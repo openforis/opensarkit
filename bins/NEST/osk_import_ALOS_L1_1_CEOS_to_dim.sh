@@ -25,6 +25,9 @@ else
   echo "Processing $1"
 fi
 
+# source OpenSARKit environment
+source 
+
 #	0.2 Define Workspace
 export PROC_DIR="$1"
 export TMP_DIR="${PROC_DIR}/TMP"
@@ -40,13 +43,6 @@ mkdir -p ${TMP_DIR}
 mkdir -p ${RAW_DIR}
 mkdir -p ${INPUT_DIR}
 
-# 	0.4 Source graph templates
-export NEST_GRAPHS="/media/avollrath/phd_data2/FAO/S1TBX/Graphs/NEST/"
-export S1TBX_GRAPHS="/media/avollrath/phd_data2/FAO/S1TBX/Graphs/S1TBX/"
-
-#	0.5 Source progam executables
-export S1TBX_EXE="/usr/programs/S1TBX/gpt.sh"
-export NEST_EXE="/usr/programs/NEST/gpt.sh"
 
 #----------------------------------------------------------------------
 # 	1 Import Raw data to DIMAP format compatible with S1TBX
