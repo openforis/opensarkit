@@ -23,7 +23,7 @@ if [ "$#" != "1" ]; then
   exit 1
 else
   echo "Processing folder: 	$1"
-  echo "Land application Toolbox "
+  echo "OpenSARKit"
 fi
 
 #	0.2 Define Workspace
@@ -46,14 +46,6 @@ mkdir -p ${SPK_DIV_DIR}
 mkdir -p ${TEXTURE_DIR}
 mkdir -p ${POLSAR_DIR}
 mkdir -p ${FINAL_DIR}
-
-# 	0.4 Source graph templates
-export NEST_GRAPHS="/home/avollrath/Dropbox/Scripts/Forestry/graphs/NEST"
-export S1TBX_GRAPHS="/home/avollrath/Dropbox/Scripts/Forestry/graphs/S1TBX"
-
-#	0.5 Source progam executables
-export S1TBX_EXE="/usr/programs/S1TBX/gpt.sh"
-export NEST_EXE="/usr/programs/NEST/gpt.sh"
 
 #----------------------------------------------------------------------
 # 	1 Import Raw data to DIMAP format compatible with S1TBX
@@ -121,7 +113,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 
 		fi
 
-	done < ${NEST_GRAPHS}/Alos_L1.1_Nest_import.xml
+	done < ${NEST_GRAPHS}/ALOS_L1.1_NEST_import.xml
 	
 	# Execute the import
 	echo "Importing CEOS files to BEAM_DIMAP file format for ${SCENE_ID}"
@@ -212,47 +204,47 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 #----------------------------------------------------------------------	
 
 	# define path/name of output
-	OUTPUT_POLSAR=${POLSAR_DIR}/${SCENE_ID}"_H_alpha.dim"
+#	OUTPUT_POLSAR=${POLSAR_DIR}/${SCENE_ID}"_H_alpha.dim"
 
-	while read LINE; do
+#	while read LINE; do
 
-	INPUT_TEST=`echo ${LINE} | grep "INPUT_DIMAP"`
-	OUTPUT_TEST=`echo ${LINE} | grep "OUTPUT_SPK_DIV"`
+#	INPUT_TEST=`echo ${LINE} | grep "INPUT_DIMAP"`
+#	OUTPUT_TEST=`echo ${LINE} | grep "OUTPUT_SPK_DIV"`
 	
 		# check if it is the input file line 
-		if [[ "$INPUT_TEST" != "" ]] ;then 
+#		if [[ "$INPUT_TEST" != "" ]] ;then 
 			
 			# write path of input file into graph.xml
-			INPUT_LINE=`echo ${LINE} | sed "s|INPUT_DIMAP|${OUTPUT_DIMAP}|g"`
-			echo ${INPUT_LINE} >> ${TMP_DIR}/POLSAR.xml
+#			INPUT_LINE=`echo ${LINE} | sed "s|INPUT_DIMAP|${OUTPUT_DIMAP}|g"`
+#			echo ${INPUT_LINE} >> ${TMP_DIR}/POLSAR.xml
 		
 		# check if it is the output file line
-		elif [[ "$OUTPUT_TEST" != "" ]] ;then 
+#		elif [[ "$OUTPUT_TEST" != "" ]] ;then 
 			
 			# write path of output file into graph.xml
-			OUTPUT_LINE=`echo ${LINE} | sed "s|OUTPUT_POLSAR|${OUTPUT_POLSAR}|g"`
-			echo ${OUTPUT_LINE} >> ${TMP_DIR}/POLSAR.xml
+#			OUTPUT_LINE=`echo ${LINE} | sed "s|OUTPUT_POLSAR|${OUTPUT_POLSAR}|g"`
+#			echo ${OUTPUT_LINE} >> ${TMP_DIR}/POLSAR.xml
 				
 		# write line from template elsewise
-		else
+#		else
 
-			echo ${LINE} >> ${TMP_DIR}/POLSAR.xml
+#			echo ${LINE} >> ${TMP_DIR}/POLSAR.xml
 
-		fi
+#		fi
 
-	done < ${S1TBX_GRAPHS}/ALOS_FBD_1_1_H_alpha_ML.xml
+#	done < ${S1TBX_GRAPHS}/ALOS_FBD_1_1_H_alpha_ML.xml
 
-	echo "Calculate H-alpha dual pol decomposition for ${SCENE_ID}"
-	sh ${S1TBX_EXE} ${TMP_DIR}/POLSAR.xml
+#	echo "Calculate H-alpha dual pol decomposition for ${SCENE_ID}"
+#	sh ${S1TBX_EXE} ${TMP_DIR}/POLSAR.xml
 
 #----------------------------------------------------------------------
 # 	5 Geocode Products
 #----------------------------------------------------------------------	
 
 DEM_FILE='/home/avollrath/test/final_dem_filled.tif'
-OUTPUT_ML_SPK_TR=${FINAL}/${SCENE_ID}'_ML_SPK_TR.tif'
+OUTPUT_ML_SPK_TR=${FINAL_DIR}/${SCENE_ID}'_ML_SPK_TR.tif'
 
-OUTPUT_POLSAR_TR=${FINAL}/${SCENE_ID}'_POLSAR_TR.tif'
+OUTPUT_POLSAR_TR=${FINAL_DIR}/${SCENE_ID}'_POLSAR_TR.tif'
 
 
 	# 5a	Geocode Multi-looked, speckle-filtered imagery
@@ -298,7 +290,7 @@ OUTPUT_POLSAR_TR=${FINAL}/${SCENE_ID}'_POLSAR_TR.tif'
 	# 5b	Geocode Speckle-Divergence
 
 
-	OUTPUT_SPK_DIV_TR=${FINAL}/${SCENE_ID}'_SPK_DIV_TR.tif'
+	OUTPUT_SPK_DIV_TR=${FINAL_DIR}/${SCENE_ID}'_SPK_DIV_TR.tif'
 	
 	while read LINE; do
 

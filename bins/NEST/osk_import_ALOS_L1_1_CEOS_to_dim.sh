@@ -18,29 +18,23 @@
 
 # 	0.1 Check for right usage
 if [ "$#" != "1" ]; then
-  echo -e "Usage: bash Import_ALOS_L.1_1_to_dim.sh /path/to/downloaded/zips"
+  echo -e "Usage: bash osk_ALOS_CEOS_to_dim.sh /path/to/downloaded/zips"
   echo -e "The path will be your Project folder!"
   exit 1
 else
   echo "Processing $1"
 fi
 
-# source OpenSARKit environment
-source 
-
 #	0.2 Define Workspace
 export PROC_DIR="$1"
 export TMP_DIR="${PROC_DIR}/TMP"
 export ZIP_DIR="${PROC_DIR}/ZIP"
-export TMP_DIR="${PROC_DIR}/TMP"
-export RAW_DIR="${PROC_DIR}/RAW"
 export INPUT_DIR="${PROC_DIR}/DIM_INPUT" # Imported DIMAP raw data
-export FINAL_DIR="${PROC_DIR}/FINAL"
+
 
 #	0.3 Create Workspace
 mkdir -p ${ZIP_DIR}
 mkdir -p ${TMP_DIR}
-mkdir -p ${RAW_DIR}
 mkdir -p ${INPUT_DIR}
 
 
@@ -67,13 +61,13 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	# extract Date and Footprint
 	YEAR=`cat workreport | grep Img_SceneCenterDateTime | awk -F "=" $'{print $2}' | cut -c 2-5`
 	DATE=`cat workreport | grep Img_SceneCenterDateTime | awk -F "=" $'{print $2}' | cut -c 2-9`
-	UL_LAT=`cat workreport | grep Brs_ImageSceneLeftTopLatitude | awk -F "=" '${print $2}' | sed 's/\"//g'`
-	UL_LAT=`cat workreport | grep Brs_ImageSceneLeftTopLatitude | awk -F "=" '${print $2}' | sed 's/\"//g'`
+	UL_LAT=`cat workreport | grep Brs_ImageSceneLeftTopLatitude | awk -F "=" $'{print $2}' | sed 's/\"//g'`
+	UL_LAT=`cat workreport | grep Brs_ImageSceneLeftTopLatitude | awk -F "=" $'{print $2}' | sed 's/\"//g'`
 	
 	FRAME=`echo ${SCENE_ID}	| cut -c 12-14`	
 
 	# !!!!!needs change for final version!!!!!	
-	PATH=`curl http://api.daac.asf.alaska.edu/services/search/param?keyword=value\&granule_list=${SCENE_ID}\&output=csv | tail -n 1 | awk -F "," $'{print $7}' | sed 's/\"//g'`
+	#SARTRACK=`curl http://api.daac.asf.alaska.edu/services/search/param?keyword=value\&granule_list=${SCENE_ID}\&output=csv | tail -n 1 | awk -F "," $'{print $7}' | sed 's/\"//g'`
 
 	# define input/output
 	export INPUT_RAW=${TMP_DIR}/${SCENE_ID}/${VOLUME_FILE}	
@@ -110,7 +104,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 
 		fi
 
-	done < ${NEST_GRAPHS}/Alos_L1.1_Nest_import.xml
+	done < ${NEST_GRAPHS}/ALOS_L1.1_NEST_import.xml
 	
 	# Execute the import
 	sh ${NEST_EXE} ${TMP_DIR}/Import_DIMAP.xml
@@ -130,3 +124,5 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 #----------------------------------------------------------------------	
 	
 done
+
+rm -rf ${TMP_DIR}

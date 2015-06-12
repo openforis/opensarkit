@@ -11,11 +11,11 @@ export S1TBX_EXE=${PROGRAMS}/S1TBX/gpt.sh
 # DORIS 
 
 # Folder of OpenSARKit scripts and workflows
-export OPENSARKIT="~/github/OpenSARKit"
+export OPENSARKIT="/home/avollrath/github/OpenSARKit"
 
 # source worklows/graphs
-export NEST_GRAPHS="${OPENSARKIT}/graphs/NEST"
-export S1TBX_GRAPHS="${OPENSARKIT}/graphs/S1TBX"
+export NEST_GRAPHS="${OPENSARKIT}/workflows/NEST"
+export S1TBX_GRAPHS="${OPENSARKIT}/workflows/S1TBX"
 
 # source worklows/graphs
 export NEST_BIN="${OPENSARKIT}/bins/NEST"
@@ -23,3 +23,4 @@ export S1TBX_BIN="${OPENSARKIT}/bins/S1TBX"
 
 # Aliases
 alias osk_ALOS_CEOS_import="bash ${NEST_BIN}/osk_import_ALOS_L1_1_CEOS_to_dim.sh"
+alias osk_ALOS_FBD_L1.1_preprocess="bash ${S1TBX_BIN}/osk_ALOS_L1_1_preprocess.sh"
