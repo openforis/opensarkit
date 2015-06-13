@@ -58,7 +58,7 @@ DEM_FILE='/home/avollrath/test/final_dem_filled.tif'
 #----------------------------------------------------------------------
 
 # 	move data 
-#mv ${PROC_DIR}/*zip ${ZIP_DIR}
+mv ${PROC_DIR}/*zip ${ZIP_DIR}
 
 #	loop for every scene
 for FILE in `ls -1 ${ZIP_DIR}`;do
