@@ -4,7 +4,7 @@
     <operator>Read</operator>
     <sources/>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <file>/home/avollrath/test/ALPSRP078787170-L1.1.dim</file>
+      <file>INPUT_DIMAP</file>
     </parameters>
   </node>
   <node id="Write">
@@ -13,7 +13,7 @@
       <sourceProduct refid="Polarimetric-Decomposition"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <file>/home/avollrath/test/ALPSRP078787170-L1.1.dim</file>
+      <file>OUTPUT_POLSAR</file>
       <formatName>BEAM-DIMAP</formatName>
     </parameters>
   </node>
