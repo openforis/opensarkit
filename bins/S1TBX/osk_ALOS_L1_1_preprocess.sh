@@ -170,11 +170,11 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_TR_radiometric.xml ${TMP_DIR}/TR_ML_SPK.xml
 
 	# insert Input file path into processing chain xml
-	sed -i "s|<file>INPUT_TR</file>|<file>${OUTPUT_SPK_DIV}</file>|g" ${TMP_DIR}/TR_ML_SPK.xml
+	sed -i "s|<file>INPUT_TR</file>|<file>${OUTPUT_SPK_DIV}</file>|g" >> ${TMP_DIR}/TR_ML_SPK.xml
 	# insert Input file path into processing chain xml
-	sed -i "s|<file>OUTPUT_TR</file>|<file>${OUTPUT_SPK_DIV_TR}</file>|g" ${TMP_DIR}/TR_ML_SPK.xml
+	sed -i "s|<file>OUTPUT_TR</file>|<file>${OUTPUT_SPK_DIV_TR}</file>|g" >> ${TMP_DIR}/TR_ML_SPK.xml
 	# insert DEM path
-	sed -i "s|<externalDEMFile>DEM_FILE</externalDEMFile>|<externalDEMFile>${DEM_FILE}</externalDEMFile>|g" ${TMP_DIR}/TR_ML_SPK.xml
+	sed -i "s|<externalDEMFile>DEM_FILE</externalDEMFile>|<externalDEMFile>${DEM_FILE}</externalDEMFile>|g" >> ${TMP_DIR}/TR_ML_SPK.xml
 
 	# Radiometrically terrain correcting Multi-looked, speckle-filtered files
 	echo "Geocode Multi-looked, speckle-filtered scene: ${SCENE_ID}"
@@ -190,11 +190,11 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_TR_SPK_DIV.xml ${TMP_DIR}/TR_SPK_DIV.xml
 
 	# insert Input file path into processing chain xml
-	sed -i "s|<file>INPUT_TR</file>|<file>${OUTPUT_SPK_DIV}</file>|g" ${TMP_DIR}/TR_SPK_DIV.xml
+	sed -i "s|<file>INPUT_TR</file>|<file>${OUTPUT_SPK_DIV}</file>|g" >> ${TMP_DIR}/TR_SPK_DIV.xml
 	# insert Input file path into processing chain xml
-	sed -i "s|<file>OUTPUT_TR</file>|<file>${OUTPUT_SPK_DIV_TR}</file>|g" ${TMP_DIR}/TR_SPK_DIV.xml
+	sed -i "s|<file>OUTPUT_TR</file>|<file>${OUTPUT_SPK_DIV_TR}</file>|g" >> ${TMP_DIR}/TR_SPK_DIV.xml
 	# insert external DEM path
-	sed -i "s|<externalDEMFile>DEM_FILE</externalDEMFile>|<externalDEMFile>${DEM_FILE}</externalDEMFile>|g" ${TMP_DIR}/TR_SPK_DIV.xml
+	sed -i "s|<externalDEMFile>DEM_FILE</externalDEMFile>|<externalDEMFile>${DEM_FILE}</externalDEMFile>|g" >> ${TMP_DIR}/TR_SPK_DIV.xml
 
 	# Radiometrically terrain correcting Multi-looked, speckle-filtered files
 	echo "Geocode Speckle-Divergence from scene: ${SCENE_ID}"
@@ -209,11 +209,11 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_TR_ML_H_alpha.xml ${TMP_DIR}/TR_H_alpha.xml
 
 	# insert Input file path into processing chain xml
-	sed -i "s|<file>INPUT_TR</file>|<file>${OUTPUT_POLSAR}</file>|g" ${TMP_DIR}/TR_H_alpha.xml
+	sed -i "s|<file>INPUT_TR</file>|<file>${OUTPUT_POLSAR}</file>|g" >> ${TMP_DIR}/TR_H_alpha.xml
 	# insert Input file path into processing chain xml
-	sed -i "s|<file>OUTPUT_TR</file>|<file>${OUTPUT_POLSAR_TR}</file>|g" ${TMP_DIR}/TR_H_alpha.xml
+	sed -i "s|<file>OUTPUT_TR</file>|<file>${OUTPUT_POLSAR_TR}</file>|g" >> ${TMP_DIR}/TR_H_alpha.xml
 	# insert external DEM path
-	sed -i "s|<externalDEMFile>DEM_FILE</externalDEMFile>|<externalDEMFile>${DEM_FILE}</externalDEMFile>|g" ${TMP_DIR}/TR_H_alpha.xml
+	sed -i "s|<externalDEMFile>DEM_FILE</externalDEMFile>|<externalDEMFile>${DEM_FILE}</externalDEMFile>|g" >> ${TMP_DIR}/TR_H_alpha.xml
 
 	# Radiometrically terrain correcting Multi-looked, speckle-filtered files
 	echo "Geocode Speckle-Divergence from scene: ${SCENE_ID}"
