@@ -47,6 +47,9 @@ mkdir -p ${TEXTURE_DIR}
 mkdir -p ${POLSAR_DIR}
 mkdir -p ${FINAL_DIR}
 
+#	0.4 DEM File for Geocoding
+DEM_FILE='/home/avollrath/test/final_dem_filled.tif'
+
 #----------------------------------------------------------------------
 # 	1 Import Raw data to DIMAP format compatible with S1TBX
 #----------------------------------------------------------------------
@@ -79,43 +82,23 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	#SAT_PATH=`curl http://api.daac.asf.alaska.edu/services/search/param?keyword=value\&granule_list=${SCENE_ID}\&output=csv | tail -n 1 | awk -F "," $'{print $7}' | sed 's/\"//g'`
 	
 	#echo "$FRAME $PATH $YEAR $UL_LAT"
+
+#----------------------------------------------------------------------
+# 	1 Import Raw data to DIMAP format compatible with S1TBX
+#----------------------------------------------------------------------
+
 	# define input/output
-	export INPUT_RAW=${TMP_DIR}/${SCENE_ID}/${VOLUME_FILE}	
-	export OUTPUT_DIMAP=${INPUT_DIR}/${SCENE_ID}.dim
+	INPUT_RAW=${TMP_DIR}/${SCENE_ID}/${VOLUME_FILE}	
+	OUTPUT_DIMAP=${INPUT_DIR}/${SCENE_ID}.dim
 
 	# Write new xml graph and substitute input and output files
+	cp ${NEST_GRAPHS}/ALOS_L1.1_NEST_import.xml ${TMP_DIR}/Import_DIMAP.xml
 	
-	while read LINE; do
-		
-		INPUT_TEST=`echo ${LINE} | grep "INPUT_RAW"`
-		OUTPUT_TEST=`echo ${LINE} | grep "OUTPUT_DIMAP"`
-	
-		# check if it is the input file line 
-		if [[ "$INPUT_TEST" != "" ]] ;then 
-			
+	# insert Input file path into processing chain xml
+	sed -i "s|<file>INPUT_RAW</file>|<file>${INPUT_RAW}</file>|g" ${TMP_DIR}/Import_DIMAP.xml
+	# insert Input file path into processing chain xml
+	sed -i "s|<file>OUTPUT_DIMAP</file>|<file>${OUTPUT_DIMAP}</file>|g" ${TMP_DIR}/Import_DIMAP.xml
 
-			# write path of input file into graph.xml
-			INPUT_LINE=`echo ${LINE} | sed "s|INPUT_RAW|${INPUT_RAW}|g"`
-			echo ${INPUT_LINE} >> ${TMP_DIR}/Import_DIMAP.xml
-		
-		# check if it is the output file line
-		elif [[ "$OUTPUT_TEST" != "" ]] ;then 
-			
-			# write path of output file into graph.xml
-			OUTPUT_LINE=`echo ${LINE} | sed "s|OUTPUT_DIMAP|${OUTPUT_DIMAP}|g"`
-			echo ${OUTPUT_LINE} >> ${TMP_DIR}/Import_DIMAP.xml
-			
-		
-		# write line from template elsewise
-		else
-	
-			echo ${LINE} >> ${TMP_DIR}/Import_DIMAP.xml
-
-		fi
-
-	done < ${NEST_GRAPHS}/ALOS_L1.1_NEST_import.xml
-	
-	# Execute the import
 	echo "Importing CEOS files to BEAM_DIMAP file format for ${SCENE_ID}"
 	sh ${NEST_EXE} ${TMP_DIR}/Import_DIMAP.xml
 
@@ -123,36 +106,15 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 # 	2 Create multilooked, Lee speckle-filtered intensities
 #----------------------------------------------------------------------	
 
-	# define path/name of output
+	# define output
 	OUTPUT_ML_SPK=${ML_SPK_DIR}/${SCENE_ID}"_ML_SPK.dim"
+	# Write new xml graph and substitute input and output files
+	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_DSK_ML_SPK.xml ${TMP_DIR}/ML_SPK.xml
 
-	while read LINE; do
-
-	INPUT_TEST=`echo ${LINE} | grep "INPUT_DIMAP"`
-	OUTPUT_TEST=`echo ${LINE} | grep "OUTPUT_ML_SPK"`
-	
-#		# check if it is the input file line 
-		if [[ "$INPUT_TEST" != "" ]] ;then 
-			
-			# write path of input file into graph.xml
-			INPUT_LINE=`echo ${LINE} | sed "s|INPUT_DIMAP|${OUTPUT_DIMAP}|g"`
-			echo ${INPUT_LINE} >> ${TMP_DIR}/ML_SPK.xml
-		
-		# check if it is the output file line
-		elif [[ "$OUTPUT_TEST" != "" ]] ;then 
-			
-			# write path of output file into graph.xml
-			OUTPUT_LINE=`echo ${LINE} | sed "s|OUTPUT_ML_SPK|${OUTPUT_ML_SPK}|g"`
-			echo ${OUTPUT_LINE} >> ${TMP_DIR}/ML_SPK.xml
-				
-		# write line from template elsewise
-		else
-
-			echo ${LINE} >> ${TMP_DIR}/ML_SPK.xml
-
-		fi
-
-	done < ${S1TBX_GRAPHS}/ALOS_FBD_1_1_DSK_ML_SPK.xml
+	# insert Input file path into processing chain xml
+	sed -i "s|<file>INPUT_DIMAP</file>|<file>${OUTPUT_DIMAP}</file>|g" ${TMP_DIR}/ML_SPK.xml
+	# insert Input file path into processing chain xml
+	sed -i "s|<file>OUTPUT_ML_SPK</file>|<file>${OUTPUT_ML_SPK}</file>|g" ${TMP_DIR}/ML_SPK.xml
 
 	echo "Apply Multi-look & Speckle Filter to ${SCENE_ID}"
 	sh ${S1TBX_EXE} ${TMP_DIR}/ML_SPK.xml
@@ -164,120 +126,50 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 
 	# define path/name of output
 	OUTPUT_SPK_DIV=${SPK_DIV_DIR}/${SCENE_ID}"_SPK_DIV.dim"
+	# Write new xml graph and substitute input and output files
+	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_DSK_SPK-DIV_ML.xml ${TMP_DIR}/SPK_DIV.xml
 
-	while read LINE; do
-
-	INPUT_TEST=`echo ${LINE} | grep "INPUT_DIMAP"`
-	OUTPUT_TEST=`echo ${LINE} | grep "OUTPUT_SPK_DIV"`
-	
-		# check if it is the input file line 
-		if [[ "$INPUT_TEST" != "" ]] ;then 
-			
-			# write path of input file into graph.xml
-			INPUT_LINE=`echo ${LINE} | sed "s|INPUT_DIMAP|${OUTPUT_DIMAP}|g"`
-			echo ${INPUT_LINE} >> ${TMP_DIR}/SPK_DIV.xml
-		
-		# check if it is the output file line
-		elif [[ "$OUTPUT_TEST" != "" ]] ;then 
-			
-			# write path of output file into graph.xml
-			OUTPUT_LINE=`echo ${LINE} | sed "s|OUTPUT_SPK_DIV|${OUTPUT_SPK_DIV}|g"`
-			echo ${OUTPUT_LINE} >> ${TMP_DIR}/SPK_DIV.xml
-				
-		# write line from template elsewise
-		else
-
-			echo ${LINE} >> ${TMP_DIR}/SPK_DIV.xml
-
-		fi
-
-	done < ${S1TBX_GRAPHS}/ALOS_FBD_1_1_DSK_SPK-DIV_ML.xml
+	# insert Input file path into processing chain xml
+	sed -i "s|<file>INPUT_DIMAP</file>|<file>${OUTPUT_DIMAP}</file>|g" ${TMP_DIR}/SPK_DIV.xml
+	# insert Input file path into processing chain xml
+	sed -i "s|<file>OUTPUT_SPK_DIV</file>|<file>${OUTPUT_SPK_DIV}</file>|g" ${TMP_DIR}/SPK_DIV.xml
 
 	echo "Calculate Speckle Divergence and apply Multi-looking for ${SCENE_ID}"
 	sh ${S1TBX_EXE} ${TMP_DIR}/SPK_DIV.xml
 
 	
-
-
 #----------------------------------------------------------------------
 # 	4 Create Polarimetric Products
 #----------------------------------------------------------------------	
 
 	# define path/name of output
-#	OUTPUT_POLSAR=${POLSAR_DIR}/${SCENE_ID}"_H_alpha.dim"
-
-#	while read LINE; do
-
-#	INPUT_TEST=`echo ${LINE} | grep "INPUT_DIMAP"`
-#	OUTPUT_TEST=`echo ${LINE} | grep "OUTPUT_SPK_DIV"`
+	OUTPUT_POLSAR=${POLSAR_DIR}/${SCENE_ID}"_H_alpha.dim"
+	# Write new xml graph and substitute input and output files
+	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_H_alpha.xml ${TMP_DIR}/POLSAR.xml
 	
-		# check if it is the input file line 
-#		if [[ "$INPUT_TEST" != "" ]] ;then 
-			
-			# write path of input file into graph.xml
-#			INPUT_LINE=`echo ${LINE} | sed "s|INPUT_DIMAP|${OUTPUT_DIMAP}|g"`
-#			echo ${INPUT_LINE} >> ${TMP_DIR}/POLSAR.xml
-		
-		# check if it is the output file line
-#		elif [[ "$OUTPUT_TEST" != "" ]] ;then 
-			
-			# write path of output file into graph.xml
-#			OUTPUT_LINE=`echo ${LINE} | sed "s|OUTPUT_POLSAR|${OUTPUT_POLSAR}|g"`
-#			echo ${OUTPUT_LINE} >> ${TMP_DIR}/POLSAR.xml
-				
-		# write line from template elsewise
-#		else
+	# insert Input file path into processing chain xml
+	sed -i "s|<file>INPUT_DIMAP</file>|<file>${OUTPUT_DIMAP}</file>|g" ${TMP_DIR}/POLSAR.xml
+	# insert Input file path into processing chain xml
+	sed -i "s|<file>OUTPUT_POLSAR</file>|<file>${OUTPUT_POLSAR}</file>|g" ${TMP_DIR}/POLSAR.xml
 
-#			echo ${LINE} >> ${TMP_DIR}/POLSAR.xml
+	echo "Calculate H-alpha dual pol decomposition for ${SCENE_ID}"
+	sh ${S1TBX_EXE} ${TMP_DIR}/POLSAR.xml
 
-#		fi
-
-#	done < ${S1TBX_GRAPHS}/ALOS_FBD_1_1_H_alpha_ML.xml
-
-#	echo "Calculate H-alpha dual pol decomposition for ${SCENE_ID}"
-#	sh ${S1TBX_EXE} ${TMP_DIR}/POLSAR.xml
 
 #----------------------------------------------------------------------
 # 	5 Geocode Products
 #----------------------------------------------------------------------	
 
-DEM_FILE='/home/avollrath/test/final_dem_filled.tif'
-OUTPUT_ML_SPK_TR=${FINAL_DIR}/${SCENE_ID}'_ML_SPK_TR.tif'
-
-OUTPUT_POLSAR_TR=${FINAL_DIR}/${SCENE_ID}'_POLSAR_TR.tif'
-
 
 	# 5a	Geocode Multi-looked, speckle-filtered imagery
 
+	OUTPUT_ML_SPK_TR=${FINAL_DIR}/${SCENE_ID}'_ML_SPK_TR.tif'
+	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_TR_radiometric.xml ${TMP_DIR}/TR_ML_SPK.xml
 
-	while read LINE; do
-
-	INPUT_TEST=`echo ${LINE} | grep "INPUT_TR"`
-	OUTPUT_TEST=`echo ${LINE} | grep "OUTPUT_TR"`
-	
-		# check if it is the input file line 
-		if [[ "$INPUT_TEST" != "" ]] ;then 
-			
-			# write path of input file into graph.xml
-			INPUT_LINE=`echo ${LINE} | sed "s|INPUT_TR|${OUTPUT_ML_SPK}|g"`
-			echo ${INPUT_LINE} >> ${TMP_DIR}/TR_ML_SPK.xml
-		
-		# check if it is the output file line
-		elif [[ "$OUTPUT_TEST" != "" ]] ;then 
-			
-			# write path of output file into graph.xml
-			OUTPUT_LINE=`echo ${LINE} | sed "s|OUTPUT_TR|${OUTPUT_ML_SPK_TR}|g"`
-			echo ${OUTPUT_LINE} >> ${TMP_DIR}/TR_ML_SPK.xml
-				
-		# write line from template elsewise
-		else
-
-			echo ${LINE} >> ${TMP_DIR}/TR_ML_SPK.xml
-
-		fi
-
-	done < ${S1TBX_GRAPHS}/ALOS_FBD_1_1_TR_radiometric.xml
-
+	# insert Input file path into processing chain xml
+	sed -i "s|<file>INPUT_TR</file>|<file>${OUTPUT_SPK_DIV}</file>|g" ${TMP_DIR}/TR_ML_SPK.xml
+	# insert Input file path into processing chain xml
+	sed -i "s|<file>OUTPUT_TR</file>|<file>${OUTPUT_SPK_DIV_TR}</file>|g" ${TMP_DIR}/TR_ML_SPK.xml
 	# insert DEM path
 	sed -i "s|<externalDEMFile>DEM_FILE</externalDEMFile>|<externalDEMFile>${DEM_FILE}</externalDEMFile>|g" ${TMP_DIR}/TR_ML_SPK.xml
 
@@ -289,45 +181,40 @@ OUTPUT_POLSAR_TR=${FINAL_DIR}/${SCENE_ID}'_POLSAR_TR.tif'
 
 	# 5b	Geocode Speckle-Divergence
 
-
+	# define output file name
 	OUTPUT_SPK_DIV_TR=${FINAL_DIR}/${SCENE_ID}'_SPK_DIV_TR.tif'
-	
-	while read LINE; do
+	# copy template xml graph into tmp folder 
+	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_TR_SPK_DIV.xml ${TMP_DIR}/TR_SPK_DIV.xml
 
-	INPUT_TEST=`echo ${LINE} | grep "INPUT_TR"`
-	OUTPUT_TEST=`echo ${LINE} | grep "OUTPUT_TR"`
-	
-		# check if it is the input file line 
-		if [[ "$INPUT_TEST" != "" ]] ;then 
-			
-			# write path of input file into graph.xml
-			INPUT_LINE=`echo ${LINE} | sed "s|INPUT_TR|${OUTPUT_SPK_DIV}|g"`
-			echo ${INPUT_LINE} >> ${TMP_DIR}/TR_SPK_DIV.xml
-		
-		# check if it is the output file line
-		elif [[ "$OUTPUT_TEST" != "" ]] ;then 
-			
-			# write path of output file into graph.xml
-			OUTPUT_LINE=`echo ${LINE} | sed "s|OUTPUT_TR|${OUTPUT_SPK_DIV_TR}|g"`
-			echo ${OUTPUT_LINE} >> ${TMP_DIR}/TR_SPK_DIV.xml
-				
-		# write line from template elsewise
-		else
-
-			echo ${LINE} >> ${TMP_DIR}/TR_SPK_DIV.xml
-
-		fi
-
-	done < ${S1TBX_GRAPHS}/ALOS_FBD_1_1_TR_SPK_DIV.xml
-
+	# insert Input file path into processing chain xml
+	sed -i "s|<file>INPUT_TR</file>|<file>${OUTPUT_SPK_DIV}</file>|g" ${TMP_DIR}/TR_SPK_DIV.xml
+	# insert Input file path into processing chain xml
+	sed -i "s|<file>OUTPUT_TR</file>|<file>${OUTPUT_SPK_DIV_TR}</file>|g" ${TMP_DIR}/TR_SPK_DIV.xml
 	# insert external DEM path
 	sed -i "s|<externalDEMFile>DEM_FILE</externalDEMFile>|<externalDEMFile>${DEM_FILE}</externalDEMFile>|g" ${TMP_DIR}/TR_SPK_DIV.xml
 
-	
 	# Radiometrically terrain correcting Multi-looked, speckle-filtered files
 	echo "Geocode Speckle-Divergence from scene: ${SCENE_ID}"
 	sh ${S1TBX_EXE} ${TMP_DIR}/TR_SPK_DIV.xml
 	
+
+	# 5c	Multi-look & Geocode Polsar H-alpha dual pol data (multilook included, since it does not work for the preproc chain)
+
+	# define output file name
+	OUTPUT_POLSAR_TR=${FINAL_DIR}/${SCENE_ID}'_H_ALPHA_TR.tif'
+	# copy template xml graph into tmp folder
+	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_TR_ML_H_alpha.xml ${TMP_DIR}/TR_H_alpha.xml
+
+	# insert Input file path into processing chain xml
+	sed -i "s|<file>INPUT_TR</file>|<file>${OUTPUT_POLSAR}</file>|g" ${TMP_DIR}/TR_H_alpha.xml
+	# insert Input file path into processing chain xml
+	sed -i "s|<file>OUTPUT_TR</file>|<file>${OUTPUT_POLSAR_TR}</file>|g" ${TMP_DIR}/TR_H_alpha.xml
+	# insert external DEM path
+	sed -i "s|<externalDEMFile>DEM_FILE</externalDEMFile>|<externalDEMFile>${DEM_FILE}</externalDEMFile>|g" ${TMP_DIR}/TR_H_alpha.xml
+
+	# Radiometrically terrain correcting Multi-looked, speckle-filtered files
+	echo "Geocode Speckle-Divergence from scene: ${SCENE_ID}"
+	sh ${S1TBX_EXE} ${TMP_DIR}/TR_H_alpha.xml
 
 #----------------------------------------------------------------------
 # 	5 Remove tmp files
