@@ -25,12 +25,15 @@ if [ "$#" != "1" ]; then
   echo -e "The path will be your Project folder!"
   exit 1
 else
+  cd $1
+  export PROC_DIR=`pwd`
   echo "Welcome to OpenSARKit!"
-  echo "Processing folder: 	$1"
+  echo "Processing folder: 	${PROC_DIR}"
 fi
 
 #	0.2 Define Workspace
-export PROC_DIR="$1"
+
+
 export TMP_DIR="${PROC_DIR}/TMP"
 export ZIP_DIR="${PROC_DIR}/ZIP"
 export INPUT_DIR="${PROC_DIR}/DIM_INPUT" # Imported DIMAP raw data
@@ -102,12 +105,12 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	# !!!!!needs change for final version!!!!!	
 	SAT_PATH=`curl -s http://api.daac.asf.alaska.edu/services/search/param?keyword=value\&granule_list=${SCENE_ID:0:15}\&output=csv | tail -n 1 | awk -F "," $'{print $7}' | sed 's/\"//g'`
 	
-	echo "Processing Scene: ${SCENE_ID:0:15}"
-	echo "Satellite/Sensor: ALOS/Palsar"
-	echo "Acquisiton Mode: ${MODE}"
-	echo "Acquisition Date (YYYYMMDD): ${DATE}"
-	echo "Relative Satellite Track: ${SAT_PATH}"
-	echo "Image Frame: $FRAME"
+	echo "Processing Scene: 		${SCENE_ID:0:15}"
+	echo "Satellite/Sensor: 		ALOS/Palsar"
+	echo "Acquisiton Mode: 			${MODE}"
+	echo "Acquisition Date (YYYYMMDD):	${DATE}"
+	echo "Relative Satellite Track: 	${SAT_PATH}"
+	echo "Image Frame: 			$FRAME"
 
 	mkdir -p ${PROC_DIR}/${MODE}
 	mkdir -p ${PROC_DIR}/${MODE}/${YEAR}
