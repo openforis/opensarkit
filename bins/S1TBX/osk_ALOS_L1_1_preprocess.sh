@@ -31,9 +31,11 @@ else
   echo "Processing folder: 	${PROC_DIR}"
 fi
 
+
+#DEM_FILE='/home/avollrath/test/final_dem_filled.tif'
+DEM_FILE=$2
+
 #	0.2 Define Workspace
-
-
 export TMP_DIR="${PROC_DIR}/TMP"
 export ZIP_DIR="${PROC_DIR}/ZIP"
 export INPUT_DIR="${PROC_DIR}/DIM_INPUT" # Imported DIMAP raw data
@@ -56,7 +58,7 @@ mkdir -p ${INPUT_DIR}
 #mkdir -p ${GAMMA_DIR}
 
 #	0.4 DEM File for Geocoding
-DEM_FILE='/home/avollrath/test/final_dem_filled.tif'
+
 
 #----------------------------------------------------------------------
 # 	1 Import Raw data to DIMAP format compatible with S1TBX
@@ -107,7 +109,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	
 	echo "Processing Scene: 		${SCENE_ID:0:15}"
 	echo "Satellite/Sensor: 		ALOS/Palsar"
-	echo "Acquisiton Mode: 			${MODE}"
+	echo "Acquisiton Mode:			${MODE}"
 	echo "Acquisition Date (YYYYMMDD):	${DATE}"
 	echo "Relative Satellite Track: 	${SAT_PATH}"
 	echo "Image Frame: 			$FRAME"
