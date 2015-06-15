@@ -7,16 +7,6 @@
       <file>INPUT_TR</file>
     </parameters>
   </node>
-  <node id="Write">
-    <operator>Write</operator>
-    <sources>
-      <sourceProduct refid="Terrain-Correction"/>
-    </sources>
-    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <file>OUTPUT_TR</file>
-      <formatName>GeoTIFF</formatName>
-    </parameters>
-  </node>
   <node id="Terrain-Correction">
     <operator>Terrain-Correction</operator>
     <sources>
@@ -55,16 +45,43 @@
       <externalAuxFile/>
     </parameters>
   </node>
+  <node id="LinearTodB">
+    <operator>LinearTodB</operator>
+    <sources>
+      <sourceProduct refid="Terrain-Correction"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <sourceBands>
+        <band>Sigma0_HH</band>
+        <band>Sigma0_HV</band>
+        <band>Gamma0_HH_use_projected_local_inci_angle_from_dem</band>
+        <band>Gamma0_HV_use_projected_local_inci_angle_from_dem</band>
+      </sourceBands>
+    </parameters>
+  </node>
+  <node id="Write">
+    <operator>Write</operator>
+    <sources>
+      <sourceProduct refid="LinearTodB"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <file>OUTPUT_TR</file>
+      <formatName>BEAM-DIMAP</formatName>
+    </parameters>
+  </node>
   <applicationData id="Presentation">
     <Description/>
     <node id="Read">
-      <displayPosition x="37.0" y="134.0"/>
-    </node>
-    <node id="Write">
-      <displayPosition x="455.0" y="135.0"/>
+      <displayPosition x="80.0" y="54.0"/>
     </node>
     <node id="Terrain-Correction">
-      <displayPosition x="222.0" y="129.0"/>
+      <displayPosition x="183.0" y="111.0"/>
+    </node>
+    <node id="LinearTodB">
+      <displayPosition x="261.0" y="196.0"/>
+    </node>
+    <node id="Write">
+      <displayPosition x="336.0" y="177.0"/>
     </node>
   </applicationData>
 </graph>
