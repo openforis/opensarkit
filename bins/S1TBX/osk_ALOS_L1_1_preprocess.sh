@@ -20,8 +20,8 @@ source /data/home/Andreas.Vollrath/github/OpenSARKit_source.bash
 #----------------------------------------------------------------------
 
 # 	0.1 Check for right usage
-if [ "$#" != "1" ]; then
-  echo -e "Usage: bash Import_ALOS_L.1_1_to_dim.sh /path/to/downloaded/zips"
+if [ "$#" != "2" ]; then
+  echo -e "Usage: bash Import_ALOS_L.1_1_to_dim.sh /path/to/downloaded/zips /path/to/dem"
   echo -e "The path will be your Project folder!"
   exit 1
 else
