@@ -21,14 +21,14 @@ source /data/home/Andreas.Vollrath/github/OpenSARKit_source.bash
 
 # 	0.1 Check for right usage
 if [ "$#" != "2" ]; then
-  echo -e "Usage: bash Import_ALOS_L.1_1_to_dim.sh /path/to/downloaded/zips /path/to/dem"
+  echo -e "Usage: osk_ALOS_L1_1_preprocess /path/to/downloaded/zips /path/to/dem"
   echo -e "The path will be your Project folder!"
   exit 1
 else
   cd $1
   export PROC_DIR=`pwd`
   echo "Welcome to OpenSARKit!"
-  echo "Processing folder: 	${PROC_DIR}"
+  echo "Processing folder: ${PROC_DIR}"
 fi
 
 
@@ -38,26 +38,10 @@ DEM_FILE=$2
 #	0.2 Define Workspace
 export TMP_DIR="${PROC_DIR}/TMP"
 export ZIP_DIR="${PROC_DIR}/ZIP"
-export INPUT_DIR="${PROC_DIR}/DIM_INPUT" # Imported DIMAP raw data
-export ML_SPK_DIR="${PROC_DIR}/ML_SPK"
-export SPK_DIV_DIR="${PROC_DIR}/SPK_DIV"
-export RATIO_DIR="${PROC_DIR}/RATIO"
-export TEXTURE_DIR="${PROC_DIR}/TEXTURE"
-export POLSAR_DIR="${PROC_DIR}/POLSAR"
-export GAMMA_DIR="${PROC_DIR}/FINAL"
 
 #	0.3 Create Workspace
 mkdir -p ${ZIP_DIR}
 mkdir -p ${TMP_DIR}
-mkdir -p ${INPUT_DIR}
-#mkdir -p ${ML_SPK_DIR}
-#mkdir -p ${SPK_DIV_DIR}
-#mkdir -p ${TEXTURE_DIR}
-#mkdir -p ${POLSAR_DIR}
-#mkdir -p ${RATIO_DIR}
-#mkdir -p ${GAMMA_DIR}
-
-#	0.4 DEM File for Geocoding
 
 
 #----------------------------------------------------------------------
@@ -99,11 +83,11 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	MONTH=`cat workreport | grep Img_SceneCenterDateTime | awk -F "=" $'{print $2}' | cut -c 6-7`
 	DAY=`cat workreport | grep Img_SceneCenterDateTime | awk -F "=" $'{print $2}' | cut -c 7-8`
 	DATE=`cat workreport | grep Img_SceneCenterDateTime | awk -F "=" $'{print $2}' | cut -c 2-9`
+
 #	UL_LAT=`cat workreport | grep Brs_ImageSceneLeftTopLatitude | awk -F "=" $'{print $2}' | sed 's/\"//g'`
 #	UL_LAT=`cat workreport | grep Brs_ImageSceneLeftTopLatitude | awk -F "=" $'{print $2}' | sed 's/\"//g'`
 	
 	FRAME=`echo ${SCENE_ID}	| cut -c 12-15`	
-
 	# !!!!!needs change for final version!!!!!	
 	SAT_PATH=`curl -s http://api.daac.asf.alaska.edu/services/search/param?keyword=value\&granule_list=${SCENE_ID:0:15}\&output=csv | tail -n 1 | awk -F "," $'{print $7}' | sed 's/\"//g'`
 	

@@ -14,7 +14,7 @@
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
       <file>OUTPUT_TR</file>
-      <formatName>GeoTIFF</formatName>
+      <formatName>BEAM-DIMAP</formatName>
     </parameters>
   </node>
   <node id="Terrain-Correction">
