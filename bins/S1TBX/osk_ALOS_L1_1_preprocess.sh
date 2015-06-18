@@ -98,13 +98,10 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	echo "Relative Satellite Track: 	${SAT_PATH}"
 	echo "Image Frame: 			$FRAME"
 
-	mkdir -p ${PROC_DIR}/${MODE}
-	mkdir -p ${PROC_DIR}/${MODE}/${YEAR}
-	mkdir -p ${PROC_DIR}/${MODE}/${YEAR}/${SAT_PATH}
-	mkdir -p ${PROC_DIR}/${MODE}/${YEAR}/${SAT_PATH}/${FRAME}
-	mkdir -p ${PROC_DIR}/${MODE}/${YEAR}/${SAT_PATH}/${FRAME}/${DATE}
+	mkdir -p ${PROC_DIR}/${DATE}
+	mkdir -p ${PROC_DIR}/${DATE}/${FRAME}
 
-	FINAL_DIR=${PROC_DIR}/${MODE}/${YEAR}/${SAT_PATH}/${FRAME}/${DATE}
+	FINAL_DIR=${PROC_DIR}/${DATE}/${FRAME}
 
 #----------------------------------------------------------------------
 # 	1 Import Raw data to DIMAP format compatible with S1TBX
@@ -299,7 +296,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	# insert external DEM path
 	sed -i "s|DEM_FILE|${DEM_FILE}|g" ${TMP_DIR}/LAYOVER.xml
 
-	echo "Calculate the Layover Shadow mask"
+	echo "Calculate the Layover/Shadow mask"
 	sh ${S1TBX_EXE} ${TMP_DIR}/LAYOVER.xml
 
 	# Geocode Layover
@@ -315,7 +312,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	sed -i "s|DEM_FILE|${DEM_FILE}|g" ${TMP_DIR}/TR_LAYOVER.xml
 
 	# Terrain correcting Layover mask
-	echo "Geocode Layover Mask: ${SCENE_ID}"
+	echo "Geocode Layover/Shadow Mask: ${SCENE_ID}"
 	sh ${S1TBX_EXE} ${TMP_DIR}/TR_LAYOVER.xml
 
 #----------------------------------------------------------------------
