@@ -1,0 +1,46 @@
+<graph id="Graph">
+  <version>1.0</version>
+  <node id="Read">
+    <operator>Read</operator>
+    <sources/>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <file>INPUT_TR</file>
+    </parameters>
+  </node>
+  <node id="Write">
+    <operator>Write</operator>
+    <sources>
+      <sourceProduct refid="BandMaths"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <file>OUTPUT_TR</file>
+      <formatName>BEAM-DIMAP</formatName>
+    </parameters>
+  </node>
+  <node id="BandMaths">
+    <operator>BandMaths</operator>
+    <sources>
+      <sourceProduct refid="Read"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <targetBands/>
+      <variables/>
+      <bandName>HH_HV</bandName>
+      <bandUnit/>
+      <bandNodataValue>0.0</bandNodataValue>
+      <bandExpression>Gamma0_HH_use_projected_local_inci_angle_from_dem_db / Gamma0_HV_use_projected_local_inci_angle_from_dem_db</bandExpression>
+    </parameters>
+  </node>
+  <applicationData id="Presentation">
+    <Description/>
+    <node id="Read">
+      <displayPosition x="37.0" y="134.0"/>
+    </node>
+    <node id="Write">
+      <displayPosition x="455.0" y="135.0"/>
+    </node>
+    <node id="BandMaths">
+      <displayPosition x="190.0" y="139.0"/>
+    </node>
+  </applicationData>
+</graph>

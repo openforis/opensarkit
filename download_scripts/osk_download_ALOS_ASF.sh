@@ -41,18 +41,20 @@ wget --save-cookies cookies.txt --post-data='user_name='$UNAME'&user_password='$
 ogr2ogr -f CSV tmp_AOI_WKT.csv $2 -lco GEOMETRY=AS_WKT
 AOI=`grep POLYGON tmp_AOI_WKT.csv | sed 's|\"POLYGON ((||g' | awk -F "))" $'{print $1}' | sed 's/\ /,/g'`
 
-#PERIOD="start='$4'T11:59:59UTC\&end='$5'T00:00:00UTC"
+PERIOD="start=2008-12-31T11:59:59UTC&end=2010-01-01T00:00:00UTC"
 PLATFORM="platform=A3"
 PROCESSING="processingLevel=L1.1"
 OUTPUT_FORMAT="output=csv"
 OUTPUT="$1/inventory"
-
+REL_ORBIT="relativeOrbit=112"
 # Download dual polarized data
 BEAM="beamMode=FBD"
 mkdir -p ${PROC_DIR}/FBD
 
 # search part of the URL
-ASK="\&polygon=${AOI}&${PLATFORM}&${BEAM}&${PROCESSING}&${OUTPUT_FORMAT}"
+# for period
+ASK="\&polygon=${AOI}&${PLATFORM}&${BEAM}&${PERIOD}&${PROCESSING}&${REL_ORBIT}&${OUTPUT_FORMAT}"
+#ASK="\&polygon=${AOI}&${PLATFORM}&${BEAM}&${PROCESSING}&${OUTPUT_FORMAT}"
 
 echo "Getting the inventory data"
 curl -s http://api.daac.asf.alaska.edu/services/search/param?keyword=value$ASK | tail -n +2 > $OUTPUT-FBD.csv
@@ -66,20 +68,17 @@ while read line;do
 	DOWNLOAD=`echo $line | awk -F "," $'{print $26}' | sed "s|\"||g"`
 	GRANULE=`echo $line | awk -F "," $'{print $1}' | sed "s|\"||g"`
 
-	echo ${DOWNLOAD}
 	mkdir -p ${PROC_DIR}/FBD/${ACQ_YEAR}
 	mkdir -p ${PROC_DIR}/FBD/${ACQ_YEAR}/${SAT_TRACK}
 
 	cd ${PROC_DIR}/FBD/${ACQ_YEAR}/${SAT_TRACK}
 	echo "Downloading ALOS FBD scene: ${GRANULE}"
+	echo "from: ${DOWNLOAD}"
 	echo "into: ${PROC_DIR}/FBD/${ACQ_YEAR}/${SAT_TRACK}"
-
-	echo "aria2c --load-cookies="$3" ${DOWNLOAD}"
 	aria2c --load-cookies="${PROC_DIR}/cookies.txt" ${DOWNLOAD}
 
 done < inventory-FBD.csv 
 
 rm -rf ${PROC_DIR}/cookies.txt ${PROC_DIR}/tmp*
 
-# for period
-#ASK="\&polygon=${AOI}&${PLATFORM}&${BEAM}&${PERIOD}&${PROCESSING}&${OUTPUT_FORMAT}"
+

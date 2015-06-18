@@ -178,10 +178,10 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	echo "Calculate Speckle Divergence and apply Multi-looking for ${SCENE_ID}"
 	sh ${S1TBX_EXE} ${TMP_DIR}/SPK_DIV.xml
 
-	# 5b	Geocode Speckle-Divergence
+	# Geocode Speckle-Divergence
 
 	# define output file name
-	OUTPUT_SPK_DIV_TR=${FINAL_DIR}/${SCENE_ID}'_SPK_DIV_TR.tif'
+	OUTPUT_SPK_DIV_TR=${FINAL_DIR}/${SCENE_ID}'_SPK_DIV_TR.dim'
 	# copy template xml graph into tmp folder 
 	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_TR_SPK_DIV.xml ${TMP_DIR}/TR_SPK_DIV.xml
 
@@ -216,7 +216,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	# 5c	Multi-look & Geocode Polsar H-alpha dual pol data (multilook included, since it does not work for the preproc chain)
 
 	# define output file name
-	OUTPUT_POLSAR_TR=${FINAL_DIR}/${SCENE_ID}'_H_ALPHA_TR.tif'
+	OUTPUT_POLSAR_TR=${FINAL_DIR}/${SCENE_ID}'_H_ALPHA_TR.dim'
 	# copy template xml graph into tmp folder
 	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_TR_ML_H_alpha.xml ${TMP_DIR}/TR_H_alpha.xml
 
@@ -227,7 +227,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	# insert external DEM path
 	sed -i "s|DEM_FILE|${DEM_FILE}|g" ${TMP_DIR}/TR_H_alpha.xml
 
-	# Radiometrically terrain correcting Multi-looked, speckle-filtered files
+	# Radiometrically terrain correcting PolSAR H-A-alpha products
 	echo "Geocode Speckle-Divergence from scene: ${SCENE_ID}"
 	sh ${S1TBX_EXE} ${TMP_DIR}/TR_H_alpha.xml
 
@@ -237,9 +237,9 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 #----------------------------------------------------------------------	
 
 	# define path/name of output
-	OUTPUT_RATIO=${FINAL_DIR}/${SCENE_ID}"_HVHH_ratio.dim"
+	OUTPUT_RATIO=${FINAL_DIR}/${SCENE_ID}"_HHHV_ratio.dim"
 	# Write new xml graph and substitute input and output files
-	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_HVHH_ratio.xml ${TMP_DIR}/RATIO.xml
+	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_HHHV_ratio.xml ${TMP_DIR}/RATIO.xml
 	
 	# insert Input file path into processing chain xml
 	sed -i "s|INPUT_TR|${OUTPUT_ML_SPK_TR}|g" ${TMP_DIR}/RATIO.xml
@@ -284,8 +284,45 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	sh ${S1TBX_EXE} ${TMP_DIR}/TEXTURE_HV.xml
 
 #----------------------------------------------------------------------
-# 	7 Remove tmp files
+# 	7 Layover/Shadow Mask
+#----------------------------------------------------------------------	
+
+	# define path/name of output
+	OUTPUT_LAYOVER=${TMP_DIR}/${SCENE_ID}"_LAYOVER.dim"
+	# Write new xml graph and substitute input and output files
+	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_Layover.xml ${TMP_DIR}/LAYOVER.xml
+	
+	# insert Input file path into processing chain xml
+	sed -i "s|INPUT_DIMAP|${OUTPUT_DIMAP}|g" ${TMP_DIR}/LAYOVER.xml
+	# insert Input file path into processing chain xml
+	sed -i "s|OUTPUT_LAYOVER|${OUTPUT_LAYOVER}|g" ${TMP_DIR}/LAYOVER.xml
+	# insert external DEM path
+	sed -i "s|DEM_FILE|${DEM_FILE}|g" ${TMP_DIR}/LAYOVER.xml
+
+	echo "Calculate the Layover Shadow mask"
+	sh ${S1TBX_EXE} ${TMP_DIR}/LAYOVER.xml
+
+	# Geocode Layover
+	OUTPUT_SPK_DIV_TR=${FINAL_DIR}/${SCENE_ID}'_LAYOVER.dim'
+	# copy template xml graph into tmp folder 
+	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_TR_Layover.xml ${TMP_DIR}/TR_LAYOVER.xml
+
+	# insert Input file path into processing chain xml
+	sed -i "s|INPUT_TR|${OUTPUT_SPK_DIV}|g" ${TMP_DIR}/TR_LAYOVER.xml
+	# insert Input file path into processing chain xml
+	sed -i "s|OUTPUT_TR|${OUTPUT_SPK_DIV_TR}|g" ${TMP_DIR}/TR_LAYOVER.xml
+	# insert external DEM path
+	sed -i "s|DEM_FILE|${DEM_FILE}|g" ${TMP_DIR}/TR_LAYOVER.xml
+
+	# Terrain correcting Layover mask
+	echo "Geocode Layover Mask: ${SCENE_ID}"
+	sh ${S1TBX_EXE} ${TMP_DIR}/TR_LAYOVER.xml
+
+#----------------------------------------------------------------------
+# 	8 Remove tmp files
 #----------------------------------------------------------------------	
 
 	rm -rf ${TMP_DIR}/*
 done
+
+rm -rf ${TMP_DIR}

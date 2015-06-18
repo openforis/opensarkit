@@ -17,27 +17,16 @@
       <formatName>BEAM-DIMAP</formatName>
     </parameters>
   </node>
-  <node id="Multilook">
-    <operator>Multilook</operator>
+  <node id="Terrain-Correction">
+    <operator>Terrain-Correction</operator>
     <sources>
       <sourceProduct refid="Read"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <sourceBands/>
-      <nRgLooks>2</nRgLooks>
-      <nAzLooks>9</nAzLooks>
-      <outputIntensity>true</outputIntensity>
-      <grSquarePixel>true</grSquarePixel>
-      <note>Currently, detection for complex data is performed without any resampling</note>
-    </parameters>
-  </node>
-  <node id="Terrain-Correction">
-    <operator>Terrain-Correction</operator>
-    <sources>
-      <sourceProduct refid="Multilook"/>
-    </sources>
-    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <sourceBands/>
+      <sourceBands>
+        <band>Simulated_Intensity</band>
+        <band>layover_shadow_mask</band>
+      </sourceBands>
       <demName>External DEM</demName>
       <externalDEMFile>DEM_FILE</externalDEMFile>
       <externalDEMNoDataValue>0.0</externalDEMNoDataValue>
@@ -72,16 +61,13 @@
   <applicationData id="Presentation">
     <Description/>
     <node id="Read">
-      <displayPosition x="30.0" y="29.0"/>
+      <displayPosition x="37.0" y="134.0"/>
     </node>
     <node id="Write">
       <displayPosition x="455.0" y="135.0"/>
     </node>
-    <node id="Multilook">
-      <displayPosition x="65.0" y="62.0"/>
-    </node>
     <node id="Terrain-Correction">
-      <displayPosition x="179.0" y="115.0"/>
+      <displayPosition x="177.0" y="133.0"/>
     </node>
   </applicationData>
 </graph>
