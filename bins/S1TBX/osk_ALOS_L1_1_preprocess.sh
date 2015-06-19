@@ -122,8 +122,11 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	sed -i "s|OUTPUT_DIMAP|${OUTPUT_DIMAP}|g" ${TMP_DIR}/Import_DIMAP.xml
 
 	echo "Importing CEOS files to BEAM_DIMAP file format for ${SCENE_ID} from $DATE"
-	sh ${NEST_EXE} ${TMP_DIR}/Import_DIMAP.xml 2>&1 >/dev/null > ${TMP_DIR}/tmplog
-	
+	sh ${NEST_EXE} ${TMP_DIR}/Import_DIMAP.xml 2>&1 | tee ${TMP_DIR}/tmplog
+	EXIT_CODE=$?
+
+	echo $EXIT_CODE
+
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog;then 
 		echo "2nd try"
@@ -149,7 +152,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	sed -i "s|OUTPUT_ML_SPK|${OUTPUT_ML_SPK}|g" ${TMP_DIR}/ML_SPK.xml
 
 	echo "Apply Multi-look & Speckle Filter to ${SCENE_ID}"
-	sh ${S1TBX_EXE} ${TMP_DIR}/ML_SPK.xml 2>&1 >/dev/null > ${TMP_DIR}/tmplog
+	sh ${S1TBX_EXE} ${TMP_DIR}/ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
@@ -172,7 +175,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 
 	# Radiometrically terrain correcting Multi-looked, speckle-filtered files
 	echo "Geocode Multi-looked, speckle-filtered scene: ${SCENE_ID}"
-	sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 >/dev/null > ${TMP_DIR}/tmplog
+	sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 
@@ -196,7 +199,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	sed -i "s|OUTPUT_SPK_DIV|${OUTPUT_SPK_DIV}|g" ${TMP_DIR}/SPK_DIV.xml
 
 	echo "Calculate Speckle Divergence and apply Multi-looking for ${SCENE_ID}"
-	sh ${S1TBX_EXE} ${TMP_DIR}/SPK_DIV.xml 2>&1 >/dev/null > ${TMP_DIR}/tmplog
+	sh ${S1TBX_EXE} ${TMP_DIR}/SPK_DIV.xml 2>&1 | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
@@ -221,7 +224,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 
 	# Radiometrically terrain correcting Multi-looked, speckle-filtered files
 	echo "Geocode Speckle-Divergence from scene: ${SCENE_ID}"
-	sh ${S1TBX_EXE} ${TMP_DIR}/TR_SPK_DIV.xml 2>&1 >/dev/null > ${TMP_DIR}/tmplog
+	sh ${S1TBX_EXE} ${TMP_DIR}/TR_SPK_DIV.xml 2>&1  | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
@@ -245,7 +248,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	sed -i "s|OUTPUT_POLSAR|${OUTPUT_POLSAR}|g" ${TMP_DIR}/POLSAR.xml
 
 	echo "Calculate H-alpha dual pol decomposition for ${SCENE_ID}"
-	sh ${S1TBX_EXE} ${TMP_DIR}/POLSAR.xml 2>&1 >/dev/null > ${TMP_DIR}/tmplog
+	sh ${S1TBX_EXE} ${TMP_DIR}/POLSAR.xml 2>&1 | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
@@ -270,7 +273,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 
 	# Radiometrically terrain correcting PolSAR H-A-alpha products
 	echo "Geocode H-A-alpha from scene: ${SCENE_ID}"
-	sh ${S1TBX_EXE} ${TMP_DIR}/TR_H_alpha.xml 2>&1 >/dev/null > ${TMP_DIR}/tmplog
+	sh ${S1TBX_EXE} ${TMP_DIR}/TR_H_alpha.xml 2>&1 | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
@@ -294,7 +297,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	sed -i "s|OUTPUT_TR|${OUTPUT_RATIO}|g" ${TMP_DIR}/RATIO.xml
 
 	echo "Calculating HV/HH ratio ${SCENE_ID}"
-	sh ${S1TBX_EXE} ${TMP_DIR}/RATIO.xml 2>&1 >/dev/null > ${TMP_DIR}/tmplog
+	sh ${S1TBX_EXE} ${TMP_DIR}/RATIO.xml 2>&1 | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
@@ -319,7 +322,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	sed -i "s|OUTPUT_TR|${OUTPUT_TEXTURE_HH}|g" ${TMP_DIR}/TEXTURE_HH.xml
 
 	echo "Calculate GLCM Texture measurements for HH channel"
-	sh ${S1TBX_EXE} ${TMP_DIR}/TEXTURE_HH.xml 2>&1 >/dev/null > ${TMP_DIR}/tmplog
+	sh ${S1TBX_EXE} ${TMP_DIR}/TEXTURE_HH.xml 2>&1 | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
@@ -341,7 +344,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	sed -i "s|OUTPUT_TR|${OUTPUT_TEXTURE_HV}|g" ${TMP_DIR}/TEXTURE_HV.xml
 
 	echo "Calculate GLCM Texture measurements for HV channel"
-	sh ${S1TBX_EXE} ${TMP_DIR}/TEXTURE_HV.xml 2>&1 >/dev/null > ${TMP_DIR}/tmplog
+	sh ${S1TBX_EXE} ${TMP_DIR}/TEXTURE_HV.xml 2>&1 | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
@@ -367,7 +370,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	sed -i "s|DEM_FILE|${DEM_FILE}|g" ${TMP_DIR}/LAYOVER.xml
 
 	echo "Calculate the Layover/Shadow mask"
-	sh ${S1TBX_EXE} ${TMP_DIR}/LAYOVER.xml 2>&1 >/dev/null > ${TMP_DIR}/tmplog
+	sh ${S1TBX_EXE} ${TMP_DIR}/LAYOVER.xml 2>&1 | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
@@ -390,7 +393,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 
 	# Terrain correcting Layover mask
 	echo "Geocode Layover/Shadow Mask: ${SCENE_ID}"
-	sh ${S1TBX_EXE} ${TMP_DIR}/TR_LAYOVER.xml 2>&1 >/dev/null > ${TMP_DIR}/tmplog
+	sh ${S1TBX_EXE} ${TMP_DIR}/TR_LAYOVER.xml 2>&1 | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
@@ -402,7 +405,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 # 	8 Remove tmp files
 #----------------------------------------------------------------------	
 
-	rm -rf ${TMP_DIR}/*
+	#rm -rf ${TMP_DIR}/*
 done
 
-rm -rf ${TMP_DIR}
+#rm -rf ${TMP_DIR}
