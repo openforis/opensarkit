@@ -405,7 +405,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 # 	8 Remove tmp files
 #----------------------------------------------------------------------	
 
-	#rm -rf ${TMP_DIR}/*
+	rm -rf ${TMP_DIR}/*
 done
 
-#rm -rf ${TMP_DIR}
+rm -rf ${TMP_DIR}
