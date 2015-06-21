@@ -199,13 +199,13 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	sed -i "s|OUTPUT_SPK_DIV|${OUTPUT_SPK_DIV}|g" ${TMP_DIR}/SPK_DIV.xml
 
 	echo "Calculate Speckle Divergence and apply Multi-looking for ${SCENE_ID}"
-	sh ${S1TBX_EXE} ${TMP_DIR}/SPK_DIV.xml 2>&1 | tee  ${TMP_DIR}/tmplog
+#	sh ${S1TBX_EXE} ${TMP_DIR}/SPK_DIV.xml 2>&1 | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
 		echo "2nd try"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_SPK_DIV.dim" ${TMP_DIR}/${SCENE_ID}"_SPK_DIV.data"
-		sh ${S1TBX_EXE} ${TMP_DIR}/SPK_DIV.xml
+#		sh ${S1TBX_EXE} ${TMP_DIR}/SPK_DIV.xml
 	fi
 	
 	# Geocode Speckle-Divergence
@@ -224,13 +224,13 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 
 	# Radiometrically terrain correcting Multi-looked, speckle-filtered files
 	echo "Geocode Speckle-Divergence from scene: ${SCENE_ID}"
-	sh ${S1TBX_EXE} ${TMP_DIR}/TR_SPK_DIV.xml 2>&1  | tee  ${TMP_DIR}/tmplog
+#	sh ${S1TBX_EXE} ${TMP_DIR}/TR_SPK_DIV.xml 2>&1  | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
 		echo "2nd try"
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_SPK_DIV_TR.dim" ${FINAL_DIR}/${SCENE_ID}"_SPK_DIV_TR.data"
-		sh ${S1TBX_EXE} ${TMP_DIR}/TR_SPK_DIV.xml
+#		sh ${S1TBX_EXE} ${TMP_DIR}/TR_SPK_DIV.xml
 	fi
 
 #----------------------------------------------------------------------
@@ -248,13 +248,13 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	sed -i "s|OUTPUT_POLSAR|${OUTPUT_POLSAR}|g" ${TMP_DIR}/POLSAR.xml
 
 	echo "Calculate H-alpha dual pol decomposition for ${SCENE_ID}"
-	sh ${S1TBX_EXE} ${TMP_DIR}/POLSAR.xml 2>&1 | tee  ${TMP_DIR}/tmplog
+#	sh ${S1TBX_EXE} ${TMP_DIR}/POLSAR.xml 2>&1 | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
 		echo "2nd try"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_H_alpha.dim" ${TMP_DIR}/${SCENE_ID}"_H_alpha.data"
-		sh ${S1TBX_EXE} ${TMP_DIR}/POLSAR.xml
+#		sh ${S1TBX_EXE} ${TMP_DIR}/POLSAR.xml
 	fi
 
 	# 5c	Multi-look & Geocode Polsar H-alpha dual pol data (multilook included, since it does not work for the preproc chain)
@@ -273,13 +273,13 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 
 	# Radiometrically terrain correcting PolSAR H-A-alpha products
 	echo "Geocode H-A-alpha from scene: ${SCENE_ID}"
-	sh ${S1TBX_EXE} ${TMP_DIR}/TR_H_alpha.xml 2>&1 | tee  ${TMP_DIR}/tmplog
+#	sh ${S1TBX_EXE} ${TMP_DIR}/TR_H_alpha.xml 2>&1 | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
 		echo "2nd try"
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_H_alpha_TR.dim" ${FINAL_DIR}/${SCENE_ID}"_H_alpha_TR.data"
-		sh ${S1TBX_EXE} ${TMP_DIR}/TR_H_alpha.xml
+#		sh ${S1TBX_EXE} ${TMP_DIR}/TR_H_alpha.xml
 	fi
 
 #----------------------------------------------------------------------
@@ -297,13 +297,13 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	sed -i "s|OUTPUT_TR|${OUTPUT_RATIO}|g" ${TMP_DIR}/RATIO.xml
 
 	echo "Calculating HV/HH ratio ${SCENE_ID}"
-	sh ${S1TBX_EXE} ${TMP_DIR}/RATIO.xml 2>&1 | tee  ${TMP_DIR}/tmplog
+	sh ${NEST_EXE} ${TMP_DIR}/RATIO.xml 2>&1 | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
 		echo "2nd try"
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_HHHV_ratio.dim" ${FINAL_DIR}/${SCENE_ID}"_HHHV_ratio.data"
-		sh ${S1TBX_EXE} ${TMP_DIR}/RATIO.xml
+		sh ${NEST_EXE} ${TMP_DIR}/RATIO.xml
 	fi
 #----------------------------------------------------------------------
 # 	6 Texture
@@ -322,13 +322,13 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	sed -i "s|OUTPUT_TR|${OUTPUT_TEXTURE_HH}|g" ${TMP_DIR}/TEXTURE_HH.xml
 
 	echo "Calculate GLCM Texture measurements for HH channel"
-	sh ${S1TBX_EXE} ${TMP_DIR}/TEXTURE_HH.xml 2>&1 | tee  ${TMP_DIR}/tmplog
+#	sh ${S1TBX_EXE} ${TMP_DIR}/TEXTURE_HH.xml 2>&1 | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
 		echo "2nd try"
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_TEXTURE_HH.dim" ${FINAL_DIR}/${SCENE_ID}"_TEXTURE_HH.data"
-		sh ${S1TBX_EXE} ${TMP_DIR}/TEXTURE_HH.xml
+#		sh ${S1TBX_EXE} ${TMP_DIR}/TEXTURE_HH.xml
 	fi
 
 	# HV texture calculations
@@ -344,13 +344,13 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	sed -i "s|OUTPUT_TR|${OUTPUT_TEXTURE_HV}|g" ${TMP_DIR}/TEXTURE_HV.xml
 
 	echo "Calculate GLCM Texture measurements for HV channel"
-	sh ${S1TBX_EXE} ${TMP_DIR}/TEXTURE_HV.xml 2>&1 | tee  ${TMP_DIR}/tmplog
+#	sh ${S1TBX_EXE} ${TMP_DIR}/TEXTURE_HV.xml 2>&1 | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
 		echo "2nd try"
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_TEXTURE_HV.dim" ${FINAL_DIR}/${SCENE_ID}"_TEXTURE_HV.data"
-		sh ${S1TBX_EXE} ${TMP_DIR}/TEXTURE_HV.xml
+#		sh ${S1TBX_EXE} ${TMP_DIR}/TEXTURE_HV.xml
 	fi
 
 #----------------------------------------------------------------------
@@ -380,14 +380,14 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	fi
 
 	# Geocode Layover
-	OUTPUT_SPK_DIV_TR=${FINAL_DIR}/${SCENE_ID}'_LAYOVER_TR.dim'
+	OUTPUT_LAYOVER_TR=${FINAL_DIR}/${SCENE_ID}'_LAYOVER_TR.dim'
 	# copy template xml graph into tmp folder 
 	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_TR_Layover.xml ${TMP_DIR}/TR_LAYOVER.xml
 
 	# insert Input file path into processing chain xml
-	sed -i "s|INPUT_TR|${OUTPUT_SPK_DIV}|g" ${TMP_DIR}/TR_LAYOVER.xml
+	sed -i "s|INPUT_TR|${OUTPUT_LAYOVER}|g" ${TMP_DIR}/TR_LAYOVER.xml
 	# insert Input file path into processing chain xml
-	sed -i "s|OUTPUT_TR|${OUTPUT_SPK_DIV_TR}|g" ${TMP_DIR}/TR_LAYOVER.xml
+	sed -i "s|OUTPUT_TR|${OUTPUT_LAYOVER_TR}|g" ${TMP_DIR}/TR_LAYOVER.xml
 	# insert external DEM path
 	sed -i "s|DEM_FILE|${DEM_FILE}|g" ${TMP_DIR}/TR_LAYOVER.xml
 
