@@ -1,7 +1,24 @@
 #! /bin/bash
 
 
-PROC_DIR=/media/avollrath/phd_data2/FAO/Studies/Ecuador/Mainland/FBD/2009
+# TMP sourcing for Sepal env.
+source /data/home/Andreas.Vollrath/github/OpenSARKit_source.bash
+
+#----------------------------------------------------------------------
+#	0 Set up Script variables
+#----------------------------------------------------------------------
+
+# 	0.1 Check for right usage
+if [ "$#" != "1" ]; then
+  echo -e "Usage: osk_ALOS_merge_path /path/to/satellite/tracks"
+  echo -e "The path will be your Project folder!"
+  exit 1
+else
+  cd $1
+  export PROC_DIR=`pwd`
+  echo "Welcome to OpenSARKit!"
+  echo "Processing folder: ${PROC_DIR}"
+fi
 
 cd ${PROC_DIR}
 # Loop for Satellite Track
