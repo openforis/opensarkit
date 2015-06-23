@@ -3,13 +3,10 @@
 
 PROC_DIR=/media/avollrath/phd_data2/FAO/Studies/Ecuador/Mainland/FBD/2009
 
-
-
 cd ${PROC_DIR}
 # Loop for Satellite Track
-for SAT_TRACK in `ls -1 ${PROC_DIR}`
+for SAT_TRACK in `ls -1 -d [1-9]*`
 do
-
 	cd ${SAT_TRACK}
 	
 	# Loop for Acquisition Date
@@ -98,7 +95,7 @@ do
 	#saga_cmd grid_tools 3 -GRIDS:${LIST_HV} -TYPE:7 -OVERLAP:5 -BLEND_DIST:10 -TARGET_OUT_GRID:${PROC_DIR}/${SAT_TRACK}"_Gamma0_HV.sgrd"
 
 	LIST_HHHV=`cat ${PROC_DIR}/"tmp_"${SAT_TRACK}"_HH_HV_list"`
-	saga_cmd grid_tools 3 -GRIDS:${LIST_HHHV} -TYPE:7 -OVERLAP:5 -BLEND_DIST:10 -TARGET_OUT_GRID:${PROC_DIR}/${SAT_TRACK}"_HHHV_ratio.sgrd"
+	#saga_cmd grid_tools 3 -GRIDS:${LIST_HHHV} -TYPE:7 -OVERLAP:5 -BLEND_DIST:10 -TARGET_OUT_GRID:${PROC_DIR}/${SAT_TRACK}"_HHHV_ratio.sgrd"
 
 	gdal_merge.py -n -99999 -a_nodata -99999 -separate -of GTiff -o ${PROC_DIR}/${SAT_TRACK}"_HH_HV_HHHV_ratio.tif" ${PROC_DIR}/${SAT_TRACK}"_Gamma0_HH.sdat" ${PROC_DIR}/${SAT_TRACK}"_Gamma0_HV.sdat" ${PROC_DIR}/${SAT_TRACK}"_HHHV_ratio.sdat"
 
@@ -106,5 +103,6 @@ do
 	rm ${PROC_DIR}/"tmp_"${SAT_TRACK}"_Gamma0_HV_list"
 	rm ${PROC_DIR}/"tmp_"${SAT_TRACK}"_Gamma0_HHHV_list"
 
-cd ../
+
+	cd ${PROC_DIR}
 done
