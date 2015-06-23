@@ -10,6 +10,7 @@
   <node id="Write">
     <operator>Write</operator>
     <sources>
+      <sourceProduct refid="Read"/>
       <sourceProduct refid="BandMaths"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
@@ -28,7 +29,7 @@
       <bandName>HH_HV</bandName>
       <bandUnit/>
       <bandNodataValue>0.0</bandNodataValue>
-      <bandExpression>Gamma0_HH_use_projected_local_inci_angle_from_dem_db / Gamma0_HV_use_projected_local_inci_angle_from_dem_db</bandExpression>
+      <bandExpression>Gamma0_HH_use_projected_local_inci_angle_from_dem / Gamma0_HV_use_projected_local_inci_angle_from_dem</bandExpression>
     </parameters>
   </node>
   <applicationData id="Presentation">

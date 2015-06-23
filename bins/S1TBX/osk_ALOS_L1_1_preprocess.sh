@@ -94,7 +94,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	echo "----------------------------------------------------------------"
 	echo "Processing Scene: 		${SCENE_ID:0:15}"
 	echo "Satellite/Sensor: 		ALOS/Palsar"
-	echo "Acquisiton Mode:			${MODE}"
+	echo "Acquisiton Mode:		${MODE}"
 	echo "Acquisition Date (YYYYMMDD):	${DATE}"
 	echo "Relative Satellite Track: 	${SAT_PATH}"
 	echo "Image Frame: 			$FRAME"
@@ -135,7 +135,6 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	fi
 
 
-
 #----------------------------------------------------------------------
 # 	2 Create multilooked, Lee speckle-filtered intensities
 #----------------------------------------------------------------------	
@@ -163,19 +162,22 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 
 	# Geocode Multi-looked, speckle-filtered imagery
 
-	OUTPUT_ML_SPK_TR=${FINAL_DIR}/${SCENE_ID}'_ML_SPK_TR.dim'
+	OUTPUT_GAMMA_HH=${FINAL_DIR}/${SCENE_ID}'_Gamma0_HH.dim'
+	OUTPUT_GAMMA_HV=${FINAL_DIR}/${SCENE_ID}'_Gamma0_HV.dim'
 	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_TR_radiometric.xml ${TMP_DIR}/TR_ML_SPK.xml
 
 	# insert Input file path into processing chain xml
 	sed -i "s|INPUT_TR|${OUTPUT_ML_SPK}|g" ${TMP_DIR}/TR_ML_SPK.xml
 	# insert Input file path into processing chain xml
-	sed -i "s|OUTPUT_TR|${OUTPUT_ML_SPK_TR}|g" ${TMP_DIR}/TR_ML_SPK.xml
+	sed -i "s|OUTPUT_HH|${OUTPUT_GAMMA_HH}|g" ${TMP_DIR}/TR_ML_SPK.xml
+	# insert Input file path into processing chain xml
+	sed -i "s|OUTPUT_HV|${OUTPUT_GAMMA_HV}|g" ${TMP_DIR}/TR_ML_SPK.xml
 	# insert DEM path
 	sed -i "s|DEM_FILE|${DEM_FILE}|g" ${TMP_DIR}/TR_ML_SPK.xml
 
 	# Radiometrically terrain correcting Multi-looked, speckle-filtered files
 	echo "Geocode Multi-looked, speckle-filtered scene: ${SCENE_ID}"
-	sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog
+	sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
 
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 
@@ -184,6 +186,53 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 		sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 
 	fi
 	
+
+	# Linear to dB output Gamma_HH
+
+	OUTPUT_GAMMA_HH_DB=${FINAL_DIR}/${SCENE_ID}'_GAMMA_HH_DB.dim'
+	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_lin_to_db.xml ${TMP_DIR}/GAMMA_HH_DB.xml
+
+	# insert Input file path into processing chain xml
+	sed -i "s|INPUT_TR|${OUTPUT_GAMMA_HH}|g" ${TMP_DIR}/GAMMA_HH_DB.xml
+	# insert Input file path into processing chain xml
+	sed -i "s|OUTPUT_TR|${OUTPUT_GAMMA_HH_DB}|g" ${TMP_DIR}/GAMMA_HH_DB.xml
+	# insert DEM path
+	sed -i "s|DEM_FILE|${DEM_FILE}|g" ${TMP_DIR}/GAMMA_HH_DB.xml
+
+	# Radiometrically terrain correcting Multi-looked, speckle-filtered files
+	echo "Converting linear data to dB scale: ${SCENE_ID}"
+	sh ${S1TBX_EXE} ${TMP_DIR}/GAMMA_HH_DB.xml 2>&1 | tee  ${TMP_DIR}/tmplog
+
+	# in case it fails try a second time	
+	if grep -q Error ${TMP_DIR}/tmplog; then 
+		echo "2nd try"
+		rm -rf ${FINAL_DIR}/${SCENE_ID}"_ML_SPK_DB_TR.dim" ${FINAL_DIR}/${SCENE_ID}"_ML_SPK_DB_TR.data"
+		sh ${S1TBX_EXE} ${TMP_DIR}/GAMMA_HH_DB.xml 
+	fi
+
+	# Linear to dB output Gamma_HH
+
+	OUTPUT_GAMMA_HV_DB=${FINAL_DIR}/${SCENE_ID}'_GAMMA_HV_DB.dim'
+	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_lin_to_db.xml ${TMP_DIR}/GAMMA_HV_DB.xml
+
+	# insert Input file path into processing chain xml
+	sed -i "s|INPUT_TR|${OUTPUT_GAMMA_HV}|g" ${TMP_DIR}/GAMMA_HV_DB.xml
+	# insert Input file path into processing chain xml
+	sed -i "s|OUTPUT_TR|${OUTPUT_GAMMA_HV_DB}|g" ${TMP_DIR}/GAMMA_HV_DB.xml
+	# insert DEM path
+	sed -i "s|DEM_FILE|${DEM_FILE}|g" ${TMP_DIR}/GAMMA_HV_DB.xml
+
+	# Radiometrically terrain correcting Multi-looked, speckle-filtered files
+	echo "Converting linear data to dB scale: ${SCENE_ID}"
+	sh ${S1TBX_EXE} ${TMP_DIR}/GAMMA_HV_DB.xml 2>&1 | tee  ${TMP_DIR}/tmplog
+
+	# in case it fails try a second time	
+	if grep -q Error ${TMP_DIR}/tmplog; then 
+		echo "2nd try"
+		rm -rf ${FINAL_DIR}/${SCENE_ID}"_ML_SPK_DB_TR.dim" ${FINAL_DIR}/${SCENE_ID}"_ML_SPK_DB_TR.data"
+		sh ${S1TBX_EXE} ${TMP_DIR}/GAMMA_HV_DB.xml 
+	fi
+
 #----------------------------------------------------------------------
 # 	3 Create Speckle Divergence files
 #----------------------------------------------------------------------	
@@ -286,6 +335,8 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 # 	5 HH/HV ratio
 #----------------------------------------------------------------------	
 
+	# HHHV ratio on linear scale
+
 	# define path/name of output
 	OUTPUT_RATIO=${FINAL_DIR}/${SCENE_ID}"_HHHV_ratio.dim"
 	# Write new xml graph and substitute input and output files
@@ -297,13 +348,36 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	sed -i "s|OUTPUT_TR|${OUTPUT_RATIO}|g" ${TMP_DIR}/RATIO.xml
 
 	echo "Calculating HV/HH ratio ${SCENE_ID}"
-	sh ${NEST_EXE} ${TMP_DIR}/RATIO.xml 2>&1 | tee  ${TMP_DIR}/tmplog
+#	sh ${NEST_EXE} ${TMP_DIR}/RATIO.xml 2>&1 | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
 		echo "2nd try"
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_HHHV_ratio.dim" ${FINAL_DIR}/${SCENE_ID}"_HHHV_ratio.data"
-		sh ${NEST_EXE} ${TMP_DIR}/RATIO.xml
+#		sh ${NEST_EXE} ${TMP_DIR}/RATIO.xml
+	fi
+
+
+	# HHHV ratio on dB scale
+
+	# define path/name of output
+	OUTPUT_RATIO_DB=${FINAL_DIR}/${SCENE_ID}"_HHHV_ratio_DB.dim"
+	# Write new xml graph and substitute input and output files
+	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_HHHV_ratio_db.xml ${TMP_DIR}/RATIO_DB.xml
+	
+	# insert Input file path into processing chain xml
+	sed -i "s|INPUT_TR|${OUTPUT_ML_SPK_DB_TR}|g" ${TMP_DIR}/RATIO_DB.xml
+	# insert Input file path into processing chain xml
+	sed -i "s|OUTPUT_TR|${OUTPUT_RATIO_DB}|g" ${TMP_DIR}/RATIO_DB.xml
+
+	echo "Calculating HV/HH ratio in dB ${SCENE_ID}"
+#	sh ${NEST_EXE} ${TMP_DIR}/RATIO_DB.xml 2>&1 | tee  ${TMP_DIR}/tmplog
+
+	# in case it fails try a second time	
+	if grep -q Error ${TMP_DIR}/tmplog; then 	
+		echo "2nd try"
+		rm -rf ${FINAL_DIR}/${SCENE_ID}"_HHHV_ratio_DB.dim" ${FINAL_DIR}/${SCENE_ID}"_HHHV_ratio_DB.data"
+	#	sh ${NEST_EXE} ${TMP_DIR}/RATIO_DB.xml
 	fi
 #----------------------------------------------------------------------
 # 	6 Texture
@@ -317,7 +391,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_Texture_HH.xml ${TMP_DIR}/TEXTURE_HH.xml
 	
 	# insert Input file path into processing chain xml
-	sed -i "s|INPUT_TR|${OUTPUT_ML_SPK_TR}|g" ${TMP_DIR}/TEXTURE_HH.xml
+	sed -i "s|INPUT_TR|${OUTPUT_GAMMA_HH_DB}|g" ${TMP_DIR}/TEXTURE_HH.xml
 	# insert Input file path into processing chain xml
 	sed -i "s|OUTPUT_TR|${OUTPUT_TEXTURE_HH}|g" ${TMP_DIR}/TEXTURE_HH.xml
 
@@ -339,7 +413,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_Texture_HV.xml ${TMP_DIR}/TEXTURE_HV.xml
 	
 	# insert Input file path into processing chain xml
-	sed -i "s|INPUT_TR|${OUTPUT_ML_SPK_TR}|g" ${TMP_DIR}/TEXTURE_HV.xml
+	sed -i "s|INPUT_TR|${OUTPUT_GAMMA_HV_DB}|g" ${TMP_DIR}/TEXTURE_HV.xml
 	# insert Input file path into processing chain xml
 	sed -i "s|OUTPUT_TR|${OUTPUT_TEXTURE_HV}|g" ${TMP_DIR}/TEXTURE_HV.xml
 

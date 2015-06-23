@@ -19,9 +19,9 @@ else
   echo "Welcome to OpenSARKit!"
   echo "Processing folder: ${PROC_DIR}"
 fi
-
+source /home/avollrath/github/OpenSARKit/OpenSARKit_source.bash
 #----------------------------------------------------------------------
-#	0 Set up Script variables
+#	1 Do the bulk!
 #----------------------------------------------------------------------
 
 cd ${PROC_DIR}
@@ -31,6 +31,6 @@ for SAR_TRACK in `ls -1 -d [1-9]*`;do
 	echo " Bulk Processing ALOS FBD: Track: ${SAR_TRACK}"
 	echo "------------------------------------------------"
 
-	osk_ALOS_L1_1_preprocess ${PROC_DIR}/${SAR_TRACK} $2
+	bash ${S1TBX_BIN}/osk_ALOS_L1_1_preprocess.sh ${PROC_DIR}/${SAR_TRACK} $2  
 
 done

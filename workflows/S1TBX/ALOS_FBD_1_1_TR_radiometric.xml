@@ -45,43 +45,70 @@
       <externalAuxFile/>
     </parameters>
   </node>
-  <node id="LinearTodB">
-    <operator>LinearTodB</operator>
+  <node id="Write">
+    <operator>Write</operator>
+    <sources>
+      <sourceProduct refid="BandMaths"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <file>OUTPUT_HH</file>
+      <formatName>BEAM-DIMAP</formatName>
+    </parameters>
+  </node>
+  <node id="BandMaths">
+    <operator>BandMaths</operator>
     <sources>
       <sourceProduct refid="Terrain-Correction"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <sourceBands>
-        <band>Sigma0_HH</band>
-        <band>Sigma0_HV</band>
-        <band>Gamma0_HH_use_projected_local_inci_angle_from_dem</band>
-        <band>Gamma0_HV_use_projected_local_inci_angle_from_dem</band>
-      </sourceBands>
+      <targetBands/>
+      <variables/>
+      <bandName>Gamma0_HH</bandName>
+      <bandUnit/>
+      <bandNodataValue>0.0</bandNodataValue>
+      <bandExpression>Gamma0_HH_use_projected_local_inci_angle_from_dem * 1</bandExpression>
     </parameters>
   </node>
-  <node id="Write">
-    <operator>Write</operator>
+  <node id="BandMaths(2)">
+    <operator>BandMaths</operator>
     <sources>
-      <sourceProduct refid="LinearTodB"/>
+      <sourceProduct refid="Terrain-Correction"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <file>OUTPUT_TR</file>
+      <targetBands/>
+      <variables/>
+      <bandName>Gamma0_HV</bandName>
+      <bandUnit/>
+      <bandNodataValue>0.0</bandNodataValue>
+      <bandExpression>Gamma0_HV_use_projected_local_inci_angle_from_dem * 1</bandExpression>
+    </parameters>
+  </node>
+<node id="Write(2)">
+    <operator>Write</operator>
+    <sources>
+      <sourceProduct refid="BandMaths(2)"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <file>OUTPUT_HV</file>
       <formatName>BEAM-DIMAP</formatName>
     </parameters>
   </node>
   <applicationData id="Presentation">
     <Description/>
     <node id="Read">
-      <displayPosition x="80.0" y="54.0"/>
+      <displayPosition x="22.0" y="17.0"/>
     </node>
     <node id="Terrain-Correction">
-      <displayPosition x="183.0" y="111.0"/>
-    </node>
-    <node id="LinearTodB">
-      <displayPosition x="261.0" y="196.0"/>
+      <displayPosition x="72.0" y="65.0"/>
     </node>
     <node id="Write">
-      <displayPosition x="336.0" y="177.0"/>
+      <displayPosition x="345.0" y="218.0"/>
+    </node>
+    <node id="BandMaths">
+      <displayPosition x="190.0" y="116.0"/>
+    </node>
+    <node id="BandMaths(2)">
+      <displayPosition x="105.0" y="158.0"/>
     </node>
   </applicationData>
 </graph>

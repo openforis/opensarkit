@@ -24,7 +24,7 @@
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
       <sourceBands>
-        <band>Gamma0_HV_use_projected_local_inci_angle_from_dem_db</band>
+        <band>Gamma0_HV_db</band>
       </sourceBands>
       <windowSizeStr>9x9</windowSizeStr>
       <angleStr>ALL</angleStr>
