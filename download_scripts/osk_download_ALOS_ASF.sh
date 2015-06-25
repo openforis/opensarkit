@@ -41,20 +41,20 @@ wget --save-cookies cookies.txt --post-data='user_name='$UNAME'&user_password='$
 ogr2ogr -f CSV tmp_AOI_WKT.csv $2 -lco GEOMETRY=AS_WKT
 AOI=`grep POLYGON tmp_AOI_WKT.csv | sed 's|\"POLYGON ((||g' | awk -F "))" $'{print $1}' | sed 's/\ /,/g'`
 
-PERIOD="start=2009-07-16T11:59:59UTC&end=2009-08-29T00:00:00UTC"
+PERIOD="start=2009-06-11T11:59:59UTC&end=2008-06-29T00:00:00UTC"
 PLATFORM="platform=A3"
 PROCESSING="processingLevel=L1.1"
 OUTPUT_FORMAT="output=csv"
 OUTPUT="$1/inventory"
-REL_ORBIT="relativeOrbit=111"
+REL_ORBIT="relativeOrbit=109"
 # Download dual polarized data
 BEAM="beamMode=FBD"
 mkdir -p ${PROC_DIR}/FBD
 
 # search part of the URL
 # for period
-#ASK="\&polygon=${AOI}&${PLATFORM}&${BEAM}&${PERIOD}&${PROCESSING}&${REL_ORBIT}&${OUTPUT_FORMAT}"
-ASK="\&polygon=${AOI}&${PLATFORM}&${BEAM}&${PERIOD}&${PROCESSING}&${OUTPUT_FORMAT}"
+ASK="\&polygon=${AOI}&${PLATFORM}&${BEAM}&${PERIOD}&${PROCESSING}&${REL_ORBIT}&${OUTPUT_FORMAT}"
+#ASK="\&polygon=${AOI}&${PLATFORM}&${BEAM}&${PERIOD}&${PROCESSING}&${OUTPUT_FORMAT}"
 
 echo "Getting the inventory data"
 curl -s http://api.daac.asf.alaska.edu/services/search/param?keyword=value$ASK | tail -n +2 > $OUTPUT-FBD.csv

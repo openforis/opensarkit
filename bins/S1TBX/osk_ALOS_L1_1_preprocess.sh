@@ -377,7 +377,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
 		echo "2nd try"
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_HHHV_ratio_DB.dim" ${FINAL_DIR}/${SCENE_ID}"_HHHV_ratio_DB.data"
-	#	sh ${NEST_EXE} ${TMP_DIR}/RATIO_DB.xml
+#		sh ${NEST_EXE} ${TMP_DIR}/RATIO_DB.xml
 	fi
 #----------------------------------------------------------------------
 # 	6 Texture
@@ -424,7 +424,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
 		echo "2nd try"
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_TEXTURE_HV.dim" ${FINAL_DIR}/${SCENE_ID}"_TEXTURE_HV.data"
-#		sh ${S1TBX_EXE} ${TMP_DIR}/TEXTURE_HV.xml
+	#	sh ${S1TBX_EXE} ${TMP_DIR}/TEXTURE_HV.xml
 	fi
 
 #----------------------------------------------------------------------
