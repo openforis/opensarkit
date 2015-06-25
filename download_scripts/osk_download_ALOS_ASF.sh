@@ -41,7 +41,7 @@ wget --save-cookies cookies.txt --post-data='user_name='$UNAME'&user_password='$
 ogr2ogr -f CSV tmp_AOI_WKT.csv $2 -lco GEOMETRY=AS_WKT
 AOI=`grep POLYGON tmp_AOI_WKT.csv | sed 's|\"POLYGON ((||g' | awk -F "))" $'{print $1}' | sed 's/\ /,/g'`
 
-PERIOD="start=2009-06-11T11:59:59UTC&end=2008-06-29T00:00:00UTC"
+PERIOD="start=2009-06-11T11:59:59UTC&end=2009-06-29T00:00:00UTC"
 PLATFORM="platform=A3"
 PROCESSING="processingLevel=L1.1"
 OUTPUT_FORMAT="output=csv"
