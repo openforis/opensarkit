@@ -2,7 +2,7 @@
 
 WORKSPACE=/data/home/Andreas.Vollrath/datasets/Sri_Lanka/FBD
 
-source /data/home/Andreas.Vollrath/github/OpenSARKit_source.sh
+source /data/home/Andreas.Vollrath/github/OpenSARKit_source.bash
 cd $WORKSPACE
 
 for JAHR in `ls -1`; do
