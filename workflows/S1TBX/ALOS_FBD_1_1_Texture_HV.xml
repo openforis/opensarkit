@@ -26,7 +26,7 @@
       <sourceBands>
         <band>Gamma0_HV_db</band>
       </sourceBands>
-      <windowSizeStr>3x3</windowSizeStr>
+      <windowSizeStr>5x5</windowSizeStr>
       <angleStr>ALL</angleStr>
       <quantizerStr>Probabilistic Quantizer</quantizerStr>
       <quantizationLevelsStr>64</quantizationLevelsStr>

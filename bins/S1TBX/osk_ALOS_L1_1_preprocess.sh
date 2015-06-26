@@ -297,13 +297,13 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	sed -i "s|OUTPUT_POLSAR|${OUTPUT_POLSAR}|g" ${TMP_DIR}/POLSAR.xml
 
 	echo "Calculate H-alpha dual pol decomposition for ${SCENE_ID}"
-#	sh ${S1TBX_EXE} ${TMP_DIR}/POLSAR.xml 2>&1 | tee  ${TMP_DIR}/tmplog
+	sh ${S1TBX_EXE} ${TMP_DIR}/POLSAR.xml 2>&1 | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
 		echo "2nd try"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_H_alpha.dim" ${TMP_DIR}/${SCENE_ID}"_H_alpha.data"
-#		sh ${S1TBX_EXE} ${TMP_DIR}/POLSAR.xml
+		sh ${S1TBX_EXE} ${TMP_DIR}/POLSAR.xml
 	fi
 
 	# 5c	Multi-look & Geocode Polsar H-alpha dual pol data (multilook included, since it does not work for the preproc chain)
@@ -322,13 +322,13 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 
 	# Radiometrically terrain correcting PolSAR H-A-alpha products
 	echo "Geocode H-A-alpha from scene: ${SCENE_ID}"
-#	sh ${S1TBX_EXE} ${TMP_DIR}/TR_H_alpha.xml 2>&1 | tee  ${TMP_DIR}/tmplog
+	sh ${S1TBX_EXE} ${TMP_DIR}/TR_H_alpha.xml 2>&1 | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
 		echo "2nd try"
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_H_alpha_TR.dim" ${FINAL_DIR}/${SCENE_ID}"_H_alpha_TR.data"
-#		sh ${S1TBX_EXE} ${TMP_DIR}/TR_H_alpha.xml
+		sh ${S1TBX_EXE} ${TMP_DIR}/TR_H_alpha.xml
 	fi
 
 #----------------------------------------------------------------------
@@ -347,12 +347,12 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	# insert Input file path into processing chain xml
 	sed -i "s|OUTPUT_TR|${OUTPUT_RATIO}|g" ${TMP_DIR}/RATIO.xml
 
-	echo "Calculating HV/HH ratio ${SCENE_ID}"
+#	echo "Calculating HV/HH ratio ${SCENE_ID}"
 #	sh ${NEST_EXE} ${TMP_DIR}/RATIO.xml 2>&1 | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
-		echo "2nd try"
+#		echo "2nd try"
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_HHHV_ratio.dim" ${FINAL_DIR}/${SCENE_ID}"_HHHV_ratio.data"
 #		sh ${NEST_EXE} ${TMP_DIR}/RATIO.xml
 	fi
@@ -370,7 +370,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	# insert Input file path into processing chain xml
 	sed -i "s|OUTPUT_TR|${OUTPUT_RATIO_DB}|g" ${TMP_DIR}/RATIO_DB.xml
 
-	echo "Calculating HV/HH ratio in dB ${SCENE_ID}"
+#	echo "Calculating HV/HH ratio in dB ${SCENE_ID}"
 #	sh ${NEST_EXE} ${TMP_DIR}/RATIO_DB.xml 2>&1 | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
