@@ -75,7 +75,7 @@ while read line;do
 	cd ${PROC_DIR}/FBD/${ACQ_YEAR}/${ORBIT}
 	echo "Downloading ALOS FBD scene: ${GRANULE}"
 	echo "from: ${DOWNLOAD}"
-	echo "into: ${PROC_DIR}/FBD/${ACQ_YEAR}/${SAT_TRACK}"
+	echo "into: ${PROC_DIR}/FBD/${ACQ_YEAR}/${ORBIT}"
 	aria2c --load-cookies="${PROC_DIR}/cookies.txt" ${DOWNLOAD}
 
 done < inventory-FBD.csv 
