@@ -25,7 +25,7 @@ source /home/avollrath/github/OpenSARKit/OpenSARKit_source.bash
 #----------------------------------------------------------------------
 
 cd ${PROC_DIR}
-for SAR_TRACK in `ls -1 -d [1-9]*`;do
+for SAR_TRACK in `ls -1 -d [0-9]*`;do
 
 	echo "------------------------------------------------"
 	echo " Bulk Processing ALOS FBD: Track: ${SAR_TRACK}"

@@ -26,21 +26,21 @@
       <sourceBands>
         <band>Gamma0_HH_db</band>
       </sourceBands>
-      <windowSizeStr>9x9</windowSizeStr>
+      <windowSizeStr>3x3</windowSizeStr>
       <angleStr>ALL</angleStr>
       <quantizerStr>Probabilistic Quantizer</quantizerStr>
       <quantizationLevelsStr>64</quantizationLevelsStr>
       <displacement>1</displacement>
-      <outputContrast>true</outputContrast>
+      <outputContrast>false</outputContrast>
       <outputDissimilarity>true</outputDissimilarity>
       <outputHomogeneity>true</outputHomogeneity>
-      <outputASM>true</outputASM>
+      <outputASM>false</outputASM>
       <outputEnergy>true</outputEnergy>
-      <outputMAX>true</outputMAX>
-      <outputEntropy>true</outputEntropy>
+      <outputMAX>false</outputMAX>
+      <outputEntropy>false</outputEntropy>
       <outputMean>true</outputMean>
       <outputVariance>true</outputVariance>
-      <outputCorrelation>true</outputCorrelation>
+      <outputCorrelation>false</outputCorrelation>
     </parameters>
   </node>
   <applicationData id="Presentation">
