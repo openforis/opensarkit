@@ -444,13 +444,13 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	sed -i "s|DEM_FILE|${DEM_FILE}|g" ${TMP_DIR}/LAYOVER.xml
 
 	echo "Calculate the Layover/Shadow mask"
-#	sh ${S1TBX_EXE} ${TMP_DIR}/LAYOVER.xml 2>&1 | tee  ${TMP_DIR}/tmplog
+	sh ${S1TBX_EXE} ${TMP_DIR}/LAYOVER.xml 2>&1 | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
 		echo "2nd try"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_LAYOVER.dim" ${TMP_DIR}/${SCENE_ID}"_LAYOVER.data"
-#		sh ${S1TBX_EXE} ${TMP_DIR}/LAYOVER.xml
+		sh ${S1TBX_EXE} ${TMP_DIR}/LAYOVER.xml
 	fi
 
 	# Geocode Layover
@@ -467,13 +467,13 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 
 	# Terrain correcting Layover mask
 	echo "Geocode Layover/Shadow Mask: ${SCENE_ID}"
-#	sh ${S1TBX_EXE} ${TMP_DIR}/TR_LAYOVER.xml 2>&1 | tee  ${TMP_DIR}/tmplog
+sh ${S1TBX_EXE} ${TMP_DIR}/TR_LAYOVER.xml 2>&1 | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
 		echo "2nd try"
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_LAYOVER_TR.dim" ${FINAL_DIR}/${SCENE_ID}"_LAYOVER_TR.data"
-#		sh ${S1TBX_EXE} ${TMP_DIR}/TR_LAYOVER.xml
+		sh ${S1TBX_EXE} ${TMP_DIR}/TR_LAYOVER.xml
 	fi
 #----------------------------------------------------------------------
 # 	8 Remove tmp files

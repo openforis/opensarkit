@@ -306,7 +306,7 @@ do
 	rm ${PROC_DIR}/"tmp_"${SAT_TRACK}"_Gamma0_HV_list"
 	rm ${PROC_DIR}/"tmp_"${SAT_TRACK}"_Gamma0_HH_db_list"
 	rm ${PROC_DIR}/"tmp_"${SAT_TRACK}"_Gamma0_HV_db_list"
-	rm $PROC_DIR}/"tmp_"${SAT_TRACK}"_Alpha_list"
+	rm ${PROC_DIR}/"tmp_"${SAT_TRACK}"_Alpha_list"
 	rm ${PROC_DIR}/"tmp_"${SAT_TRACK}"_Entropy_list"
 	rm ${PROC_DIR}/"tmp_"${SAT_TRACK}"_Anisotropy_list"
 	rm ${PROC_DIR}/"tmp_"${SAT_TRACK}"_HH_speckle_divergence_list"
