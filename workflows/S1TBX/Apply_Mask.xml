@@ -4,7 +4,7 @@
     <operator>Read</operator>
     <sources/>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <file>INPUT_TR</file>
+      <file>INPUT_DATA</file>
     </parameters>
   </node>
   <node id="Write">
@@ -13,7 +13,7 @@
       <sourceProduct refid="BandMaths"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <file>OUTPUT_TR</file>
+      <file>OUTPUT_MASK</file>
       <formatName>BEAM-DIMAP</formatName>
     </parameters>
   </node>
@@ -21,26 +21,37 @@
     <operator>BandMaths</operator>
     <sources>
       <sourceProduct refid="Read"/>
+      <sourceProduct refid="Read(2)"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
       <targetBands/>
       <variables/>
-      <bandName>HH_HV</bandName>
+      <bandName>new_band</bandName>
       <bandUnit/>
       <bandNodataValue>0.0</bandNodataValue>
-      <bandExpression>Gamma0_HH_use_projected_local_inci_angle_from_dem_db / Gamma0_HV_use_projected_local_inci_angle_from_dem_db</bandExpression>
+      <bandExpression>INPUT_LAYER * $2.layover_shadow_mask</bandExpression>
+    </parameters>
+  </node>
+  <node id="Read(2)">
+    <operator>Read</operator>
+    <sources/>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <file>INPUT_MASK</file>
     </parameters>
   </node>
   <applicationData id="Presentation">
     <Description/>
     <node id="Read">
-      <displayPosition x="37.0" y="134.0"/>
+      <displayPosition x="115.0" y="57.0"/>
     </node>
     <node id="Write">
       <displayPosition x="455.0" y="135.0"/>
     </node>
     <node id="BandMaths">
-      <displayPosition x="190.0" y="139.0"/>
+      <displayPosition x="212.0" y="128.0"/>
+    </node>
+    <node id="Read(2)">
+      <displayPosition x="294.0" y="52.0"/>
     </node>
   </applicationData>
 </graph>

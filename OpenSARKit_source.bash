@@ -21,9 +21,23 @@ export S1TBX_GRAPHS="${OPENSARKIT}/workflows/S1TBX"
 export NEST_BIN="${OPENSARKIT}/bins/NEST"
 export S1TBX_BIN="${OPENSARKIT}/bins/S1TBX"
 export DOWNLOAD_BIN="${OPENSARKIT}/download_scripts"
+export PYTHON_BIN="${OPENSARKIT}/python"
+
+export PATH=$PATH:${PYTHON_BIN}
+
 # Aliases
-alias osk_ALOS_CEOS_import="bash ${NEST_BIN}/osk_import_ALOS_L1_1_CEOS_to_dim.sh"
-alias osk_ALOS_FBD_L1.1_preprocess="bash ${S1TBX_BIN}/osk_ALOS_L1_1_preprocess.sh"
+
+# Downloads
 alias osk_download_ALOS_ASF="bash ${DOWNLOAD_BIN}/osk_download_ALOS_ASF.sh"
+
+# Imports
+alias osk_ALOS_CEOS_import="bash ${NEST_BIN}/osk_import_ALOS_L1_1_CEOS_to_dim.sh"
+
+# Process
+alias osk_ALOS_FBD_L1.1_preprocess="bash ${S1TBX_BIN}/osk_ALOS_L1_1_preprocess.sh"
 alias osk_ALOS_merge_path="bash ${S1TBX_BIN}/osk_ALOS_merge_path.sh"
 alias osk_bulk_ALOS_FBD_L1_1_preprocess="bash ${S1TBX_BIN}/osk_bulk_ALOS_L1_1_preprocess.sh"
+
+# Helpers
+#alias osk_byteswap_float32="python ${PYTHON_BIN}/osk_byteswap32.py"
+

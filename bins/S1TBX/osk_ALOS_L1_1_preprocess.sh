@@ -13,7 +13,8 @@
 #----------------------------------------------------------------------
 
 # TMP sourcing for Sepal env.
-source /data/home/Andreas.Vollrath/github/OpenSARKit_source.bash
+#source /data/home/Andreas.Vollrath/github/OpenSARKit_source.bash
+source /home/avollrath/github/OpenSARKit/OpenSARKit_source.bash
 
 #----------------------------------------------------------------------
 #	0 Set up Script variables
@@ -61,6 +62,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 
 	# extract filenames
 	SCENE_ID=`ls ${TMP_DIR}`
+	#SCENE_ID=ALPSRP073760140-L1.1
 	cd ${TMP_DIR}/${SCENE_ID}
 	VOLUME_FILE=`ls VOL*`
 
@@ -130,7 +132,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog;then 
 		echo "2nd try"
-		rm -rf ${FINAL_DIR}/${SCENE_ID}".dim" ${FINAL_DIR}/${SCENE_ID}".data"
+		rm -rf ${TMP_DIR}/${SCENE_ID}".dim" ${TMP_DIR}/${SCENE_ID}".data"
 		sh ${NEST_EXE} ${TMP_DIR}/Import_DIMAP.xml  
 	fi
 
@@ -164,7 +166,8 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 
 	OUTPUT_GAMMA_HH=${FINAL_DIR}/${SCENE_ID}'_Gamma0_HH.dim'
 	OUTPUT_GAMMA_HV=${FINAL_DIR}/${SCENE_ID}'_Gamma0_HV.dim'
-	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_TR_radiometric.xml ${TMP_DIR}/TR_ML_SPK.xml
+	OUTPUT_LAYOVER=${TMP_DIR}/${SCENE_ID}'_Layover_Shadow.dim'
+	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_SIM_TR_radiometric.xml ${TMP_DIR}/TR_ML_SPK.xml
 
 	# insert Input file path into processing chain xml
 	sed -i "s|INPUT_TR|${OUTPUT_ML_SPK}|g" ${TMP_DIR}/TR_ML_SPK.xml
@@ -172,6 +175,8 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	sed -i "s|OUTPUT_HH|${OUTPUT_GAMMA_HH}|g" ${TMP_DIR}/TR_ML_SPK.xml
 	# insert Input file path into processing chain xml
 	sed -i "s|OUTPUT_HV|${OUTPUT_GAMMA_HV}|g" ${TMP_DIR}/TR_ML_SPK.xml
+	# insert Input file path into processing chain xml
+	sed -i "s|OUTPUT_LAY|${OUTPUT_LAYOVER}|g" ${TMP_DIR}/TR_ML_SPK.xml
 	# insert DEM path
 	sed -i "s|DEM_FILE|${DEM_FILE}|g" ${TMP_DIR}/TR_ML_SPK.xml
 
@@ -186,6 +191,17 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 		sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 
 	fi
 	
+	# Mask Layover/Shadow areas
+	echo "Invert Layover/Shadow Mask"	
+	gdal_calc.py -A ${TMP_DIR}/${SCENE_ID}'_Layover_Shadow.data/layover_shadow_mask.img' --outfile=${TMP_DIR}/mask.tif --calc="1*(A==0)" --NoDataValue=0
+
+	echo "Multiply inverted LAy/Shadow mask wih layers"
+ 	gdal_calc.py -A ${TMP_DIR}/mask.tif -B ${FINAL_DIR}/${SCENE_ID}'_Gamma0_HH.data/Gamma0_HH.img' --outfile=${TMP_DIR}/tmp_Gamma0_HH2.img --format "ENVI" --calc="A*B" --NoDataValue=0
+	gdal_calc.py -A ${TMP_DIR}/mask.tif -B ${FINAL_DIR}/${SCENE_ID}'_Gamma0_HV.data/Gamma0_HV.img' --outfile=${TMP_DIR}/tmp_Gamma0_HV2.img --format "ENVI" --calc="A*B" --NoDataValue=0
+
+	echo "Byteswap the layers due to GDAL BIGENDIAN output of ENVI format"
+	osk_byteswap32.py ${TMP_DIR}/tmp_Gamma0_HH2.img ${FINAL_DIR}/${SCENE_ID}'_Gamma0_HH.data/Gamma0_HH.img'
+	osk_byteswap32.py ${TMP_DIR}/tmp_Gamma0_HV2.img ${FINAL_DIR}/${SCENE_ID}'_Gamma0_HV.data/Gamma0_HV.img'
 
 	# Linear to dB output Gamma_HH
 
@@ -206,7 +222,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 
 		echo "2nd try"
-		rm -rf ${FINAL_DIR}/${SCENE_ID}"_ML_SPK_DB_TR.dim" ${FINAL_DIR}/${SCENE_ID}"_ML_SPK_DB_TR.data"
+		rm -rf ${FINAL_DIR}/${SCENE_ID}'_GAMMA_HH_DB.dim' ${FINAL_DIR}/${SCENE_ID}'_GAMMA_HH_DB.data'
 		sh ${S1TBX_EXE} ${TMP_DIR}/GAMMA_HH_DB.xml 
 	fi
 
@@ -229,7 +245,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 
 		echo "2nd try"
-		rm -rf ${FINAL_DIR}/${SCENE_ID}"_ML_SPK_DB_TR.dim" ${FINAL_DIR}/${SCENE_ID}"_ML_SPK_DB_TR.data"
+		rm -rf ${FINAL_DIR}/${SCENE_ID}"_GAMMA_HV_DB.dim" ${FINAL_DIR}/${SCENE_ID}"_GAMMA_HV_DB.data"
 		sh ${S1TBX_EXE} ${TMP_DIR}/GAMMA_HV_DB.xml 
 	fi
 
@@ -248,13 +264,13 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	sed -i "s|OUTPUT_SPK_DIV|${OUTPUT_SPK_DIV}|g" ${TMP_DIR}/SPK_DIV.xml
 
 	echo "Calculate Speckle Divergence and apply Multi-looking for ${SCENE_ID}"
-	sh ${S1TBX_EXE} ${TMP_DIR}/SPK_DIV.xml 2>&1 | tee  ${TMP_DIR}/tmplog
+#	sh ${S1TBX_EXE} ${TMP_DIR}/SPK_DIV.xml 2>&1 | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
 		echo "2nd try"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_SPK_DIV.dim" ${TMP_DIR}/${SCENE_ID}"_SPK_DIV.data"
-		sh ${S1TBX_EXE} ${TMP_DIR}/SPK_DIV.xml
+#		sh ${S1TBX_EXE} ${TMP_DIR}/SPK_DIV.xml
 	fi
 	
 	# Geocode Speckle-Divergence
@@ -273,13 +289,13 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 
 	# Radiometrically terrain correcting Multi-looked, speckle-filtered files
 	echo "Geocode Speckle-Divergence from scene: ${SCENE_ID}"
-	sh ${S1TBX_EXE} ${TMP_DIR}/TR_SPK_DIV.xml 2>&1  | tee  ${TMP_DIR}/tmplog
+#	sh ${S1TBX_EXE} ${TMP_DIR}/TR_SPK_DIV.xml 2>&1  | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
 		echo "2nd try"
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_SPK_DIV_TR.dim" ${FINAL_DIR}/${SCENE_ID}"_SPK_DIV_TR.data"
-		sh ${S1TBX_EXE} ${TMP_DIR}/TR_SPK_DIV.xml
+#		sh ${S1TBX_EXE} ${TMP_DIR}/TR_SPK_DIV.xml
 	fi
 
 #----------------------------------------------------------------------
@@ -297,13 +313,13 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	sed -i "s|OUTPUT_POLSAR|${OUTPUT_POLSAR}|g" ${TMP_DIR}/POLSAR.xml
 
 	echo "Calculate H-alpha dual pol decomposition for ${SCENE_ID}"
-	sh ${S1TBX_EXE} ${TMP_DIR}/POLSAR.xml 2>&1 | tee  ${TMP_DIR}/tmplog
+#	sh ${S1TBX_EXE} ${TMP_DIR}/POLSAR.xml 2>&1 | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
 		echo "2nd try"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_H_alpha.dim" ${TMP_DIR}/${SCENE_ID}"_H_alpha.data"
-		sh ${S1TBX_EXE} ${TMP_DIR}/POLSAR.xml
+#		sh ${S1TBX_EXE} ${TMP_DIR}/POLSAR.xml
 	fi
 
 	# 5c	Multi-look & Geocode Polsar H-alpha dual pol data (multilook included, since it does not work for the preproc chain)
@@ -322,65 +338,18 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 
 	# Radiometrically terrain correcting PolSAR H-A-alpha products
 	echo "Geocode H-A-alpha from scene: ${SCENE_ID}"
-	sh ${S1TBX_EXE} ${TMP_DIR}/TR_H_alpha.xml 2>&1 | tee  ${TMP_DIR}/tmplog
+#	sh ${S1TBX_EXE} ${TMP_DIR}/TR_H_alpha.xml 2>&1 | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
 		echo "2nd try"
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_H_alpha_TR.dim" ${FINAL_DIR}/${SCENE_ID}"_H_alpha_TR.data"
-		sh ${S1TBX_EXE} ${TMP_DIR}/TR_H_alpha.xml
+#		sh ${S1TBX_EXE} ${TMP_DIR}/TR_H_alpha.xml
 	fi
+
 
 #----------------------------------------------------------------------
-# 	5 HH/HV ratio
-#----------------------------------------------------------------------	
-
-	# HHHV ratio on linear scale
-
-	# define path/name of output
-	OUTPUT_RATIO=${FINAL_DIR}/${SCENE_ID}"_HHHV_ratio.dim"
-	# Write new xml graph and substitute input and output files
-	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_HHHV_ratio.xml ${TMP_DIR}/RATIO.xml
-	
-	# insert Input file path into processing chain xml
-	sed -i "s|INPUT_TR|${OUTPUT_ML_SPK_TR}|g" ${TMP_DIR}/RATIO.xml
-	# insert Input file path into processing chain xml
-	sed -i "s|OUTPUT_TR|${OUTPUT_RATIO}|g" ${TMP_DIR}/RATIO.xml
-
-#	echo "Calculating HV/HH ratio ${SCENE_ID}"
-#	sh ${NEST_EXE} ${TMP_DIR}/RATIO.xml 2>&1 | tee  ${TMP_DIR}/tmplog
-
-	# in case it fails try a second time	
-	if grep -q Error ${TMP_DIR}/tmplog; then 	
-#		echo "2nd try"
-		rm -rf ${FINAL_DIR}/${SCENE_ID}"_HHHV_ratio.dim" ${FINAL_DIR}/${SCENE_ID}"_HHHV_ratio.data"
-#		sh ${NEST_EXE} ${TMP_DIR}/RATIO.xml
-	fi
-
-
-	# HHHV ratio on dB scale
-
-	# define path/name of output
-	OUTPUT_RATIO_DB=${FINAL_DIR}/${SCENE_ID}"_HHHV_ratio_DB.dim"
-	# Write new xml graph and substitute input and output files
-	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_HHHV_ratio_db.xml ${TMP_DIR}/RATIO_DB.xml
-	
-	# insert Input file path into processing chain xml
-	sed -i "s|INPUT_TR|${OUTPUT_ML_SPK_DB_TR}|g" ${TMP_DIR}/RATIO_DB.xml
-	# insert Input file path into processing chain xml
-	sed -i "s|OUTPUT_TR|${OUTPUT_RATIO_DB}|g" ${TMP_DIR}/RATIO_DB.xml
-
-#	echo "Calculating HV/HH ratio in dB ${SCENE_ID}"
-#	sh ${NEST_EXE} ${TMP_DIR}/RATIO_DB.xml 2>&1 | tee  ${TMP_DIR}/tmplog
-
-	# in case it fails try a second time	
-	if grep -q Error ${TMP_DIR}/tmplog; then 	
-		echo "2nd try"
-		rm -rf ${FINAL_DIR}/${SCENE_ID}"_HHHV_ratio_DB.dim" ${FINAL_DIR}/${SCENE_ID}"_HHHV_ratio_DB.data"
-#		sh ${NEST_EXE} ${TMP_DIR}/RATIO_DB.xml
-	fi
-#----------------------------------------------------------------------
-# 	6 Texture
+# 	5 Texture
 #----------------------------------------------------------------------	
 
 	# HH texture calculations
@@ -428,55 +397,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	fi
 
 #----------------------------------------------------------------------
-# 	7 Layover/Shadow Mask
-#----------------------------------------------------------------------	
-
-	# define path/name of output
-	OUTPUT_LAYOVER=${TMP_DIR}/${SCENE_ID}"_LAYOVER.dim"
-	# Write new xml graph and substitute input and output files
-	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_Layover.xml ${TMP_DIR}/LAYOVER.xml
-	
-	# insert Input file path into processing chain xml
-	sed -i "s|INPUT_DIMAP|${OUTPUT_DIMAP}|g" ${TMP_DIR}/LAYOVER.xml
-	# insert Input file path into processing chain xml
-	sed -i "s|OUTPUT_LAYOVER|${OUTPUT_LAYOVER}|g" ${TMP_DIR}/LAYOVER.xml
-	# insert external DEM path
-	sed -i "s|DEM_FILE|${DEM_FILE}|g" ${TMP_DIR}/LAYOVER.xml
-
-	echo "Calculate the Layover/Shadow mask"
-	sh ${S1TBX_EXE} ${TMP_DIR}/LAYOVER.xml 2>&1 | tee  ${TMP_DIR}/tmplog
-
-	# in case it fails try a second time	
-	if grep -q Error ${TMP_DIR}/tmplog; then 	
-		echo "2nd try"
-		rm -rf ${TMP_DIR}/${SCENE_ID}"_LAYOVER.dim" ${TMP_DIR}/${SCENE_ID}"_LAYOVER.data"
-		sh ${S1TBX_EXE} ${TMP_DIR}/LAYOVER.xml
-	fi
-
-	# Geocode Layover
-	OUTPUT_LAYOVER_TR=${FINAL_DIR}/${SCENE_ID}'_LAYOVER_TR.dim'
-	# copy template xml graph into tmp folder 
-	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_TR_Layover.xml ${TMP_DIR}/TR_LAYOVER.xml
-
-	# insert Input file path into processing chain xml
-	sed -i "s|INPUT_TR|${OUTPUT_LAYOVER}|g" ${TMP_DIR}/TR_LAYOVER.xml
-	# insert Input file path into processing chain xml
-	sed -i "s|OUTPUT_TR|${OUTPUT_LAYOVER_TR}|g" ${TMP_DIR}/TR_LAYOVER.xml
-	# insert external DEM path
-	sed -i "s|DEM_FILE|${DEM_FILE}|g" ${TMP_DIR}/TR_LAYOVER.xml
-
-	# Terrain correcting Layover mask
-	echo "Geocode Layover/Shadow Mask: ${SCENE_ID}"
-sh ${S1TBX_EXE} ${TMP_DIR}/TR_LAYOVER.xml 2>&1 | tee  ${TMP_DIR}/tmplog
-
-	# in case it fails try a second time	
-	if grep -q Error ${TMP_DIR}/tmplog; then 	
-		echo "2nd try"
-		rm -rf ${FINAL_DIR}/${SCENE_ID}"_LAYOVER_TR.dim" ${FINAL_DIR}/${SCENE_ID}"_LAYOVER_TR.data"
-		sh ${S1TBX_EXE} ${TMP_DIR}/TR_LAYOVER.xml
-	fi
-#----------------------------------------------------------------------
-# 	8 Remove tmp files
+# 	6 Remove tmp files
 #----------------------------------------------------------------------	
 
 	rm -rf ${TMP_DIR}/*
