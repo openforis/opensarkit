@@ -6,7 +6,7 @@
       <sourceProduct refid="SAR-Mosaic"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <file>/home/avollrath/Desktop/mosaic.dim</file>
+      <file>OUTPUT_DIMAP</file>
       <formatName>BEAM-DIMAP</formatName>
     </parameters>
   </node>
@@ -28,7 +28,7 @@
       <average>true</average>
       <normalizeByMean>true</normalizeByMean>
       <gradientDomainMosaic>false</gradientDomainMosaic>
-      <pixelSize>0.0</pixelSize>
+      <pixelSize>30.0</pixelSize>
       <sceneWidth>0</sceneWidth>
       <sceneHeight>0</sceneHeight>
       <feather>20</feather>
