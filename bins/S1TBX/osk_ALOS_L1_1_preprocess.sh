@@ -421,13 +421,13 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 #----------------------------------------------------------------------	
 
 	
-	#touch ${PROC_DIR}/session_Gamma0_HH.s1tbx
-	#echo "<product>" >> ${PROC_DIR}/session_Gamma0_HH.s1tbx
-	#echo "<refNo>$i</refNo>" >> ${PROC_DIR}/session_Gamma0_HH.s1tbx
-	#echo "<uri>${DATE}/${FRAME}/${SCENE_ID}'_Gamma0_HH.dim</uri>" >> ${PROC_DIR}/session_Gamma0_HH.s1tbx
-	#echo "</product>"  >> ${PROC_DIR}/session_Gamma0_HH.s1tbx
+	touch ${PROC_DIR}/session_Gamma0_HH.s1tbx
+	echo "<product>" >> ${PROC_DIR}/session_Gamma0_HH.s1tbx
+	echo "<refNo>$i</refNo>" >> ${PROC_DIR}/session_Gamma0_HH.s1tbx
+	echo "<uri>${DATE}/${FRAME}/${SCENE_ID}'_Gamma0_HH.dim</uri>" >> ${PROC_DIR}/session_Gamma0_HH.s1tbx
+	echo "</product>"  >> ${PROC_DIR}/session_Gamma0_HH.s1tbx
 
-	#i=`expr $i + 1` 
+	i=`expr $i + 1` 
 #----------------------------------------------------------------------
 # 	6 Remove tmp files
 #----------------------------------------------------------------------	
