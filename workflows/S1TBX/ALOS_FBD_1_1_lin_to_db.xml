@@ -1,9 +1,9 @@
 <graph id="Graph">
   <version>1.0</version>
   <node id="Read">
-    <operator>Read</operator>
+  <operator>Read</operator>
     <sources/>
-    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+       <parameters class="com.bc.ceres.binding.dom.XppDomElement">
       <file>INPUT_TR</file>
     </parameters>
   </node>

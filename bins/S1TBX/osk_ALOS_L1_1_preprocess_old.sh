@@ -117,15 +117,25 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	INPUT_RAW=${TMP_DIR}/${SCENE_ID}/${VOLUME_FILE}	
 	OUTPUT_DIMAP=${TMP_DIR}/${SCENE_ID}.dim
 
+	# Write new xml graph and substitute input and output files
+	cp ${NEST_GRAPHS}/ALOS_L1.1_NEST_import.xml ${TMP_DIR}/Import_DIMAP.xml
+	
+	# insert Input file path into processing chain xml
+	sed -i "s|INPUT_RAW|${INPUT_RAW}|g" ${TMP_DIR}/Import_DIMAP.xml
+	# insert Input file path into processing chain xml
+	sed -i "s|OUTPUT_DIMAP|${OUTPUT_DIMAP}|g" ${TMP_DIR}/Import_DIMAP.xml
+
 	echo "Importing CEOS files to BEAM_DIMAP file format for ${SCENE_ID} from $DATE"
-	sh ${NEST_EXE} ${NEST_GRAPHS}/ALOS_L1.1_NEST_import.xml ${INPUT_RAW} -t ${OUTPUT_DIMAP} 2>&1 | tee ${TMP_DIR}/tmplog
-#	[ $? -ne 0 ] && return ${ERR_IMPORT}
+	sh ${NEST_EXE} ${TMP_DIR}/Import_DIMAP.xml 2>&1 | tee ${TMP_DIR}/tmplog
+	EXIT_CODE=$?
+
+	echo $EXIT_CODE
 
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog;then 
 		echo "2nd try"
 		rm -rf ${TMP_DIR}/${SCENE_ID}".dim" ${TMP_DIR}/${SCENE_ID}".data"
-		sh ${NEST_EXE} ${NEST_GRAPHS}/ALOS_L1.1_NEST_import.xml ${INPUT_RAW} -t ${OUTPUT_DIMAP} 2>&1 | tee ${TMP_DIR}/tmplog
+		sh ${NEST_EXE} ${TMP_DIR}/Import_DIMAP.xml  
 	fi
 
 
@@ -136,21 +146,26 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	
 	# define output
 	OUTPUT_ML_SPK=${TMP_DIR}/${SCENE_ID}"_ML_SPK.dim"
+	# Write new xml graph and substitute input and output files
+#	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_DSK_ML_SPK.xml ${TMP_DIR}/ML_SPK.xml
+	cp ${NEST_GRAPHS}/ALOS_L1.1_DSK_ML_SPK.xml ${TMP_DIR}/ML_SPK.xml
+
+	# insert Input file path into processing chain xml
+	sed -i "s|INPUT_DIMAP|${OUTPUT_DIMAP}|g" ${TMP_DIR}/ML_SPK.xml
+	# insert Input file path into processing chain xml
+	sed -i "s|OUTPUT_ML_SPK|${OUTPUT_ML_SPK}|g" ${TMP_DIR}/ML_SPK.xml
 
 	echo "Apply Multi-look & Speckle Filter to ${SCENE_ID}"
-	sh ${NEST_EXE} ${NEST_GRAPHS}/ALOS_L1.1_DSK_ML_SPK.xml ${OUTPUT_DIMAP} -t ${OUTPUT_ML_SPK} 2>&1 | tee  ${TMP_DIR}/tmplog
+	sh ${NEST_EXE} ${TMP_DIR}/ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
 		echo "2nd try"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_ML_SPK.dim" ${TMP_DIR}/${SCENE_ID}"_ML_SPK.data"
-		sh ${NEST_EXE} ${NEST_GRAPHS}/ALOS_L1.1_DSK_ML_SPK.xml ${OUTPUT_DIMAP} -t ${OUTPUT_ML_SPK} 2>&1 | tee  ${TMP_DIR}/tmplog
+		sh ${NEST_EXE} ${TMP_DIR}/ML_SPK.xml 
 	fi
 
-
-#----------------------------------------------------------------------
-# 	3 Geocoding with Radiometric normalization
-#----------------------------------------------------------------------	
+	# Geocode Multi-looked, speckle-filtered imagery
 
 	OUTPUT_ML_SPK_TR=${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.dim"
 	OUTPUT_GAMMA_HH=${FINAL_DIR}/${SCENE_ID}'_Gamma0_HH.dim'
@@ -190,7 +205,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 
 	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
 		echo "Let's do it a 3rd time, since coarse offset did not start (NEST bug)"
-		echo "This time we will take 4000 GCPs (probably too much water in the scene)"
+		echo "This time we will take 4000 GCPs (probably too much water in the scene, so we need more)"
 		sed -i "s|<numGCPtoGenerate>500|<numGCPtoGenerate>4000|g" ${TMP_DIR}/TR_ML_SPK.xml
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.dim" ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.data"
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HH.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HH.data"
@@ -220,51 +235,32 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 		sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
 	fi
 	
-	# exclude low backscatter pixel to eliminate border effect
+
 	gdal_calc.py --overwrite -A ${FINAL_DIR}/${SCENE_ID}'_Gamma0_HH.data/Gamma0_HH.img' --outfile=${TMP_DIR}/tmp_mask_border_hh.tif --calc="A*(A>=0.001)" --NoDataValue=0
 	gdal_calc.py --overwrite -A ${FINAL_DIR}/${SCENE_ID}'_Gamma0_HV.data/Gamma0_HV.img' --outfile=${TMP_DIR}/tmp_mask_border_hv.tif --calc="A*(A>=0.001)" --NoDataValue=0
 
-	# tansform to SAGA
-	#gdalwarp -srcnodata 0 -dstnodata -99999 -of SAGA ${TMP_DIR}/tmp_mask_border_hh.tif ${TMP_DIR}/tmp_mask_border_hh_saga.sdat
-	#gdalwarp -srcnodata 0 -dstnodata -99999 -of SAGA ${TMP_DIR}/tmp_mask_border_hv.tif ${TMP_DIR}/tmp_mask_border_hv_saga.sdat
+	gdalwarp -srcnodata 0 -dstnodata -99999 -of SAGA ${TMP_DIR}/tmp_mask_border_hh.tif ${TMP_DIR}/tmp_mask_border_hh_saga.sdat
+	gdalwarp -srcnodata 0 -dstnodata -99999 -of SAGA ${TMP_DIR}/tmp_mask_border_hv.tif ${TMP_DIR}/tmp_mask_border_hv_saga.sdat
 
-	# fill holes from previously eliminated pixels inside the scene
 	echo "fill holes"
 	cd ${TMP_DIR}
-	#saga_cmd -f=r grid_tools 25 -GRID:tmp_mask_border_hh_saga.sgrd -MAXGAPCELLS:500 -MAXPOINTS:1000 -LOCALPOINTS:25 -CLOSED:tmp_mask_border_hh_filled.sgrd
-	#saga_cmd -f=r grid_tools 25 -GRID:tmp_mask_border_hv_saga.sgrd -MAXGAPCELLS:500 -MAXPOINTS:1000 -LOCALPOINTS:25 -CLOSED:tmp_mask_border_hv_filled.sgrd
+	
+	saga_cmd -f=r grid_tools 25 -GRID:tmp_mask_border_hh_saga.sgrd -MAXGAPCELLS:500 -MAXPOINTS:1000 -LOCALPOINTS:25 -CLOSED:tmp_mask_border_hh_filled.sgrd
+	saga_cmd -f=r grid_tools 25 -GRID:tmp_mask_border_hv_saga.sgrd -MAXGAPCELLS:500 -MAXPOINTS:1000 -LOCALPOINTS:25 -CLOSED:tmp_mask_border_hv_filled.sgrd
 
-	# Apply Layover/Shadow mask
+	# Mask Layover/Shadow areas
 	echo "Invert Layover/Shadow Mask"	
 	gdal_calc.py -A ${TMP_DIR}/${SCENE_ID}'_Layover_Shadow.data/layover_shadow_mask.img' --outfile=${TMP_DIR}/mask.tif --calc="1*(A==0)" --NoDataValue=0
 
-	echo "Multiply inverted Layover/Shadow mask wih image layers"
- 	gdal_calc.py -A ${TMP_DIR}/mask.tif -B ${TMP_DIR}/tmp_mask_border_hh.tif --outfile=${TMP_DIR}/tmp_Gamma0_HH2.tif --calc="A*B" --NoDataValue=0
-	gdal_calc.py -A ${TMP_DIR}/mask.tif -B ${TMP_DIR}/tmp_mask_border_hv.tif --outfile=${TMP_DIR}/tmp_Gamma0_HV2.tif --calc="A*B" --NoDataValue=0
+	echo "Multiply inverted LAy/Shadow mask wih layers"
+ 	gdal_calc.py -A ${TMP_DIR}/mask.tif -B ${TMP_DIR}/tmp_mask_border_hh_filled.sdat --outfile=${TMP_DIR}/tmp_Gamma0_HH2.img --format "ENVI" --calc="A*B" --NoDataValue=0
+	gdal_calc.py -A ${TMP_DIR}/mask.tif -B ${TMP_DIR}/tmp_mask_border_hv_filled.sdat --outfile=${TMP_DIR}/tmp_Gamma0_HV2.img --format "ENVI" --calc="A*B" --NoDataValue=0
 
-
-	echo "fill holes "
-	# transform to SAGA format
-	gdalwarp -srcnodata 0 -dstnodata -99999 -of SAGA ${TMP_DIR}/tmp_Gamma0_HH2.tif ${TMP_DIR}/tmp_mask_hh_saga.sdat
-	gdalwarp -srcnodata 0 -dstnodata -99999 -of SAGA ${TMP_DIR}/tmp_Gamma0_HV2.tif ${TMP_DIR}/tmp_mask_hv_saga.sdat
-
-	saga_cmd -f=r grid_tools 25 -GRID:tmp_mask_hh_saga.sgrd -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:tmp_mask_hh_filled.sgrd
-	saga_cmd -f=r grid_tools 25 -GRID:tmp_mask_hv_saga.sgrd -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:tmp_mask_hv_filled.sgrd
-
-	gdalwarp -srcnodata -99999 -dstnodata 0 -of ENVI ${TMP_DIR}/tmp_mask_hh_filled.sdat ${TMP_DIR}/tmp_mask_hh_saga.img
-	gdalwarp -srcnodata -99999 -dstnodata 0 -of ENVI ${TMP_DIR}/tmp_mask_hv_filled.sdat ${TMP_DIR}/tmp_mask_hv_saga.img
-	
 	echo "Byteswap the layers due to GDAL BIGENDIAN output of ENVI format"
-	osk_byteswap32.py ${TMP_DIR}/tmp_mask_hh_saga.img ${FINAL_DIR}/${SCENE_ID}'_Gamma0_HH.data/Gamma0_HH.img'
-	osk_byteswap32.py ${TMP_DIR}/tmp_mask_hv_saga.img ${FINAL_DIR}/${SCENE_ID}'_Gamma0_HV.data/Gamma0_HV.img'
+	osk_byteswap32.py ${TMP_DIR}/tmp_Gamma0_HH2.img ${FINAL_DIR}/${SCENE_ID}'_Gamma0_HH.data/Gamma0_HH.img'
+	osk_byteswap32.py ${TMP_DIR}/tmp_Gamma0_HV2.img ${FINAL_DIR}/${SCENE_ID}'_Gamma0_HV.data/Gamma0_HV.img'
 
-
-#----------------------------------------------
-#	4 Linear to dB output 
-#----------------------------------------------
-
-	# 4a) for Gamma0_HH band
-	# define output file
+	# Linear to dB output Gamma_HH
 
 	OUTPUT_GAMMA_HH_DB=${FINAL_DIR}/${SCENE_ID}'_GAMMA_HH_DB.dim'
 	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_lin_to_db.xml ${TMP_DIR}/GAMMA_HH_DB.xml
@@ -273,9 +269,11 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	sed -i "s|INPUT_TR|${OUTPUT_GAMMA_HH}|g" ${TMP_DIR}/GAMMA_HH_DB.xml
 	# insert Input file path into processing chain xml
 	sed -i "s|OUTPUT_TR|${OUTPUT_GAMMA_HH_DB}|g" ${TMP_DIR}/GAMMA_HH_DB.xml
-	
+	# insert DEM path
+	sed -i "s|DEM_FILE|${DEM_FILE}|g" ${TMP_DIR}/GAMMA_HH_DB.xml
+
 	# Radiometrically terrain correcting Multi-looked, speckle-filtered files
-	echo "Converting linear data to dB scale for Gamma0_HH"
+	echo "Converting linear data to dB scale: ${SCENE_ID}"
 	sh ${S1TBX_EXE} ${TMP_DIR}/GAMMA_HH_DB.xml 2>&1 | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
@@ -294,10 +292,11 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	sed -i "s|INPUT_TR|${OUTPUT_GAMMA_HV}|g" ${TMP_DIR}/GAMMA_HV_DB.xml
 	# insert Input file path into processing chain xml
 	sed -i "s|OUTPUT_TR|${OUTPUT_GAMMA_HV_DB}|g" ${TMP_DIR}/GAMMA_HV_DB.xml
-
+	# insert DEM path
+	sed -i "s|DEM_FILE|${DEM_FILE}|g" ${TMP_DIR}/GAMMA_HV_DB.xml
 
 	# Radiometrically terrain correcting Multi-looked, speckle-filtered files
-	echo "Converting linear data to dB scale for Gamma0_HV"
+	echo "Converting linear data to dB scale: ${SCENE_ID}"
 	sh ${S1TBX_EXE} ${TMP_DIR}/GAMMA_HV_DB.xml 2>&1 | tee  ${TMP_DIR}/tmplog
 
 	# in case it fails try a second time	
@@ -308,7 +307,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	fi
 
 #----------------------------------------------------------------------
-# 	5 Create Speckle Divergence files
+# 	3 Create Speckle Divergence files
 #----------------------------------------------------------------------	
 
 	# define path/name of output
@@ -357,7 +356,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	fi
 
 #----------------------------------------------------------------------
-# 	6 Create Polarimetric Products
+# 	4 Create Polarimetric Products
 #----------------------------------------------------------------------	
 
 	# define path/name of output
