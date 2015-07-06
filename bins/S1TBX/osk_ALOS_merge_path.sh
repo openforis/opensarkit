@@ -27,10 +27,10 @@ do
 	cd ${SAT_TRACK}
 	
 	# Loop for Acquisition Date
-#	for ACQ_DATE in `ls -1 -d [1,2]*`
-#	do 
+	for ACQ_DATE in `ls -1 -d [1,2]*`
+	do 
 
-#		cd ${ACQ_DATE}
+		cd ${ACQ_DATE}
 
 		# Loop for Frames
 		for FRAME in `ls -1`
@@ -219,8 +219,8 @@ do
 		cd ../
 		done
 
-#	cd ../
-#	done
+	cd ../
+	done
 
 	mkdir -p ${PROC_DIR}/${SAT_TRACK}/PATH_MOSAIC
 
