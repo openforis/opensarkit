@@ -16,98 +16,78 @@
 #source /data/home/Andreas.Vollrath/github/OpenSARKit_source.bash
 source /home/avollrath/github/OpenSARKit/OpenSARKit_source.bash
 
-#----------------------------------------------------------------------
-#	0 Set up Script variables
-#----------------------------------------------------------------------
-	
 # 	0.1 Check for right usage
 if [ "$#" != "2" ]; then
-  echo -e "Usage: osk_ALOS_L1_1_preprocess /path/to/downloaded/zips /path/to/dem"
+  echo -e "Usage: osk_ALOS_L1_1_preprocess /path/to/zipped/scene.zip /path/to/dem"
   echo -e "The path will be your Project folder!"
   exit 1
 else
-  cd $1
-  export PROC_DIR=`pwd`
+  #cd $1
+  #export PROC_DIR=`pwd`
   echo "Welcome to OpenSARKit!"
   echo "Processing folder: ${PROC_DIR}"
 fi
 
-
-#DEM_FILE='/home/avollrath/test/final_dem_filled.tif'
-DEM_FILE=$2
-
-#	0.2 Define Workspace
-export TMP_DIR="${PROC_DIR}/TMP"
-export ZIP_DIR="${PROC_DIR}/ZIP"
-
-#	0.3 Create Workspace
-mkdir -p ${ZIP_DIR}
+# set up input data
+FILE=`readlink -f $1`
+PROC_DIR=`dirname ${FILE}`
+TMP_DIR=${PROC_DIR}/TMP
 mkdir -p ${TMP_DIR}
 
+DEM_FILE=$2
 
-#----------------------------------------------------------------------
-# 	1 Import Raw data to DIMAP format compatible with S1TBX
-#----------------------------------------------------------------------
 
-# 	move data 
-mv ${PROC_DIR}/*zip ${ZIP_DIR}
+echo "Extracting ${FILE}"
+unzip -o -q ${FILE} -d ${TMP_DIR}
 
-# set number for session refNo
-i=1
-#	loop for every scene
-for FILE in `ls -1 ${ZIP_DIR}`;do
 
-	cd ${ZIP_DIR}
-	# Extract file
-	echo "Extracting ${FILE}"
-	unzip -o -q ${FILE} -d ${TMP_DIR}
+# extract filenames
+SCENE_ID=`ls ${TMP_DIR}`
 
-	# extract filenames
-	SCENE_ID=`ls ${TMP_DIR}`
-	#SCENE_ID=ALPSRP073760140-L1.1
-	cd ${TMP_DIR}/${SCENE_ID}
-	VOLUME_FILE=`ls VOL*`
+cd ${TMP_DIR}/${SCENE_ID}
+VOLUME_FILE=`ls VOL*`
 
-	# check for mode
-	if grep -q IMG-VV workreport;then
+# check for mode
+if grep -q IMG-VV workreport;then
 
-		MODE="PLR"
+	MODE="PLR"
 
-	elif grep -q IMG-HV workreport;then
+elif grep -q IMG-HV workreport;then
 
-		MODE="FBD"
+	MODE="FBD"
 	
-	else
+else
 
-		MODE="FBS"
-	fi
+	MODE="FBS"
+fi
 
 	# extract Date and Footprint
-	YEAR=`cat workreport | grep Img_SceneCenterDateTime | awk -F "=" $'{print $2}' | cut -c 2-5`
-	MONTH=`cat workreport | grep Img_SceneCenterDateTime | awk -F "=" $'{print $2}' | cut -c 6-7`
-	DAY=`cat workreport | grep Img_SceneCenterDateTime | awk -F "=" $'{print $2}' | cut -c 7-8`
-	DATE=`cat workreport | grep Img_SceneCenterDateTime | awk -F "=" $'{print $2}' | cut -c 2-9`
+YEAR=`cat workreport | grep Img_SceneCenterDateTime | awk -F "=" $'{print $2}' | cut -c 2-5`
+MONTH=`cat workreport | grep Img_SceneCenterDateTime | awk -F "=" $'{print $2}' | cut -c 6-7`
+DAY=`cat workreport | grep Img_SceneCenterDateTime | awk -F "=" $'{print $2}' | cut -c 7-8`
+DATE=`cat workreport | grep Img_SceneCenterDateTime | awk -F "=" $'{print $2}' | cut -c 2-9`
 
 #	UL_LAT=`cat workreport | grep Brs_ImageSceneLeftTopLatitude | awk -F "=" $'{print $2}' | sed 's/\"//g'`
 #	UL_LAT=`cat workreport | grep Brs_ImageSceneLeftTopLatitude | awk -F "=" $'{print $2}' | sed 's/\"//g'`
 	
-	FRAME=`echo ${SCENE_ID}	| cut -c 12-15`	
-	# !!!!!needs change for final version!!!!!	
-	SAT_PATH=`curl -s http://api.daac.asf.alaska.edu/services/search/param?keyword=value\&granule_list=${SCENE_ID:0:15}\&output=csv | tail -n 1 | awk -F "," $'{print $7}' | sed 's/\"//g'`
+FRAME=`echo ${SCENE_ID}	| cut -c 12-15`	
+# !!!!!needs change for final version!!!!!	
+SAT_PATH=`curl -s http://api.daac.asf.alaska.edu/services/search/param?keyword=value\&granule_list=${SCENE_ID:0:15}\&output=csv | tail -n 1 | awk -F "," $'{print $7}' | sed 's/\"//g'`
 	
-	echo "----------------------------------------------------------------"
-	echo "Processing Scene: 		${SCENE_ID:0:15}"
-	echo "Satellite/Sensor: 		ALOS/Palsar"
-	echo "Acquisiton Mode:		${MODE}"
-	echo "Acquisition Date (YYYYMMDD):	${DATE}"
-	echo "Relative Satellite Track: 	${SAT_PATH}"
-	echo "Image Frame: 			$FRAME"
-	echo "----------------------------------------------------------------"
+echo "----------------------------------------------------------------"
+echo "Processing Scene: 		${SCENE_ID:0:15}"
+echo "Satellite/Sensor: 		ALOS/Palsar"
+echo "Acquisiton Mode:		${MODE}"
+echo "Acquisition Date (YYYYMMDD):	${DATE}"
+echo "Relative Satellite Track: 	${SAT_PATH}"
+echo "Image Frame: 			$FRAME"
+echo "----------------------------------------------------------------"
 
-	mkdir -p ${PROC_DIR}/${DATE}
-	mkdir -p ${PROC_DIR}/${DATE}/${FRAME}
 
-	FINAL_DIR=${PROC_DIR}/${DATE}/${FRAME}
+FINAL_DIR=${PROC_DIR}/PREPROCESSED
+mkdir -p ${FINAL_DIR}
+
+
 
 #----------------------------------------------------------------------
 # 	1 Import Raw data to DIMAP format compatible with S1TBX
@@ -459,18 +439,17 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 #----------------------------------------------------------------------	
 
 	
-	touch ${PROC_DIR}/session_Gamma0_HH.s1tbx
-	echo "<product>" >> ${PROC_DIR}/session_Gamma0_HH.s1tbx
-	echo "<refNo>$i</refNo>" >> ${PROC_DIR}/session_Gamma0_HH.s1tbx
-	echo "<uri>${DATE}/${FRAME}/${SCENE_ID}'_Gamma0_HH.dim</uri>" >> ${PROC_DIR}/session_Gamma0_HH.s1tbx
-	echo "</product>"  >> ${PROC_DIR}/session_Gamma0_HH.s1tbx
+	#touch ${PROC_DIR}/session_Gamma0_HH.s1tbx
+	#echo "<product>" >> ${PROC_DIR}/session_Gamma0_HH.s1tbx
+	#echo "<refNo>$i</refNo>" >> ${PROC_DIR}/session_Gamma0_HH.s1tbx
+	#echo "<uri>${DATE}/${FRAME}/${SCENE_ID}'_Gamma0_HH.dim</uri>" >> ${PROC_DIR}/session_Gamma0_HH.s1tbx
+	#echo "</product>"  >> ${PROC_DIR}/session_Gamma0_HH.s1tbx
 
-	i=`expr $i + 1` 
+	#i=`expr $i + 1` 
 #----------------------------------------------------------------------
 # 	6 Remove tmp files
 #----------------------------------------------------------------------	
 
-	rm -rf ${TMP_DIR}/*
-done
+rm -rf ${TMP_DIR}/
 
-rm -rf ${TMP_DIR}
+
