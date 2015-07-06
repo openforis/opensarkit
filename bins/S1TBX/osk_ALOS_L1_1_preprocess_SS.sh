@@ -83,11 +83,10 @@ echo "Relative Satellite Track: 	${SAT_PATH}"
 echo "Image Frame: 			$FRAME"
 echo "----------------------------------------------------------------"
 
-
-FINAL_DIR=${PROC_DIR}/PREPROCESSED
+# be in line with preliminary processed path data
+mkdir -p ${PROC_DIR}/../${DATE}
+FINAL_DIR=${PROC_DIR}/../${DATE}/${FRAME}
 mkdir -p ${FINAL_DIR}
-
-
 
 #----------------------------------------------------------------------
 # 	1 Import Raw data to DIMAP format compatible with S1TBX
