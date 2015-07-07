@@ -156,9 +156,12 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	OUTPUT_GAMMA_HH=${FINAL_DIR}/${SCENE_ID}'_Gamma0_HH.dim'
 	OUTPUT_GAMMA_HV=${FINAL_DIR}/${SCENE_ID}'_Gamma0_HV.dim'
 	OUTPUT_LAYOVER=${TMP_DIR}/${SCENE_ID}'_Layover_Shadow.dim'
-#	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_SIM_TR_radiometric.xml ${TMP_DIR}/TR_ML_SPK.xml
 
-	cp ${NEST_GRAPHS}/ALOS_L1.1_SIMTR2.xml ${TMP_DIR}/TR_ML_SPK.xml
+	# S1TBX version
+	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_SIM_TR_radiometric.xml ${TMP_DIR}/TR_ML_SPK.xml
+
+	# NEST version
+#	cp ${NEST_GRAPHS}/ALOS_L1.1_SIMTR2.xml ${TMP_DIR}/TR_ML_SPK.xml
 
 	# insert Input file path into processing chain xml
 	sed -i "s|INPUT_TR|${OUTPUT_ML_SPK}|g" ${TMP_DIR}/TR_ML_SPK.xml
@@ -175,7 +178,11 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 
 	# Radiometrically terrain correcting Multi-looked, speckle-filtered files
 	echo "Geocode Multi-looked, speckle-filtered scene: ${SCENE_ID}"
-	sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
+	# Nest	
+#	sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
+	
+	# S1TBX 
+	sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
 
 	# in case it fails try a another time	
 	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
@@ -185,7 +192,8 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.data"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.dim" ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.data"
 		rm ${TMP_DIR}/tmplog
-		sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
+	#	sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
+		sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
 	fi
 
 	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
@@ -197,17 +205,23 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.data"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.dim" ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.data"
 		rm ${TMP_DIR}/tmplog
-		sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
+#		sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
+		sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
 	fi
 
 	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
 		echo "Let's do it a 4th time, since coarse offset did not start (NEST bug)"
+		echo "This time we will take also increase the window size for the coarse registration to 1024/512 (height/width)"
+		sed -i "s|<coarseRegistrationWindowWidth>128|<coarseRegistrationWindowWidth>512|g" ${TMP_DIR}/TR_ML_SPK.xml
+		sed -i "s|<coarseRegistrationWindowHeight>256|<coarseRegistrationWindowHeight>1024|g" ${TMP_DIR}/TR_ML_SPK.xml
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.dim" ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.data"
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HH.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HH.data"
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.data"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.dim" ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.data"
 		rm ${TMP_DIR}/tmplog
-		sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
+#		sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
+		sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
+
 	fi
 
 	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
@@ -217,7 +231,9 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.data"
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Layover_Shadow.dim" ${FINAL_DIR}/${SCENE_ID}"_Layover_Shadow.data"
 		rm ${TMP_DIR}/tmplog
-		sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
+#		sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
+		sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
+
 	fi
 	
 	# exclude low backscatter pixel to eliminate border effect
@@ -257,7 +273,6 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	echo "Byteswap the layers due to GDAL BIGENDIAN output of ENVI format"
 	osk_byteswap32.py ${TMP_DIR}/tmp_mask_hh_saga.img ${FINAL_DIR}/${SCENE_ID}'_Gamma0_HH.data/Gamma0_HH.img'
 	osk_byteswap32.py ${TMP_DIR}/tmp_mask_hv_saga.img ${FINAL_DIR}/${SCENE_ID}'_Gamma0_HV.data/Gamma0_HV.img'
-
 
 #----------------------------------------------
 #	4 Linear to dB output 

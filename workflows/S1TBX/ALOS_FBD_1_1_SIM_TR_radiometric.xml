@@ -73,8 +73,8 @@
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
       <numGCPtoGenerate>500</numGCPtoGenerate>
-      <coarseRegistrationWindowWidth>256</coarseRegistrationWindowWidth>
-      <coarseRegistrationWindowHeight>128</coarseRegistrationWindowHeight>
+      <coarseRegistrationWindowWidth>128</coarseRegistrationWindowWidth>
+      <coarseRegistrationWindowHeight>256</coarseRegistrationWindowHeight>
       <rowInterpFactor>4</rowInterpFactor>
       <columnInterpFactor>4</columnInterpFactor>
       <maxIteration>3</maxIteration>

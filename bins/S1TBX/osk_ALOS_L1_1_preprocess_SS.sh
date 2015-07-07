@@ -190,6 +190,9 @@ mkdir -p ${FINAL_DIR}
 
 	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
 		echo "Let's do it a 4th time, since coarse offset did not start (NEST bug)"
+		echo "This time we will take also increase the window size for the coarse registration to 1024/512 (height/width)"
+		sed -i "s|<coarseRegistrationWindowWidth>128|<coarseRegistrationWindowWidth>512|g" ${TMP_DIR}/TR_ML_SPK.xml
+		sed -i "s|<coarseRegistrationWindowHeight>256|<coarseRegistrationWindowHeight>1024|g" ${TMP_DIR}/TR_ML_SPK.xml
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.dim" ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.data"
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HH.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HH.data"
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.data"
