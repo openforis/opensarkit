@@ -35,6 +35,7 @@ alias osk_ALOS_CEOS_import="bash ${NEST_BIN}/osk_import_ALOS_L1_1_CEOS_to_dim.sh
 
 # Process
 alias osk_single_ALOS_preprocess="bash ${S1TBX_BIN}/osk_ALOS_L1_1_preprocess_SS.sh"
+alias osk_single_ALOS_preprocess_nest="bash ${S1TBX_BIN}/osk_ALOS_L1_1_preprocess_SS_nest.sh"
 alias osk_path_ALOS_preprocess="bash ${S1TBX_BIN}/osk_ALOS_L1_1_preprocess.sh"
 alias osk_mosaic_ALOS_preprocess="bash ${S1TBX_BIN}/osk_bulk_ALOS_L1_1_preprocess.sh"
 alias osk_ALOS_merge_path="bash ${S1TBX_BIN}/osk_ALOS_merge_path.sh"

@@ -16,77 +16,98 @@
 #source /data/home/Andreas.Vollrath/github/OpenSARKit_source.bash
 source /home/avollrath/github/OpenSARKit/OpenSARKit_source.bash
 
+#----------------------------------------------------------------------
+#	0 Set up Script variables
+#----------------------------------------------------------------------
+	
 # 	0.1 Check for right usage
 if [ "$#" != "2" ]; then
-  echo -e "Usage: osk_ALOS_L1_1_preprocess /path/to/zipped/scene.zip /path/to/dem"
+  echo -e "Usage: osk_ALOS_L1_1_preprocess /path/to/downloaded/zips /path/to/dem"
   echo -e "The path will be your Project folder!"
   exit 1
 else
-  #cd $1
-  #export PROC_DIR=`pwd`
+  cd $1
+  export PROC_DIR=`pwd`
   echo "Welcome to OpenSARKit!"
   echo "Processing folder: ${PROC_DIR}"
 fi
 
-# set up input data
-FILE=`readlink -f $1`
-PROC_DIR=`dirname ${FILE}`
-TMP_DIR=${PROC_DIR}/TMP
-mkdir -p ${TMP_DIR}
 
+#DEM_FILE='/home/avollrath/test/final_dem_filled.tif'
 DEM_FILE=$2
 
+#	0.2 Define Workspace
+export TMP_DIR="${PROC_DIR}/TMP"
+export ZIP_DIR="${PROC_DIR}/ZIP"
 
-echo "Extracting ${FILE}"
-unzip -o -q ${FILE} -d ${TMP_DIR}
+#	0.3 Create Workspace
+mkdir -p ${ZIP_DIR}
+mkdir -p ${TMP_DIR}
 
 
-# extract filenames
-SCENE_ID=`ls ${TMP_DIR}`
+#----------------------------------------------------------------------
+# 	1 Import Raw data to DIMAP format compatible with S1TBX
+#----------------------------------------------------------------------
 
-cd ${TMP_DIR}/${SCENE_ID}
-VOLUME_FILE=`ls VOL*`
+# 	move data 
+mv ${PROC_DIR}/*zip ${ZIP_DIR}
 
-# check for mode
-if grep -q IMG-VV workreport;then
+# set number for session refNo
+i=1
+#	loop for every scene
+for FILE in `ls -1 ${ZIP_DIR}`;do
 
-	MODE="PLR"
+	cd ${ZIP_DIR}
+	# Extract file
+	echo "Extracting ${FILE}"
+	unzip -o -q ${FILE} -d ${TMP_DIR}
 
-elif grep -q IMG-HV workreport;then
+	# extract filenames
+	SCENE_ID=`ls ${TMP_DIR}`
+	#SCENE_ID=ALPSRP073760140-L1.1
+	cd ${TMP_DIR}/${SCENE_ID}
+	VOLUME_FILE=`ls VOL*`
 
-	MODE="FBD"
+	# check for mode
+	if grep -q IMG-VV workreport;then
+
+		MODE="PLR"
+
+	elif grep -q IMG-HV workreport;then
+
+		MODE="FBD"
 	
-else
+	else
 
-	MODE="FBS"
-fi
+		MODE="FBS"
+	fi
 
 	# extract Date and Footprint
-YEAR=`cat workreport | grep Img_SceneCenterDateTime | awk -F "=" $'{print $2}' | cut -c 2-5`
-MONTH=`cat workreport | grep Img_SceneCenterDateTime | awk -F "=" $'{print $2}' | cut -c 6-7`
-DAY=`cat workreport | grep Img_SceneCenterDateTime | awk -F "=" $'{print $2}' | cut -c 7-8`
-DATE=`cat workreport | grep Img_SceneCenterDateTime | awk -F "=" $'{print $2}' | cut -c 2-9`
+	YEAR=`cat workreport | grep Img_SceneCenterDateTime | awk -F "=" $'{print $2}' | cut -c 2-5`
+	MONTH=`cat workreport | grep Img_SceneCenterDateTime | awk -F "=" $'{print $2}' | cut -c 6-7`
+	DAY=`cat workreport | grep Img_SceneCenterDateTime | awk -F "=" $'{print $2}' | cut -c 7-8`
+	DATE=`cat workreport | grep Img_SceneCenterDateTime | awk -F "=" $'{print $2}' | cut -c 2-9`
 
 #	UL_LAT=`cat workreport | grep Brs_ImageSceneLeftTopLatitude | awk -F "=" $'{print $2}' | sed 's/\"//g'`
 #	UL_LAT=`cat workreport | grep Brs_ImageSceneLeftTopLatitude | awk -F "=" $'{print $2}' | sed 's/\"//g'`
 	
-FRAME=`echo ${SCENE_ID}	| cut -c 12-15`	
-# !!!!!needs change for final version!!!!!	
-SAT_PATH=`curl -s http://api.daac.asf.alaska.edu/services/search/param?keyword=value\&granule_list=${SCENE_ID:0:15}\&output=csv | tail -n 1 | awk -F "," $'{print $7}' | sed 's/\"//g'`
+	FRAME=`echo ${SCENE_ID}	| cut -c 12-15`	
+	# !!!!!needs change for final version!!!!!	
+	SAT_PATH=`curl -s http://api.daac.asf.alaska.edu/services/search/param?keyword=value\&granule_list=${SCENE_ID:0:15}\&output=csv | tail -n 1 | awk -F "," $'{print $7}' | sed 's/\"//g'`
 	
-echo "----------------------------------------------------------------"
-echo "Processing Scene: 		${SCENE_ID:0:15}"
-echo "Satellite/Sensor: 		ALOS/Palsar"
-echo "Acquisiton Mode:		${MODE}"
-echo "Acquisition Date (YYYYMMDD):	${DATE}"
-echo "Relative Satellite Track: 	${SAT_PATH}"
-echo "Image Frame: 			$FRAME"
-echo "----------------------------------------------------------------"
+	echo "----------------------------------------------------------------"
+	echo "Processing Scene: 		${SCENE_ID:0:15}"
+	echo "Satellite/Sensor: 		ALOS/Palsar"
+	echo "Acquisiton Mode:		${MODE}"
+	echo "Acquisition Date (YYYYMMDD):	${DATE}"
+	echo "Relative Satellite Track: 	${SAT_PATH}"
+	echo "Image Frame: 			$FRAME"
+	echo "----------------------------------------------------------------"
 
-# be in line with preliminary processed path data
-mkdir -p ${PROC_DIR}/../${DATE}
-FINAL_DIR=${PROC_DIR}/../${DATE}/${FRAME}
-mkdir -p ${FINAL_DIR}
+	mkdir -p ${PROC_DIR}/${DATE}
+	mkdir -p ${PROC_DIR}/${DATE}/${FRAME}
+
+	FINAL_DIR=${PROC_DIR}/${DATE}/${FRAME}
 
 #----------------------------------------------------------------------
 # 	1 Import Raw data to DIMAP format compatible with S1TBX
@@ -117,14 +138,13 @@ mkdir -p ${FINAL_DIR}
 	OUTPUT_ML_SPK=${TMP_DIR}/${SCENE_ID}"_ML_SPK.dim"
 
 	echo "Apply Multi-look & Speckle Filter to ${SCENE_ID}"
-#	sh ${NEST_EXE} ${NEST_GRAPHS}/ALOS_L1.1_DSK_ML_SPK.xml ${OUTPUT_DIMAP} -t ${OUTPUT_ML_SPK} 2>&1 | tee  ${TMP_DIR}/tmplog
-	sh ${S1TBX_EXE} ${S1TBX_GRAPHS}/ALOS_L1.1_DSK_ML_SPK.xml ${OUTPUT_DIMAP} -t ${OUTPUT_ML_SPK} 2>&1 | tee  ${TMP_DIR}/tmplog
+	sh ${NEST_EXE} ${NEST_GRAPHS}/ALOS_L1.1_DSK_ML_SPK.xml ${OUTPUT_DIMAP} -t ${OUTPUT_ML_SPK} 2>&1 | tee  ${TMP_DIR}/tmplog
+
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
 		echo "2nd try"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_ML_SPK.dim" ${TMP_DIR}/${SCENE_ID}"_ML_SPK.data"
-#		sh ${NEST_EXE} ${NEST_GRAPHS}/ALOS_L1.1_DSK_ML_SPK.xml ${OUTPUT_DIMAP} -t ${OUTPUT_ML_SPK} 2>&1 | tee  ${TMP_DIR}/tmplog
-		sh ${S1TBX_EXE} ${S1TBX_GRAPHS}/ALOS_L1.1_DSK_ML_SPK.xml ${OUTPUT_DIMAP} -t ${OUTPUT_ML_SPK} 2>&1 | tee  ${TMP_DIR}/tmplog
+		sh ${NEST_EXE} ${NEST_GRAPHS}/ALOS_L1.1_DSK_ML_SPK.xml ${OUTPUT_DIMAP} -t ${OUTPUT_ML_SPK} 2>&1 | tee  ${TMP_DIR}/tmplog
 	fi
 
 
@@ -159,10 +179,10 @@ mkdir -p ${FINAL_DIR}
 	# Radiometrically terrain correcting Multi-looked, speckle-filtered files
 	echo "Geocode Multi-looked, speckle-filtered scene: ${SCENE_ID}"
 	# Nest	
-#	sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
+	sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
 	
 	# S1TBX 
-	sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
+#	sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
 
 	# in case it fails try a another time	
 	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
@@ -172,8 +192,8 @@ mkdir -p ${FINAL_DIR}
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.data"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.dim" ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.data"
 		rm ${TMP_DIR}/tmplog
-	#	sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
-		sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
+		sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
+#		sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
 	fi
 
 	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
@@ -185,8 +205,8 @@ mkdir -p ${FINAL_DIR}
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.data"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.dim" ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.data"
 		rm ${TMP_DIR}/tmplog
-#		sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
-		sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
+		sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
+#		sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
 	fi
 
 	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
@@ -199,8 +219,8 @@ mkdir -p ${FINAL_DIR}
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.data"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.dim" ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.data"
 		rm ${TMP_DIR}/tmplog
-#		sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
-		sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
+		sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
+#		sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
 
 	fi
 
@@ -211,8 +231,8 @@ mkdir -p ${FINAL_DIR}
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.data"
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Layover_Shadow.dim" ${FINAL_DIR}/${SCENE_ID}"_Layover_Shadow.data"
 		rm ${TMP_DIR}/tmplog
-#		sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
-		sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
+		sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
+#		sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
 
 	fi
 	
@@ -253,7 +273,6 @@ mkdir -p ${FINAL_DIR}
 	echo "Byteswap the layers due to GDAL BIGENDIAN output of ENVI format"
 	osk_byteswap32.py ${TMP_DIR}/tmp_mask_hh_saga.img ${FINAL_DIR}/${SCENE_ID}'_Gamma0_HH.data/Gamma0_HH.img'
 	osk_byteswap32.py ${TMP_DIR}/tmp_mask_hv_saga.img ${FINAL_DIR}/${SCENE_ID}'_Gamma0_HV.data/Gamma0_HV.img'
-
 
 #----------------------------------------------
 #	4 Linear to dB output 
@@ -466,6 +485,7 @@ mkdir -p ${FINAL_DIR}
 # 	6 Remove tmp files
 #----------------------------------------------------------------------	
 
-rm -rf ${TMP_DIR}/
+	rm -rf ${TMP_DIR}/*
+done
 
-
+rm -rf ${TMP_DIR}
