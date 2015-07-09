@@ -137,10 +137,10 @@ mkdir -p ${FINAL_DIR}
 	OUTPUT_LAYOVER=${TMP_DIR}/${SCENE_ID}'_Layover_Shadow.dim'
 
 	# S1TBX version
-	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_SIM_TR_radiometric.xml ${TMP_DIR}/TR_ML_SPK.xml
+#	cp ${S1TBX_GRAPHS}/ALOS_FBD_1_1_SIM_TR_radiometric.xml ${TMP_DIR}/TR_ML_SPK.xml
 
 	# NEST version
-#	cp ${NEST_GRAPHS}/ALOS_L1.1_SIMTR2.xml ${TMP_DIR}/TR_ML_SPK.xml
+	cp ${NEST_GRAPHS}/ALOS_L1.1_SIMTR2.xml ${TMP_DIR}/TR_ML_SPK.xml
 
 	# insert Input file path into processing chain xml
 	sed -i "s|INPUT_TR|${OUTPUT_ML_SPK}|g" ${TMP_DIR}/TR_ML_SPK.xml
