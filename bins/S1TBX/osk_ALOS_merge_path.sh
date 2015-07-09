@@ -72,13 +72,13 @@ do
 	
 					echo "${MOSAIC_INPUT}" > tmp.test
 					echo "${MOSAIC_INPUT}"
-					if grep -q Gamma0_HH_filled tmp.test;then
+					if grep -q Gamma0_HH_saga tmp.test;then
 					
 						GREP_HH=`grep Gamma0_HH_saga tmp.test`
 						echo ${PWD}/${GREP_HH} | tr '\n' ';' >> ${PROC_DIR}/tmp_${SAT_TRACK}"_Gamma0_HH_list"
 					fi
 
-					if grep -q Gamma0_HV_filled tmp.test;then
+					if grep -q Gamma0_HV_saga tmp.test;then
 
 						GREP_HV=`grep Gamma0_HV_saga tmp.test`
 						echo ${PWD}/${GREP_HV} | tr '\n' ';' >> ${PROC_DIR}/tmp_${SAT_TRACK}"_Gamma0_HV_list"
@@ -239,34 +239,34 @@ do
 	saga_cmd grid_tools 3 -GRIDS:${LIST_HV_DB} -TYPE:7 -OVERLAP:3 -BLEND_DIST:0 -TARGET_OUT_GRID:${PROC_DIR}/${SAT_TRACK}/PATH_MOSAIC/${SAT_TRACK}"_Gamma0_HV_db.sgrd"
 
 	LIST_HH_DISS=`cat ${PROC_DIR}/"tmp_"${SAT_TRACK}"_HH_Dissimilarity_list"`
-	saga_cmd grid_tools 3 -GRIDS:${LIST_HH_DISS} -TYPE:7 -OVERLAP:3 -BLEND_DIST:0 -TARGET_OUT_GRID:${PROC_DIR}/${SAT_TRACK}/PATH_MOSAIC/${SAT_TRACK}"_HH_Dissimilarity.sgrd"
+	saga_cmd grid_tools 3 -GRIDS:${LIST_HH_DISS} -TYPE:7 -OVERLAP:2 -BLEND_DIST:0 -MATCH:1 -TARGET_OUT_GRID:${PROC_DIR}/${SAT_TRACK}/PATH_MOSAIC/${SAT_TRACK}"_HH_Dissimilarity.sgrd"
 
 	LIST_HH_HOMO=`cat ${PROC_DIR}/"tmp_"${SAT_TRACK}"_HH_Homogeneity_list"`
-	saga_cmd grid_tools 3 -GRIDS:${LIST_HH_HOMO} -TYPE:7 -OVERLAP:3 -BLEND_DIST:0 -TARGET_OUT_GRID:${PROC_DIR}/${SAT_TRACK}/PATH_MOSAIC/${SAT_TRACK}"_HH_Homogeneity.sgrd"
+	saga_cmd grid_tools 3 -GRIDS:${LIST_HH_HOMO} -TYPE:7 -OVERLAP:2 -BLEND_DIST:0 -MATCH:1 -TARGET_OUT_GRID:${PROC_DIR}/${SAT_TRACK}/PATH_MOSAIC/${SAT_TRACK}"_HH_Homogeneity.sgrd"
 
 	LIST_HH_ENER=`cat ${PROC_DIR}/"tmp_"${SAT_TRACK}"_HH_Energy_list"`
-	saga_cmd grid_tools 3 -GRIDS:${LIST_HH_ENER} -TYPE:7 -OVERLAP:3 -BLEND_DIST:0 -TARGET_OUT_GRID:${PROC_DIR}/${SAT_TRACK}/PATH_MOSAIC/${SAT_TRACK}"_HH_Energy.sgrd"
+	saga_cmd grid_tools 3 -GRIDS:${LIST_HH_ENER} -TYPE:7 -OVERLAP:2 -BLEND_DIST:0 -MATCH:1 -TARGET_OUT_GRID:${PROC_DIR}/${SAT_TRACK}/PATH_MOSAIC/${SAT_TRACK}"_HH_Energy.sgrd"
 
 	LIST_HH_MEAN=`cat ${PROC_DIR}/"tmp_"${SAT_TRACK}"_HH_GLCMMean_list"`
-	saga_cmd grid_tools 3 -GRIDS:${LIST_HH_MEAN} -TYPE:7 -OVERLAP:3 -BLEND_DIST:0 -TARGET_OUT_GRID:${PROC_DIR}/${SAT_TRACK}/PATH_MOSAIC/${SAT_TRACK}"_HH_GLCMMean.sgrd"
+	saga_cmd grid_tools 3 -GRIDS:${LIST_HH_MEAN} -TYPE:7 -OVERLAP:3 -BLEND_DIST:0 -MATCH:1 -TARGET_OUT_GRID:${PROC_DIR}/${SAT_TRACK}/PATH_MOSAIC/${SAT_TRACK}"_HH_GLCMMean.sgrd"
 
 	LIST_HH_VAR=`cat ${PROC_DIR}/"tmp_"${SAT_TRACK}"_HH_GLCMVariance_list"`
-	saga_cmd grid_tools 3 -GRIDS:${LIST_HH_VAR} -TYPE:7 -OVERLAP:3 -BLEND_DIST:0 -TARGET_OUT_GRID:${PROC_DIR}/${SAT_TRACK}/PATH_MOSAIC/${SAT_TRACK}"_HH_GLCMVariance.sgrd"
+	saga_cmd grid_tools 3 -GRIDS:${LIST_HH_VAR} -TYPE:7 -OVERLAP:3 -BLEND_DIST:0 -MATCH:1 -TARGET_OUT_GRID:${PROC_DIR}/${SAT_TRACK}/PATH_MOSAIC/${SAT_TRACK}"_HH_GLCMVariance.sgrd"
 
 	LIST_HV_DISS=`cat ${PROC_DIR}/"tmp_"${SAT_TRACK}"_HV_Dissimilarity_list"`
-	saga_cmd grid_tools 3 -GRIDS:${LIST_HV_DISS} -TYPE:7 -OVERLAP:3 -BLEND_DIST:0 -TARGET_OUT_GRID:${PROC_DIR}/${SAT_TRACK}/PATH_MOSAIC/${SAT_TRACK}"_HV_Dissimilarity.sgrd"
+	saga_cmd grid_tools 3 -GRIDS:${LIST_HV_DISS} -TYPE:7 -OVERLAP:2 -BLEND_DIST:0 -MATCH:1 -TARGET_OUT_GRID:${PROC_DIR}/${SAT_TRACK}/PATH_MOSAIC/${SAT_TRACK}"_HV_Dissimilarity.sgrd"
 
 	LIST_HV_HOMO=`cat ${PROC_DIR}/"tmp_"${SAT_TRACK}"_HV_Homogeneity_list"`
-	saga_cmd grid_tools 3 -GRIDS:${LIST_HV_HOMO} -TYPE:7 -OVERLAP:3 -BLEND_DIST:0 -TARGET_OUT_GRID:${PROC_DIR}/${SAT_TRACK}/PATH_MOSAIC/${SAT_TRACK}"_HV_Homogeneity.sgrd"
+	saga_cmd grid_tools 3 -GRIDS:${LIST_HV_HOMO} -TYPE:7 -OVERLAP:2 -BLEND_DIST:0 -MATCH:1 -TARGET_OUT_GRID:${PROC_DIR}/${SAT_TRACK}/PATH_MOSAIC/${SAT_TRACK}"_HV_Homogeneity.sgrd"
 
 	LIST_HV_ENER=`cat ${PROC_DIR}/"tmp_"${SAT_TRACK}"_HV_Energy_list"`
-	saga_cmd grid_tools 3 -GRIDS:${LIST_HV_ENER} -TYPE:7 -OVERLAP:3 -BLEND_DIST:0 -TARGET_OUT_GRID:${PROC_DIR}/${SAT_TRACK}/PATH_MOSAIC/${SAT_TRACK}"_HV_Energy.sgrd"
+	saga_cmd grid_tools 3 -GRIDS:${LIST_HV_ENER} -TYPE:7 -OVERLAP:2 -BLEND_DIST:0 -MATCH:1 -TARGET_OUT_GRID:${PROC_DIR}/${SAT_TRACK}/PATH_MOSAIC/${SAT_TRACK}"_HV_Energy.sgrd"
 
 	LIST_HV_MEAN=`cat ${PROC_DIR}/"tmp_"${SAT_TRACK}"_HV_GLCMMean_list"`
-	saga_cmd grid_tools 3 -GRIDS:${LIST_HV_MEAN} -TYPE:7 -OVERLAP:3 -BLEND_DIST:0 -TARGET_OUT_GRID:${PROC_DIR}/${SAT_TRACK}/PATH_MOSAIC/${SAT_TRACK}"_HV_GLCMMean.sgrd"
+	saga_cmd grid_tools 3 -GRIDS:${LIST_HV_MEAN} -TYPE:7 -OVERLAP:3 -BLEND_DIST:0 -MATCH:1 -TARGET_OUT_GRID:${PROC_DIR}/${SAT_TRACK}/PATH_MOSAIC/${SAT_TRACK}"_HV_GLCMMean.sgrd"
 
 	LIST_HV_VAR=`cat ${PROC_DIR}/"tmp_"${SAT_TRACK}"_HV_GLCMVariance_list"`
-	saga_cmd grid_tools 3 -GRIDS:${LIST_HV_VAR} -TYPE:7 -OVERLAP:3 -BLEND_DIST:0 -TARGET_OUT_GRID:${PROC_DIR}/${SAT_TRACK}/PATH_MOSAIC/${SAT_TRACK}"_HV_GLCMVariance.sgrd"
+	saga_cmd grid_tools 3 -GRIDS:${LIST_HV_VAR} -TYPE:7 -OVERLAP:3 -BLEND_DIST:0 -MATCH:1 -TARGET_OUT_GRID:${PROC_DIR}/${SAT_TRACK}/PATH_MOSAIC/${SAT_TRACK}"_HV_GLCMVariance.sgrd"
 
 #	LIST_ALPHA=`cat ${PROC_DIR}/"tmp_"${SAT_TRACK}"_Alpha_list"`
 #	saga_cmd grid_tools 3 -GRIDS:${LIST_ALPHA} -TYPE:7 -OVERLAP:3 -BLEND_DIST:0 -TARGET_OUT_GRID:${PROC_DIR}/${SAT_TRACK}/PATH_MOSAIC/${SAT_TRACK}"_Alpha.sgrd"
