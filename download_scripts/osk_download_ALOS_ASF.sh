@@ -41,7 +41,7 @@ wget --save-cookies cookies.txt --post-data='user_name='$UNAME'&user_password='$
 ogr2ogr -f CSV tmp_AOI_WKT.csv $2 -lco GEOMETRY=AS_WKT
 AOI=`grep POLYGON tmp_AOI_WKT.csv | sed 's|\"POLYGON ((||g' | awk -F "))" $'{print $1}' | sed 's/\ /,/g'`
 
-PERIOD="start=2006-06-11T11:59:59UTC&end=2009-06-29T00:00:00UTC"
+PERIOD="start=2007-01-01T11:59:59UTC&end=2007-12-31T00:00:00UTC"
 PLATFORM="platform=A3"
 PROCESSING="processingLevel=L1.1"
 OUTPUT_FORMAT="output=csv"
@@ -60,6 +60,10 @@ echo "Getting the inventory data"
 curl -s http://api.daac.asf.alaska.edu/services/search/param?keyword=value$ASK | tail -n +2 > $OUTPUT-FBD.csv
 NR_OF_PRODUCTS=`wc -l $OUTPUT-FBD.csv`
 echo "Found ${NR_OF_PRODUCTS} products"
+
+OUTPUT_FORMAT="output=kml"
+ASK="\&polygon=${AOI}&${PLATFORM}&${BEAM}&${PERIOD}&${PROCESSING}&${OUTPUT_FORMAT}"
+curl -s http://api.daac.asf.alaska.edu/services/search/param?keyword=value$ASK > $OUTPUT-FBD.kml
 
 while read line;do 
 	
