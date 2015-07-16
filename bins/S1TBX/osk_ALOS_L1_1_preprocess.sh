@@ -152,6 +152,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 # 	3 Geocoding with Radiometric normalization
 #----------------------------------------------------------------------	
 
+
 	OUTPUT_ML_SPK_TR=${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.dim"
 	OUTPUT_GAMMA_HH=${TMP_DIR}/${SCENE_ID}'_Gamma0_HH.dim'
 	OUTPUT_GAMMA_HV=${TMP_DIR}/${SCENE_ID}'_Gamma0_HV.dim'
@@ -186,18 +187,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 
 	# in case it fails try a another time	
 	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
-		echo "Let's do it a 2nd time, since coarse offset did not start (NEST bug)"
-		rm -rf ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.dim" ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.data"
-		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HH.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HH.data"
-		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.data"
-		rm -rf ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.dim" ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.data"
-		rm ${TMP_DIR}/tmplog
-	#	sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
-		sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
-	fi
-
-	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
-		echo "Let's do it a 3rd time, since coarse offset did not start (NEST bug)"
+		echo "Let's do it a 2nd time, since coarse offset did not start (bug)"
 		echo "This time we will take 4000 GCPs (probably too much water in the scene)"
 		sed -i "s|<numGCPtoGenerate>500|<numGCPtoGenerate>4000|g" ${TMP_DIR}/TR_ML_SPK.xml
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.dim" ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.data"
@@ -205,13 +195,13 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.data"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.dim" ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.data"
 		rm ${TMP_DIR}/tmplog
-#		sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
+
 		sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
 	fi
 
 	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
-		cp ${NEST_GRAPHS}/ALOS_L1.1_SIMTR2.xml ${TMP_DIR}/TR_ML_SPK.xml
-		echo "Let's do it a 4th time, since coarse offset did not start (NEST bug)"
+		echo "Let's do it a 3rd time, since coarse offset did not start (bug)"
+		echo "This time we will take 4000 GCPs (probably too much water in the scene)"
 		echo "This time we will take also increase the window size for the coarse registration to 1024/512 (height/width)"
 		sed -i "s|<numGCPtoGenerate>500|<numGCPtoGenerate>4000|g" ${TMP_DIR}/TR_ML_SPK.xml
 		sed -i "s|<coarseRegistrationWindowWidth>128|<coarseRegistrationWindowWidth>512|g" ${TMP_DIR}/TR_ML_SPK.xml
@@ -221,9 +211,39 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.data"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.dim" ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.data"
 		rm ${TMP_DIR}/tmplog
+
+		sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
+	fi
+
+	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
+		cp ${NEST_GRAPHS}/ALOS_L1.1_SIMTR2.xml ${TMP_DIR}/TR_ML_SPK.xml
+
+		# insert Input file path into processing chain xml
+		sed -i "s|INPUT_TR|${OUTPUT_ML_SPK}|g" ${TMP_DIR}/TR_ML_SPK.xml
+		# insert Input file path into processing chain xml
+		sed -i "s|OUTPUT_TR|${OUTPUT_ML_SPK_TR}|g" ${TMP_DIR}/TR_ML_SPK.xml
+		# insert Input file path into processing chain xml
+		sed -i "s|OUTPUT_HH|${OUTPUT_GAMMA_HH}|g" ${TMP_DIR}/TR_ML_SPK.xml
+		# insert Input file path into processing chain xml
+		sed -i "s|OUTPUT_HV|${OUTPUT_GAMMA_HV}|g" ${TMP_DIR}/TR_ML_SPK.xml
+		# insert Input file path into processing chain xml
+		sed -i "s|OUTPUT_LAY|${OUTPUT_LAYOVER}|g" ${TMP_DIR}/TR_ML_SPK.xml
+		# insert DEM path
+		sed -i "s|DEM_FILE|${DEM_FILE}|g" ${TMP_DIR}/TR_ML_SPK.xml
+
+		echo "Let's do it a 4th time, since coarse offset did not start (bug)"
+		echo "This time we will use the NEST routine (sometimes this works)"
+		echo "This time we will take also increase the window size for the coarse registration to 1024/512 (height/width)"
+		sed -i "s|<numGCPtoGenerate>500|<numGCPtoGenerate>4000|g" ${TMP_DIR}/TR_ML_SPK.xml
+		sed -i "s|<coarseRegistrationWindowWidth>128|<coarseRegistrationWindowWidth>512|g" ${TMP_DIR}/TR_ML_SPK.xml
+		sed -i "s|<coarseRegistrationWindowHeight>256|<coarseRegistrationWindowHeight>1024|g" ${TMP_DIR}/TR_ML_SPK.xml
+		rm -rf ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.dim" ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.data"
+		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HH.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HH.data"
+		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.data"
+		rm -rf ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.dim" ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.data"
+		rm ${TMP_DIR}/tmplog
+	
 		sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
-
-
 	fi
 
 	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
@@ -233,11 +253,27 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.data"
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Layover_Shadow.dim" ${FINAL_DIR}/${SCENE_ID}"_Layover_Shadow.data"
 		rm ${TMP_DIR}/tmplog
-		sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
 
-
+			sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
 	fi
 	
+	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
+		echo "Let's do it a 5th time, since coarse offset did not start (NEST bug)"
+		rm -rf ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.dim" ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.data"
+		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HH.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HH.data"
+		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.data"
+		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Layover_Shadow.dim" ${FINAL_DIR}/${SCENE_ID}"_Layover_Shadow.data"
+		rm ${TMP_DIR}/tmplog
+
+			sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
+	fi
+
+if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
+
+	echo "${SCENE_ID}" >> ${PROC_DIR}/../failed_scenes
+
+else
+
 	# exclude low backscatter pixel to eliminate border effect
 	gdal_calc.py --overwrite -A ${FINAL_DIR}/${SCENE_ID}'_Gamma0_HH.data/Gamma0_HH.img' --outfile=${TMP_DIR}/tmp_mask_border_hh.tif --calc="A*(A>=0.001)" --NoDataValue=0
 	gdal_calc.py --overwrite -A ${FINAL_DIR}/${SCENE_ID}'_Gamma0_HV.data/Gamma0_HV.img' --outfile=${TMP_DIR}/tmp_mask_border_hv.tif --calc="A*(A>=0.001)" --NoDataValue=0

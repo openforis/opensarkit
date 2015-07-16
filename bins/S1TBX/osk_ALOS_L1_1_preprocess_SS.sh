@@ -235,6 +235,22 @@ mkdir -p ${FINAL_DIR}
 			sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
 	fi
 	
+	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
+		echo "Let's do it a 5th time, since coarse offset did not start (NEST bug)"
+		rm -rf ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.dim" ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.data"
+		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HH.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HH.data"
+		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.data"
+		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Layover_Shadow.dim" ${FINAL_DIR}/${SCENE_ID}"_Layover_Shadow.data"
+		rm ${TMP_DIR}/tmplog
+
+			sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
+	fi
+
+if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
+
+	echo "${SCENE_ID}" >> ${PROC_DIR}/../failed_scenes
+
+else
 	# exclude low backscatter pixel to eliminate border effect
 	gdal_calc.py --overwrite -A ${TMP_DIR}/${SCENE_ID}'_Gamma0_HH.data/Gamma0_HH.img' --outfile=${TMP_DIR}/tmp_mask_border_hh.tif --calc="A*(A>=0.001)" --NoDataValue=0
 	gdal_calc.py --overwrite -A ${TMP_DIR}/${SCENE_ID}'_Gamma0_HV.data/Gamma0_HV.img' --outfile=${TMP_DIR}/tmp_mask_border_hv.tif --calc="A*(A>=0.001)" --NoDataValue=0
@@ -314,7 +330,7 @@ mkdir -p ${FINAL_DIR}
 		sh ${S1TBX_EXE} ${TMP_DIR}/GAMMA_HV_DB.xml 
 	fi
 
-
+fi
 #----------------------------------------------------------------------
 # 	6 Remove tmp files
 #----------------------------------------------------------------------	
