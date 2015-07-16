@@ -118,13 +118,13 @@ mkdir -p ${FINAL_DIR}
 
 	echo "Apply Multi-look & Speckle Filter to ${SCENE_ID}"
 #	sh ${NEST_EXE} ${NEST_GRAPHS}/ALOS_L1.1_DSK_ML_SPK.xml ${OUTPUT_DIMAP} -t ${OUTPUT_ML_SPK} 2>&1 | tee  ${TMP_DIR}/tmplog
-	sh ${S1TBX_EXE} ${S1TBX_GRAPHS}/ALOS_L1.1_DSK_ML_SPK.xml ${OUTPUT_DIMAP} -t ${OUTPUT_ML_SPK} 2>&1 | tee  ${TMP_DIR}/tmplog
+	sh ${S1TBX_EXE} ${S1TBX_GRAPHS}/ALOS_L1_1_DSK_ML_SPK.xml ${OUTPUT_DIMAP} -t ${OUTPUT_ML_SPK} 2>&1 | tee  ${TMP_DIR}/tmplog
 	# in case it fails try a second time	
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
 		echo "2nd try"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_ML_SPK.dim" ${TMP_DIR}/${SCENE_ID}"_ML_SPK.data"
 #		sh ${NEST_EXE} ${NEST_GRAPHS}/ALOS_L1.1_DSK_ML_SPK.xml ${OUTPUT_DIMAP} -t ${OUTPUT_ML_SPK} 2>&1 | tee  ${TMP_DIR}/tmplog
-		sh ${S1TBX_EXE} ${S1TBX_GRAPHS}/ALOS_L1.1_DSK_ML_SPK.xml ${OUTPUT_DIMAP} -t ${OUTPUT_ML_SPK} 2>&1 | tee  ${TMP_DIR}/tmplog
+		sh ${S1TBX_EXE} ${S1TBX_GRAPHS}/ALOS_L1_1_DSK_ML_SPK.xml ${OUTPUT_DIMAP} -t ${OUTPUT_ML_SPK} 2>&1 | tee  ${TMP_DIR}/tmplog
 	fi
 
 
