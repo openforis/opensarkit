@@ -249,14 +249,16 @@ mkdir -p ${FINAL_DIR}
 
 
 	echo "fill holes "
-	# transform to SAGA format
+	# translate to SAGA format
 	gdalwarp -srcnodata 0 -dstnodata -99999 -of SAGA ${TMP_DIR}/tmp_Gamma0_HH2.tif ${TMP_DIR}/tmp_mask_hh_saga.sdat
 	gdalwarp -srcnodata 0 -dstnodata -99999 -of SAGA ${TMP_DIR}/tmp_Gamma0_HV2.tif ${TMP_DIR}/tmp_mask_hv_saga.sdat
 
-	saga_cmd -f=r grid_tools 25 -GRID:tmp_mask_hh_saga.sgrd -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:tmp_mask_hh_filled.sgrd
-	saga_cmd -f=r grid_tools 25 -GRID:tmp_mask_hv_saga.sgrd -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:tmp_mask_hv_filled.sgrd
+	# fill
+	saga_cmd -f=r grid_tools 25 -GRID:${TMP_DIR}/tmp_mask_hh_saga.sgrd -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:${TMP_DIR}/tmp_mask_hh_filled.sgrd
+	saga_cmd -f=r grid_tools 25 -GRID:${TMP_DIR}/tmp_mask_hv_saga.sgrd -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:${TMP_DIR}/tmp_mask_hv_filled.sgrd
 
-		gdalwarp -srcnodata -99999 -dstnodata 0 -of ENVI ${TMP_DIR}/tmp_mask_hh_filled.sdat ${TMP_DIR}/tmp_mask_hh_saga.img
+	# retranslate to img
+	gdalwarp -srcnodata -99999 -dstnodata 0 -of ENVI ${TMP_DIR}/tmp_mask_hh_filled.sdat ${TMP_DIR}/tmp_mask_hh_saga.img
 	gdalwarp -srcnodata -99999 -dstnodata 0 -of ENVI ${TMP_DIR}/tmp_mask_hv_filled.sdat ${TMP_DIR}/tmp_mask_hv_saga.img
 	
 	echo "Byteswap the layers due to GDAL BIGENDIAN output of ENVI format"
