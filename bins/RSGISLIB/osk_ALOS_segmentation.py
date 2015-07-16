@@ -6,6 +6,7 @@
 import rsgislib
 from rsgislib import imagecalc
 from rsgislib import imageutils
+from rsgislib.imagecalc import BandDefn
 
 # inputs 
 dem = '/media/avollrath/phd_data2/FAO/Studies/Sri_Lanka/TEST/PathMosaicTest/FINAL_MOSAIC/Seg/DEM.kea'
@@ -22,14 +23,14 @@ inFile_Var_HV = '/media/avollrath/phd_data2/FAO/Studies/Sri_Lanka/TEST/PathMosai
 
 # outputs
 # HH/HV ratio
-outFileHHHV = '/media/avollrath/phd_data2/FAO/Studies/Sri_Lanka/TEST/PathMosaicTest/FINAL_MOSAIC/Seg/out_hhhv_ratio.kea'
+outFileHHHV = '/media/avollrath/phd_data2/FAO/Studies/Sri_Lanka/TEST/PathMosaicTest/FINAL_MOSAIC/Seg/out_hhhv_ratio.tif'
 outStackInt = '/media/avollrath/phd_data2/FAO/Studies/Sri_Lanka/TEST/PathMosaicTest/FINAL_MOSAIC/Seg/out_hhhv_ratio_stack.kea'
 outStackInt_stretch = '/media/avollrath/phd_data2/FAO/Studies/Sri_Lanka/TEST/PathMosaicTest/FINAL_MOSAIC/Seg/Mosaic_stack_stretch.kea'
 
 # calculate ratio
 bandDefns = [imagecalc.BandDefn('hh', inFileHH, 1),
              imagecalc.BandDefn('hv', inFileHV, 1)]
-imagecalc.bandMath(outFileHHHV, 'hh/hv', 'KEA', rsgislib.TYPE_32FLOAT, bandDefns) 
+imagecalc.bandMath(outFileHHHV, 'hh/hv', 'GTiff', rsgislib.TYPE_32FLOAT, bandDefns) 
 
 
 # create image stack

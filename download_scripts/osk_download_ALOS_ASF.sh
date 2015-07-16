@@ -68,18 +68,21 @@ curl -s http://api.daac.asf.alaska.edu/services/search/param?keyword=value$ASK >
 while read line;do 
 	
 	ACQ_YEAR=`echo $line | awk -F "," $'{print $9}' | cut -c 2-5`
+	ACQ_MONTH=`echo $line | awk -F "," $'{print $9}' | cut -c 7-8`
+	ACQ_DAY=`echo $line | awk -F "," $'{print $9}' | cut -c 10-11`
+	ACQ_DATE=${ACQYEAR}${ACQ_MONTH}${ACQ_DAY}
 	SAT_TRACK=`echo $line | awk -F "," $'{print $7}' | sed "s|\"||g"`
 	DOWNLOAD=`echo $line | awk -F "," $'{print $26}' | sed "s|\"||g"`
 	GRANULE=`echo $line | awk -F "," $'{print $1}' | sed "s|\"||g"`
 	ORBIT=`echo $line | awk -F "," $'{print $1}' | cut -c 8-12`
 
-	mkdir -p ${PROC_DIR}/FBD/${ACQ_YEAR}
-	mkdir -p ${PROC_DIR}/FBD/${ACQ_YEAR}/${ORBIT}
+	mkdir -p ${PROC_DIR}/FBD/${ACQ_DATE}
+	
 
-	cd ${PROC_DIR}/FBD/${ACQ_YEAR}/${ORBIT}
+	cd ${PROC_DIR}/FBD/${ACQ_DATE}
 	echo "Downloading ALOS FBD scene: ${GRANULE}"
 	echo "from: ${DOWNLOAD}"
-	echo "into: ${PROC_DIR}/FBD/${ACQ_YEAR}/${ORBIT}"
+	echo "into: ${PROC_DIR}/FBD/${ACQ_DATE}"
 	aria2c --load-cookies="${PROC_DIR}/cookies.txt" ${DOWNLOAD}
 
 done < inventory-FBD.csv 
