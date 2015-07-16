@@ -195,6 +195,20 @@ mkdir -p ${FINAL_DIR}
 
 	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
 		cp ${NEST_GRAPHS}/ALOS_L1.1_SIMTR2.xml ${TMP_DIR}/TR_ML_SPK.xml
+
+		# insert Input file path into processing chain xml
+		sed -i "s|INPUT_TR|${OUTPUT_ML_SPK}|g" ${TMP_DIR}/TR_ML_SPK.xml
+		# insert Input file path into processing chain xml
+		sed -i "s|OUTPUT_TR|${OUTPUT_ML_SPK_TR}|g" ${TMP_DIR}/TR_ML_SPK.xml
+		# insert Input file path into processing chain xml
+		sed -i "s|OUTPUT_HH|${OUTPUT_GAMMA_HH}|g" ${TMP_DIR}/TR_ML_SPK.xml
+		# insert Input file path into processing chain xml
+		sed -i "s|OUTPUT_HV|${OUTPUT_GAMMA_HV}|g" ${TMP_DIR}/TR_ML_SPK.xml
+		# insert Input file path into processing chain xml
+		sed -i "s|OUTPUT_LAY|${OUTPUT_LAYOVER}|g" ${TMP_DIR}/TR_ML_SPK.xml
+		# insert DEM path
+		sed -i "s|DEM_FILE|${DEM_FILE}|g" ${TMP_DIR}/TR_ML_SPK.xml
+
 		echo "Let's do it a 4th time, since coarse offset did not start (bug)"
 		echo "This time we will use the NEST routine (sometimes this works)"
 		echo "This time we will take also increase the window size for the coarse registration to 1024/512 (height/width)"
