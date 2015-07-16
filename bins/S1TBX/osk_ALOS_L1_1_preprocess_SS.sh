@@ -130,9 +130,10 @@ mkdir -p ${FINAL_DIR}
 # 	3 Geocoding with Radiometric normalization
 #----------------------------------------------------------------------	
 
+
 	OUTPUT_ML_SPK_TR=${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.dim"
-	OUTPUT_GAMMA_HH=${FINAL_DIR}/${SCENE_ID}'_Gamma0_HH.dim'
-	OUTPUT_GAMMA_HV=${FINAL_DIR}/${SCENE_ID}'_Gamma0_HV.dim'
+	OUTPUT_GAMMA_HH=${TMP_DIR}/${SCENE_ID}'_Gamma0_HH.dim'
+	OUTPUT_GAMMA_HV=${TMP_DIR}/${SCENE_ID}'_Gamma0_HV.dim'
 	OUTPUT_LAYOVER=${TMP_DIR}/${SCENE_ID}'_Layover_Shadow.dim'
 
 	# S1TBX version
@@ -164,18 +165,7 @@ mkdir -p ${FINAL_DIR}
 
 	# in case it fails try a another time	
 	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
-		echo "Let's do it a 2nd time, since coarse offset did not start (NEST bug)"
-		rm -rf ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.dim" ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.data"
-		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HH.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HH.data"
-		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.data"
-		rm -rf ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.dim" ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.data"
-		rm ${TMP_DIR}/tmplog
-	#	sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
-		sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
-	fi
-
-	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
-		echo "Let's do it a 3rd time, since coarse offset did not start (NEST bug)"
+		echo "Let's do it a 2nd time, since coarse offset did not start (bug)"
 		echo "This time we will take 4000 GCPs (probably too much water in the scene)"
 		sed -i "s|<numGCPtoGenerate>500|<numGCPtoGenerate>4000|g" ${TMP_DIR}/TR_ML_SPK.xml
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.dim" ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.data"
@@ -183,13 +173,15 @@ mkdir -p ${FINAL_DIR}
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.data"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.dim" ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.data"
 		rm ${TMP_DIR}/tmplog
-#		sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
+
 		sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
 	fi
 
 	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
-		echo "Let's do it a 4th time, since coarse offset did not start (NEST bug)"
+		echo "Let's do it a 3rd time, since coarse offset did not start (bug)"
+		echo "This time we will take 4000 GCPs (probably too much water in the scene)"
 		echo "This time we will take also increase the window size for the coarse registration to 1024/512 (height/width)"
+		sed -i "s|<numGCPtoGenerate>500|<numGCPtoGenerate>4000|g" ${TMP_DIR}/TR_ML_SPK.xml
 		sed -i "s|<coarseRegistrationWindowWidth>128|<coarseRegistrationWindowWidth>512|g" ${TMP_DIR}/TR_ML_SPK.xml
 		sed -i "s|<coarseRegistrationWindowHeight>256|<coarseRegistrationWindowHeight>1024|g" ${TMP_DIR}/TR_ML_SPK.xml
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.dim" ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.data"
@@ -197,9 +189,25 @@ mkdir -p ${FINAL_DIR}
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.data"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.dim" ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.data"
 		rm ${TMP_DIR}/tmplog
-#		sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
-		sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
 
+		sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
+	fi
+
+	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
+		cp ${NEST_GRAPHS}/ALOS_L1.1_SIMTR2.xml ${TMP_DIR}/TR_ML_SPK.xml
+		echo "Let's do it a 4th time, since coarse offset did not start (bug)"
+		echo "This time we will use the NEST routine (sometimes this works)"
+		echo "This time we will take also increase the window size for the coarse registration to 1024/512 (height/width)"
+		sed -i "s|<numGCPtoGenerate>500|<numGCPtoGenerate>4000|g" ${TMP_DIR}/TR_ML_SPK.xml
+		sed -i "s|<coarseRegistrationWindowWidth>128|<coarseRegistrationWindowWidth>512|g" ${TMP_DIR}/TR_ML_SPK.xml
+		sed -i "s|<coarseRegistrationWindowHeight>256|<coarseRegistrationWindowHeight>1024|g" ${TMP_DIR}/TR_ML_SPK.xml
+		rm -rf ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.dim" ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.data"
+		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HH.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HH.data"
+		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.data"
+		rm -rf ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.dim" ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.data"
+		rm ${TMP_DIR}/tmplog
+	
+		sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
 	fi
 
 	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
@@ -209,24 +217,13 @@ mkdir -p ${FINAL_DIR}
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.data"
 		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Layover_Shadow.dim" ${FINAL_DIR}/${SCENE_ID}"_Layover_Shadow.data"
 		rm ${TMP_DIR}/tmplog
-#		sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
-		sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
 
+			sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
 	fi
 	
 	# exclude low backscatter pixel to eliminate border effect
 	gdal_calc.py --overwrite -A ${FINAL_DIR}/${SCENE_ID}'_Gamma0_HH.data/Gamma0_HH.img' --outfile=${TMP_DIR}/tmp_mask_border_hh.tif --calc="A*(A>=0.001)" --NoDataValue=0
 	gdal_calc.py --overwrite -A ${FINAL_DIR}/${SCENE_ID}'_Gamma0_HV.data/Gamma0_HV.img' --outfile=${TMP_DIR}/tmp_mask_border_hv.tif --calc="A*(A>=0.001)" --NoDataValue=0
-
-	# tansform to SAGA
-	#gdalwarp -srcnodata 0 -dstnodata -99999 -of SAGA ${TMP_DIR}/tmp_mask_border_hh.tif ${TMP_DIR}/tmp_mask_border_hh_saga.sdat
-	#gdalwarp -srcnodata 0 -dstnodata -99999 -of SAGA ${TMP_DIR}/tmp_mask_border_hv.tif ${TMP_DIR}/tmp_mask_border_hv_saga.sdat
-
-	# fill holes from previously eliminated pixels inside the scene
-	echo "fill holes"
-	cd ${TMP_DIR}
-	#saga_cmd -f=r grid_tools 25 -GRID:tmp_mask_border_hh_saga.sgrd -MAXGAPCELLS:500 -MAXPOINTS:1000 -LOCALPOINTS:25 -CLOSED:tmp_mask_border_hh_filled.sgrd
-	#saga_cmd -f=r grid_tools 25 -GRID:tmp_mask_border_hv_saga.sgrd -MAXGAPCELLS:500 -MAXPOINTS:1000 -LOCALPOINTS:25 -CLOSED:tmp_mask_border_hv_filled.sgrd
 
 	# Apply Layover/Shadow mask
 	echo "Invert Layover/Shadow Mask"	
@@ -245,7 +242,7 @@ mkdir -p ${FINAL_DIR}
 	saga_cmd -f=r grid_tools 25 -GRID:tmp_mask_hh_saga.sgrd -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:tmp_mask_hh_filled.sgrd
 	saga_cmd -f=r grid_tools 25 -GRID:tmp_mask_hv_saga.sgrd -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:tmp_mask_hv_filled.sgrd
 
-	gdalwarp -srcnodata -99999 -dstnodata 0 -of ENVI ${TMP_DIR}/tmp_mask_hh_filled.sdat ${TMP_DIR}/tmp_mask_hh_saga.img
+		gdalwarp -srcnodata -99999 -dstnodata 0 -of ENVI ${TMP_DIR}/tmp_mask_hh_filled.sdat ${TMP_DIR}/tmp_mask_hh_saga.img
 	gdalwarp -srcnodata -99999 -dstnodata 0 -of ENVI ${TMP_DIR}/tmp_mask_hv_filled.sdat ${TMP_DIR}/tmp_mask_hv_saga.img
 	
 	echo "Byteswap the layers due to GDAL BIGENDIAN output of ENVI format"
