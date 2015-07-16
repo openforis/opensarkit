@@ -236,8 +236,8 @@ mkdir -p ${FINAL_DIR}
 	fi
 	
 	# exclude low backscatter pixel to eliminate border effect
-	gdal_calc.py --overwrite -A ${FINAL_DIR}/${SCENE_ID}'_Gamma0_HH.data/Gamma0_HH.img' --outfile=${TMP_DIR}/tmp_mask_border_hh.tif --calc="A*(A>=0.001)" --NoDataValue=0
-	gdal_calc.py --overwrite -A ${FINAL_DIR}/${SCENE_ID}'_Gamma0_HV.data/Gamma0_HV.img' --outfile=${TMP_DIR}/tmp_mask_border_hv.tif --calc="A*(A>=0.001)" --NoDataValue=0
+	gdal_calc.py --overwrite -A ${TMP_DIR}/${SCENE_ID}'_Gamma0_HH.data/Gamma0_HH.img' --outfile=${TMP_DIR}/tmp_mask_border_hh.tif --calc="A*(A>=0.001)" --NoDataValue=0
+	gdal_calc.py --overwrite -A ${TMP_DIR}/${SCENE_ID}'_Gamma0_HV.data/Gamma0_HV.img' --outfile=${TMP_DIR}/tmp_mask_border_hv.tif --calc="A*(A>=0.001)" --NoDataValue=0
 
 	# Apply Layover/Shadow mask
 	echo "Invert Layover/Shadow Mask"	
@@ -260,8 +260,8 @@ mkdir -p ${FINAL_DIR}
 	gdalwarp -srcnodata -99999 -dstnodata 0 -of ENVI ${TMP_DIR}/tmp_mask_hv_filled.sdat ${TMP_DIR}/tmp_mask_hv_saga.img
 	
 	echo "Byteswap the layers due to GDAL BIGENDIAN output of ENVI format"
-	osk_byteswap32.py ${TMP_DIR}/tmp_mask_hh_saga.img ${FINAL_DIR}/${SCENE_ID}'_Gamma0_HH.data/Gamma0_HH.img'
-	osk_byteswap32.py ${TMP_DIR}/tmp_mask_hv_saga.img ${FINAL_DIR}/${SCENE_ID}'_Gamma0_HV.data/Gamma0_HV.img'
+	osk_byteswap32.py ${TMP_DIR}/tmp_mask_hh_saga.img ${TMP_DIR}/${SCENE_ID}'_Gamma0_HH.data/Gamma0_HH.img'
+	osk_byteswap32.py ${TMP_DIR}/tmp_mask_hv_saga.img ${TMP_DIR}/${SCENE_ID}'_Gamma0_HV.data/Gamma0_HV.img'
 
 
 #----------------------------------------------
