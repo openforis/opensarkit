@@ -31,9 +31,9 @@ RT_LON=`cat workreport | grep Brs_ImageSceneRightTopLongitude | awk -F"=" $'{pri
 LB_LAT=`cat workreport | grep Brs_ImageSceneLeftBottomLatitude | awk -F"=" $'{print $2}' | sed 's|"||g'`
 LB_LON=`cat workreport | grep Brs_ImageSceneLeftBottomLongitude | awk -F"=" $'{print $2}' | sed 's|"||g'`
 
-LT_LAT_BUF=`echo "${LT_LAT} + 0.25" | bc`
-LT_LON_BUF=`echo "${LT_LON} - 0.25" | bc`
-RB_LAT_BUF=`echo "${RB_LAT} - 0.25" | bc`
-RB_LON_BUF=`echo "${RB_LON} + 0.25" | bc`
+LT_LAT_BUF=`echo "${LT_LAT} + 0.35" | bc`
+LT_LON_BUF=`echo "${LT_LON} - 0.35" | bc`
+RB_LAT_BUF=`echo "${RB_LAT} - 0.35" | bc`
+RB_LON_BUF=`echo "${RB_LON} + 0.35" | bc`
 
-gdal_translate -projwin ${LT_LON_BUF} ${LT_LAT_BUF} ${RB_LON_BUF} ${RB_LAT_BUF} $2 $3
+gdal_translate -of GTiff -a_nodata -32768 -projwin ${LT_LON_BUF} ${LT_LAT_BUF} ${RB_LON_BUF} ${RB_LAT_BUF} $2 $3
