@@ -130,6 +130,9 @@ mkdir -p ${FINAL_DIR}
 # 	3 Geocoding with Radiometric normalization
 #----------------------------------------------------------------------	
 
+	echo "create DEM crop"
+	CROP_DEM=${TMP_DIR}/tmp_crop_dem.tif
+	bash ${GDAL_BIN}/crop_dem.sh ${TMP_DIR}/${SCENE_ID} ${DEM_FILE} ${CROP_DEM}
 
 	OUTPUT_ML_SPK_TR=${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.dim"
 	OUTPUT_GAMMA_HH=${TMP_DIR}/${SCENE_ID}'_Gamma0_HH.dim'
@@ -153,7 +156,7 @@ mkdir -p ${FINAL_DIR}
 	# insert Input file path into processing chain xml
 	sed -i "s|OUTPUT_LAY|${OUTPUT_LAYOVER}|g" ${TMP_DIR}/TR_ML_SPK.xml
 	# insert DEM path
-	sed -i "s|DEM_FILE|${DEM_FILE}|g" ${TMP_DIR}/TR_ML_SPK.xml
+	sed -i "s|DEM_FILE|${CROP_DEM}|g" ${TMP_DIR}/TR_ML_SPK.xml
 
 	# Radiometrically terrain correcting Multi-looked, speckle-filtered files
 	echo "Geocode Multi-looked, speckle-filtered scene: ${SCENE_ID}"
@@ -166,11 +169,11 @@ mkdir -p ${FINAL_DIR}
 	# in case it fails try a another time	
 	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
 		echo "Let's do it a 2nd time, since coarse offset did not start (bug)"
-		echo "This time we will take 4000 GCPs (probably too much water in the scene)"
-		sed -i "s|<numGCPtoGenerate>500|<numGCPtoGenerate>4000|g" ${TMP_DIR}/TR_ML_SPK.xml
+		#echo "This time we will take 4000 GCPs (probably too much water in the scene)"
+		#sed -i "s|<numGCPtoGenerate>500|<numGCPtoGenerate>4000|g" ${TMP_DIR}/TR_ML_SPK.xml
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.dim" ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.data"
-		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HH.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HH.data"
-		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.data"
+		rm -rf ${TMP_DIR}/${SCENE_ID}"_Gamma0_HH.dim" ${TMP_DIR}/${SCENE_ID}"_Gamma0_HH.data"
+		rm -rf ${TMP_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${TMP_DIR}/${SCENE_ID}"_Gamma0_HV.data"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.dim" ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.data"
 		rm ${TMP_DIR}/tmplog
 
@@ -185,8 +188,8 @@ mkdir -p ${FINAL_DIR}
 		sed -i "s|<coarseRegistrationWindowWidth>128|<coarseRegistrationWindowWidth>512|g" ${TMP_DIR}/TR_ML_SPK.xml
 		sed -i "s|<coarseRegistrationWindowHeight>256|<coarseRegistrationWindowHeight>1024|g" ${TMP_DIR}/TR_ML_SPK.xml
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.dim" ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.data"
-		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HH.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HH.data"
-		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.data"
+		rm -rf ${TMP_DIR}/${SCENE_ID}"_Gamma0_HH.dim" ${TMP_DIR}/${SCENE_ID}"_Gamma0_HH.data"
+		rm -rf ${TMP_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${TMP_DIR}/${SCENE_ID}"_Gamma0_HV.data"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.dim" ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.data"
 		rm ${TMP_DIR}/tmplog
 
@@ -207,7 +210,7 @@ mkdir -p ${FINAL_DIR}
 		# insert Input file path into processing chain xml
 		sed -i "s|OUTPUT_LAY|${OUTPUT_LAYOVER}|g" ${TMP_DIR}/TR_ML_SPK.xml
 		# insert DEM path
-		sed -i "s|DEM_FILE|${DEM_FILE}|g" ${TMP_DIR}/TR_ML_SPK.xml
+		sed -i "s|DEM_FILE|${CROP_DEM}|g" ${TMP_DIR}/TR_ML_SPK.xml
 
 		echo "Let's do it a 4th time, since coarse offset did not start (bug)"
 		echo "This time we will use the NEST routine (sometimes this works)"
@@ -216,8 +219,8 @@ mkdir -p ${FINAL_DIR}
 		sed -i "s|<coarseRegistrationWindowWidth>128|<coarseRegistrationWindowWidth>512|g" ${TMP_DIR}/TR_ML_SPK.xml
 		sed -i "s|<coarseRegistrationWindowHeight>256|<coarseRegistrationWindowHeight>1024|g" ${TMP_DIR}/TR_ML_SPK.xml
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.dim" ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.data"
-		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HH.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HH.data"
-		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.data"
+		rm -rf ${TMP_DIR}/${SCENE_ID}"_Gamma0_HH.dim" ${TMP_DIR}/${SCENE_ID}"_Gamma0_HH.data"
+		rm -rf ${TMP_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${TMP_DIR}/${SCENE_ID}"_Gamma0_HV.data"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.dim" ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.data"
 		rm ${TMP_DIR}/tmplog
 	
@@ -227,9 +230,9 @@ mkdir -p ${FINAL_DIR}
 	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
 		echo "Let's do it a 5th time, since coarse offset did not start (NEST bug)"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.dim" ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.data"
-		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HH.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HH.data"
-		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.data"
-		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Layover_Shadow.dim" ${FINAL_DIR}/${SCENE_ID}"_Layover_Shadow.data"
+		rm -rf ${TMP_DIR}/${SCENE_ID}"_Gamma0_HH.dim" ${TMP_DIR}/${SCENE_ID}"_Gamma0_HH.data"
+		rm -rf ${TMP_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${TMP_DIR}/${SCENE_ID}"_Gamma0_HV.data"
+		rm -rf ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.dim" ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.data"
 		rm ${TMP_DIR}/tmplog
 
 			sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
@@ -238,9 +241,9 @@ mkdir -p ${FINAL_DIR}
 	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
 		echo "Let's do it a 5th time, since coarse offset did not start (NEST bug)"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.dim" ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.data"
-		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HH.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HH.data"
-		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${FINAL_DIR}/${SCENE_ID}"_Gamma0_HV.data"
-		rm -rf ${FINAL_DIR}/${SCENE_ID}"_Layover_Shadow.dim" ${FINAL_DIR}/${SCENE_ID}"_Layover_Shadow.data"
+		rm -rf ${TMP_DIR}/${SCENE_ID}"_Gamma0_HH.dim" ${TMP_DIR}/${SCENE_ID}"_Gamma0_HH.data"
+		rm -rf ${TMP_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${TMP_DIR}/${SCENE_ID}"_Gamma0_HV.data"
+		rm -rf ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.dim" ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.data"
 		rm ${TMP_DIR}/tmplog
 
 			sh ${NEST_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 

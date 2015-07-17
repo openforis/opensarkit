@@ -22,6 +22,7 @@ export NEST_BIN="${OPENSARKIT}/bins/NEST"
 export S1TBX_BIN="${OPENSARKIT}/bins/S1TBX"
 export DOWNLOAD_BIN="${OPENSARKIT}/download_scripts"
 export PYTHON_BIN="${OPENSARKIT}/python"
+export GDAL_BIN="${OPENSARKIT}/bins/GDAL"
 
 export PATH=$PATH:${PYTHON_BIN}
 
