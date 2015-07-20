@@ -72,7 +72,7 @@
       <sourceProduct refid="SAR-Simulation"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <numGCPtoGenerate>2000</numGCPtoGenerate>
+      <numGCPtoGenerate>8000</numGCPtoGenerate>
       <coarseRegistrationWindowWidth>64</coarseRegistrationWindowWidth>
       <coarseRegistrationWindowHeight>64</coarseRegistrationWindowHeight>
       <rowInterpFactor>4</rowInterpFactor>
@@ -83,7 +83,7 @@
       <fineRegistrationWindowWidth>32</fineRegistrationWindowWidth>
       <fineRegistrationWindowHeight>32</fineRegistrationWindowHeight>
       <coherenceWindowSize>3</coherenceWindowSize>
-      <coherenceThreshold>0.4</coherenceThreshold>
+      <coherenceThreshold>0.6</coherenceThreshold>
       <useSlidingWindow>true</useSlidingWindow>
       <computeOffset>true</computeOffset>
       <onlyGCPsOnLand>true</onlyGCPsOnLand>
