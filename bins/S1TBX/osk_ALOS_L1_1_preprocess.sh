@@ -188,6 +188,8 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	
 	# S1TBX 
 	sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
+#	rm -f ~/.s1tbx/log/*
+
 
 	# in case it fails try a another time	
 	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
@@ -204,7 +206,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
 		echo "Let's do it a 3rd time, since coarse offset did not start (bug)"
 		echo "This time we will take 4000 GCPs (probably too much water in the scene)"
-		sed -i "s|<numGCPtoGenerate>500|<numGCPtoGenerate>4000|g" ${TMP_DIR}/TR_ML_SPK.xml
+		sed -i "s|<numGCPtoGenerate>2000|<numGCPtoGenerate>4000|g" ${TMP_DIR}/TR_ML_SPK.xml
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.dim" ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.data"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_Gamma0_HH.dim" ${TMP_DIR}/${SCENE_ID}"_Gamma0_HH.data"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${TMP_DIR}/${SCENE_ID}"_Gamma0_HV.data"
@@ -216,10 +218,9 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 
 	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
 		echo "Let's do it a 4th time, since coarse offset did not start (bug)"
-		echo "This time we will take 4000 GCPs (probably too much water in the scene)"
 		echo "This time we will take also increase the window size for the coarse registration to 512/256 (height/width)"
-		sed -i "s|<coarseRegistrationWindowWidth>256|<coarseRegistrationWindowWidth>512|g" ${TMP_DIR}/TR_ML_SPK.xml
-		sed -i "s|<coarseRegistrationWindowHeight>512|<coarseRegistrationWindowHeight>1024|g" ${TMP_DIR}/TR_ML_SPK.xml
+		sed -i "s|<coarseRegistrationWindowWidth>64|<coarseRegistrationWindowWidth>128|g" ${TMP_DIR}/TR_ML_SPK.xml
+		sed -i "s|<coarseRegistrationWindowHeight>64|<coarseRegistrationWindowHeight>128|g" ${TMP_DIR}/TR_ML_SPK.xml
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.dim" ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.data"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_Gamma0_HH.dim" ${TMP_DIR}/${SCENE_ID}"_Gamma0_HH.data"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${TMP_DIR}/${SCENE_ID}"_Gamma0_HV.data"
