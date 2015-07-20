@@ -74,11 +74,11 @@
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
       <numGCPtoGenerate>500</numGCPtoGenerate>
       <coarseRegistrationWindowWidth>256</coarseRegistrationWindowWidth>
-      <coarseRegistrationWindowHeight>128</coarseRegistrationWindowHeight>
+      <coarseRegistrationWindowHeight>512</coarseRegistrationWindowHeight>
       <rowInterpFactor>4</rowInterpFactor>
       <columnInterpFactor>4</columnInterpFactor>
-      <maxIteration>3</maxIteration>
-      <gcpTolerance>0.25</gcpTolerance>
+      <maxIteration>10</maxIteration>
+      <gcpTolerance>0.5</gcpTolerance>
       <applyFineRegistration>true</applyFineRegistration>
       <fineRegistrationWindowWidth>64</fineRegistrationWindowWidth>
       <fineRegistrationWindowHeight>64</fineRegistrationWindowHeight>

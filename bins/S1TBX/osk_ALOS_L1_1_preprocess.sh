@@ -204,10 +204,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
 		echo "Let's do it a 3rd time, since coarse offset did not start (bug)"
 		echo "This time we will take 4000 GCPs (probably too much water in the scene)"
-		echo "This time we will take also increase the window size for the coarse registration to 1024/512 (height/width)"
 		sed -i "s|<numGCPtoGenerate>500|<numGCPtoGenerate>4000|g" ${TMP_DIR}/TR_ML_SPK.xml
-		sed -i "s|<coarseRegistrationWindowWidth>128|<coarseRegistrationWindowWidth>512|g" ${TMP_DIR}/TR_ML_SPK.xml
-		sed -i "s|<coarseRegistrationWindowHeight>256|<coarseRegistrationWindowHeight>1024|g" ${TMP_DIR}/TR_ML_SPK.xml
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.dim" ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.data"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_Gamma0_HH.dim" ${TMP_DIR}/${SCENE_ID}"_Gamma0_HH.data"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${TMP_DIR}/${SCENE_ID}"_Gamma0_HV.data"
@@ -216,6 +213,22 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 
 		sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
 	fi
+
+	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
+		echo "Let's do it a 4th time, since coarse offset did not start (bug)"
+		echo "This time we will take 4000 GCPs (probably too much water in the scene)"
+		echo "This time we will take also increase the window size for the coarse registration to 512/256 (height/width)"
+		sed -i "s|<coarseRegistrationWindowWidth>256|<coarseRegistrationWindowWidth>512|g" ${TMP_DIR}/TR_ML_SPK.xml
+		sed -i "s|<coarseRegistrationWindowHeight>512|<coarseRegistrationWindowHeight>1024|g" ${TMP_DIR}/TR_ML_SPK.xml
+		rm -rf ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.dim" ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.data"
+		rm -rf ${TMP_DIR}/${SCENE_ID}"_Gamma0_HH.dim" ${TMP_DIR}/${SCENE_ID}"_Gamma0_HH.data"
+		rm -rf ${TMP_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${TMP_DIR}/${SCENE_ID}"_Gamma0_HV.data"
+		rm -rf ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.dim" ${TMP_DIR}/${SCENE_ID}"_Layover_Shadow.data"
+		rm ${TMP_DIR}/tmplog
+
+		sh ${S1TBX_EXE} ${TMP_DIR}/TR_ML_SPK.xml 2>&1 | tee  ${TMP_DIR}/tmplog 
+	fi
+
 
 	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
 		cp ${NEST_GRAPHS}/ALOS_L1.1_SIMTR2.xml ${TMP_DIR}/TR_ML_SPK.xml
@@ -231,9 +244,9 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 		# insert Input file path into processing chain xml
 		sed -i "s|OUTPUT_LAY|${OUTPUT_LAYOVER}|g" ${TMP_DIR}/TR_ML_SPK.xml
 		# insert DEM path
-		sed -i "s|DEM_FILE|${CROP_DEM}|g" ${TMP_DIR}/TR_ML_SPK.xml
+		sed -i "s|DEM_FILE|${DEM_FILE}|g" ${TMP_DIR}/TR_ML_SPK.xml
 
-		echo "Let's do it a 4th time, since coarse offset did not start (bug)"
+		echo "Let's do it a 5th time, since coarse offset did not start (bug)"
 		echo "This time we will use the NEST routine (sometimes this works)"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.dim" ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.data"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_Gamma0_HH.dim" ${TMP_DIR}/${SCENE_ID}"_Gamma0_HH.data"
@@ -245,12 +258,9 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	fi
 
 	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
-		echo "Let's do it a 5th time, since coarse offset did not start (NEST bug)"
-		echo "This time we will take 4000 GCPs (probably too much water in the scene)"
-		echo "This time we will take also increase the window size for the coarse registration to 1024/512 (height/width)"
+		echo "Let's do it a 6th time, since coarse offset did not start (NEST bug)"
+		echo "This time we will take 4000 GCPs (perhaps too much water in the scene)"
 		sed -i "s|<numGCPtoGenerate>500|<numGCPtoGenerate>4000|g" ${TMP_DIR}/TR_ML_SPK.xml
-		sed -i "s|<coarseRegistrationWindowWidth>128|<coarseRegistrationWindowWidth>512|g" ${TMP_DIR}/TR_ML_SPK.xml
-		sed -i "s|<coarseRegistrationWindowHeight>256|<coarseRegistrationWindowHeight>1024|g" ${TMP_DIR}/TR_ML_SPK.xml
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.dim" ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.data"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_Gamma0_HH.dim" ${TMP_DIR}/${SCENE_ID}"_Gamma0_HH.data"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${TMP_DIR}/${SCENE_ID}"_Gamma0_HV.data"
@@ -261,7 +271,10 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	fi
 	
 	if grep -q Error ${TMP_DIR}/tmplog || grep -q "does not have enough" ${TMP_DIR}/tmplog ; then 
-		echo "Let's do it a 5th time, since coarse offset did not start (NEST bug)"
+		echo "Let's do it a 7th time, since coarse offset did not start (NEST bug)"
+		echo "This time we will take also increase the window size for the coarse registration to 512/256 (height/width)"
+		sed -i "s|<coarseRegistrationWindowWidth>256|<coarseRegistrationWindowWidth>512|g" ${TMP_DIR}/TR_ML_SPK.xml
+		sed -i "s|<coarseRegistrationWindowHeight>512|<coarseRegistrationWindowHeight>1024|g" ${TMP_DIR}/TR_ML_SPK.xml
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.dim" ${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.data"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_Gamma0_HH.dim" ${TMP_DIR}/${SCENE_ID}"_Gamma0_HH.data"
 		rm -rf ${TMP_DIR}/${SCENE_ID}"_Gamma0_HV.dim" ${TMP_DIR}/${SCENE_ID}"_Gamma0_HV.data"
