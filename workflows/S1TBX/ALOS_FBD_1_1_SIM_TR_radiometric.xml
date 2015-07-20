@@ -26,8 +26,8 @@
       <rmsThreshold>0.25</rmsThreshold>
       <warpPolynomialOrder>3</warpPolynomialOrder>
       <imgResamplingMethod>BISINC_11_POINT_INTERPOLATION</imgResamplingMethod>
-      <pixelSpacingInMeter>29.94</pixelSpacingInMeter>
-      <pixelSpacingInDegree>2.6895559606538474E-4</pixelSpacingInDegree>
+      <pixelSpacingInMeter>30</pixelSpacingInMeter>
+      <pixelSpacingInDegree>0.000277778</pixelSpacingInDegree>
       <mapProjection>GEOGCS[&quot;WGS84(DD)&quot;, 
   DATUM[&quot;WGS84&quot;, 
     SPHEROID[&quot;WGS84&quot;, 6378137.0, 298.257223563]], 
@@ -73,8 +73,8 @@
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
       <numGCPtoGenerate>500</numGCPtoGenerate>
-      <coarseRegistrationWindowWidth>128</coarseRegistrationWindowWidth>
-      <coarseRegistrationWindowHeight>256</coarseRegistrationWindowHeight>
+      <coarseRegistrationWindowWidth>256</coarseRegistrationWindowWidth>
+      <coarseRegistrationWindowHeight>128</coarseRegistrationWindowHeight>
       <rowInterpFactor>4</rowInterpFactor>
       <columnInterpFactor>4</columnInterpFactor>
       <maxIteration>3</maxIteration>
