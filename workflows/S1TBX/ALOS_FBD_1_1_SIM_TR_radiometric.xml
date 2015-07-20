@@ -75,9 +75,9 @@
       <numGCPtoGenerate>8000</numGCPtoGenerate>
       <coarseRegistrationWindowWidth>64</coarseRegistrationWindowWidth>
       <coarseRegistrationWindowHeight>64</coarseRegistrationWindowHeight>
-      <rowInterpFactor>4</rowInterpFactor>
-      <columnInterpFactor>4</columnInterpFactor>
-      <maxIteration>10</maxIteration>
+      <rowInterpFactor>2</rowInterpFactor>
+      <columnInterpFactor>2</columnInterpFactor>
+      <maxIteration>5</maxIteration>
       <gcpTolerance>0.5</gcpTolerance>
       <applyFineRegistration>true</applyFineRegistration>
       <fineRegistrationWindowWidth>32</fineRegistrationWindowWidth>
