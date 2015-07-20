@@ -77,7 +77,7 @@
       <coarseRegistrationWindowHeight>64</coarseRegistrationWindowHeight>
       <rowInterpFactor>2</rowInterpFactor>
       <columnInterpFactor>2</columnInterpFactor>
-      <maxIteration>5</maxIteration>
+      <maxIteration>200</maxIteration>
       <gcpTolerance>0.5</gcpTolerance>
       <applyFineRegistration>true</applyFineRegistration>
       <fineRegistrationWindowWidth>32</fineRegistrationWindowWidth>
