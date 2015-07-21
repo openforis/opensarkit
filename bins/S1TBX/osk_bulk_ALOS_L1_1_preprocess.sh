@@ -31,6 +31,6 @@ for SAR_TRACK in `ls -1 -d [0-9]*`;do
 	echo " Bulk Processing ALOS FBD: Track: ${SAR_TRACK}"
 	echo "------------------------------------------------"
 
-	bash ${S1TBX_BIN}/osk_ALOS_L1_1_preprocess.sh ${PROC_DIR}/${SAR_TRACK} $2  
+	bash ${S1TBX_BIN}/osk_ALOS_L1_1_preprocess_nest.sh ${PROC_DIR}/${SAR_TRACK} $2  
 
 done
