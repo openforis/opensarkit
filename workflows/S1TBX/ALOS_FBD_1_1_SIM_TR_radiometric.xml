@@ -72,7 +72,7 @@
       <sourceProduct refid="SAR-Simulation"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <numGCPtoGenerate>8000</numGCPtoGenerate>
+      <numGCPtoGenerate>500</numGCPtoGenerate>
       <coarseRegistrationWindowWidth>128</coarseRegistrationWindowWidth>
       <coarseRegistrationWindowHeight>256</coarseRegistrationWindowHeight>
       <rowInterpFactor>8</rowInterpFactor>
