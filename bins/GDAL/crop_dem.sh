@@ -31,12 +31,12 @@ RT_LON=`cat workreport | grep Brs_ImageSceneRightTopLongitude | awk -F"=" $'{pri
 LB_LAT=`cat workreport | grep Brs_ImageSceneLeftBottomLatitude | awk -F"=" $'{print $2}' | sed 's|"||g'`
 LB_LON=`cat workreport | grep Brs_ImageSceneLeftBottomLongitude | awk -F"=" $'{print $2}' | sed 's|"||g'`
 
-LT_LAT_BUF=`echo "${LT_LAT} + 0.35" | bc`
-LT_LON_BUF=`echo "${LT_LON} - 0.35" | bc`
-RB_LAT_BUF=`echo "${RB_LAT} - 0.35" | bc`
-RB_LON_BUF=`echo "${RB_LON} + 0.35" | bc`
+LT_LAT_BUF=`echo "${LT_LAT} + 0.175" | bc`
+LT_LON_BUF=`echo "${LT_LON} - 0.175" | bc`
+RB_LAT_BUF=`echo "${RB_LAT} - 0.175" | bc`
+RB_LON_BUF=`echo "${RB_LON} + 0.175" | bc`
 
 
-gdal_translate -of GTiff -a_nodata -0 -projwin ${LT_LON_BUF} ${LT_LAT_BUF} ${RB_LON_BUF} ${RB_LAT_BUF} $2 tmp_dem.tif
-gdal_calc.py -A tmp_dem.tif --outfile=$3 --overwrite --calc="0*(A==-32768)" --NoDataValue=0
+gdal_translate -of GTiff -a_nodata -0 -projwin ${LT_LON_BUF} ${LT_LAT_BUF} ${RB_LON_BUF} ${RB_LAT_BUF} $2 $3 #tmp_dem.tif
+#gdal_calc.py -A tmp_dem.tif --outfile=$3 --overwrite --calc="0*(A==-32768)" --NoDataValue=0
 rm tmp_dem.tif

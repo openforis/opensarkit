@@ -152,6 +152,11 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 # 	3 Geocoding with Radiometric normalization
 #----------------------------------------------------------------------	
 
+	echo "create DEM crop"
+	CROP_DEM=${TMP_DIR}/tmp_crop_dem.tif
+	bash ${GDAL_BIN}/crop_dem.sh ${TMP_DIR}/${SCENE_ID} ${DEM_FILE} ${CROP_DEM}
+	cd ${TMP_DIR}/${SCENE_ID}
+
 	OUTPUT_ML_SPK_TR=${TMP_DIR}/${SCENE_ID}"_ML_SPK_TR.dim"
 	OUTPUT_GAMMA_HH=${TMP_DIR}/${SCENE_ID}'_Gamma0_HH.dim'
 	OUTPUT_GAMMA_HV=${TMP_DIR}/${SCENE_ID}'_Gamma0_HV.dim'
@@ -171,7 +176,7 @@ for FILE in `ls -1 ${ZIP_DIR}`;do
 	# insert Input file path into processing chain xml
 	sed -i "s|OUTPUT_LAY|${OUTPUT_LAYOVER}|g" ${TMP_DIR}/TR_ML_SPK.xml
 	# insert DEM path
-	sed -i "s|DEM_FILE|${DEM_FILE}|g" ${TMP_DIR}/TR_ML_SPK.xml
+	sed -i "s|DEM_FILE|${CROP_DEM}|g" ${TMP_DIR}/TR_ML_SPK.xml
 
 	# Radiometrically terrain correcting Multi-looked, speckle-filtered files
 	echo "Geocode Multi-looked, speckle-filtered scene: ${SCENE_ID}"
