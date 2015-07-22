@@ -3,11 +3,14 @@
 #conda install -c osgeo rsgis_scripts rsgislib kealib scikit-learn rios
 
 
+import sys, getopt
 import rsgislib
 from rsgislib import imagecalc
 from rsgislib import imageutils
 from rsgislib.imagecalc import BandDefn
 
+
+print 
 # inputs 
 #dem = '/media/avollrath/phd_data2/FAO/Studies/Sri_Lanka/TEST/PathMosaicTest/FINAL_MOSAIC/Seg/DEM.kea'
 #aspect = '/media/avollrath/phd_data2/FAO/Studies/Sri_Lanka/TEST/PathMosaicTest/FINAL_MOSAIC/Seg/DEM_aspect.kea'

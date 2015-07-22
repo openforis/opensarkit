@@ -63,8 +63,8 @@
       <sourceProduct refid="4-GCP-Selection"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <rmsThreshold>0.25</rmsThreshold>
-      <warpPolynomialOrder>3</warpPolynomialOrder>
+      <rmsThreshold>1</rmsThreshold>
+      <warpPolynomialOrder>1</warpPolynomialOrder>
       <imgResamplingMethod>BILINEAR_INTERPOLATION</imgResamplingMethod>
       <pixelSpacingInMeter>30</pixelSpacingInMeter>
       <pixelSpacingInDegree>0.000277778</pixelSpacingInDegree>

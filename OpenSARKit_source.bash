@@ -23,6 +23,7 @@ export S1TBX_BIN="${OPENSARKIT}/bins/S1TBX"
 export DOWNLOAD_BIN="${OPENSARKIT}/download_scripts"
 export PYTHON_BIN="${OPENSARKIT}/python"
 export GDAL_BIN="${OPENSARKIT}/bins/GDAL"
+export SAGA_BIN="${OPENSARKIT}/bins/SAGA"
 
 export PATH=$PATH:${PYTHON_BIN}
 
@@ -41,6 +42,8 @@ alias osk_path_ALOS_preprocess="bash ${S1TBX_BIN}/osk_ALOS_L1_1_preprocess.sh"
 alias osk_mosaic_ALOS_preprocess="bash ${S1TBX_BIN}/osk_bulk_ALOS_L1_1_preprocess.sh"
 alias osk_ALOS_merge_path="bash ${S1TBX_BIN}/osk_ALOS_merge_path.sh"
 
+# Postprocess
+alias osk_postprocess="bash ${SAGA_BIN}/osk_postprocess.sh"
 
 # Helpers
 #alias osk_byteswap_float32="python ${PYTHON_BIN}/osk_byteswap32.py"
