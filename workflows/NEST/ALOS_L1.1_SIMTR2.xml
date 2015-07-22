@@ -41,7 +41,7 @@
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
       <numGCPtoGenerate>500</numGCPtoGenerate>
-      <coarseRegistrationWindowWidth>128</coarseRegistrationWindowWidth>
+      <coarseRegistrationWindowWidth>256</coarseRegistrationWindowWidth>
       <coarseRegistrationWindowHeight>256</coarseRegistrationWindowHeight>
       <rowInterpFactor>4</rowInterpFactor>
       <columnInterpFactor>4</columnInterpFactor>
@@ -63,7 +63,7 @@
       <sourceProduct refid="4-GCP-Selection"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <rmsThreshold>1</rmsThreshold>
+      <rmsThreshold>0.75</rmsThreshold>
       <warpPolynomialOrder>3</warpPolynomialOrder>
       <imgResamplingMethod>BICUBIC_INTERPOLATION</imgResamplingMethod>
       <pixelSpacingInMeter>30</pixelSpacingInMeter>
