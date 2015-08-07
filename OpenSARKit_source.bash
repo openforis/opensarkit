@@ -6,6 +6,8 @@
 PROGRAMS="/usr/programs"
 export NEST_EXE=${PROGRAMS}/NEST/gpt.sh
 export S1TBX_EXE=${PROGRAMS}/S1TBX/gpt.sh
+export POLSAR="/usr/programs/PolSARPro/Soft"
+export POLSAR_BIN=${POLSAR}/data_import:${POLSAR}/data_convert:${POLSAR}/speckle_filter:${POLSAR}/bmp_process:${POLSAR}/tools
 # ASF Mapready
 # GMTSAR
 # DORIS 
@@ -16,16 +18,21 @@ export OPENSARKIT="/home/avollrath/github/OpenSARKit"
 # source worklows/graphs
 export NEST_GRAPHS="${OPENSARKIT}/workflows/NEST"
 export S1TBX_GRAPHS="${OPENSARKIT}/workflows/S1TBX"
+export ASF_CONF="${OPENSARKIT}/workflows/ASF"
+export POLSAR_CONF="${OPENSARKIT}/workflows/POLSAR"
 
 # source worklows/graphs
 export NEST_BIN="${OPENSARKIT}/bins/NEST"
 export S1TBX_BIN="${OPENSARKIT}/bins/S1TBX"
+export ASF_BIN="${OPENSARKIT}/bins/ASF"
 export DOWNLOAD_BIN="${OPENSARKIT}/download_scripts"
 export PYTHON_BIN="${OPENSARKIT}/python"
 export GDAL_BIN="${OPENSARKIT}/bins/GDAL"
 export SAGA_BIN="${OPENSARKIT}/bins/SAGA"
+export RSGISLIB_BIN="${OPENSARKIT}/bins/RSGISLIB"
 
-export PATH=$PATH:${PYTHON_BIN}
+
+export PATH=$PATH:${PYTHON_BIN}:${RSGISLIB_BIN}:${ASF_BIN}:${POLSAR_BIN}
 
 # Aliases
 
@@ -42,9 +49,11 @@ alias osk_path_ALOS_preprocess="bash ${S1TBX_BIN}/osk_ALOS_L1_1_preprocess.sh"
 alias osk_mosaic_ALOS_preprocess="bash ${S1TBX_BIN}/osk_bulk_ALOS_L1_1_preprocess.sh"
 alias osk_ALOS_merge_path="bash ${S1TBX_BIN}/osk_ALOS_merge_path.sh"
 
+alias osk_ALOS_preprocess_ASF="bash ${ASF_BIN}/osk_ALOS_L1_1_preprocess_asf.sh"
+alias osk_single_ALOS_L1.5_preprocess_asf="bash ${ASF_BIN}/osk_single_ALOS_L1.5_preprocess_asf.sh"
+alias osk_path_ALOS_L1.5_preprocess_asf="bash ${ASF_BIN}/osk_path_ALOS_L1.5_preprocess_asf.sh"
+
 # Postprocess
 alias osk_postprocess="bash ${SAGA_BIN}/osk_postprocess.sh"
 
-# Helpers
-#alias osk_byteswap_float32="python ${PYTHON_BIN}/osk_byteswap32.py"
 

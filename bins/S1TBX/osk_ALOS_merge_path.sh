@@ -20,11 +20,14 @@ else
   echo "Processing folder: ${PROC_DIR}"
 fi
 
+# Number of CPUs (for SAGA GIS)
+CPU=`lscpu | grep "CPU(s):" | awk $'{print $2}' | head -1`
+
 cd ${PROC_DIR}
 # Loop for Satellite Track
-for SAT_TRACK in `ls -1 -d [0-9]*`
-do
-	cd ${SAT_TRACK}
+#for SAT_TRACK in `ls -1 -d [0-9]*`
+#do
+	#cd ${SAT_TRACK}
 	
 	# Loop for Acquisition Date
 	for ACQ_DATE in `ls -1 -d [1,2]*`
@@ -59,7 +62,7 @@ do
 					#echo $FILE
 					#echo $BNAME
   					echo "Translate to SAGA GIS format (powerful and fast raster manipulation)"				
-					gdalwarp -overwrite -of SAGA -srcnodata "0" -dstnodata "-99999" ${FILE} ${BNAME}"_saga".sdat
+					gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -overwrite -of SAGA -srcnodata "0" -dstnodata "-99999" ${FILE} ${BNAME}"_saga".sdat
 	
 
 				done
@@ -82,9 +85,7 @@ do
 						GREP_HV=`grep Gamma0_HV_db tmp.test`
 						echo ${PWD}/${GREP_HV} | tr '\n' ';' >> ${PROC_DIR}/tmp_${SAT_TRACK}"_Gamma0_HV_db_list"
 					fi					
-				
-
-					fi	
+					
 				fi
 				
 			cd ../
@@ -93,17 +94,17 @@ do
 		cd ../
 		done
 
-	cd ../
-	done
+	#cd ../
+	#done
 
 	mkdir -p ${PROC_DIR}/PATH_MOSAICS
 
 
 	LIST_HH_DB=`cat ${PROC_DIR}/"tmp_"${SAT_TRACK}"_Gamma0_HH_db_list"`
-	saga_cmd grid_tools 3 -GRIDS:${LIST_HH_DB} -TYPE:7 -OVERLAP:3 -BLEND_DIST:0 -TARGET_OUT_GRID:${PROC_DIR}/PATH_MOSAICS/${SAT_TRACK}"_"${DATE}"_Gamma0_HH_db.sgrd"
+	saga_cmd -f=r -c=${CPU} grid_tools 3 -GRIDS:${LIST_HH_DB} -TYPE:7 -OVERLAP:3 -BLEND_DIST:0 -TARGET_OUT_GRID:${PROC_DIR}/PATH_MOSAICS/${ACQ_DATE}"_Gamma0_HH_db.sgrd"
 
 	LIST_HV_DB=`cat ${PROC_DIR}/"tmp_"${SAT_TRACK}"_Gamma0_HV_db_list"`
-	saga_cmd grid_tools 3 -GRIDS:${LIST_HV_DB} -TYPE:7 -OVERLAP:3 -BLEND_DIST:0 -TARGET_OUT_GRID:${PROC_DIR}/PATH_MOSAICS/${SAT_TRACK}"_"${DATE}"_Gamma0_HV_db.sgrd"
+	saga_cmd -f=r -c=${CPU} grid_tools 3 -GRIDS:${LIST_HV_DB} -TYPE:7 -OVERLAP:3 -BLEND_DIST:0 -TARGET_OUT_GRID:${PROC_DIR}/PATH_MOSAICS/${ACQ_DATE}"_Gamma0_HV_db.sgrd"
 
 	# remove lists
 	rm ${PROC_DIR}/"tmp_"${SAT_TRACK}"_Gamma0_HH_db_list"
