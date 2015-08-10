@@ -132,7 +132,8 @@ cd ${TMP_DIR}/${SCENE_ID}
 #-------------------------------------------------------------------------------------------
 # manipulate ASF config file
 cp ${ASF_CONF}/geocoding_alos_l1.5.cfg ${TMP_DIR}/geocoding_alos_fbd.cfg
-sed -i "s|model = |model = ${CROP_DEM}|g" ${TMP_DIR}/geocoding_alos_fbd.cfg
+sed -i "s|model =|model = ${CROP_DEM}|g" ${TMP_DIR}/geocoding_alos_fbd.cfg
+sed -i "s|projection =|projection = ${ASF_CONF}/Proj.proj|g" ${TMP_DIR}/geocoding_alos_fbd.cfg 
 #-------------------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------------------
