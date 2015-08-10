@@ -140,8 +140,14 @@ sed -i "s|projection =|projection = ${ASF_CONF}/Proj.proj|g" ${TMP_DIR}/geocodin
 # do ASF procesing
 echo "Importing ${SCENE_ID} from $DATE into ASF and geocode it"
 echo "Check logfile ${FINAL_DIR}/log_asf for output"
-asf_mapready -quiet -input ${INPUT_RAW} -output ${OUTPUT_ASF} -tmpdir ${TMP_DIR}/tmp -log ${FINAL_DIR}/log_asf ${TMP_DIR}/geocoding_alos_fbd.cfg
+asf_mapready -quiet -auto-water-mask -input ${INPUT_RAW} -output ${OUTPUT_ASF} -tmpdir ${TMP_DIR}/tmp -log ${FINAL_DIR}/log_asf ${TMP_DIR}/geocoding_alos_fbd.cfg
 #-------------------------------------------------------------------------------------------
+
+if grep -q Error ${FINAL_DIR}/log_asf; then 	
+	echo "The coregistration seems not to be possible, so we will try without DEM and water mask"
+	echo "Check logfile ${FINAL_DIR}/log_asf_no_coreg for output"
+	asf_mapready -quiet -no-match -input ${INPUT_RAW} -output ${OUTPUT_ASF} -tmpdir ${TMP_DIR}/tmp -log ${FINAL_DIR}/log_asf_no_coreg ${TMP_DIR}/geocoding_alos_fbd.cfg
+fi
 
 #-------------------------------------------------------------------------------------------
 # 4 Preprocess imagery II - Speckle Filtering with S1TBX
