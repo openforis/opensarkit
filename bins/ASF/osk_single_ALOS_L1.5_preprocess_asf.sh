@@ -143,12 +143,16 @@ echo "Check logfile ${FINAL_DIR}/log_asf for output"
 asf_mapready -quiet -input ${INPUT_RAW} -output ${OUTPUT_ASF} -tmpdir ${TMP_DIR}/tmp -log ${FINAL_DIR}/log_asf ${TMP_DIR}/geocoding_alos_fbd.cfg
 #-------------------------------------------------------------------------------------------
 
+#-------------------------------------------------------------------------------------------
+# do ASF procesing with no DEM math during terrain correction (i.e. too much water, no terrain etc...)
 if grep -q Error ${FINAL_DIR}/log_asf; then 	
 	echo "The coregistration seems not to be possible, so we will try without DEM"
 	echo "Check logfile ${FINAL_DIR}/log_asf_no_coreg for output"
 	sed -i "s|no matching = 0|no matching = 1}/Proj.proj|g" ${TMP_DIR}/geocoding_alos_fbd.cfg
 	asf_mapready -quiet -input ${INPUT_RAW} -output ${OUTPUT_ASF} -tmpdir ${TMP_DIR}/tmp -log ${FINAL_DIR}/log_asf_no_coreg ${TMP_DIR}/geocoding_alos_fbd.cfg
 fi
+#-------------------------------------------------------------------------------------------
+
 
 #-------------------------------------------------------------------------------------------
 # 4 Preprocess imagery II - Speckle Filtering with S1TBX

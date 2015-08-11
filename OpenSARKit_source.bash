@@ -49,10 +49,11 @@ alias osk_path_ALOS_preprocess="bash ${S1TBX_BIN}/osk_ALOS_L1_1_preprocess.sh"
 alias osk_mosaic_ALOS_preprocess="bash ${S1TBX_BIN}/osk_bulk_ALOS_L1_1_preprocess.sh"
 alias osk_ALOS_merge_path="bash ${S1TBX_BIN}/osk_ALOS_merge_path.sh"
 
+#Asf bins
 alias osk_ALOS_preprocess_ASF="bash ${ASF_BIN}/osk_ALOS_L1_1_preprocess_asf.sh"
 alias osk_single_ALOS_L1.5_preprocess_asf="bash ${ASF_BIN}/osk_single_ALOS_L1.5_preprocess_asf.sh"
 alias osk_path_ALOS_L1.5_preprocess_asf="bash ${ASF_BIN}/osk_path_ALOS_L1.5_preprocess_asf.sh"
-
+alias osk_merge_path="bash ${ASF_BIN}/osk_merge_path.sh"
 # Postprocess
 alias osk_postprocess="bash ${SAGA_BIN}/osk_postprocess.sh"
 
