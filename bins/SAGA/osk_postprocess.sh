@@ -176,7 +176,7 @@ echo "------------------------------------------------------------"
 echo " Calculate HH/HV ratio"
 echo "------------------------------------------------------------"
 #saga_cmd grid_calculus 1 -GRIDS:${FINAL}/GAMMA0_HH_db_mosaic.sdat -XGRIDS:${FINAL}/GAMMA0_HV_db_mosaic.sdat -RESULT:${FINAL}/HH_HV_db_mosaic.sdat -FORMULA:"a / b"
-saga_cmd -f=r -c=${CPU} grid_calculus 1 -GRIDS:${TMP_DIR}/GAMMA0_HH_db_mosaic_filtered.sgrd -XGRIDS:${TMP_DIR}/GAMMA0_HV_db_mosaic_filtered.sgrd -RESULT:${TMP_DIR}/HH_HV_db_mosaic_filtered.sdat -FORMULA:"a / b"
+saga_cmd -f=r -c=${CPU} grid_calculus 1 -GRIDS:${TMP_DIR}/GAMMA0_HH_db_mosaic_filtered.sgrd -XGRIDS:${TMP_DIR}/GAMMA0_HV_db_mosaic_filtered.sgrd -RESULT:${TMP_DIR}/HH_HV_db_mosaic_filtered.sgrd -FORMULA:"a / b"
 
 
 gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -t_srs EPSG:4326 -srcnodata -99999 -dstnodata 0 -tr 0.000277778 0.000277778 ${TMP_DIR}/GAMMA0_HH_db_mosaic_filtered.sdat ${TMP_DIR}/1_Gamma0_HH.tif

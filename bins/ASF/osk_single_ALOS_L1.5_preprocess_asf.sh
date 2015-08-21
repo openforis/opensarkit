@@ -238,9 +238,15 @@ saga_cmd -f=r grid_tools 25 -GRID:${TMP_DIR}/tmp_mask_hv_saga.sgrd -MAXGAPCELLS:
 #-------------------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------------------
+echo "Applying multi-directional Lee-Filter for further smoothing"
+saga_cmd -f=r grid_tools 25 -GRID:${TMP_DIR}/tmp_mask_hh_filled.sgrd -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:${TMP_DIR}/tmp_mask_hh_filtered.sgrd
+saga_cmd -f=r grid_tools 25 -GRID:${TMP_DIR}/tmp_mask_hv_filled.sgrd -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:${TMP_DIR}/tmp_mask_hv_filtered.sgrd
+#-------------------------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------------------------
 echo "Create Final Output files"
-gdalwarp -srcnodata -99999 -dstnodata 0 ${TMP_DIR}/tmp_mask_hh_filled.sdat ${FINAL_DIR}/Gamma0_HH.tif
-gdalwarp -srcnodata -99999 -dstnodata 0 ${TMP_DIR}/tmp_mask_hv_filled.sdat ${FINAL_DIR}/Gamma0_HV.tif
+gdalwarp -srcnodata -99999 -dstnodata 0 ${TMP_DIR}/tmp_mask_hh_filtered.sdat ${FINAL_DIR}/Gamma0_HH.tif
+gdalwarp -srcnodata -99999 -dstnodata 0 ${TMP_DIR}/tmp_mask_hv_filtered.sdat ${FINAL_DIR}/Gamma0_HV.tif
 #-------------------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------------------
