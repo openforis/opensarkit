@@ -58,7 +58,7 @@ cd ${TMP_DIR}
 #saga_cmd -c=${CPU} grid_tools 3 -GRIDS:${LIST_HH} -TYPE:7 -OVERLAP:4 -BLEND_DIST:10 -MATCH:1 -TARGET_OUT_GRID:${FINAL_DIR}/GAMMA0_HH_db_mosaic.sgrd
 
 LIST_HH=`ls -1 *-rec2.sgrd | tr '\n' ';'| rev|cut -c 2-|rev`
-saga_cmd -c=${CPU} grid_tools 3 -GRIDS:${LIST_HH} -TYPE:7 -OVERLAP:4 -BLEND_DIST:10 -MATCH:0 -TARGET_OUT_GRID:${TMP_DIR}/GAMMA0_HH_mosaic.sgrd
+saga_cmd -c=${CPU} grid_tools 3 -GRIDS:${LIST_HH} -TYPE:7 -OVERLAP:4 -BLEND_DIST:10 -MATCH:0 -TARGET_OUT_GRID:${FINAL_DIR}/GAMMA0_HH_mosaic.sgrd
 
 #saga_cmd -f=r -c=${CPU} grid_filter 3 -INPUT:${TMP_DIR}/GAMMA0_HH_mosaic.sgrd -RESULT:${FINAL_DIR}/GAMMA0_HH_mosaic_filtered.sgrd -NOISE_ABS:5000 -NOISE_REL:5000 -METHOD:1
 
@@ -101,12 +101,19 @@ while read LINE; do
 done < ${TMP_DIR}/list_sort
 
 cd ${TMP_DIR}
+
+# mosaicing db channel
 #LIST_HH=`ls -1 *-dB.sgrd | tr '\n' ';'| rev|cut -c 2-|rev`
 #saga_cmd -c=${CPU} grid_tools 3 -GRIDS:${LIST_HH} -TYPE:7 -OVERLAP:4 -BLEND_DIST:10 -MATCH:1 -TARGET_OUT_GRID:${FINAL_DIR}/GAMMA0_HH_db_mosaic.sgrd
 
+# Mosaicing HV channel
 LIST_HV=`ls -1 *-rec2.sgrd | tr '\n' ';'| rev|cut -c 2-|rev`
-saga_cmd -c=${CPU} grid_tools 3 -GRIDS:${LIST_HV} -TYPE:7 -OVERLAP:4 -BLEND_DIST:10 -MATCH:0 -TARGET_OUT_GRID:${TMP_DIR}/GAMMA0_HV_mosaic.sgrd
+saga_cmd -c=${CPU} grid_tools 3 -GRIDS:${LIST_HV} -TYPE:7 -OVERLAP:4 -BLEND_DIST:10 -MATCH:0 -TARGET_OUT_GRID:${FINAL_DIR}/GAMMA0_HV_mosaic.sgrd
 
-#saga_cmd -f=r -c=${CPU} grid_filter 3 -INPUT:${TMP_DIR}/GAMMA0_HV_mosaic.sgrd -RESULT:${FINAL_DIR}/GAMMA0_HV_mosaic_filtered.sgrd -NOISE_ABS:5000 -NOISE_REL:5000 -METHOD:1
+# create Ratio
+saga_cmd -f=r -c=${CPU} grid_calculus 1 -GRIDS:${FINAL_DIR}/GAMMA0_HH_mosaic.sgrd -XGRIDS:${FINAL_DIR}/GAMMA0_HV_mosaic.sgrd -RESULT:${FINAL_DIR}/HH_HV_mosaic.sgrd -FORMULA:"a / b"
 
-saga_cmd -f=r -c=${CPU} grid_calculus 1 -GRIDS:${FINAL_DIR}/GAMMA0_HH_mosaic_filtered.sgrd -XGRIDS:${FINAL_DIR}/GAMMA0_HV_mosaic.sgrd -RESULT:${FINAL_DIR}/HH_HV_mosaic.sgrd -FORMULA:"a / b"
+#gdalbuildvrt
+echo "creating an RGB KMZ file for GoogleEarth Visualisation"
+#gdal_translate -of KMLSUPEROVERLAY -a_nodata 0 -outsize 25% 25% -scale_1 0.001 0.35 0 255 -scale_2 0.001 0.1 -scale_3 2 10 0 255 stack_2007_01.vrt output.kmz -co FORMAT=JPEG
+
