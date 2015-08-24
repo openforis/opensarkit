@@ -1,5 +1,9 @@
 #! /bin/bash
 
+# dependecies
+#	SAGA GIS (Version > 2.1.4)
+#  dans-gdal-scripts
+#  gdal-libs
 
 # TMP sourcing for Sepal env.
 source /data/home/Andreas.Vollrath/github/OpenSARKit_source.bash
@@ -63,7 +67,7 @@ for ACQ_DATE in `ls -1 -d [1,2]*`;do
 	echo "creating a shapefile for all valid points"
 	gdal_trace_outline ${ACQ_DATE}"_Gamma0_HV_"${ORBIT}.sdat -ndv -99999 -dp-toler 0 -out-cs en -ogr-out ${PROC_DIR}/PATH_OUTLINES/${ACQ_DATE}"_Gamma0_HV_"${ORBIT}.shp
 	echo "creating a KMZ file for GoogleEarth"
-	gdal_translate -of KMLSUPEROVERLAY -a_nodata 0 -outsize 25% 25% -scale 0.001 0.1 0 255 ${PROC_DIR}/PATH_MOSAICS/${ACQ_DATE}"_Gamma0_HV_"${ORBIT}.sgrd  ${PROC_DIR}/PATH_KMZS/${ACQ_DATE}"_Gamma0_HV_"${ORBIT}.kmz -co FORMAT=JPEG
+	gdal_translate -of KMLSUPEROVERLAY -a_nodata 0 -outsize 25% 25% -scale 0.001 0.1 0 255 ${PROC_DIR}/PATH_MOSAICS/${ACQ_DATE}"_Gamma0_HV_"${ORBIT}.sdat  ${PROC_DIR}/PATH_KMZS/${ACQ_DATE}"_Gamma0_HV_"${ORBIT}.kmz -co FORMAT=PNG
 
 	rm -rf ${TMP_DIR}/*
 	cd ${PROC_DIR}
