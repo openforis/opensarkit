@@ -31,9 +31,10 @@ CPU=`lscpu | grep "CPU(s):" | awk $'{print $2}' | head -1`
 cd ${PROC_DIR}
 TMP_DIR=${PROC_DIR}/TMP
 mkdir -p ${TMP_DIR}
-mkdir -p ${PROC_DIR}/PATH_MOSAICS
-mkdir -p ${PROC_DIR}/PATH_SHP_OUTLINES
-mkdir -p ${PROC_DIR}/PATH_KMZS
+mkdir -p ${PROC_DIR}/PATH
+mkdir -p ${PROC_DIR}/PATHs/MOSAICS
+mkdir -p ${PROC_DIR}/PATH/KMZS
+mkdir -p ${PROC_DIR}/PATH/OUTLINES
 
 # Loop for Acquisition Date
 for ACQ_DATE in `ls -1 -d [1,2]*`;do 
@@ -59,15 +60,15 @@ for ACQ_DATE in `ls -1 -d [1,2]*`;do
 	done
 
 	LIST_HH=`cat ${TMP_DIR}/Gamma0_HH_db_list | tr '\n' ';' | rev | cut -c 2- | rev`
-	saga_cmd -c=${CPU} grid_tools 3 -GRIDS:"${LIST_HH}" -TYPE:7 -OVERLAP:4 -BLEND_DIST:0 -TARGET_OUT_GRID:${PROC_DIR}/PATH_MOSAICS/${ACQ_DATE}"_Gamma0_HH_"${ORBIT}.sgrd
+	saga_cmd -c=${CPU} grid_tools 3 -GRIDS:"${LIST_HH}" -TYPE:7 -OVERLAP:4 -BLEND_DIST:0 -TARGET_OUT_GRID:${PROC_DIR}/PATH/MOSAICS/${ACQ_DATE}"_Gamma0_HH_"${ORBIT}.sgrd
 
 	LIST_HV=`cat ${TMP_DIR}/Gamma0_HV_db_list | tr '\n' ';' | rev | cut -c 2- | rev`
-	saga_cmd -c=${CPU} grid_tools 3 -GRIDS:"${LIST_HV}" -TYPE:7 -OVERLAP:4 -BLEND_DIST:0 -TARGET_OUT_GRID:${PROC_DIR}/PATH_MOSAICS/${ACQ_DATE}"_Gamma0_HV_"${ORBIT}.sgrd
+	saga_cmd -c=${CPU} grid_tools 3 -GRIDS:"${LIST_HV}" -TYPE:7 -OVERLAP:4 -BLEND_DIST:0 -TARGET_OUT_GRID:${PROC_DIR}/PATH/MOSAICS/${ACQ_DATE}"_Gamma0_HV_"${ORBIT}.sgrd
 	
 	echo "creating a shapefile for all valid points"
-	gdal_trace_outline ${ACQ_DATE}"_Gamma0_HV_"${ORBIT}.sdat -ndv -99999 -dp-toler 0 -out-cs en -ogr-out ${PROC_DIR}/PATH_OUTLINES/${ACQ_DATE}"_Gamma0_HV_"${ORBIT}.shp
+	gdal_trace_outline ${ACQ_DATE}"_Gamma0_HV_"${ORBIT}.sdat -ndv -99999 -dp-toler 0 -out-cs en -ogr-out ${PROC_DIR}/PATH/OUTLINES/${ACQ_DATE}"_Gamma0_HV_"${ORBIT}.shp
 	echo "creating a KMZ file for GoogleEarth"
-	gdal_translate -of KMLSUPEROVERLAY -a_nodata 0 -outsize 25% 25% -scale 0.001 0.1 0 255 ${PROC_DIR}/PATH_MOSAICS/${ACQ_DATE}"_Gamma0_HV_"${ORBIT}.sdat  ${PROC_DIR}/PATH_KMZS/${ACQ_DATE}"_Gamma0_HV_"${ORBIT}.kmz -co FORMAT=PNG
+	gdal_translate -of KMLSUPEROVERLAY -a_nodata 0 -outsize 25% 25% -scale 0.001 0.1 0 255 ${PROC_DIR}/PATH/MOSAICS/${ACQ_DATE}"_Gamma0_HV_"${ORBIT}.sdat  ${PROC_DIR}/PATH/KMZS/${ACQ_DATE}"_Gamma0_HV_"${ORBIT}.kmz -co FORMAT=PNG
 
 	rm -rf ${TMP_DIR}/*
 	cd ${PROC_DIR}
@@ -76,7 +77,8 @@ done
 
 cd ${PROC_DIR}
 
-tar -cfzv ${PROC_DIR}/Path_Outlines
+tar -cfzv ${PROC_DIR}/PATH/OUTLINES
+tar -cfzv ${PROC_DIR}/PATH/KMZS
 rm -rf ${TMP_DIR}
 
 
