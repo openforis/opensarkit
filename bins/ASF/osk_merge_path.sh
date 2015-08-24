@@ -32,7 +32,7 @@ cd ${PROC_DIR}
 TMP_DIR=${PROC_DIR}/TMP
 mkdir -p ${TMP_DIR}
 mkdir -p ${PROC_DIR}/PATH
-mkdir -p ${PROC_DIR}/PATHs/MOSAICS
+mkdir -p ${PROC_DIR}/PATH/MOSAICS
 mkdir -p ${PROC_DIR}/PATH/KMZS
 mkdir -p ${PROC_DIR}/PATH/OUTLINES
 
