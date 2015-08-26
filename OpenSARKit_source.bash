@@ -31,35 +31,9 @@ export GDAL_BIN="${OPENSARKIT}/bins/GDAL"
 export SAGA_BIN="${OPENSARKIT}/bins/SAGA"
 export RSGISLIB_BIN="${OPENSARKIT}/bins/RSGISLIB"
 
-export PATH=$PATH:${PYTHON_BIN}:${RSGISLIB_BIN}:${ASF_BIN}:${POLSAR_BIN}
+export PATH=$PATH:${PYTHON_BIN}:${RSGISLIB_BIN}:${ASF_BIN}:${POLSAR_BIN}:${SAGA_BIN}:${S1TBX_BIN}:${NEST_BIN}:${GDAL_BIN}:${DOWNLOAD_BIN}
 
 # source database
 export DB_GLOBAL=${OPENSARKIT}/DB/global_info.sqlite	 
-
-
-# Aliases
-
-# Downloads
-alias osk_download_ALOS_ASF="bash ${DOWNLOAD_BIN}/osk_download_ALOS_ASF.sh"
-alias osk_download_SRTM3="bash ${DOWNLOAD_BIN}/osk_download_SRTM3.sh"
-alias osk_download_S1="bash ${DOWNLOAD_BIN}/osk_download_S1.sh"
-
-# Imports
-alias osk_ALOS_CEOS_import="bash ${NEST_BIN}/osk_import_ALOS_L1_1_CEOS_to_dim.sh"
-
-# Process
-alias osk_single_ALOS_preprocess="bash ${S1TBX_BIN}/osk_ALOS_L1_1_preprocess_SS.sh"
-alias osk_single_ALOS_preprocess_nest="bash ${S1TBX_BIN}/osk_ALOS_L1_1_preprocess_SS_nest.sh"
-alias osk_path_ALOS_preprocess="bash ${S1TBX_BIN}/osk_ALOS_L1_1_preprocess.sh"
-alias osk_mosaic_ALOS_preprocess="bash ${S1TBX_BIN}/osk_bulk_ALOS_L1_1_preprocess.sh"
-alias osk_ALOS_merge_path="bash ${S1TBX_BIN}/osk_ALOS_merge_path.sh"
-
-#Asf bins
-alias osk_ALOS_preprocess_ASF="bash ${ASF_BIN}/osk_ALOS_L1_1_preprocess_asf.sh"
-alias osk_single_ALOS_L1.5_preprocess_asf="bash ${ASF_BIN}/osk_single_ALOS_L1.5_preprocess_asf.sh"
-alias osk_path_ALOS_L1.5_preprocess_asf="bash ${ASF_BIN}/osk_path_ALOS_L1.5_preprocess_asf.sh"
-alias osk_merge_path="bash ${ASF_BIN}/osk_merge_path.sh"
-# Postprocess
-alias osk_postprocess="bash ${SAGA_BIN}/osk_postprocess.sh"
 
 
