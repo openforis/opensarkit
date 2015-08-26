@@ -51,7 +51,7 @@ for DATE in `ls -1 -d [0-9]*`;do
 	cd ${DATE}
 
 	for FILE in `ls -1 *.zip`;do
-		bash ${ASF_BIN}/osk_single_ALOS_L1.5_preprocess_asf.sh ${FILE} $2 ${PROC_DIR}/${DATE}  
+		osk_single_ALOS_L1.5_preprocess_asf ${FILE} $2 ${PROC_DIR}/${DATE}  
 	done
 
 	# possible Path mosaicing --> use extra script, that could be used also later on
