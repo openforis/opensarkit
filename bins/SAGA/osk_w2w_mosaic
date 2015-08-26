@@ -129,6 +129,8 @@ saga_cmd -c=${CPU} grid_tools 3 -GRIDS:${LIST_HV} -TYPE:7 -OVERLAP:4 -BLEND_DIST
 saga_cmd -f=r -c=${CPU} grid_calculus 1 -GRIDS:${FINAL_DIR}/GAMMA0_HH_mosaic.sgrd -XGRIDS:${FINAL_DIR}/GAMMA0_HV_mosaic.sgrd -RESULT:${FINAL_DIR}/HH_HV_mosaic.sgrd -FORMULA:"a / b"
 
 #gdalbuildvrt
+gdalbuildvrt -vrtnodata -99999 -separate ${FINAL_DIR}/stack.vrt ${FINAL_DIR}/GAMMA0_HH_mosaic.sdat ${FINAL_DIR}/GAMMA0_HV_mosaic.sdat ${FINAL_DIR}/HH_HV_mosaic.sdat 
+
 echo "creating an RGB KMZ file for GoogleEarth Visualisation"
-#gdal_translate -of KMLSUPEROVERLAY -a_nodata 0 -outsize 25% 25% -scale_1 0.001 0.35 0 255 -scale_2 0.001 0.1 -scale_3 2 10 0 255 stack_2007_01.vrt output.kmz -co FORMAT=JPEG
+gdal_translate -of KMLSUPEROVERLAY -a_nodata 0 -outsize 25% 25% -scale_1 0.001 0.35 0 255 -scale_2 0.001 0.1 -scale_3 2 10 0 255 ${FINAL_DIR}/stack_2007_01.vrt ${FINAL_DIR}/stack_2007_01.kmz -co FORMAT=PNG
 
