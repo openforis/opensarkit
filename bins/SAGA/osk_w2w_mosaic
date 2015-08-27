@@ -26,8 +26,8 @@ fi
 
 cd ${PROC_DIR}
 TMP_DIR=${PROC_DIR}/TMP
+rm -rf ${TMP_DIR}
 mkdir -p ${TMP_DIR}
-rm ${TMP_DIR}/list
 FINAL_DIR=${PROC_DIR}/Final_Mosaic
 mkdir -p ${FINAL_DIR}
 CPU=`lscpu | grep "CPU(s):" | awk $'{print $2}' | head -1`

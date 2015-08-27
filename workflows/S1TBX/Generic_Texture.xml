@@ -35,10 +35,10 @@
       <outputDissimilarity>true</outputDissimilarity>
       <outputHomogeneity>true</outputHomogeneity>
       <outputASM>false</outputASM>
-      <outputEnergy>true</outputEnergy>
+      <outputEnergy>false</outputEnergy>
       <outputMAX>false</outputMAX>
       <outputEntropy>false</outputEntropy>
-      <outputMean>true</outputMean>
+      <outputMean>false</outputMean>
       <outputVariance>true</outputVariance>
       <outputCorrelation>false</outputCorrelation>
     </parameters>
