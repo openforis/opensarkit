@@ -149,5 +149,6 @@ echo "creating an RGB KMZ file for GoogleEarth Visualisation"
 gdal_translate -of KMLSUPEROVERLAY -a_nodata 0 -outsize 25% 25% -scale_1 0.001 0.35 0 255 -scale_2 0.001 0.1 0 255 -scale_3 2 10 0 255 ${FINAL_DIR}/stack.vrt ${FINAL_DIR}/RGB_stack.kmz -co FORMAT=PNG
 gdal_translate -of KMLSUPEROVERLAY -a_nodata 0 -outsize 25% 25% -scale_1 -30 0 0 255 -scale_2 -30 -1 0 255 -scale_3 2 10 0 255 ${FINAL_DIR}/stack_db.vrt ${FINAL_DIR}/RGB_stack_db.kmz -co FORMAT=PNG
 
-
+# clean up temp folder
+rm -rf ${TMP_DIR}
 
