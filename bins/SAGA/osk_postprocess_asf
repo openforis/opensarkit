@@ -1,0 +1,84 @@
+#! /bin/bash
+
+if [ "$#" != "2" ]; then  
+	echo -e "*** Postprocessing script ***"
+	echo -e "*** OpenSARKit, v.01  ***"
+	echo -e ""
+	echo -e "usage: osk_w2w_mosaic <mosaic_folder> <DEM>"
+	echo -e ""
+	echo -e "input parameters:"
+	echo -e "mosaic_folder	(input) folder where w2w mosaics are stored"
+	echo -e "DEM		(input) Digital Elevation model, that covers the area of the w2w mosaics"
+	echo -e ""
+	echo -e "Software components:"
+	echo -e "	- gdal-libraries"
+	echo -e "	- Sentinel-1 Toolbox"
+	exit 1
+else
+	echo -e "*** Postprocessing script ***"
+	echo -e "*** OpenSARKit, v.01  ***"
+	echo -e ""
+
+	cd $1
+	export PROC_DIR=`pwd`
+	DEM_FILE=$2	
+fi
+
+TMP_DIR=${PROC_DIR}/TMP
+mkdir -p ${TMP_DIR}
+
+echo "--------------------------------------------------------------------------------------------------"
+echo " Calculate second order statistic Texture measurements (GLCMMean, GLCMVariance) for HH channel"
+echo "--------------------------------------------------------------------------------------------------"
+
+# define path/name of output
+INPUT_HH=${PROC_DIR}/Gamma0_HH_db.tif
+INPUT_HV=${PROC_DIR}/Gamma0_HV_db.tif
+
+OUTPUT_TEXTURE_HH=${TMP_DIR}/TEXTURE_HH.dim
+OUTPUT_TEXTURE_HV=${TMP_DIR}/TEXTURE_HV.dim
+
+# Write new xml graph and substitute input and output files
+cp ${S1TBX_GRAPHS}/Generic_Texture.xml ${TMP_DIR}/TEXTURE_HH.xml
+	
+# insert Input file path into processing chain xml
+sed -i "s|INPUT_TR|${INPUT_HH}|g" ${TMP_DIR}/TEXTURE_HH.xml
+# insert Input file path into processing chain xml
+sed -i "s|OUTPUT_TR|${OUTPUT_TEXTURE_HH}|g" ${TMP_DIR}/TEXTURE_HH.xml
+
+#echo "Calculate GLCM Texture measurements for HH channel"
+sh ${S1TBX_EXE} ${TMP_DIR}/TEXTURE_HH.xml 2>&1 | tee  ${TMP_DIR}/tmplog
+
+# in case it fails try a second time	
+if grep -q Error ${TMP_DIR}/tmplog; then 	
+	echo "2nd try"
+	rm -rf ${TMP_DIR}/TEXTURE_HH.dim ${TMP_DIR}/TEXTURE_HH.data
+	sh ${S1TBX_EXE} ${TMP_DIR}/TEXTURE_HH.xml
+fi
+
+
+
+
+echo "--------------------------------------------------------------------------------------------------"
+echo " Calculate second order statistic Texture measurements (GLCMMean, GLCMVariance) for HV channel"
+echo "--------------------------------------------------------------------------------------------------"
+
+# Write new xml graph and substitute input and output files
+cp ${S1TBX_GRAPHS}/Generic_Texture.xml ${TMP_DIR}/TEXTURE_HV.xml
+	
+# insert Input file path into processing chain xml
+sed -i "s|INPUT_TR|${INPUT_HV}|g" ${TMP_DIR}/TEXTURE_HV.xml
+# insert Input file path into processing chain xml
+sed -i "s|OUTPUT_TR|${OUTPUT_TEXTURE_HV}|g" ${TMP_DIR}/TEXTURE_HV.xml
+
+echo "Calculate GLCM Texture measurements for HV channel"
+sh ${S1TBX_EXE} ${TMP_DIR}/TEXTURE_HV.xml 2>&1 | tee  ${TMP_DIR}/tmplog
+
+# in case it fails try a second time	
+if grep -q Error ${TMP_DIR}/tmplog; then 	
+	echo "2nd try"
+	rm -rf ${TMP_DIR}/TEXTURE_HV.dim ${TMP_DIR}/TEXTURE_HV.data
+	sh ${S1TBX_EXE} ${TMP_DIR}/TEXTURE_HV.xml
+fi
+
+
