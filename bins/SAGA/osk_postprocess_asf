@@ -7,8 +7,8 @@ if [ "$#" != "3" ]; then
 	echo -e "usage: osk_w2w_mosaic <mosaic_folder> <DEM> <output_folder>"
 	echo -e ""
 	echo -e "input parameters:"
-	echo -e "mosaic_folder	(input) folder where w2w mosaics are stored"
-	echo -e "DEM		(input) Digital Elevation model, that covers the area of the w2w mosaics"
+	echo -e "mosaic_folder		(input) folder where w2w mosaics are stored"
+	echo -e "DEM			(input) Digital Elevation model, that covers the area of the w2w mosaics"
 	echo -e "output_folder		(output) folder, where the output stack will be saved"
 	echo -e ""
 	echo -e "Software components:"
@@ -102,8 +102,8 @@ gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -t_srs EPSG:4326 -srcnodata 0
 gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -ot Float32 -t_srs EPSG:4326 -srcnodata -99999 -dstnodata -9999 -te $XMIN $YMIN $XMAX $YMAX -tr 0.000277778 0.000277778 $DEM ${FINAL}/11_DEM_height.tif
 
 # write world file (we will need for segmentation)
-listgeo -tfw ${FINAL}/01_Gamma0_HH.tif
-mv ${FINAL}/01_Gamma0_HH.tfw ${FINAL}/generic.tfw
+listgeo -tfw ${FINAL}/01_Gamma0_HH_db.tif
+mv ${FINAL}/01_Gamma0_HH_db.tfw ${FINAL}/generic.tfw
 
 # create slope and aspect layers
 # mask for no data 

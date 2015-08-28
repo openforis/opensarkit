@@ -39,10 +39,10 @@ mkdir -p ${PROC_DIR}/ALOS
 
 cd ${PROC_DIR}
 echo "get srtm3 tile list"
-echo "SELECT s.COL,s.ROW FROM srtm3_grid as s, global_info as c WHERE \"iso3\" = \"${ISO3}\" AND ST_INTERSECTS(s.GEOM,c.GEOMETRY);" | spatialite -separator ' ' ${DB_GLOBAL} | head -50 > ${TMP_DIR}/srtm_list
+echo "SELECT s.COL,s.ROW FROM srtm3_grid as s, countries as c WHERE \"iso3\" = \"${ISO3}\" AND ST_INTERSECTS(s.GEOM,c.geom);" | spatialite -separator ' ' ${DB_GLOBAL} | head -50 > ${TMP_DIR}/srtm_list
 
 echo "get LSAT tile list"
-echo "SELECT l.path,l.row FROM landsat_wrs2_grid as l, global_info as c WHERE \"iso3\" = \"${ISO3}\" AND \"mode\" = \"D\" AND ST_INTERSECTS(l.GEOM,c.GEOMETRY);" | spatialite -separator ' ' ${DB_GLOBAL} | head -50 > ${PROC_DIR}/LSAT/Inventory/lsat_path_row_list.txt
+echo "SELECT l.path,l.row FROM landsat_wrs2_grid as l, countries as c WHERE \"iso3\" = \"${ISO3}\" AND \"mode\" = \"D\" AND ST_INTERSECTS(l.GEOM,c.geom);" | spatialite -separator ' ' ${DB_GLOBAL} | head -50 > ${PROC_DIR}/LSAT/Inventory/lsat_path_row_list.txt
 
 rm -f ${PROC_DIR}/LSAT/Inventory/*inv.txt
 
@@ -63,9 +63,9 @@ while read LINE; do
 # Date to DOY
 # date -d '2007-01-01' +%j
 
-	gsutil ls gs://earthengine-public/landsat/L5/${LSAT_PATH}/${LSAT_ROW} >> ${PROC_DIR}/LSAT/Inventory/L5_inv.txt
-	gsutil ls gs://earthengine-public/landsat/L7/${LSAT_PATH}/${LSAT_ROW} >> ${PROC_DIR}/LSAT/Inventory/L7_inv.txt
-	gsutil ls gs://earthengine-public/landsat/L8/${LSAT_PATH}/${LSAT_ROW} >> ${PROC_DIR}/LSAT/Inventory/L8_inv.txt
+	#gsutil ls gs://earthengine-public/landsat/L5/${LSAT_PATH}/${LSAT_ROW} >> ${PROC_DIR}/LSAT/Inventory/L5_inv.txt
+	#gsutil ls gs://earthengine-public/landsat/L7/${LSAT_PATH}/${LSAT_ROW} >> ${PROC_DIR}/LSAT/Inventory/L7_inv.txt
+	#gsutil ls gs://earthengine-public/landsat/L8/${LSAT_PATH}/${LSAT_ROW} >> ${PROC_DIR}/LSAT/Inventory/L8_inv.txt
 
 #   gsutil ls gs://earthengine-public/landsat/LM1/${LSAT_PATH}/${LSAT_ROW} >> ${PROC_DIR}/LSAT/Inventory/LM1_inv.txt
 #   gsutil ls gs://earthengine-public/landsat/LM2/${LSAT_PATH}/${LSAT_ROW} >> ${PROC_DIR}/LSAT/Inventory/LM2_inv.txt
@@ -78,7 +78,7 @@ while read LINE; do
 done < ${PROC_DIR}/LSAT/Inventory/lsat_path_row_list.txt
 
 echo "extract AOI"
-ogr2ogr -f "Esri Shapefile" ${PROC_DIR}/AOI/AOI.shp ${DB_GLOBAL} -dsco SPATIALITE=yes -where "\"iso3\" = \"${ISO3}\"" -nln AOI global_info
+ogr2ogr -f "Esri Shapefile" ${PROC_DIR}/AOI/AOI.shp ${DB_GLOBAL} -dsco SPATIALITE=yes -where "\"iso3\" = \"${ISO3}\"" -nln AOI countries
 
 echo "convex hull"
 osk_convex_hull.py --input ${PROC_DIR}/AOI/AOI.shp --output ${PROC_DIR}/AOI/${ISO3}"_convex_hull.shp"

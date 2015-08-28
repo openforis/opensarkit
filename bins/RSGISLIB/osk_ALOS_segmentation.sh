@@ -10,13 +10,11 @@
 # 	0.1 Check for right usage
 if [ "$#" != "1" ]; then
   echo -e "------------------------------------------------------------------------------------------------------------------------"
-  echo -e "Usage: osk_segmentation.sh </path/to/mosaic/sat/tracks>"
+  echo -e "Usage: osk_segmentation.sh </path/to/mosaic/>"
   echo -e "------------------------------------------------------------------------------------------------------------------------"
   echo -e "This script:"
   echo -e "	- creates an Image Stack in KEA Format of the output of osk_postprocess [RSGISLIB]"
   echo -e "	- Applies a Segmentation based on Shepard et al. 2013 [RSGISLIB]"
-  echo -e "	- Generates output  [Sentinel Toolbox]"
-  echo -e "	- outputs all files with sam extent and resolution in GeoTiff format ready for RSGISLIB segmentation [gdal]"
   echo -e "------------------------------------------------------------------------------------------------------------------------"
   echo -e "The path will be your Project folder!"
   exit 1
@@ -25,10 +23,10 @@ else
   export PROC_DIR=`pwd`
   echo -e "------------------------------------------------------------------------------------------------------------------------"
   echo -e "This script:"
-  echo -e "	- mosaics primarily merged Satellite Tracks (i.e. output of osk_SENSOR_merge_path) [SAGA GIS]"
-  echo -e "	- filters the Gamma0 channels with a multi-directional filter (Lee et al. 1998) [SAGA GIS]"
-  echo -e "	- calculates second order statistics for Texture measurements (i.e. GLCM Mean, GLCM Variance) [Sentinel Toolbox]"
-  echo -e "	- outputs all files with sam extent and resolution in GeoTiff format ready for RSGISLIB segmentation [gdal]"
+  echo -e "	- creates an Image Stack in KEA Format of the output of osk_postprocess [RSGISLIB]"
+  echo -e "	- Applies a Segmentation based on Shepard et al. 2013 [RSGISLIB]"
+  echo -e "------------------------------------------------------------------------------------------------------------------------"
+  echo -e "The path will be your Project folder!"
   echo -e "------------------------------------------------------------------------------------------------------------------------"
   echo "Processing folder: ${PROC_DIR}"
   echo "Output folder: ${PROC_DIR}/../FINAL_MOSAIC"
