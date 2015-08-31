@@ -110,7 +110,7 @@ mv ${FINAL}/01_Gamma0_HH_db.tfw ${FINAL}/generic.tfw
 gdaldem slope -s 111120 ${FINAL}/11_DEM_height.tif ${FINAL}/12_DEM_slope.tif
 gdaldem aspect ${FINAL}/11_DEM_height.tif ${FINAL}/13_DEM_aspect.tif
 
-gdalbuildvrt -separate -srcnodata 0 ${FINAL}/stack.vrt ${FINAL}/*.tif
+gdalbuildvrt -separate -srcnodata -9999 -vrtnodata -9999 ${FINAL}/stack.vrt ${FINAL}/*.tif
 # remove temp files
 rm -rf ${TMP_DIR}/ ${PROC_DIR}/target.d*
 

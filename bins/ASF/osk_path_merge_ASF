@@ -104,8 +104,8 @@ done
 
 cd ${PROC_DIR}
 
-tar -cfzv ${PROC_DIR}/PATH/OUTLINES
-tar -cfzv ${PROC_DIR}/PATH/KMZS
+tar -cfzv ${PROC_DIR}/PATH/Outlines.tar.gz ${PROC_DIR}/PATH/OUTLINES
+tar -cfzv ${PROC_DIR}/PATH/KMZS.tar.gz ${PROC_DIR}/PATH/KMZS
 rm -rf ${TMP_DIR}
 
 

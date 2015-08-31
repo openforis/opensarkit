@@ -28,32 +28,16 @@ def main(argv):
    print 'Input list is:', 		inputlist
    print 'Output file is:', 		outstack
 
-  #dem = '/media/avollrath/phd_data2/FAO/Studies/Sri_Lanka/TEST/PathMosaicTest/FINAL_MOSAIC/Seg/DEM.kea'
-  #aspect = '/media/avollrath/phd_data2/FAO/Studies/Sri_Lanka/TEST/PathMosaicTest/FINAL_MOSAIC/Seg/DEM_aspect.kea'
-  #slope = '/media/avollrath/phd_data2/FAO/Studies/Sri_Lanka/TEST/PathMosaicTest/FINAL_MOSAIC/Seg/DEM_slope.kea'
-
-   	
    # create image stack
-
    with open(inputlist, 'r') as f:
    	bands_list = [line.strip() for line in f]
- #  print bands_list
-   band_names = ['HH', 'HV', 'HH_HV', 'Mean_HH', 'Mean_HV', 'Var_HH', 'Var_HV','DEM_H', 'DEM_S', 'DEM_A']    #, 'dem', 'aspect', 'slope']
+   with open(inputlist, 'r') as f:
+      band_names = [line.strip() for line in f]
+   
+	#band_names = ['HH', 'HV', 'HH_HV', 'Mean_HH', 'Mean_HV', 'Var_HH', 'Var_HV','DEM_H', 'DEM_S', 'DEM_A']    #, 'dem', 'aspect', 'slope']
    gdaltype = rsgislib.TYPE_32FLOAT
-   imageutils.stackImageBands(bands_list, band_names, outstack, None, 0, 'KEA', rsgislib.TYPE_32FLOAT)  
-
+   imageutils.stackImageBands(bands_list, band_names, outstack, -9999, 0, 'KEA', rsgislib.TYPE_32FLOAT)  
 
 if __name__ == "__main__":
    main(sys.argv[1:])
-
-
-
-
-
-
-
-
-# stretch image
-#imageutils.stretchImage(outStackInt, outStackInt_stretch, False, '', True, False, 'GTiff', rsgislib.TYPE_8INT, imageutils.STRETCH_LINEARSTDDEV, 2)
-
 
