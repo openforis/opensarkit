@@ -1,0 +1,112 @@
+#! /bin/bash
+
+#-------------------------------------------------------------------------------------------	
+# 	0.1 Check for right usage & set up basic Script Variables
+if [ "$#" != "2" ]; then
+
+	echo -e "*** Prepare project script ***"
+	echo -e "*** OpenSARKit, v.01  ***"
+	echo -e ""
+	echo -e "usage: osk_prepare_project <project_folder> <ISO3_country_code/Area_of_Interest>"
+	echo -e ""
+	echo -e "input parameters:"
+	echo -e "project_folder		(output) folder where w2w mosaics are stored"
+	echo -e "ISO3_country_code/Area	(input) ISO3 country code or Shapefile of your Area of interest"
+	echo -e ""
+	echo -e "Note: Check for ISO3 code at http://www.fao.org/countryprofiles/iso3list/en/"	
+	echo -e ""
+	echo -e "Software components:"
+	echo -e "	- gdal-libraries"
+	echo -e "	- ogr2ogr"
+	echo -e "	- Spatialite/SQlite"
+	exit 1
+else
+	echo -e "*** Prepare project script ***"
+	echo -e "*** OpenSARKit, v.01  ***"
+# set up input data
+   cd $1
+   PROC_DIR=`pwd`
+   TMP_DIR=${PROC_DIR}/TMP
+   mkdir -p ${TMP_DIR}
+   echo "Processing folder: ${PROC_DIR}"
+fi
+#---------------------------------------------------------------------------------------------
+
+#------------------------------------------------------------
+# 1 Create Directories for the Project 
+mkdir -p ${PROC_DIR}/AOI
+mkdir -p ${TMP_DIR}/SRTM
+mkdir -p ${PROC_DIR}/DEM
+#mkdir -p ${PROC_DIR}/LSAT
+#mkdir -p ${PROC_DIR}/LSAT/Inventory
+mkdir -p ${PROC_DIR}/ALOS
+#--------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------
+# 2 get AOI and download the respective SRTM3 90m v4.1 void-filled data
+
+# check if AOI comes from country code or is already a shape
+if [ `echo $2 | grep shp` ]; then # AOI case
+
+		AOI=$2
+
+		# get the base AOI name
+		BASE_AOI=`echo ${AOI} | rev | cut -c 5- | rev`
+
+		# copy the AOI file into the AOI project folder
+		cp ${BASE_AOI}.shp ${PROC_DIR}/AOI/AOI.shp
+		cp ${BASE_AOI}.shx ${PROC_DIR}/AOI/AOI.shx
+		cp ${BASE_AOI}.dbf ${PROC_DIR}/AOI/AOI.dbf
+		cp ${BASE_AOI}.prj ${PROC_DIR}/AOI/AOI.prj
+
+		# create convex hull for data search
+		echo "convex hull"
+		osk_convex_hull.py --input ${PROC_DIR}/AOI/AOI.shp --output ${PROC_DIR}/AOI/convex_hull_aoi.shp
+
+		echo "Prepare SAR project for the Area defined by ${AOI}"
+		# download SRTM
+		osk_download_SRTM3 ${AOI} ${PROC_DIR}/DEM/DEM_final_90m.tif
+		
+		# download Landsat
+		#osk_download_LSAT ${AOI} ${PROC_DIR}/LSAT
+
+else # country case
+	
+      COUNTRY=`echo "SELECT name FROM countries WHERE \"iso3\" = '$2';" | spatialite $DB_GLOBAL | head -50`
+		echo "Prepare SAR project for ${COUNTRY}"
+
+		# extract srtm grid as shape from the OpenSARKit DB	
+	   ogr2ogr -f "Esri Shapefile" ${PROC_DIR}/AOI/AOI.shp ${DB_GLOBAL} -dsco SPATIALITE=yes -where "\"iso3\" = \"${2}\"" -nln AOI countries
+		AOI=${PROC_DIR}/AOI/AOI.shp
+
+		# create convex hull for data search
+		echo "convex hull"
+		osk_convex_hull.py --input ${PROC_DIR}/AOI/AOI.shp --output ${PROC_DIR}/AOI/convex_hull_aoi.shp
+
+		# downoad SRTM
+		osk_download_SRTM3 ${AOI} ${PROC_DIR}/DEM/DEM_final_90m.tif
+		
+		# download landsat		
+		#osk_download_LSAT ${AOI} ${PROC_DIR}/LSAT
+	
+fi
+#--------------------------------------------------------------------------
+
+
+#echo "get wkt"
+#ogr2ogr -f CSV ${TMP_DIR}/tmp_AOI_WKT.csv ${PROC_DIR}/AOI/${ISO3}"_convex_hull.shp" -lco GEOMETRY=AS_WKT
+#AOI=`grep POLYGON ${TMP_DIR}/tmp_AOI_WKT.csv | sed 's|\"POLYGON ((||g' | awk -F "))" $'{print $1}' | sed 's/\ /,/g'`
+#echo $AOI
+
+
+# remove tmp folder
+rm -rf ${TMP_DIR}
+
+#-----------------------
+# To-dos
+#-----------------------
+
+# include Sentinel data inventory
+# include ALOS inventory
+# include ERS/Envisat inventory
+# include TerraSAR-X inventory

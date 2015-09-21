@@ -1,0 +1,127 @@
+#! /bin/bash
+
+#----------------------------------------------------------------------
+#	ALOS Download from Alaska Space Facility (ASF)
+#
+#	Dependencies:
+#
+#		- curl
+#		- ogr2ogr
+#		- aria2
+#
+#----------------------------------------------------------------------
+
+
+#----------------------------------------------------------------------
+#	0 Set up Script variables
+#----------------------------------------------------------------------
+
+#-------------------------------------------------------------------------------------------	
+# 	0.1 Check for right usage & set up basic Script Variables
+if [ "$#" != "5" ]; then
+
+	echo -e "*** Prepare project script ***"
+	echo -e "*** OpenSARKit, v.01  ***"
+	echo -e ""
+	echo -e "usage: osk_download_ALOS_ASF <output_folder> <Area_of_Interest> <start_date> <end_date> <Mode>"
+	echo -e ""
+	echo -e "input parameters:"
+	echo -e "output_folder		(output) folder where the downloaded data will be saved"
+	echo -e "Area_of_Interest	(input) Shapefile of your Area of interest"
+	echo -e ""
+	echo -e "Note: Use the convex_hull_aoi.shp prepared by osk_prepare_project script." 
+	echo -e "      Otherwise the URL will be too long and the download won't start."
+	echo -e ""
+	echo -e "start_date		Start date of search in format YYYY-MM-DD"
+	echo -e "end_date		End date of search in format YYYY-MM-DD"
+	echo -e "Mode			Acquisition Mode of PALSAR instrument"
+	echo -e "			Available choices"
+	echo -e "			  FBS (Fine-Beam Single Polarization)"
+	echo -e "			  FBD (Fine-Beam Double Polarization)"
+	echo -e "			  PLR (Polarimetric Mode)"
+	echo -e "			  WB1 (Wide-swath)"
+	echo -e ""			
+	echo -e ""
+	echo -e "Software dependencies:"
+	echo -e "	- aria2"
+	exit 1
+else
+	echo -e "*** Prepare project script ***"
+	echo -e "*** OpenSARKit, v.01  ***"
+   cd $1
+   PROC_DIR=`pwd`
+   TMP_DIR=${PROC_DIR}/TMP
+   mkdir -p ${TMP_DIR}
+	START=$3
+	END=$4
+	MODE=$5
+fi
+
+#get the cookie
+read -r -p "Please type your ASF DAAC Username:" UNAME
+#echo -n "Please type your ASF DAAC Password:"
+read -s -p "Please type your ASF DAAC Password:" PW
+echo ""
+echo "Getting the inventory data"
+wget --save-cookies cookies.txt --post-data='user_name='$UNAME'&user_password='${PW}'' --no-check-certificate https://ursa.asfdaac.alaska.edu/cgi-bin/login -o /dev/null -O /dev/null
+
+# get the footprint from the shapefile 
+ogr2ogr -f CSV tmp_AOI_WKT.csv $2 -lco GEOMETRY=AS_WKT
+AOI=`grep POLYGON tmp_AOI_WKT.csv | sed 's|\"POLYGON ((||g' | awk -F "))" $'{print $1}' | sed 's/\ /,/g'`
+
+# Search Parameters
+PERIOD="start="${START}"T11:59:59UTC&end="${END}"T00:00:00UTC"
+PLATFORM="platform=A3"
+PROCESSING="processingLevel=L1.5"
+OUTPUT_FORMAT="output=csv"
+OUTPUT="${MODE}-data_coverage"
+BEAM="beamMode=${MODE}"  
+
+# search part of the URL
+ASK="\&polygon=${AOI}&${PLATFORM}&${BEAM}&${PERIOD}&${PROCESSING}&${OUTPUT_FORMAT}"
+
+#REL_ORBIT="relativeOrbit=109"
+#ASK="\&polygon=${AOI}&${PLATFORM}&${BEAM}&${PERIOD}&${PROCESSING}&${REL_ORBIT}&${OUTPUT_FORMAT}"
+
+mkdir -p ${PROC_DIR}/Coverage
+
+curl -s https://api.daac.asf.alaska.edu/services/search/param?keyword=value$ASK | tail -n +2 > ${PROC_DIR}/Coverage/$OUTPUT.csv
+echo "" >>  ${PROC_DIR}/Coverage/$OUTPUT.csv
+NR_OF_PRODUCTS=`wc -l ${PROC_DIR}/Coverage/$OUTPUT.csv`
+echo "Found ${NR_OF_PRODUCTS} products"
+
+# 
+OUTPUT_FORMAT="output=kml"
+ASK="\&polygon=${AOI}&${PLATFORM}&${BEAM}&${PERIOD}&${PROCESSING}&${OUTPUT_FORMAT}"
+curl -s https://api.daac.asf.alaska.edu/services/search/param?keyword=value$ASK > ${PROC_DIR}/Coverage/$OUTPUT.kml
+
+# convert downloaded kml to shape
+ogr2ogr -f "Esri Shapefile" ${PROC_DIR}/Coverage/${MODE}-coverage.shp ${PROC_DIR}/Coverage/${OUTPUT}.kml 
+rm -f ${PROC_DIR}/Coverage/${OUTPUT}.kml 
+
+while read line;do 
+	
+	ACQ_YEAR=`echo $line | awk -F "," $'{print $9}' | cut -c 2-5`
+	ACQ_MONTH=`echo $line | awk -F "," $'{print $9}' | cut -c 7-8`
+	ACQ_DAY=`echo $line | awk -F "," $'{print $9}' | cut -c 10-11`
+	ACQ_DATE=${ACQ_YEAR}${ACQ_MONTH}${ACQ_DAY}
+	SAT_TRACK=`echo $line | awk -F "," $'{print $7}' | sed "s|\"||g"`
+	DOWNLOAD=`echo $line | awk -F "," $'{print $26}' | sed "s|\"||g"`
+	GRANULE=`echo $line | awk -F "," $'{print $1}' | sed "s|\"||g"`
+	ORBIT=`echo $line | awk -F "," $'{print $1}' | cut -c 8-12`
+
+	mkdir -p ${PROC_DIR}/${MODE} 
+	mkdir -p ${PROC_DIR}/${MODE}/${ACQ_DATE}
+	
+
+	cd ${PROC_DIR}/${MODE}/${ACQ_DATE}
+	echo "Downloading ALOS FBD scene: ${GRANULE}"
+	echo "from: ${DOWNLOAD}"
+	echo "into: ${PROC_DIR}/${MODE}/${ACQ_DATE}"
+	aria2c --load-cookies="${PROC_DIR}/cookies.txt" ${DOWNLOAD}
+
+done < ${PROC_DIR}/Coverage/${OUTPUT}.csv 
+
+rm -rf ${PROC_DIR}/cookies.txt ${PROC_DIR}/tmp*
+
+

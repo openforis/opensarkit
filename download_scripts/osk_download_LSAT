@@ -1,0 +1,92 @@
+#! /bin/bash
+
+#-------------------------------------------------------------------------------------------	
+# 	0.1 Check for right usage & set up basic Script Variables
+if [ "$#" != "2" ]; then
+
+	echo -e "*** Download Landsat script ***"
+	echo -e "*** OpenSARKit, v.01  ***"
+	echo -e ""
+	echo -e "usage: osk_download_LSAT <Area_of_Interest> <output_folder> <start_date> <end_date>" 
+	echo -e ""
+	echo -e "input parameters:"
+	echo -e "Area_of_Interest	(input) Shapefile of your Area of interest (i.e. with ending .shp)"
+	echo -e "output_folder		(output) folder, where all the Landsat scenes will be stored"
+	echo -e ""
+	echo -e "Software components:"
+	echo -e "	- gdal-libraries"
+	echo -e "	- ogr2ogr"
+	echo -e "	- Spatialite/SQlite"
+	echo -e "	- gsutils (python)"
+	exit 1
+else
+	echo -e "*** Download Landsat script ***"
+	echo -e "*** OpenSARKit, v.01  ***"
+	echo -e ""
+	echo -e ""
+
+	AOI=$1   
+	PROC_DIR=$2
+   TMP_DIR=${PROC_DIR}/TMP
+   mkdir -p ${TMP_DIR}
+	mkdir -p ${PROC_DIR}/Inventory
+fi
+
+# get layer name
+LAYER=`ogrinfo ${AOI} | tail -1 | awk $'{print $2}'`
+
+# create a vrt layer for consequent interect operation with ogr2ogr
+echo "<OGRVRTDataSource>" > ${TMP_DIR}/intersect.vrt
+echo "   <OGRVRTLayer name=\"${LAYER}\">" >> ${TMP_DIR}/intersect.vrt
+echo "      <SrcDataSource>${AOI}</SrcDataSource>" >> ${TMP_DIR}/intersect.vrt
+echo "   </OGRVRTLayer>" >> ${TMP_DIR}/intersect.vrt
+echo "   <OGRVRTLayer name=\"landsat_wrs2_grid\">" >> ${TMP_DIR}/intersect.vrt
+echo "      <SrcDataSource>${DB_GLOBAL}</SrcDataSource>" >> ${TMP_DIR}/intersect.vrt
+echo "   </OGRVRTLayer>" >> ${TMP_DIR}/intersect.vrt
+echo "</OGRVRTDataSource>" >> ${TMP_DIR}/intersect.vrt
+
+
+# intersect with ogr2ogr
+ogr2ogr -f "csv" ${TMP_DIR}/tiles.csv ${TMP_DIR}/intersect.vrt -dialect sqlite -sql "SELECT b.path,b.row FROM ${LAYER} a, landsat_wrs2_grid b WHERE ST_Intersects(a.geometry, b.geometry)" 
+# get tile list
+cat ${TMP_DIR}/tiles.csv | tail -n +2 | tr ',' '\ ' > ${PROC_DIR}/Inventory/lsat_path_row_list.txt
+
+# extract the landsat path/rows from th DB
+#echo "get LSAT tile list"
+#echo "SELECT l.path,l.row FROM landsat_wrs2_grid as l, countries as c WHERE \"iso3\" = \"${ISO3}\" AND \"mode\" = \"D\" AND ST_INTERSECTS(l.GEOM,c.geom);" | spatialite -separator ' ' ${DB_GLOBAL} | head -50 > ${PROC_DIR}/Inventory/lsat_path_row_list.txt
+
+#rm -f ${PROC_DIR}/Inventory/*inv.txt
+
+echo "getting LSAT inventory data"
+while read LINE; do 
+
+
+	LSAT_PATH=`echo ${LINE} | awk $'{print $1}'`
+	LSAT_ROW=`echo ${LINE} | awk $'{print $2}'`
+
+
+	if [ `echo $LSAT_PATH | wc -m` == 2 ];then LSAT_PATH=00$LSAT_PATH;fi
+	if [ `echo $LSAT_ROW | wc -m` == 2 ];then LSAT_ROW=00$LSAT_ROW;fi
+
+	if [ `echo $LSAT_PATH | wc -m` == 3 ];then LSAT_PATH=0$LSAT_PATH;fi
+	if [ `echo $LSAT_ROW | wc -m` == 3 ];then LSAT_ROW=0$LSAT_ROW;fi
+
+# Date to DOY
+# date -d '2007-01-01' +%j
+
+	#gsutil ls gs://earthengine-public/landsat/L5/${LSAT_PATH}/${LSAT_ROW} >> ${PROC_DIR}/LSAT/Inventory/L5_inv.txt
+	#gsutil ls gs://earthengine-public/landsat/L7/${LSAT_PATH}/${LSAT_ROW} >> ${PROC_DIR}/LSAT/Inventory/L7_inv.txt
+	#gsutil ls gs://earthengine-public/landsat/L8/${LSAT_PATH}/${LSAT_ROW} >> ${PROC_DIR}/LSAT/Inventory/L8_inv.txt
+
+#   gsutil ls gs://earthengine-public/landsat/LM1/${LSAT_PATH}/${LSAT_ROW} >> ${PROC_DIR}/LSAT/Inventory/LM1_inv.txt
+#   gsutil ls gs://earthengine-public/landsat/LM2/${LSAT_PATH}/${LSAT_ROW} >> ${PROC_DIR}/LSAT/Inventory/LM2_inv.txt
+#   gsutil ls gs://earthengine-public/landsat/LM3/${LSAT_PATH}/${LSAT_ROW} >> ${PROC_DIR}/LSAT/Inventory/LM3_inv.txt
+#	gsutil ls gs://earthengine-public/landsat/LM4/${LSAT_PATH}/${LSAT_ROW} >> ${PROC_DIR}/LSAT/Inventory/LM4_inv.txt
+#	gsutil ls gs://earthengine-public/landsat/LM5/${LSAT_PATH}/${LSAT_ROW} >> ${PROC_DIR}/LSAT/Inventory/LM5_inv.txt
+#	gsutil ls gs://earthengine-public/landsat/LT4/${LSAT_PATH}/${LSAT_ROW} >> ${PROC_DIR}/LSAT/Inventory/LT4_inv.txt
+#	gsutil ls gs://earthengine-public/landsat/PE1/${LSAT_PATH}/${LSAT_ROW} >> ${PROC_DIR}/LSAT/Inventory/PE1_inv.txt
+
+done < ${PROC_DIR}/Inventory/lsat_path_row_list.txt
+
+
+rm -rf ${TMP_DIR}

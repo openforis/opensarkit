@@ -21,8 +21,8 @@
 #-------------------------------------------------------------------------------------------
 
 # TMP sourcing for Sepal env.
-source /data/home/Andreas.Vollrath/github/OpenSARKit_source.bash >/dev/null 2>&1
-source /home/avollrath/github/OpenSARKit/OpenSARKit_source.bash >/dev/null 2>&1
+#source /data/home/Andreas.Vollrath/github/OpenSARKit_source.bash >/dev/null 2>&1
+#source /home/avollrath/github/OpenSARKit/OpenSARKit_source.bash >/dev/null 2>&1
 
 #-------------------------------------------------------------------------------------------	
 # 	0.1 Check for right usage & set up basic Script Variables

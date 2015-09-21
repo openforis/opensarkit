@@ -10,6 +10,50 @@
 #     - xml-twig-tools
 #----------------------------------------------------------------------
 
+#-------------------------------------------------------------------------------------------	
+# 	0.1 Check for right usage & set up basic Script Variables
+if [ "$#" != "5" ]; then
+
+	echo -e "*** Prepare project script ***"
+	echo -e "*** OpenSARKit, v.01  ***"
+	echo -e ""
+	echo -e "usage: osk_download_ALOS_ASF <output_folder> <Area_of_Interest> <start_date> <end_date> <Product_type> <Polarization_Mode>"
+	echo -e ""
+	echo -e "input parameters:"
+	echo -e "output_folder		(output) folder where the downloaded data will be saved"
+	echo -e "Area_of_Interest	(input) Shapefile of your Area of interest"
+	echo -e ""
+	echo -e "Note: Use the convex_hull_aoi.shp prepared by osk_prepare_project script." 
+	echo -e "      Otherwise the URL will be too long and the download won't start."
+	echo -e ""
+	echo -e "start_date		Start date of search in format YYYY-MM-DD"
+	echo -e "end_date		End date of search in format YYYY-MM-DD"
+	echo -e "Product_type			Acquisition Mode of Sentinel-1 SAR instrument"
+	echo -e "			Available choices"
+	echo -e "			  RAW (Fine-Beam Single Polarization)"
+	echo -e "			  SLC (Fine-Beam Double Polarization)"
+	echo -e "			  GRD (Polarimetric Mode)"
+	echo -e ""
+	echo -e "Polarization_Mode"			
+	echo -e "			Available choices"
+	echo -e "			  VH (for IWS Mode VV/VH)"
+	echo -e "			  VV (for IWS VV)"
+	echo -e "			  HH (for IWS HH/HV)"
+	echo -e ""
+	echo -e "Software dependencies:"
+	echo -e "	- aria2"
+	exit 1
+else
+	echo -e "*** Prepare project script ***"
+	echo -e "*** OpenSARKit, v.01  ***"
+   cd $1
+   PROC_DIR=`pwd`
+   TMP_DIR=${PROC_DIR}/TMP
+   mkdir -p ${TMP_DIR}
+	START=$3
+	END=$4
+	MODE=$5
+fi
 
 #----------------------------------------------------------------------
 #	0 Set up Script variables
@@ -17,7 +61,7 @@
 
 # 	0.1 Check for right usage
 if [ "$#" != "2" ]; then
-  echo -e "Usage: osk_download_S1 </path/to/output> </path/to/AOI.shp> " # <start-date> <end-date>"
+  echo -e "Usage: osk_download_S1 </path/to/output> </path/to/AOI.shp> <start-date> <end-date>"
   echo -e "The output path will be your Project folder!"
   exit 1
 else
@@ -31,8 +75,9 @@ TMP_DIR=${PROC_DIR}/TMP
 mkdir -p ${TMP_DIR}
 #	Credentials
 read -r -p "Please type your ESA Scihub Username:" USERNAME
-echo -n "Please type your ESA Scihub Password:"
-read -s PASSWORD
+read -s -p "Please type your ESA Scihub Password:" PW
+echo ""
+echo "Getting the inventory data"
 
 # Product Filters
 PRODUCT_TYPE=GRD
