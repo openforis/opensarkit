@@ -20,18 +20,52 @@
 #	0 Set up Script variables
 #-------------------------------------------------------------------------------------------
 
-# TMP sourcing for Sepal env.
-#source /data/home/Andreas.Vollrath/github/OpenSARKit_source.bash >/dev/null 2>&1
-#source /home/avollrath/github/OpenSARKit/OpenSARKit_source.bash >/dev/null 2>&1
-
 #-------------------------------------------------------------------------------------------	
 # 	0.1 Check for right usage & set up basic Script Variables
 if [ "$#" != "3" ]; then
-  echo -e "Usage: osk_ALOS_L1_1_preprocess /path/to/zip /path/to/dem /output/folder"
-  echo -e "The path will be your Project folder!"
+
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " OpenSARKit, v.01"
+	echo -e " Preprocessing ALOS Level 1.5 scene from ASF server"
+	echo -e " written by: Andreas Vollrath, UN-FAO, Rome"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Software dependencies:"
+	echo -e "	- ASF Mapready"
+	echo -e "	- SNAP Toolbox"
+	echo -e "	- SAGA GIS"
+	echo -e "	- gdal"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e " syntax: osk_single_ALOS_L1.5_preprocess_asf <filename> <elevation> <output_folder>"
+	echo -e ""
+	echo -e " description of input parameters:"
+	echo -e " filename		(input) filename of the downloaded zip file"
+	echo -e " elevation		(input) filename to the digital elevation model"
+	echo -e ""
+	echo -e " NOTE: The DEM file should be provided in Geotiff-format as a 16Bit Integer data type with 0 as the no data value."
+	echo -e ""
+	echo -e " output_folder		(output) pathname of the output folder"
   exit 1
 else
-  echo "Welcome to OpenSARKit!"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " OpenSARKit, v.01"
+	echo -e " Preprocessing ALOS Level 1.5 scene from ASF server"
+	echo -e " written by: Andreas Vollrath, UN-FAO, Rome"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Software dependencies:"
+	echo -e "	- ASF Mapready"
+	echo -e "	- SNAP Toolbox"
+	echo -e "	- SAGA GIS"
+	echo -e "	- gdal"
+	echo -e "----------------------------------"
+	echo -e ""
+
 # set up input data
   FILE=`readlink -f $1`
   PROC_DIR=`dirname ${FILE}`
@@ -39,8 +73,6 @@ else
   rm -rf ${TMP_DIR}	
   mkdir -p ${TMP_DIR}
   DEM_FILE=$2
-  echo "Processing folder: ${PROC_DIR}"
-
   mkdir -p $3
   cd $3
   OUT_DIR=`pwd`

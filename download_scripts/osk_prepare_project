@@ -4,25 +4,44 @@
 # 	0.1 Check for right usage & set up basic Script Variables
 if [ "$#" != "2" ]; then
 
-	echo -e "*** Prepare project script ***"
-	echo -e "*** OpenSARKit, v.01  ***"
 	echo -e ""
-	echo -e "usage: osk_prepare_project <project_folder> <ISO3_country_code/Area_of_Interest>"
+	echo -e "----------------------------------"
+	echo -e " OpenSARKit, v.01"
+	echo -e " Prepare mapping project"
+	echo -e " written by: Andreas Vollrath, UN-FAO, Rome"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Software dependencies:"
+	echo -e "	- gdal"
+	echo -e "	- ogr2ogr"
+	echo -e "	- Spatialite/SQlite"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e "syntax: osk_prepare_project <project_folder> <ISO3_country_code/area_of_interest>"
 	echo -e ""
 	echo -e "input parameters:"
 	echo -e "project_folder		(output) folder where w2w mosaics are stored"
-	echo -e "ISO3_country_code/Area	(input) ISO3 country code or Shapefile of your Area of interest"
+	echo -e "ISO3_country_code/area_of_interest	ISO3 country code or shapefile of your area of interest"
 	echo -e ""
-	echo -e "Note: Check for ISO3 code at http://www.fao.org/countryprofiles/iso3list/en/"	
+	echo -e "NOTE: For ISO3 code go to http://www.fao.org/countryprofiles/iso3list/en/"	
 	echo -e ""
-	echo -e "Software components:"
-	echo -e "	- gdal-libraries"
-	echo -e "	- ogr2ogr"
-	echo -e "	- Spatialite/SQlite"
 	exit 1
 else
-	echo -e "*** Prepare project script ***"
-	echo -e "*** OpenSARKit, v.01  ***"
+		echo -e ""
+	echo -e "----------------------------------"
+	echo -e " OpenSARKit, v.01"
+	echo -e " Prepare mapping project"
+	echo -e " written by: Andreas Vollrath, UN-FAO, Rome"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Software dependencies:"
+	echo -e "	- gdal"
+	echo -e "	- ogr2ogr"
+	echo -e "	- Spatialite/SQlite"
+	echo -e "----------------------------------"
+	echo -e ""
 # set up input data
    cd $1
    PROC_DIR=`pwd`
@@ -45,11 +64,12 @@ mkdir -p ${PROC_DIR}/ALOS
 #--------------------------------------------------------------------------
 # 2 get AOI and download the respective SRTM3 90m v4.1 void-filled data
 
+
 # check if AOI comes from country code or is already a shape
 if [ `echo $2 | grep shp` ]; then # AOI case
 
 		AOI=$2
-
+		echo "Preparing your mapping project for the area defined by the shapefile: ${AOI}"
 		# get the base AOI name
 		BASE_AOI=`echo ${AOI} | rev | cut -c 5- | rev`
 
@@ -60,11 +80,11 @@ if [ `echo $2 | grep shp` ]; then # AOI case
 		cp ${BASE_AOI}.prj ${PROC_DIR}/AOI/AOI.prj
 
 		# create convex hull for data search
-		echo "convex hull"
+		echo "Creating a convex hull shapefile of your area of interest"
 		osk_convex_hull.py --input ${PROC_DIR}/AOI/AOI.shp --output ${PROC_DIR}/AOI/convex_hull_aoi.shp
 
-		echo "Prepare SAR project for the Area defined by ${AOI}"
 		# download SRTM
+		echo "Downloading and preparing SRTM4 90m Digital Elevation Model"
 		osk_download_SRTM3 ${AOI} ${PROC_DIR}/DEM/DEM_final_90m.tif
 		
 		# download Landsat
@@ -73,17 +93,19 @@ if [ `echo $2 | grep shp` ]; then # AOI case
 else # country case
 	
       COUNTRY=`echo "SELECT name FROM countries WHERE \"iso3\" = '$2';" | spatialite $DB_GLOBAL | head -50`
-		echo "Prepare SAR project for ${COUNTRY}"
+		echo "Preparing your mapping project for ${COUNTRY}"
 
-		# extract srtm grid as shape from the OpenSARKit DB	
+		# extract srtm grid as shape from the OpenSARKit DB
+		echo "Extracting shapefile from country database"	
 	   ogr2ogr -f "Esri Shapefile" ${PROC_DIR}/AOI/AOI.shp ${DB_GLOBAL} -dsco SPATIALITE=yes -where "\"iso3\" = \"${2}\"" -nln AOI countries
 		AOI=${PROC_DIR}/AOI/AOI.shp
 
 		# create convex hull for data search
-		echo "convex hull"
+		echo "Creating a convex hull for ${COUNTRY}"
 		osk_convex_hull.py --input ${PROC_DIR}/AOI/AOI.shp --output ${PROC_DIR}/AOI/convex_hull_aoi.shp
 
 		# downoad SRTM
+		echo "Downloading and preparing SRTM4 90m Digital Elevation Model"
 		osk_download_SRTM3 ${AOI} ${PROC_DIR}/DEM/DEM_final_90m.tif
 		
 		# download landsat		

@@ -18,52 +18,115 @@
 
 #-------------------------------------------------------------------------------------------	
 # 	0.1 Check for right usage & set up basic Script Variables
-if [ "$#" != "5" ]; then
+if [ "$#" == "6" ]; then
 
-	echo -e "*** Prepare project script ***"
-	echo -e "*** OpenSARKit, v.01  ***"
 	echo -e ""
-	echo -e "usage: osk_download_ALOS_ASF <output_folder> <Area_of_Interest> <start_date> <end_date> <Mode>"
+	echo -e "----------------------------------"
+	echo -e " OpenSARKit, v.01"
+	echo -e " Download ALOS data from ASF server"
+	echo -e " written by: Andreas Vollrath, UN-FAO, Rome"
+	echo -e "----------------------------------"
 	echo -e ""
-	echo -e "input parameters:"
-	echo -e "output_folder		(output) folder where the downloaded data will be saved"
-	echo -e "Area_of_Interest	(input) Shapefile of your Area of interest"
-	echo -e ""
-	echo -e "Note: Use the convex_hull_aoi.shp prepared by osk_prepare_project script." 
-	echo -e "      Otherwise the URL will be too long and the download won't start."
-	echo -e ""
-	echo -e "start_date		Start date of search in format YYYY-MM-DD"
-	echo -e "end_date		End date of search in format YYYY-MM-DD"
-	echo -e "Mode			Acquisition Mode of PALSAR instrument"
-	echo -e "			Available choices"
-	echo -e "			  FBS (Fine-Beam Single Polarization)"
-	echo -e "			  FBD (Fine-Beam Double Polarization)"
-	echo -e "			  PLR (Polarimetric Mode)"
-	echo -e "			  WB1 (Wide-swath)"
-	echo -e ""			
-	echo -e ""
-	echo -e "Software dependencies:"
+	echo -e "----------------------------------"
+	echo -e " Software packages used"
 	echo -e "	- aria2"
-	exit 1
-else
-	echo -e "*** Prepare project script ***"
-	echo -e "*** OpenSARKit, v.01  ***"
+	echo -e "	- curl"
+	echo -e "	- ogr2ogr"
+	echo -e "----------------------------------"
    cd $1
    PROC_DIR=`pwd`
    TMP_DIR=${PROC_DIR}/TMP
    mkdir -p ${TMP_DIR}
+	AOI=$2
 	START=$3
 	END=$4
 	MODE=$5
+	PROCESSING="processingLevel=$6"
+
+elif [ "$#" == "8" ]; then
+
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " OpenSARKit, v.01"
+	echo -e " Download ALOS data from ASF server"
+	echo -e " written by: Andreas Vollrath, UN-FAO, Rome"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Software packages used"
+	echo -e "	- aria2"
+	echo -e "	- curl"
+	echo -e "	- ogr2ogr"
+	echo -e "----------------------------------"
+	cd $1
+   PROC_DIR=`pwd`
+   TMP_DIR=${PROC_DIR}/TMP
+   mkdir -p ${TMP_DIR}
+	AOI=$2
+	START=$3
+	END=$4
+	MODE=$5
+	PROCESSING="processingLevel=$6"
+	SCRIPT_MODE=NI
+	UNAME=$7
+	PW=$8
+
+else
+
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " OpenSARKit, v.01"
+	echo -e " Download ALOS data from ASF server"
+	echo -e " written by: Andreas Vollrath, UN-FAO, Rome"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Software dependencies:"
+	echo -e "	- aria2"
+	echo -e "	- curl"
+	echo -e "	- ogr2ogr"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e " syntax: osk_download_ALOS_ASF <output_folder> <area_of_interest> <start_date> <end_date> <mode> <processing_level>"
+	echo -e ""
+	echo -e " description of input parameters:"
+	echo -e " output_folder		(output) folder where the downloaded data will be saved"
+	echo -e " area_of_interest	(input) shapefile of your area of interest"
+	echo -e ""
+	echo -e " NOTE: Use the convex_hull_aoi.shp prepared by osk_prepare_project script." 
+	echo -e "      Otherwise the URL will be too long and the download won't start."
+	echo -e ""
+	echo -e " start_date		start date of search in format YYYY-MM-DD"
+	echo -e " end_date		end date of search in format YYYY-MM-DD"
+	echo -e " mode			acquisition Mode of PALSAR instrument"
+	echo -e "			  available choices:"
+	echo -e "			  FBS (Fine-Beam Single Polarization)"
+	echo -e "			  FBD (Fine-Beam Double Polarization)"
+	echo -e "			  PLR (Polarimetric Mode)"
+	echo -e "			  WB1 (Wide-swath)"
+	echo -e " processing_level	choose the product level"			
+	echo -e "			  Available choices:"
+	echo -e "			  L1.0 (RAW - Level 1.0)"
+	echo -e "			  L1.1 (SLC - Level 1.1)"
+	echo -e "			  L1.5 (GRD - Level 1.5)"
+	echo -e "			  RTC_HI_RES (High-resolution Terrain Corrected)"
+	echo -e ""
+	exit 1
 fi
 
+echo $1 $2 $3 $4 $5 $6 $7
 #get the cookie
-read -r -p "Please type your ASF DAAC Username:" UNAME
-#echo -n "Please type your ASF DAAC Password:"
-read -s -p "Please type your ASF DAAC Password:" PW
+if [ "${SCRIPT_MODE}" = "NI" ];then
+	echo ""
+else
+	read -r -p "Please type your ASF DAAC Username:" UNAME
+	read -s -p "Please type your ASF DAAC Password:" PW
+fi
 echo ""
 echo "Getting the inventory data"
 wget --save-cookies cookies.txt --post-data='user_name='$UNAME'&user_password='${PW}'' --no-check-certificate https://ursa.asfdaac.alaska.edu/cgi-bin/login -o /dev/null -O /dev/null
+unset PW
+
 
 # get the footprint from the shapefile 
 ogr2ogr -f CSV tmp_AOI_WKT.csv $2 -lco GEOMETRY=AS_WKT
@@ -72,14 +135,14 @@ AOI=`grep POLYGON tmp_AOI_WKT.csv | sed 's|\"POLYGON ((||g' | awk -F "))" $'{pri
 # Search Parameters
 PERIOD="start="${START}"T11:59:59UTC&end="${END}"T00:00:00UTC"
 PLATFORM="platform=A3"
-PROCESSING="processingLevel=L1.5"
+
 OUTPUT_FORMAT="output=csv"
 OUTPUT="${MODE}-data_coverage"
 BEAM="beamMode=${MODE}"  
-
 # search part of the URL
 ASK="\&polygon=${AOI}&${PLATFORM}&${BEAM}&${PERIOD}&${PROCESSING}&${OUTPUT_FORMAT}"
 
+#PROCESSING="processingLevel=L1.5"
 #REL_ORBIT="relativeOrbit=109"
 #ASK="\&polygon=${AOI}&${PLATFORM}&${BEAM}&${PERIOD}&${PROCESSING}&${REL_ORBIT}&${OUTPUT_FORMAT}"
 

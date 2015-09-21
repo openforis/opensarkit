@@ -5,27 +5,58 @@
 #  dans-gdal-scripts
 #  gdal-libs
 
-# TMP sourcing for Sepal env.
-source /data/home/Andreas.Vollrath/github/OpenSARKit_source.bash
 
 #----------------------------------------------------------------------
 #	0 Set up Script variables
 #----------------------------------------------------------------------
 
-# 	0.1 Check for right usage
+#-------------------------------------------------------------------------------------------	
+# 	0.1 Check for right usage & set up basic Script Variables
 if [ "$#" != "2" ]; then
-	echo -e "Usage: osk_path_merge_ASF </path/to/satellite/tracks> <Output Resolution>"
-	echo -e "Resolution is in degrees, but can be \"-\" for default resolution "
-	echo -e "Example for defaul resolution (i.e. 0.000138889°, ~15m): osk_path_merge_ASF ../Vietnam/2007 - "
-	echo -e "		~30m = 0.00027778°"
-	echo -e "		~90m = 0.00083333°"
+
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " OpenSARKit, v.01"
+	echo -e " Mosaic preprocessed scenes to the full path extents "
+	echo -e " written by: Andreas Vollrath, UN-FAO, Rome"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Software dependencies:"
+	echo -e "	- SAGA GIS"
+	echo -e "	- dans-gdal-scripts"
+	echo -e "	- gdal"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e " syntax: osk_merge_path_ALOS <path_to_tracks> <output_resolution>"
+	echo -e ""
+	echo -e " description of input parameters:"
+	echo -e " path_to_tracks		pathname, where the preprocessed scenes are sorted by acquisition date"
+	echo -e ""
+	echo -e " NOTE: This script should be followed by osk_bulk_preproc_ALOS_ASF_L1.5"
+	echo -e ""
+	echo -e " resolution		output resolution in degree ( - for original resolution)"
+	echo -e ""
   exit 1
 else
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " OpenSARKit, v.01"
+	echo -e " Mosaic preprocessed scenes to the full path extents "
+	echo -e " written by: Andreas Vollrath, UN-FAO, Rome"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Software dependencies:"
+	echo -e "	- SAGA GIS"
+	echo -e "	- dans-gdal-scripts"
+	echo -e "	- gdal"
+	echo -e "----------------------------------"
+	echo -e ""
+
+# set up input data
 	cd $1
 	export PROC_DIR=`pwd`
-	echo "Welcome to OpenSARKit!"
-	echo "Processing folder: ${PROC_DIR}"
-  
 fi
 
 # Number of CPUs (for SAGA GIS)

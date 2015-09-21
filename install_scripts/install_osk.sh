@@ -61,23 +61,23 @@ apt-get install --yes aria2 unrar
 # 3 Download & Install non-repository Software and OSK
 #------------------------------------------------------------------
 
-mkdir ~/github
-cd ~/github
+mkdir ${HOME}/github
+cd ${HOME}/github
 
 # OpenSARKit
 git clone https://github.com/BuddyVolly/OpenSARKit
 
 #ASF Mapready
 git clone https://github.com/asfadmin/ASF_MapReady
-cd ~/github/ASF_MapReady
-./configure --prefix=~/github/OpenSARKit/Programs/ASF_bin
+cd ${HOME}/github/ASF_MapReady
+./configure --prefix=${HOME}/github/OpenSARKit/Programs/ASF_bin
 make
 make install
 
 # PolSARPro
-mkdir -p ~/github/OpenSARKit/Programs/ # not in new version 
-mkdir -p ~/github/OpenSARKit/Programs/PolSARPro504
-cd ~/github/OpenSARKit/Programs/PolSARPro504
+mkdir -p ${HOME}/github/OpenSARKit/Programs/ # not in new version 
+mkdir -p ${HOME}/github/OpenSARKit/Programs/PolSARPro504
+cd ${HOME}/github/OpenSARKit/Programs/PolSARPro504
 wget https://earth.esa.int/documents/653194/1960708/PolSARpro_v5.0.4_Linux_20150607
 
 unrar x PolSARpro_v5.0.4_Linux_20150607
@@ -85,14 +85,14 @@ cd Soft
 bash Compil_PolSARpro_v5_Linux.bat 
 
 # SNAP
-mkdir ~/github/OpenSARKit/Programs/S1TBX
-cd ~/github/OpenSARKit/Programs/S1TBX
+mkdir ${HOME}/github/OpenSARKit/Programs/S1TBX
+cd ${HOME}/github/OpenSARKit/Programs/S1TBX
 wget http://sentinel1.s3.amazonaws.com/1.0/s1tbx_1.1.1_Linux64_installer.sh
 sh s1tbx_1.1.1_Linux64_installer.sh
 
 # add source file to .bashrc
-echo "source ~/github/OpenSARKit/OpenSARKit_source.bash" >> ~/.bashrc
+echo "source ${HOME}/github/OpenSARKit/OpenSARKit_source.bash" >> ${HOME}/.bashrc
 
-chmod -R 755 ~/github
-chown -r ${USER}:${USER} ~/github
+chmod -R 755 ${HOME}/github
+chown -r ${USER}:${USER} ${HOME}/github
 
