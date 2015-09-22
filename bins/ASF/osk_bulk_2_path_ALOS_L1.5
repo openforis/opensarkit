@@ -1,7 +1,7 @@
 #! /bin/bash
 
 #----------------------------------------------------------------------
-#	0 Set up Script variables
+#	I Set up Script variables
 #----------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------------------	
@@ -44,19 +44,19 @@ if [ "$#" != "7" ]; then
 	echo -e "			  FBD (Fine-Beam Double Polarization)"
 	echo -e "			  PLR (Polarimetric Mode)"
 	echo -e "			  WB1 (Wide-swath)"
-	echo -e " processing_level	choose the product level"			
+	echo -e " processing_level	choose the product level"				
 	echo -e "			  Available choices:"
-	echo -e "			  RAW (Level 1.0)"
-	echo -e "			  SLC (Level 1.1)"
-	echo -e "			  GRD (Level 1.5)"
-	echo -e "			  TRC (High-resolution Terrain Corrected)"
+	echo -e "			  L1.0 (RAW - Level 1.0)"
+	echo -e "			  L1.1 (SLC - Level 1.1)"
+	echo -e "			  L1.5 (GRD - Level 1.5)"
+	echo -e "			  RTC_HI_RES (High-resolution Terrain Corrected)"
 	echo -e ""
 	exit 1
 else
 	echo -e ""
 	echo -e "----------------------------------"
 	echo -e " OpenSARKit, v.01"
-	echo -e " Bulk download, preprocess ALOS Path mosaics for a specific Area of Interest"
+	echo -e " Bulk download, preprocess and mosaic ALOS Paths for a specific Area of Interest"
 	echo -e " written by: Andreas Vollrath, UN-FAO, Rome"
 	echo -e "----------------------------------"
 	echo -e ""
@@ -83,25 +83,36 @@ else
 	PROCESSING="$7"
 fi
 
+#----------------------------------------------------------------------
+#	II Launch scripts
+#----------------------------------------------------------------------
 
-
+#--------------------------------------------------------------------------
+# 1 Username and Password for ASF data access
 read -r -p "Please type your ASF DAAC Username:" UNAME
 read -s -p "Please type your ASF DAAC Password:" PW
 echo ""
+#--------------------------------------------------------------------------
 
-# prepare project
-#osk_prepare_project ${PROC_DIR} ${AOI}
+#--------------------------------------------------------------------------
+# 2 prepare project
+osk_prepare_project ${PROC_DIR} ${AOI}
+#--------------------------------------------------------------------------
 
+#--------------------------------------------------------------------------
+# 3 download scenes
 cd ${PROC_DIR}/ALOS
-
-# download scenes
-#osk_download_ALOS_ASF ${PROC_DIR}/ALOS ${PROC_DIR}/AOI/convex_hull_aoi.shp ${START} ${END} ${MODE} ${PROCESSING} ${UNAME} ${PW}
+osk_download_ALOS_ASF ${PROC_DIR}/ALOS ${PROC_DIR}/AOI/convex_hull_aoi.shp ${START} ${END} ${MODE} ${PROCESSING} ${UNAME} ${PW}
 unset PW
+#--------------------------------------------------------------------------
 
+#--------------------------------------------------------------------------
+# 4 preproces scenes
 cd ${PROC_DIR}/ALOS/${MODE}
-
-# preproces scenes
 osk_bulk_preproc_ALOS_ASF_L1.5 . ${PROC_DIR}/DEM/DEM_SRTM3V4.1.tif
+#--------------------------------------------------------------------------
 
-# create path mosaics
+#--------------------------------------------------------------------------
+# 5 create path mosaics
 osk_merge_path_ALOS ${PROC_DIR}/ALOS/${MODE} ${RESOLUTION}
+#--------------------------------------------------------------------------

@@ -33,7 +33,8 @@ apt-get upgrade -y
 # 3 install packages
 #------------------------------------------------------------------
 # Gis Packages
-apt-get install --yes qgis libqgis-dev gdal-bin libgdal-dev python-gdal saga libsaga-dev python-saga otb-bin libotb-dev libotb-ice libotb-ice-dev monteverdi2 python-otb geotiff-bin libgeotiff-dev gmt libgmt-dev dans-gdal-scripts	
+apt-get install --yes qgis  gdal-bin libgdal-dev python-gdal saga libsaga-dev python-saga otb-bin libotb-dev libotb-ice libotb-ice-dev monteverdi2 python-otb geotiff-bin libgeotiff-dev gmt libgmt-dev dans-gdal-scripts	
+#libqgis-dev (problems with grass 7)
 
 ## Spatial-Database Spatialite
 apt-get install --yes spatialite-bin spatialite-gui #pgadmin3 postgresql postgis 
@@ -61,23 +62,29 @@ apt-get install --yes aria2 unrar
 # 3 Download & Install non-repository Software and OSK
 #------------------------------------------------------------------
 
-mkdir ${HOME}/github
-cd ${HOME}/github
+mkdir ${HOME}/OSK
+cd ${HOME}/OSK
 
 # OpenSARKit
 git clone https://github.com/BuddyVolly/OpenSARKit
 
 #ASF Mapready
-git clone https://github.com/asfadmin/ASF_MapReady
-cd ${HOME}/github/ASF_MapReady
-./configure --prefix=${HOME}/github/OpenSARKit/Programs/ASF_bin
+
+mkdir -p ${HOME}/OSK/Programs
+cd ${HOME}/OSK/Programs
+
+#git clone https://github.com/asfadmin/ASF_MapReady
+wget https://github.com/asfadmin/ASF_MapReady/archive/3.6.6-117.tar.gz
+tar -xzvf /home/sarbuntu/OSK/Programs/3.6.6-117.tar.gz
+rm -f tar -xzvf /home/sarbuntu/OSK/Programs/3.6.6-117.tar.gz
+cd ASF_MapReady-3.6.6-117
+./configure --prefix=$HOME/github/OpenSARKit/Programs/ASF_bin
 make
 make install
 
 # PolSARPro
-mkdir -p ${HOME}/github/OpenSARKit/Programs/ # not in new version 
-mkdir -p ${HOME}/github/OpenSARKit/Programs/PolSARPro504
-cd ${HOME}/github/OpenSARKit/Programs/PolSARPro504
+mkdir -p ${HOME}/OSK/Programs/PolSARPro504
+cd ${HOME}/OSK/Programs/PolSARPro504
 wget https://earth.esa.int/documents/653194/1960708/PolSARpro_v5.0.4_Linux_20150607
 
 unrar x PolSARpro_v5.0.4_Linux_20150607
@@ -85,14 +92,13 @@ cd Soft
 bash Compil_PolSARpro_v5_Linux.bat 
 
 # SNAP
-mkdir ${HOME}/github/OpenSARKit/Programs/S1TBX
-cd ${HOME}/github/OpenSARKit/Programs/S1TBX
+mkdir -p ${HOME}/OSK/Programs/
 wget http://sentinel1.s3.amazonaws.com/1.0/s1tbx_1.1.1_Linux64_installer.sh
 sh s1tbx_1.1.1_Linux64_installer.sh
 
 # add source file to .bashrc
 echo "source ${HOME}/github/OpenSARKit/OpenSARKit_source.bash" >> ${HOME}/.bashrc
 
-chmod -R 755 ${HOME}/github
-chown -r ${USER}:${USER} ${HOME}/github
+chmod -R 755 ${HOME}/OSK
+chown -R ${USER}:${USER} ${HOME}/OSK
 
