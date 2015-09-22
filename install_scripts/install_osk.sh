@@ -51,8 +51,8 @@ apt-get install --yes python-scipy python-h5py python-pyresample
 # Dependencies for PolSARPro
 apt-get install --yes bwidget itcl3 itk3 iwidgets4 libtk-img 
 
-# Aria for automated ASF download
-apt-get install --yes aria2 unrar
+# Further tools (i.e. Aria for automated ASF download, unrar for unpacking, parallel for parallelization of processing)
+apt-get install --yes aria2 unrar parallel
 
 ## LEDAPS
 #apt-get install --yes zlib1g zlib1g-dev libtiff5 libtiff5-dev libgeotiff2 libgeotiff-dev libxml2 libxml2-dev ksh libhdf4-0 libhdf4-0-alt libhdf4-alt-dev libhdfeos0 libhdfeos-dev libgctp0d libgctp-dev hdf4-tools
@@ -97,7 +97,7 @@ wget http://sentinel1.s3.amazonaws.com/1.0/s1tbx_1.1.1_Linux64_installer.sh
 sh s1tbx_1.1.1_Linux64_installer.sh
 
 # add source file to .bashrc
-echo "source ${HOME}/github/OpenSARKit/OpenSARKit_source.bash" >> ${HOME}/.bashrc
+echo "source ${HOME}/OSK/OpenSARKit/OpenSARKit_source.bash" >> ${HOME}/.bashrc
 
 chmod -R 755 ${HOME}/OSK
 chown -R ${USER}:${USER} ${HOME}/OSK

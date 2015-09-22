@@ -68,9 +68,12 @@ else
 
 # set up input data
   FILE=`readlink -f $1`
+  BASE=`basename ${FILE}`
   PROC_DIR=`dirname ${FILE}`
-  TMP_DIR=${PROC_DIR}/TMP
-  rm -rf ${TMP_DIR}	
+  TMP1=${PROC_DIR}/TMP/
+  rm -rf ${TMP1}	
+  mkdir -p ${TMP1}
+  TMP_DIR=${PROC_DIR}/TMP/${BASE}
   mkdir -p ${TMP_DIR}
   DEM_FILE=$2
   mkdir -p $3
@@ -173,7 +176,7 @@ sed -i "s|projection =|projection = ${ASF_CONF}/Proj.proj|g" ${TMP_DIR}/geocodin
 # do ASF procesing
 echo "Importing ${SCENE_ID} from $DATE into ASF and geocode it"
 echo "Check logfile ${FINAL_DIR}/log_asf for output"
-asf_mapready -quiet -input ${INPUT_RAW} -output ${OUTPUT_ASF} -tmpdir ${TMP_DIR}/tmp -log ${FINAL_DIR}/log_asf ${TMP_DIR}/geocoding_alos_fbd.cfg
+asf_mapready -quiet -input ${INPUT_RAW} -output ${OUTPUT_ASF} -tmpdir ${TMP_DIR}/tmp_${BASE} -log ${FINAL_DIR}/log_asf ${TMP_DIR}/geocoding_alos_fbd.cfg
 #-------------------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------------------
@@ -182,7 +185,7 @@ if grep -q Error ${FINAL_DIR}/log_asf; then
 	echo "The coregistration seems not to be possible, so we will try without DEM"
 	echo "Check logfile ${FINAL_DIR}/log_asf_no_coreg for output"
 	sed -i "s|no matching = 0|no matching = 1}/Proj.proj|g" ${TMP_DIR}/geocoding_alos_fbd.cfg
-	asf_mapready -quiet -input ${INPUT_RAW} -output ${OUTPUT_ASF} -tmpdir ${TMP_DIR}/tmp -log ${FINAL_DIR}/log_asf_no_coreg ${TMP_DIR}/geocoding_alos_fbd.cfg
+	asf_mapready -quiet -input ${INPUT_RAW} -output ${OUTPUT_ASF} -tmpdir ${TMP_DIR}/tmp_${BASE} -log ${FINAL_DIR}/log_asf_no_coreg ${TMP_DIR}/geocoding_alos_fbd.cfg
 fi
 #-------------------------------------------------------------------------------------------
 
@@ -284,7 +287,7 @@ gdalwarp -srcnodata -99999 -dstnodata 0 ${TMP_DIR}/tmp_mask_hv_filtered.sdat ${F
 
 #-------------------------------------------------------------------------------------------
 # remove Temp Folder
-rm -rf ${TMP_DIR}
+rm -rf ${TMP}
 #-------------------------------------------------------------------------------------------
 echo "------------------------------------------------------------"
 echo "Successfully preprocessed ${SCENE_ID} (OpenSARKit Statement)"

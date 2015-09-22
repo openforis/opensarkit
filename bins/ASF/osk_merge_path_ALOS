@@ -1,11 +1,5 @@
 #! /bin/bash
 
-# dependecies
-#	SAGA GIS (Version > 2.1.4)
-#  dans-gdal-scripts
-#  gdal-libs
-
-
 #----------------------------------------------------------------------
 #	0 Set up Script variables
 #----------------------------------------------------------------------
@@ -36,8 +30,8 @@ if [ "$#" != "2" ]; then
 	echo -e " NOTE: This script should be followed by osk_bulk_preproc_ALOS_ASF_L1.5"
 	echo -e ""
 	echo -e " resolution		output resolution in degree ( - for original resolution)"
-	echo -e ""
-  exit 1
+	echo -e " "
+   exit 1
 else
 	echo -e ""
 	echo -e "----------------------------------"
@@ -54,14 +48,17 @@ else
 	echo -e "----------------------------------"
 	echo -e ""
 
-# set up input data
+	# set up input data
 	cd $1
 	export PROC_DIR=`pwd`
 fi
 
-# Number of CPUs (for SAGA GIS)
+#--------------------------------------------------------------
+# Set number of CPUs (for SAGA GIS)
 CPU=`lscpu | grep "CPU(s):" | awk $'{print $2}' | head -1`
+#--------------------------------------------------------------
 
+#--------------------------------------------------------------
 # Path structure
 cd ${PROC_DIR}
 TMP_DIR=${PROC_DIR}/TMP
@@ -70,12 +67,15 @@ mkdir -p ${PROC_DIR}/PATH
 mkdir -p ${PROC_DIR}/PATH/MOSAICS
 mkdir -p ${PROC_DIR}/PATH/KMZS
 mkdir -p ${PROC_DIR}/PATH/OUTLINES
+#--------------------------------------------------------------
 
+#--------------------------------------------------------------
 # Loop for Acquisition Date
 for ACQ_DATE in `ls -1 -d [1,2]*`;do 
 
 	cd ${ACQ_DATE}
 
+	#--------------------------------------------------------------
 	# Loop for Frames
 	for FRAME in `ls -1 -d [0-9]*`;do 
 		
@@ -83,12 +83,11 @@ for ACQ_DATE in `ls -1 -d [1,2]*`;do
 		cd $FRAME
 		ORBIT=${FRAME:5:10}
 	
+		#--------------------------------------------------------------
+		# Translate to SAGA GIS
 		if [ $2 == "-" ];then
 	
 			echo "Translate to SAGA GIS format (powerful and fast raster manipulation)"				
-	#		gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -t_srs EPSG:4326 -tr 0.000138889 0.000138889 -overwrite -of SAGA -srcnodata "0" -dstnodata "-99999" Gamma0_HH.tif ${TMP_DIR}/${FRAME}"_Gamma0_HH_saga.sdat"
-	#		gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -t_srs EPSG:4326 -tr 0.000138889 0.000138889 -overwrite -of SAGA -srcnodata "0" -dstnodata "-99999" Gamma0_HV.tif ${TMP_DIR}/${FRAME}"_Gamma0_HV_saga.sdat"
-	
 			gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -t_srs EPSG:4326 -overwrite -of SAGA -srcnodata "0" -dstnodata "-99999" Gamma0_HH.tif ${TMP_DIR}/${FRAME}"_Gamma0_HH_saga.sdat"
 			gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -t_srs EPSG:4326 -overwrite -of SAGA -srcnodata "0" -dstnodata "-99999" Gamma0_HV.tif ${TMP_DIR}/${FRAME}"_Gamma0_HV_saga.sdat"
 
@@ -97,6 +96,8 @@ for ACQ_DATE in `ls -1 -d [1,2]*`;do
 		
 			cd ../
 
+		#--------------------------------------------------------------
+		# Translate to SAGA and resample to desired resolution
 		else
 
 			RES=$2
@@ -111,10 +112,14 @@ for ACQ_DATE in `ls -1 -d [1,2]*`;do
 			cd ../
 
 		fi
-
+		#--------------------------------------------------------------
 	
 	done
+	#--------------------------------------------------------------
 
+
+	#--------------------------------------------------------------
+	# 
 	echo "Merge Paths for HH Polarization"
 	LIST_HH=`cat ${TMP_DIR}/Gamma0_HH_list | tr '\n' ';' | rev | cut -c 2- | rev`
 	saga_cmd -c=${CPU} grid_tools 3 -GRIDS:"${LIST_HH}" -TYPE:7 -OVERLAP:4 -BLEND_DIST:0 -TARGET_OUT_GRID:${PROC_DIR}/PATH/MOSAICS/${ACQ_DATE}"_Gamma0_HH_"${ORBIT}.sgrd
@@ -132,11 +137,12 @@ for ACQ_DATE in `ls -1 -d [1,2]*`;do
 	cd ${PROC_DIR}
 	
 done
+#--------------------------------------------------------------
 
 cd ${PROC_DIR}
 
-tar -cfzv ${PROC_DIR}/PATH/Outlines.tar.gz ${PROC_DIR}/PATH/OUTLINES
-tar -cfzv ${PROC_DIR}/PATH/KMZS.tar.gz ${PROC_DIR}/PATH/KMZS
+tar -czvf ${PROC_DIR}/PATH/Outlines.tar.gz ${PROC_DIR}/PATH/OUTLINES
+tar -czvf ${PROC_DIR}/PATH/KMZS.tar.gz ${PROC_DIR}/PATH/KMZS
 rm -rf ${TMP_DIR}
 
 

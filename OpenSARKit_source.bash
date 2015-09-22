@@ -3,7 +3,7 @@
 # Support script to source the original programs
 
 # Folder of OpenSARKit scripts and workflows
-export OPENSARKIT="${HOME}/github/OpenSARKit"
+export OPENSARKIT="${HOME}/OSK/OpenSARKit"
 
 # Folder of external program installations
 PROGRAMS="${OPENSARKIT}/Programs"
