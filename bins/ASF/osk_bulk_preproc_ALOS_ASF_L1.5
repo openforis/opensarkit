@@ -70,13 +70,13 @@ for DATE in `ls -1 -d [0-9]*`;do
 	cd ${DATE}
 
 	# serial version
-#	for FILE in `ls -1 *.zip`;do
-#		osk_single_ALOS_L1.5_preprocess_asf ${FILE} $2 ${PROC_DIR}/${DATE}  
-#	done
+	for FILE in `ls -1 *.zip`;do
+		osk_single_ALOS_L1.5_preprocess_asf ${FILE} $2 ${PROC_DIR}/${DATE}  
+	done
 
 	# parallel version
-	ls -1 *zip | parallel -j+0 --eta "osk_single_ALOS_L1.5_preprocess_asf {} $2 ${PROC_DIR}/${DATE}"
-	#ls -1 *zip | time parallel -j+0 --eta 'osk_single_ALOS_L1.5_preprocess_asf {} /media/avollrath/OpenSAR/Phillipines/DEM/DEM_SRTM3V4.1.tif .'
+#	ls -1 *zip | parallel -j+0 --eta "osk_single_ALOS_L1.5_preprocess_asf {} $2 ${PROC_DIR}/${DATE}"
+
 
 	# possible Path mosaicing --> use extra script, that could be used also later on
 	#list=`ls -d */Gamma0* | tr '\ ' ';'`

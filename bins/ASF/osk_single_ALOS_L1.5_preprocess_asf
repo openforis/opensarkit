@@ -287,7 +287,7 @@ gdalwarp -srcnodata -99999 -dstnodata 0 ${TMP_DIR}/tmp_mask_hv_filtered.sdat ${F
 
 #-------------------------------------------------------------------------------------------
 # remove Temp Folder
-rm -rf ${TMP}
+rm -rf ${TMP_DIR}
 #-------------------------------------------------------------------------------------------
 echo "------------------------------------------------------------"
 echo "Successfully preprocessed ${SCENE_ID} (OpenSARKit Statement)"
