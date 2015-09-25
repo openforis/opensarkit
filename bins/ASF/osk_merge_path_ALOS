@@ -128,9 +128,9 @@ for ACQ_DATE in `ls -1 -d [1,2]*`;do
 	LIST_HV=`cat ${TMP_DIR}/Gamma0_HV_list | tr '\n' ';' | rev | cut -c 2- | rev`
 	saga_cmd -c=${CPU} grid_tools 3 -GRIDS:"${LIST_HV}" -TYPE:7 -OVERLAP:4 -BLEND_DIST:0 -TARGET_OUT_GRID:${PROC_DIR}/PATH/MOSAICS/${ACQ_DATE}"_Gamma0_HV_"${ORBIT}.sgrd
 	
-	echo "creating a shapefile for all valid points"
+	echo "creating a shapefile for all valid points in the mosaic"
 	gdal_trace_outline ${PROC_DIR}/PATH/MOSAICS/${ACQ_DATE}"_Gamma0_HV_"${ORBIT}.sdat -ndv -99999 -dp-toler 0 -out-cs en -ogr-out ${PROC_DIR}/PATH/OUTLINES/${ACQ_DATE}"_Gamma0_HV_"${ORBIT}.shp
-	echo "creating a KMZ file for GoogleEarth"
+	echo "creating a KMZ file for GoogleEarth of the HV mosaic"
 	gdal_translate -of KMLSUPEROVERLAY -a_nodata 0 -outsize 25% 25% -scale 0.001 0.1 0 255 ${PROC_DIR}/PATH/MOSAICS/${ACQ_DATE}"_Gamma0_HV_"${ORBIT}.sdat  ${PROC_DIR}/PATH/KMZS/${ACQ_DATE}"_Gamma0_HV_"${ORBIT}.kmz -co FORMAT=PNG
 
 	rm -rf ${TMP_DIR}/*
@@ -141,8 +141,13 @@ done
 
 cd ${PROC_DIR}
 
+#--------------------------------------------------------------
+# Compress the Sahpefiles and KMZs for Download
 tar -czvf ${PROC_DIR}/PATH/Outlines.tar.gz ${PROC_DIR}/PATH/OUTLINES
 tar -czvf ${PROC_DIR}/PATH/KMZS.tar.gz ${PROC_DIR}/PATH/KMZS
+#--------------------------------------------------------------
+
+# remove temp folder
 rm -rf ${TMP_DIR}
 
 

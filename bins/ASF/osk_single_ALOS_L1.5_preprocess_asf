@@ -167,7 +167,7 @@ cd ${TMP_DIR}/${SCENE_ID}
 
 #-------------------------------------------------------------------------------------------
 # manipulate ASF config file
-cp ${ASF_CONF}/geocoding_alos_l1.5.cfg ${TMP_DIR}/geocoding_alos_fbd.cfg
+cp ${ASF_CONF}/geocoding_alos_l1.5_watermask.cfg ${TMP_DIR}/geocoding_alos_fbd.cfg
 sed -i "s|model =|model = ${CROP_DEM}|g" ${TMP_DIR}/geocoding_alos_fbd.cfg
 sed -i "s|projection =|projection = ${ASF_CONF}/Proj.proj|g" ${TMP_DIR}/geocoding_alos_fbd.cfg 
 #-------------------------------------------------------------------------------------------
@@ -275,8 +275,8 @@ saga_cmd -f=r grid_tools 25 -GRID:${TMP_DIR}/tmp_mask_hv_saga.sgrd -MAXGAPCELLS:
 
 #-------------------------------------------------------------------------------------------
 echo "Applying multi-directional Lee-Filter for further smoothing"
-saga_cmd -f=r grid_tools 25 -GRID:${TMP_DIR}/tmp_mask_hh_filled.sgrd -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:${TMP_DIR}/tmp_mask_hh_filtered.sgrd
-saga_cmd -f=r grid_tools 25 -GRID:${TMP_DIR}/tmp_mask_hv_filled.sgrd -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:${TMP_DIR}/tmp_mask_hv_filtered.sgrd
+saga_cmd -f=r grid_filter 3 -INPUT:${TMP_DIR}/tmp_mask_hh_filled.sgrd -RESULT:${TMP_DIR}/tmp_mask_hh_filtered.sgrd -NOISE_ABS:5000 -NOISE_REL:3000 -METHOD:1
+saga_cmd -f=r grid_filter 3 -INPUT:${TMP_DIR}/tmp_mask_hv_filled.sgrd -RESULT:${TMP_DIR}/tmp_mask_hv_filtered.sgrd -NOISE_ABS:5000 -NOISE_REL:3000 -METHOD:1
 #-------------------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------------------

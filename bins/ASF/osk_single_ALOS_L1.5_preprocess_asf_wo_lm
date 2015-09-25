@@ -220,10 +220,17 @@ gdalwarp -srcnodata 0 -dstnodata -99999 -of SAGA ${OUTPUT_SPK_HV} ${TMP_DIR}/tmp
 #-------------------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------------------
-echo "Applying multi-directional Lee-Filter for further smoothing"
-saga_cmd -f=r grid_tools 25 -GRID:${TMP_DIR}/tmp_hh_saga.sgrd -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:${TMP_DIR}/tmp_mask_hh_filtered.sgrd
-saga_cmd -f=r grid_tools 25 -GRID:${TMP_DIR}/tmp_hv_saga.sgrd -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:${TMP_DIR}/tmp_mask_hv_filtered.sgrd
+echo "Filling small data holes by IDW interpolation"
+saga_cmd -f=r grid_tools 25 -GRID:${TMP_DIR}/tmp_hh_saga.sgrd -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:${TMP_DIR}/tmp_mask_hh_filled.sgrd
+saga_cmd -f=r grid_tools 25 -GRID:${TMP_DIR}/tmp_hv_saga.sgrd -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:${TMP_DIR}/tmp_mask_hv_filled.sgrd
 #-------------------------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------------------------
+echo "Applying multi-directional Lee-Filter for further smoothing"
+saga_cmd -f=r grid_filter 3 -INPUT:${TMP_DIR}/tmp_mask_hh_filled.sgrd -RESULT:${TMP_DIR}/tmp_mask_hh_filtered.sgrd -NOISE_ABS:5000 -NOISE_REL:3000 -METHOD:1
+saga_cmd -f=r grid_filter 3 -INPUT:${TMP_DIR}/tmp_mask_hv_filled.sgrd -RESULT:${TMP_DIR}/tmp_mask_hv_filtered.sgrd -NOISE_ABS:5000 -NOISE_REL:3000 -METHOD:1
+#-------------------------------------------------------------------------------------------
+
 
 #-------------------------------------------------------------------------------------------
 echo "Create Final Output files"
