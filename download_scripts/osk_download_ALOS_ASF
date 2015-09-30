@@ -110,7 +110,7 @@ else
 	echo -e "			  L1.1 (SLC - Level 1.1)"
 	echo -e "			  L1.5 (GRD - Level 1.5)"
 	echo -e "			  RTC_HI_RES (12.5m High-resolution Terrain Corrected)"
-	echo -e "			  RTC_LWO_RES (30m Low-resolution Terrain Corrected)"
+	echo -e "			  RTC_LOW_RES (30m Low-resolution Terrain Corrected)"
 	echo -e ""
 	exit 1
 fi
