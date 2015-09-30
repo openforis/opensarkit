@@ -1,0 +1,86 @@
+#!/bin/bash
+
+#-------------------------------------------------------------------------------------------
+#	0 Set up Script variables
+#-------------------------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------------------------	
+# 	0.1 Check for right usage & set up basic Script Variables
+if [ "$#" != "2" ]; then
+
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " OpenSARKit, v.01"
+	echo -e " Bulk preprocessing ALOS Level 1.5 scenes from ASF server"
+	echo -e " written by: Andreas Vollrath, UN-FAO, Rome"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Software dependencies:"
+	echo -e "	- ASF Mapready"
+	echo -e "	- SNAP Toolbox"
+	echo -e "	- SAGA GIS"
+	echo -e "	- gdal"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e " syntax: osk_bulk_ALOS_L1.5_preprocess_asf <path_to_zips> <elevation>"
+	echo -e ""
+	echo -e " description of input parameters:"
+	echo -e " path_to_zips		pathname, where the ASF downloaded zips are located"
+	echo -e ""
+	echo -e " NOTE: This should lead to the path where the osk_download_ALOS_ASF script has stored and sorted the data by date"
+	echo -e ""
+	echo -e " elevation		(input) filename to the digital elevation model"
+	echo -e ""
+	echo -e " NOTE: The DEM file should be provided in Geotiff-format as a 16Bit Integer data type with 0 as the no data value."
+	echo -e ""
+  exit 1
+else
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " OpenSARKit, v.01"
+	echo -e " Bulk preprocessing ALOS Level 1.5 scenes from ASF server"
+	echo -e " written by: Andreas Vollrath, UN-FAO, Rome"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Software dependencies:"
+	echo -e "	- ASF Mapready"
+	echo -e "	- SNAP Toolbox"
+	echo -e "	- SAGA GIS"
+	echo -e "	- gdal"
+	echo -e "----------------------------------"
+	echo -e ""
+# set up input data
+  	cd $1
+  	PROC_DIR=`pwd`
+  	DEM_FILE=$2
+  	echo "Bulk processing folder: ${PROC_DIR}"
+fi
+#-------------------------------------------------------------------------------------------	
+
+cd ${PROC_DIR}
+
+for DATE in `ls -1 -d [0-9]*`;do
+
+	echo "------------------------------------------------"
+	echo " Bulk Processing ALOS Scenes from ${DATE} (YYYYMMDD)"
+	echo "------------------------------------------------"
+
+	cd ${DATE}
+
+	# serial version
+	for FILE in `ls -1 *.zip`;do
+		osk_single_ALOS_ASF_TC_preprocess ${FILE} ${PROC_DIR}/${DATE}  
+	done
+
+	# parallel version
+#	ls -1 *zip | parallel -j+0 --eta "osk_single_ALOS_L1.5_preprocess_asf {} $2 ${PROC_DIR}/${DATE}"
+
+
+	# possible Path mosaicing --> use extra script, that could be used also later on
+	#list=`ls -d */Gamma0* | tr '\ ' ';'`
+
+	cd ${PROC_DIR}
+done
+
