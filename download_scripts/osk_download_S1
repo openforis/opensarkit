@@ -18,7 +18,8 @@ if [ "$#" != "5" ]; then
 	echo -e "----------------------------------"
 	echo -e " OpenSARKit, v.01"
 	echo -e " Download Sentinel-1 data from ESA Scihub"
-	echo -e " written by: Andreas Vollrath, UN-FAO, Rome"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+	echo -e " Author: Andreas Vollrath"
 	echo -e "----------------------------------"
 	echo -e ""
 	echo -e "syntax: osk_download_Sentinel <output_folder> <Area_of_Interest> <start_date> <end_date> <Product_type> <Polarization_Mode>"
@@ -30,15 +31,15 @@ if [ "$#" != "5" ]; then
 	echo -e "end_date		End date of search in format YYYY-MM-DD"
 	echo -e "Product_type			Acquisition Mode of Sentinel-1 SAR instrument"
 	echo -e "			Available choices"
-	echo -e "			  RAW (Fine-Beam Single Polarization)"
-	echo -e "			  SLC (Fine-Beam Double Polarization)"
-	echo -e "			  GRD (Polarimetric Mode)"
+	echo -e "			  RAW (unfocused Raw data)"
+	echo -e "			  SLC (Single-Look-Complex)"
+	echo -e "			  GRD (Detected Ground Range product)"
 	echo -e ""
 	echo -e "Polarization_Mode"			
 	echo -e "			Available choices"
+	echo -e "			  HH (for IWS HH/HV)"
 	echo -e "			  VH (for IWS Mode VV/VH)"
 	echo -e "			  VV (for IWS VV)"
-	echo -e "			  HH (for IWS HH/HV)"
 	echo -e ""
 	echo -e "Software dependencies:"
 	echo -e "	- aria2"
@@ -55,22 +56,6 @@ else
 	MODE=$5
 fi
 
-#----------------------------------------------------------------------
-#	0 Set up Script variables
-#----------------------------------------------------------------------
-
-# 	0.1 Check for right usage
-if [ "$#" != "2" ]; then
-  echo -e "Usage: osk_download_S1 </path/to/output> </path/to/AOI.shp> <start-date> <end-date>"
-  echo -e "The output path will be your Project folder!"
-  exit 1
-else
-  cd $1
-  export PROC_DIR=`pwd`
-  echo "Welcome to OpenSARKit!"
-  echo "Automatically Downloading Sentinel-1 data from ESA Scihub"
-  echo "Download folder: ${PROC_DIR}"
-fi
 TMP_DIR=${PROC_DIR}/TMP
 mkdir -p ${TMP_DIR}
 #	Credentials
