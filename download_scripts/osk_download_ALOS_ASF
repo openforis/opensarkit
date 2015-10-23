@@ -1,18 +1,6 @@
 #! /bin/bash
 
 #----------------------------------------------------------------------
-#	ALOS Download from Alaska Space Facility (ASF)
-#
-#	Dependencies:
-#
-#		- curl
-#		- ogr2ogr
-#		- aria2
-#
-#----------------------------------------------------------------------
-
-
-#----------------------------------------------------------------------
 #	0 Set up Script variables
 #----------------------------------------------------------------------
 
@@ -77,7 +65,8 @@ else
 	echo -e "----------------------------------"
 	echo -e " OpenSARKit, v.01"
 	echo -e " Download ALOS data from ASF server"
-	echo -e " written by: Andreas Vollrath, UN-FAO, Rome"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+#	echo -e " Author: Andreas Vollrath"
 	echo -e "----------------------------------"
 	echo -e ""
 	echo -e "----------------------------------"
@@ -125,9 +114,8 @@ else
 fi
 echo ""
 echo "Getting the inventory data"
-wget --save-cookies cookies.txt --post-data='user_name='$UNAME'&user_password='${PW}'' --no-check-certificate https://ursa.asfdaac.alaska.edu/cgi-bin/login -o /dev/null -O /dev/null
+wget --save-cookies cookies.txt --post-data 'user_name='$UNAME'&user_password='${PW}'' --no-check-certificate https://ursa.asfdaac.alaska.edu/cgi-bin/login -o /dev/null -O /dev/null
 unset PW
-
 
 # get the footprint from the shapefile 
 ogr2ogr -f CSV tmp_AOI_WKT.csv $2 -lco GEOMETRY=AS_WKT
@@ -136,33 +124,37 @@ AOI=`grep POLYGON tmp_AOI_WKT.csv | sed 's|\"POLYGON ((||g' | awk -F "))" $'{pri
 # Search Parameters
 PERIOD="start="${START}"T11:59:59UTC&end="${END}"T00:00:00UTC"
 PLATFORM="platform=A3"
-
-OUTPUT_FORMAT="output=csv"
-OUTPUT="${MODE}-data_coverage"
 BEAM="beamMode=${MODE}"  
 # search part of the URL
 ASK="\&polygon=${AOI}&${PLATFORM}&${BEAM}&${PERIOD}&${PROCESSING}&${OUTPUT_FORMAT}"
-
-#PROCESSING="processingLevel=L1.5"
-#REL_ORBIT="relativeOrbit=109"
-#ASK="\&polygon=${AOI}&${PLATFORM}&${BEAM}&${PERIOD}&${PROCESSING}&${REL_ORBIT}&${OUTPUT_FORMAT}"
-
 mkdir -p ${PROC_DIR}/Coverage
 
+#----------------------------------------------------------------------------------
+# download the csv inventory file
+OUTPUT_FORMAT="output=csv"
+OUTPUT="${MODE}-data_coverage"
 curl -s https://api.daac.asf.alaska.edu/services/search/param?keyword=value$ASK | tail -n +2 > ${PROC_DIR}/Coverage/$OUTPUT.csv
 echo "" >>  ${PROC_DIR}/Coverage/$OUTPUT.csv
 NR_OF_PRODUCTS=`wc -l ${PROC_DIR}/Coverage/$OUTPUT.csv`
 echo "Found ${NR_OF_PRODUCTS} products"
+#----------------------------------------------------------------------------------
 
-# 
+#----------------------------------------------------------------------------------
+# download the kml footprints
 OUTPUT_FORMAT="output=kml"
 ASK="\&polygon=${AOI}&${PLATFORM}&${BEAM}&${PERIOD}&${PROCESSING}&${OUTPUT_FORMAT}"
 curl -s https://api.daac.asf.alaska.edu/services/search/param?keyword=value$ASK > ${PROC_DIR}/Coverage/$OUTPUT.kml
+#----------------------------------------------------------------------------------
 
+#----------------------------------------------------------------------------------
 # convert downloaded kml to shape
 ogr2ogr -f "Esri Shapefile" ${PROC_DIR}/Coverage/${MODE}-coverage.shp ${PROC_DIR}/Coverage/${OUTPUT}.kml 
-rm -f ${PROC_DIR}/Coverage/${OUTPUT}.kml 
+#rm -f ${PROC_DIR}/Coverage/${OUTPUT}.kml 
+#----------------------------------------------------------------------------------
 
+
+#----------------------------------------------------------------------------------
+# download the data sorted by Acquisition Mode and Acquisition Date
 while read line;do 
 	
 	ACQ_YEAR=`echo $line | awk -F "," $'{print $9}' | cut -c 2-5`
@@ -185,7 +177,9 @@ while read line;do
 	aria2c --load-cookies="${PROC_DIR}/cookies.txt" ${DOWNLOAD}
 
 done < ${PROC_DIR}/Coverage/${OUTPUT}.csv 
+#----------------------------------------------------------------------------------
 
+# remove temp folder
 rm -rf ${PROC_DIR}/cookies.txt ${PROC_DIR}/tmp*
 
 

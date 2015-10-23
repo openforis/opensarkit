@@ -27,23 +27,64 @@
 #-------------------------------------------------------------------------------------------	
 # 	0.1 Check for right usage & set up basic Script Variables
 if [ "$#" != "3" ]; then
-  echo -e "Usage: osk_ALOS_L1_1_preprocess /path/to/zip /path/to/dem /output/folder"
-  echo -e "The path will be your Project folder!"
-  exit 1
-else
-  echo "Welcome to OpenSARKit!"
-# set up input data
-  FILE=`readlink -f $1`
-  PROC_DIR=`dirname ${FILE}`
-  TMP_DIR=${PROC_DIR}/TMP
-  rm -rf ${TMP_DIR}	
-  mkdir -p ${TMP_DIR}
-  DEM_FILE=$2
-  echo "Processing folder: ${PROC_DIR}"
 
-  mkdir -p $3
-  cd $3
-  OUT_DIR=`pwd`
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " OpenSARKit, v.01"
+	echo -e " Preprocessing ALOS Level 1.5 scene from ASF server without maskin of the Layover/Shadow areas"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+	echo -e " Author: Andreas Vollrath"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Software dependencies:"
+	echo -e "	- ASF Mapready"
+	echo -e "	- SNAP Toolbox"
+	echo -e "	- SAGA GIS"
+	echo -e "	- gdal"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e " syntax: osk_single_ALOS_L1.5_preprocess_asf <filename> <elevation> <output_folder>"
+	echo -e ""
+	echo -e " description of input parameters:"
+	echo -e " filename		(input) filename of the downloaded zip file"
+	echo -e " elevation		(input) filename to the digital elevation model"
+	echo -e ""
+	echo -e " NOTE: The DEM file should be provided in Geotiff-format as a 16Bit Integer data type with 0 as the no data value."
+	echo -e ""
+	echo -e " output_folder		(output) pathname of the output folder"
+  	exit 1
+else
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " OpenSARKit, v.01"
+	echo -e " Preprocessing ALOS Level 1.5 scene from ASF server without maskin of the Layover/Shadow areas"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+	echo -e " Author: Andreas Vollrath"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Software dependencies:"
+	echo -e "	- ASF Mapready"
+	echo -e "	- SNAP Toolbox"
+	echo -e "	- SAGA GIS"
+	echo -e "	- gdal"
+	echo -e "----------------------------------"
+	echo -e ""
+
+	# set up initial script variables
+	FILE=`readlink -f $1`
+	BASE=`basename ${FILE}`
+	PROC_DIR=`dirname ${FILE}`
+	TMP1=${PROC_DIR}/TMP/
+	rm -rf ${TMP1}	
+	mkdir -p ${TMP1}
+	export TMP_DIR=${PROC_DIR}/TMP/${BASE}
+	mkdir -p ${TMP_DIR}
+	DEM_FILE=$2
+	mkdir -p $3
+	cd $3
+	OUT_DIR=`pwd`
 fi
 #-------------------------------------------------------------------------------------------
 
@@ -89,22 +130,20 @@ YEAR=`cat workreport | grep Img_SceneCenterDateTime | awk -F "=" $'{print $2}' |
 MONTH=`cat workreport | grep Img_SceneCenterDateTime | awk -F "=" $'{print $2}' | cut -c 6-7`
 DAY=`cat workreport | grep Img_SceneCenterDateTime | awk -F "=" $'{print $2}' | cut -c 7-8`
 DATE=`cat workreport | grep Img_SceneCenterDateTime | awk -F "=" $'{print $2}' | cut -c 2-9`
-#UL_LAT=`cat workreport | grep Brs_ImageSceneLeftTopLatitude | awk -F "=" $'{print $2}' | sed 's/\"//g'`
-#UL_LAT=`cat workreport | grep Brs_ImageSceneLeftTopLatitude | awk -F "=" $'{print $2}' | sed 's/\"//g'`
 FRAME=`echo ${SCENE_ID}	| cut -c 12-15`	
 ORBIT=`echo ${SCENE_ID}	| cut -c 7-11`	
 SAT_PATH=`curl -s https://api.daac.asf.alaska.edu/services/search/param?keyword=value\&granule_list=${SCENE_ID:0:15}\&output=csv | tail -n 1 | awk -F "," $'{print $7}' | sed 's/\"//g'` # !!!!!needs change for final version!!!!!	
-	
+export SATELLITE=ALOS	
+
 echo "----------------------------------------------------------------"
 echo "Processing Scene: 		${SCENE_ID:0:15}"
-echo "Satellite/Sensor: 		ALOS/Palsar"
+echo "Satellite/Sensor: 		${SATELLITE}/PALSAR"
 echo "Acquisiton Mode:		${MODE}"
 echo "Acquisition Date (YYYYMMDD):	${DATE}"
 echo "Relative Satellite Track: 	${SAT_PATH}"
 echo "Image Frame: 			$FRAME"
 echo "----------------------------------------------------------------"
 #-------------------------------------------------------------------------------------------
-
 
 #-------------------------------------------------------------------------------------------
 # 3 Preprocess imagery part I - Terrain Correction & Geocoding
@@ -126,7 +165,7 @@ mkdir -p ${FINAL_DIR}
 # prepare DEM
 echo "create DEM crop"
 CROP_DEM=${TMP_DIR}/tmp_crop_dem.tif
-osk_crop_dem ${TMP_DIR}/${SCENE_ID} ${DEM_FILE} ${CROP_DEM}
+osk_crop_dem ${FILE} ${DEM_FILE} ${CROP_DEM}
 cd ${TMP_DIR}/${SCENE_ID}
 #-------------------------------------------------------------------------------------------
 

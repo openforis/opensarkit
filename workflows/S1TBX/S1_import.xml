@@ -1,0 +1,107 @@
+<graph id="Graph">
+  <version>1.0</version>
+  <node id="Read">
+    <operator>Read</operator>
+    <sources/>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <file>${input}</file>
+    </parameters>
+  </node>
+  <node id="Write">
+    <operator>Write</operator>
+    <sources>
+      <sourceProduct refid="TOPSAR-Split"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <file>${out_1}</file>
+      <formatName>BEAM-DIMAP</formatName>
+    </parameters>
+  </node>
+  <node id="Apply-Orbit-File">
+    <operator>Apply-Orbit-File</operator>
+    <sources>
+      <sourceProduct refid="Read"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <orbitType>Sentinel Precise (Auto Download)</orbitType>
+      <polyDegree>3</polyDegree>
+    </parameters>
+  </node>
+  <node id="Write(2)">
+    <operator>Write</operator>
+    <sources>
+      <sourceProduct refid="TOPSAR-Split(2)"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <file>${out_2}</file>
+      <formatName>BEAM-DIMAP</formatName>
+    </parameters>
+  </node>
+  <node id="Write(3)">
+    <operator>Write</operator>
+    <sources>
+      <sourceProduct refid="TOPSAR-Split(3)"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <file>${out_3}</file>
+      <formatName>BEAM-DIMAP</formatName>
+    </parameters>
+  </node>
+  <node id="TOPSAR-Split">
+    <operator>TOPSAR-Split</operator>
+    <sources>
+      <sourceProduct refid="Apply-Orbit-File"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <subswath>IW1</subswath>
+      <selectedPolarisations/>
+    </parameters>
+  </node>
+  <node id="TOPSAR-Split(2)">
+    <operator>TOPSAR-Split</operator>
+    <sources>
+      <sourceProduct refid="Apply-Orbit-File"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <subswath>IW2</subswath>
+      <selectedPolarisations/>
+    </parameters>
+  </node>
+  <node id="TOPSAR-Split(3)">
+    <operator>TOPSAR-Split</operator>
+    <sources>
+      <sourceProduct refid="Apply-Orbit-File"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <subswath>IW3</subswath>
+      <selectedPolarisations/>
+    </parameters>
+  </node>
+  <applicationData id="Presentation">
+    <Description/>
+    <node id="Read">
+      <displayPosition x="38.0" y="28.0"/>
+    </node>
+    <node id="Write">
+      <displayPosition x="28.0" y="236.0"/>
+    </node>
+    <node id="Apply-Orbit-File">
+      <displayPosition x="75.0" y="70.0"/>
+    </node>
+    <node id="Write(2)">
+      <displayPosition x="103.0" y="239.0"/>
+    </node>
+    <node id="Write(3)">
+      <displayPosition x="182.0" y="238.0"/>
+    </node>
+    <node id="TOPSAR-Split">
+      <displayPosition x="11.0" y="121.0"/>
+    </node>
+    <node id="TOPSAR-Split(2)">
+      <displayPosition x="76.0" y="163.0"/>
+    </node>
+    <node id="TOPSAR-Split(3)">
+      <displayPosition x="158.0" y="123.0"/>
+    </node>
+  </applicationData>
+</graph>

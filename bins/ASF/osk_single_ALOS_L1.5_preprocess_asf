@@ -28,7 +28,8 @@ if [ "$#" != "3" ]; then
 	echo -e "----------------------------------"
 	echo -e " OpenSARKit, v.01"
 	echo -e " Preprocessing ALOS Level 1.5 scene from ASF server"
-	echo -e " written by: Andreas Vollrath, UN-FAO, Rome"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+#	echo -e " Author: Andreas Vollrath"
 	echo -e "----------------------------------"
 	echo -e ""
 	echo -e "----------------------------------"
@@ -48,13 +49,14 @@ if [ "$#" != "3" ]; then
 	echo -e " NOTE: The DEM file should be provided in Geotiff-format as a 16Bit Integer data type with 0 as the no data value."
 	echo -e ""
 	echo -e " output_folder		(output) pathname of the output folder"
-  exit 1
+  	exit 1
 else
 	echo -e ""
 	echo -e "----------------------------------"
 	echo -e " OpenSARKit, v.01"
 	echo -e " Preprocessing ALOS Level 1.5 scene from ASF server"
-	echo -e " written by: Andreas Vollrath, UN-FAO, Rome"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+#	echo -e " Author: Andreas Vollrath"
 	echo -e "----------------------------------"
 	echo -e ""
 	echo -e "----------------------------------"
@@ -66,19 +68,19 @@ else
 	echo -e "----------------------------------"
 	echo -e ""
 
-# set up input data
-  FILE=`readlink -f $1`
-  BASE=`basename ${FILE}`
-  PROC_DIR=`dirname ${FILE}`
-  TMP1=${PROC_DIR}/TMP/
-  rm -rf ${TMP1}	
-  mkdir -p ${TMP1}
-  TMP_DIR=${PROC_DIR}/TMP/${BASE}
-  mkdir -p ${TMP_DIR}
-  DEM_FILE=$2
-  mkdir -p $3
-  cd $3
-  OUT_DIR=`pwd`
+	# set up initial script variables
+	FILE=`readlink -f $1`
+	BASE=`basename ${FILE}`
+	PROC_DIR=`dirname ${FILE}`
+	TMP1=${PROC_DIR}/TMP/
+	rm -rf ${TMP1}	
+	mkdir -p ${TMP1}
+	export TMP_DIR=${PROC_DIR}/TMP/${BASE}
+	mkdir -p ${TMP_DIR}
+	DEM_FILE=$2
+	mkdir -p $3
+	cd $3
+	OUT_DIR=`pwd`
 fi
 #-------------------------------------------------------------------------------------------
 
@@ -129,10 +131,10 @@ DATE=`cat workreport | grep Img_SceneCenterDateTime | awk -F "=" $'{print $2}' |
 FRAME=`echo ${SCENE_ID}	| cut -c 12-15`	
 ORBIT=`echo ${SCENE_ID}	| cut -c 7-11`	
 SAT_PATH=`curl -s https://api.daac.asf.alaska.edu/services/search/param?keyword=value\&granule_list=${SCENE_ID:0:15}\&output=csv | tail -n 1 | awk -F "," $'{print $7}' | sed 's/\"//g'` # !!!!!needs change for final version!!!!!	
-	
+export SATELLITE=ALOS	
 echo "----------------------------------------------------------------"
 echo "Processing Scene: 		${SCENE_ID:0:15}"
-echo "Satellite/Sensor: 		ALOS/Palsar"
+echo "Satellite/Sensor: 		${SATELLITE}/PALSAR"
 echo "Acquisiton Mode:		${MODE}"
 echo "Acquisition Date (YYYYMMDD):	${DATE}"
 echo "Relative Satellite Track: 	${SAT_PATH}"
@@ -161,7 +163,7 @@ mkdir -p ${FINAL_DIR}
 # prepare DEM
 echo "create DEM crop"
 CROP_DEM=${TMP_DIR}/tmp_crop_dem.tif
-osk_crop_dem ${TMP_DIR}/${SCENE_ID} ${DEM_FILE} ${CROP_DEM}
+osk_crop_dem ${FILE} ${DEM_FILE} ${CROP_DEM}
 cd ${TMP_DIR}/${SCENE_ID}
 #-------------------------------------------------------------------------------------------
 
@@ -174,6 +176,7 @@ sed -i "s|projection =|projection = ${ASF_CONF}/Proj.proj|g" ${TMP_DIR}/geocodin
 
 #-------------------------------------------------------------------------------------------
 # do ASF procesing
+echo ""
 echo "Importing ${SCENE_ID} from $DATE into ASF and geocode it"
 echo "Check logfile ${FINAL_DIR}/log_asf for output"
 asf_mapready -quiet -input ${INPUT_RAW} -output ${OUTPUT_ASF} -tmpdir ${TMP_DIR}/tmp_${BASE} -log ${FINAL_DIR}/log_asf ${TMP_DIR}/geocoding_alos_fbd.cfg

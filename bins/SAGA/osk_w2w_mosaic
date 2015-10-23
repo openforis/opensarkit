@@ -32,10 +32,13 @@ FINAL_DIR=${PROC_DIR}/Final_Mosaic
 mkdir -p ${FINAL_DIR}
 CPU=`lscpu | grep "CPU(s):" | awk $'{print $2}' | head -1`
 
+#-------------------------------------------------------------------------------
+# HH mosaicing
+
+
 for FILE in `ls -1 *HH*sdat`;do
 
 	LONG=`gdalinfo $FILE | grep Origin | awk -F "(" $'{print $2}' | awk -F "," $'{print $1}'`
-
 	echo $LONG $FILE >> ${TMP_DIR}/list
 	sort -n ${TMP_DIR}/list > ${TMP_DIR}/list_sort
 
@@ -44,7 +47,6 @@ done
 i=1	
 sed -i 's|.sdat|.sgrd|g' ${TMP_DIR}/list_sort
 MAX_LINE=`cat ${TMP_DIR}/list_sort | wc -l`
-
 
 while read LINE; do
 
@@ -63,9 +65,6 @@ while read LINE; do
 	echo "Cut unreliable values"
 	saga_cmd -c=${CPU} grid_tools 15 -INPUT ${TMP_DIR}/$DATA-res-cli-rec.sgrd -RESULT ${TMP_DIR}/$DATA-res-cli-rec2.sgrd -METHOD 1 -MIN 1 -MAX 1000 -RNEW 1
 	rm -rf ${TMP_DIR}/*-res-cli-rec.*
-	echo "Create dB layer"
-	saga_cmd grid_calculus 1 -GRIDS:"${TMP_DIR}/$DATA-res-cli-rec2.sgrd" -RESULT:"${TMP_DIR}/$DATA-dB.sgrd" -FORMULA:"10*log(a)"	
-
 
 done < ${TMP_DIR}/list_sort
 
@@ -74,12 +73,11 @@ cd ${TMP_DIR}
 echo "Mosaicing the HH-polarized Paths"
 LIST_HH=`ls -1 *-rec2.sgrd | tr '\n' ';'| rev|cut -c 2-|rev`
 saga_cmd -c=${CPU} grid_tools 3 -GRIDS:${LIST_HH} -TYPE:7 -OVERLAP:4 -BLEND_DIST:10 -MATCH:${MATCH} -TARGET_OUT_GRID:${TMP_DIR}/GAMMA0_HH_mosaic.sgrd
-gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -t_srs EPSG:4326 -srcnodata -99999 -dstnodata 0 ${TMP_DIR}/GAMMA0_HH_mosaic.sdat ${FINAL_DIR}/Gamma0_HH.tif
+echo "Create dB layer"
+saga_cmd grid_calculus 1 -GRIDS:"${TMP_DIR}/GAMMA0_HH_mosaic.sgrd" -RESULT:"${TMP_DIR}/GAMMA0_HH_mosaic_db.sgrd" -FORMULA:"10*log(a)"	
+gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -t_srs EPSG:4326 -srcnodata -99999 -dstnodata 0 ${TMP_DIR}/GAMMA0_HH_mosaic_db.sdat ${FINAL_DIR}/Gamma0_db_HH.tif
 
-echo "Mosaicing the HH-polarized Paths in dB"
-LIST_HH=`ls -1 *-dB.sgrd | tr '\n' ';'| rev|cut -c 2-|rev`
-saga_cmd -c=${CPU} grid_tools 3 -GRIDS:${LIST_HH} -TYPE:7 -OVERLAP:4 -BLEND_DIST:10 -MATCH:${MATCH} -TARGET_OUT_GRID:${TMP_DIR}/GAMMA0_HH_db_mosaic.sgrd
-gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -t_srs EPSG:4326 -srcnodata -99999 -dstnodata 0 ${TMP_DIR}/GAMMA0_HH_db_mosaic.sdat ${FINAL_DIR}/Gamma0_HH_db.tif
+
 
 rm -rf ${TMP_DIR}/*
 cd ${PROC_DIR}

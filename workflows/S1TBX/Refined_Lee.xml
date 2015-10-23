@@ -4,17 +4,7 @@
     <operator>Read</operator>
     <sources/>
       <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <file>INPUT</file>
-    </parameters>
-  </node>
-  <node id="Write">
-    <operator>Write</operator>
-    <sources>
-      <sourceProduct refid="Speckle-Filter"/>
-    </sources>
-    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <file>OUT_LEE</file>
-      <formatName>GeoTIFF</formatName>
+      <file>${input}</file>
     </parameters>
   </node>
   <node id="Speckle-Filter">
@@ -33,16 +23,26 @@
       <enl>1.0</enl>
     </parameters>
   </node>
+  <node id="Write">
+    <operator>Write</operator>
+    <sources>
+      <sourceProduct refid="Speckle-Filter"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <file>${output}</file>
+      <formatName>GeoTIFF</formatName>
+    </parameters>
+  </node>
   <applicationData id="Presentation">
     <Description/>
     <node id="Read">
       <displayPosition x="37.0" y="134.0"/>
     </node>
-    <node id="Write">
-      <displayPosition x="455.0" y="135.0"/>
-    </node>
     <node id="Speckle-Filter">
       <displayPosition x="209.0" y="134.0"/>
+    </node>
+    <node id="Write">
+      <displayPosition x="455.0" y="135.0"/>
     </node>
   </applicationData>
 </graph>

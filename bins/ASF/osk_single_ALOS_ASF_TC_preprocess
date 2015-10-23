@@ -12,7 +12,8 @@ if [ "$#" != "2" ]; then
 	echo -e "----------------------------------"
 	echo -e " OpenSARKit, v.01"
 	echo -e " Preprocessing ALOS RTC data from ASF server"
-	echo -e " written by: Andreas Vollrath, UN-FAO, Rome"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+#	echo -e " Author: Andreas Vollrath"
 	echo -e "----------------------------------"
 	echo -e ""
 	echo -e "----------------------------------"
@@ -32,7 +33,8 @@ else
 	echo -e "----------------------------------"
 	echo -e " OpenSARKit, v.01"
 	echo -e " Preprocessing ALOS Level 1.5 scene from ASF server"
-	echo -e " written by: Andreas Vollrath, UN-FAO, Rome"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+#	echo -e " Author: Andreas Vollrath"
 	echo -e "----------------------------------"
 	echo -e ""
 	echo -e "----------------------------------"
@@ -73,7 +75,8 @@ unzip -o -q ${FILE} -d ${TMP_DIR}
 SCENE_ID=`ls ${TMP_DIR}`
 cd ${TMP_DIR}/${SCENE_ID}
 GAMMA_HH=`ls *HH*`
-GAMMA_HV=`ls *HV*`
+echo $GAMMA_HH
+#GAMMA_HV=`ls *HV*`
 LS_MAP=`ls *ls*`
 XML_FILE=`ls *iso.xml*`
 
@@ -113,51 +116,84 @@ echo "Acquisition Date (YYYYMMDD):	${DATE}"
 echo "Relative Satellite Track: 	${SAT_PATH}"
 echo "Image Frame: 			$FRAME"
 echo "----------------------------------------------------------------"
-#-------------------------------------------------------------------------------------------
+
 OUTPUT_SPK_HH=${TMP_DIR}/Gamma0_HH.tif
 OUTPUT_SPK_HV=${TMP_DIR}/Gamma0_HV.tif
-#-------------------------------------------------------------------------------------------
-# manipulate xml Graph for S1TBX processing
-cp ${S1TBX_GRAPHS}/Refined_Lee.xml ${TMP_DIR}/Refined_Lee.xml  
-# insert Input file path into processing chain xml
-sed -i "s|INPUT|${GAMMA_HH}|g" ${TMP_DIR}/Refined_Lee.xml  
-# insert Input file path into processing chain xml
-sed -i "s|OUT_LEE|${OUTPUT_SPK_HH}|g" ${TMP_DIR}/Refined_Lee.xml  
+OUTPUT_SPK_VH=${TMP_DIR}/Gamma0_VH.tif
+OUTPUT_SPK_VV=${TMP_DIR}/Gamma0_VV.tif
 #-------------------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------------------
 # Launch S1TBX for HH channel speckle filtering
 echo "Apply Lee Speckle Filter to ${SCENE_ID}"
-sh ${S1TBX_EXE} ${TMP_DIR}/Refined_Lee.xml 2>&1 | tee  ${TMP_DIR}/tmplog
+bash ${S1TBX_EXE} ${S1TBX_GRAPHS}/Refined_Lee.xml -Pinput=${GAMMA_HH} -Poutput=${OUTPUT_SPK_HH} 2>&1 | tee  ${TMP_DIR}/tmplog
 #-------------------------------------------------------------------------------------------
+
 
 #-------------------------------------------------------------------------------------------
 # in case it fails because of Java error, try it a second time
 if grep -q Error ${TMP_DIR}/tmplog; then 	
 	echo "2nd try"
 	rm -rf ${OUTPUT_SPK_HH} 
-	sh ${S1TBX_EXE} ${TMP_DIR}/Refined_Lee.xml 2>&1 | tee  ${TMP_DIR}/tmplog
+	sh ${S1TBX_EXE} ${TMP_DIR}/Refined_Lee.xml -Pinput=${GAMMA_HH} -Poutput=$${OUTPUT_SPK_HH} 2>&1 | tee  ${TMP_DIR}/tmplog
 fi
 rm -f ${TMP_DIR}/Refined_Lee.xml 
 #-------------------------------------------------------------------------------------------
 
-#-------------------------------------------------------------------------------------------
-# do the same for HV channel
-cp ${S1TBX_GRAPHS}/Refined_Lee.xml ${TMP_DIR}/Refined_Lee.xml  
-# insert Input file path into processing chain xml
-sed -i "s|INPUT|${GAMMA_HV}|g" ${TMP_DIR}/Refined_Lee.xml  
-# insert Input file path into processing chain xml
-sed -i "s|OUT_LEE|${OUTPUT_SPK_HV}|g" ${TMP_DIR}/Refined_Lee.xml  
+if [[ "${MODE}" == "FBD" || "${MODE}" == "PLR" ]];then
 
-echo "Apply Lee Speckle Filter to ${SCENE_ID}"
-sh ${S1TBX_EXE} ${TMP_DIR}/Refined_Lee.xml 2>&1 | tee  ${TMP_DIR}/tmplog
+	#-------------------------------------------------------------------------------------------
+	# Launch S1TBX for HV channel speckle filtering
+	echo "Apply Lee Speckle Filter to ${SCENE_ID}"
+	bash ${S1TBX_EXE} ${S1TBX_GRAPHS}/Refined_Lee.xml -Pinput=${GAMMA_HV} -Poutput=${OUTPUT_SPK_HV} 2>&1 | tee  ${TMP_DIR}/tmplog
+	#-------------------------------------------------------------------------------------------
 
-if grep -q Error ${TMP_DIR}/tmplog; then 	
-	echo "2nd try"
-	rm -rf ${OUTPUT_SPK_HV} 
-	sh ${S1TBX_EXE} ${TMP_DIR}/Refined_Lee.xml 2>&1 | tee  ${TMP_DIR}/tmplog
+	#-------------------------------------------------------------------------------------------
+	# in case it fails because of Java error, try it a second time
+	if grep -q Error ${TMP_DIR}/tmplog; then 	
+		echo "2nd try"
+		rm -rf ${OUTPUT_SPK_HH} 
+		sh ${S1TBX_EXE} ${TMP_DIR}/Refined_Lee.xml -Pinput=${GAMMA_HH} -Poutput=$${OUTPUT_SPK_HH} 2>&1 | tee  ${TMP_DIR}/tmplog
+	fi
+	rm -f ${TMP_DIR}/Refined_Lee.xml 
+	#-------------------------------------------------------------------------------------------
+
+elif [[ "${MODE}" == "PLR" ]];then
+
+	#-------------------------------------------------------------------------------------------
+	# Launch S1TBX for VH channel speckle filtering
+	echo "Apply Lee Speckle Filter to ${SCENE_ID}"
+	bash ${S1TBX_EXE} ${S1TBX_GRAPHS}/Refined_Lee.xml -Pinput=${GAMMA_VH} -Poutput=${OUTPUT_SPK_VH} 2>&1 | tee  ${TMP_DIR}/tmplog
+	#-------------------------------------------------------------------------------------------
+
+
+	#-------------------------------------------------------------------------------------------
+	# in case it fails because of Java error, try it a second time
+	if grep -q Error ${TMP_DIR}/tmplog; then 	
+		echo "2nd try"
+		rm -rf ${OUTPUT_SPK_HH} 
+		sh ${S1TBX_EXE} ${TMP_DIR}/Refined_Lee.xml -Pinput=${GAMMA_VH} -Poutput=$${OUTPUT_SPK_VH} 2>&1 | tee  ${TMP_DIR}/tmplog
+	fi
+	rm -f ${TMP_DIR}/Refined_Lee.xml 
+	#-------------------------------------------------------------------------------------------
+
+	#-------------------------------------------------------------------------------------------
+	# Launch S1TBX for VV channel speckle filtering
+	echo "Apply Lee Speckle Filter to ${SCENE_ID}"
+	bash ${S1TBX_EXE} ${S1TBX_GRAPHS}/Refined_Lee.xml -Pinput=${GAMMA_VV} -Poutput=${OUTPUT_SPK_VV} 2>&1 | tee  ${TMP_DIR}/tmplog
+	#-------------------------------------------------------------------------------------------
+
+
+	#-------------------------------------------------------------------------------------------
+	# in case it fails because of Java error, try it a second time
+	if grep -q Error ${TMP_DIR}/tmplog; then 	
+		echo "2nd try"
+		rm -rf ${OUTPUT_SPK_HH} 
+		sh ${S1TBX_EXE} ${TMP_DIR}/Refined_Lee.xml -Pinput=${GAMMA_VV} -Poutput=$${OUTPUT_SPK_VV} 2>&1 | tee  ${TMP_DIR}/tmplog
+	fi
+	rm -f ${TMP_DIR}/Refined_Lee.xml 
+	#-------------------------------------------------------------------------------------------
 fi
-#-------------------------------------------------------------------------------------------
 
 
 #-------------------------------------------------------------------------------------------
@@ -171,33 +207,63 @@ gdal_calc.py -A ${LS_MAP} --outfile=${TMP_DIR}/mask.tif --calc="1*(A==1)" --NoDa
 
 #-------------------------------------------------------------------------------------------
 # translate to SAGA format
-gdalwarp -srcnodata 0 -dstnodata -99999 -of SAGA ${OUTPUT_SPK_HH} ${TMP_DIR}/tmp_hh_saga.sdat
-gdalwarp -srcnodata 0 -dstnodata -99999 -of SAGA ${OUTPUT_SPK_HV} ${TMP_DIR}/tmp_hv_saga.sdat
 gdalwarp -srcnodata 0 -dstnodata -99999 -of SAGA ${TMP_DIR}/mask.tif ${TMP_DIR}/tmp_mask.sdat
+gdalwarp -srcnodata 0 -dstnodata -99999 -of SAGA ${OUTPUT_SPK_HH} ${TMP_DIR}/tmp_hh_saga.sdat
+
+if [[ "${MODE}" == "FBD" || "${MODE}" == "PLR" ]];then
+	gdalwarp -srcnodata 0 -dstnodata -99999 -of SAGA ${OUTPUT_SPK_HV} ${TMP_DIR}/tmp_hv_saga.sdat
+elif [[ "${MODE}" == "PLR" ]];then
+	gdalwarp -srcnodata 0 -dstnodata -99999 -of SAGA ${OUTPUT_SPK_VH} ${TMP_DIR}/tmp_vh_saga.sdat
+	gdalwarp -srcnodata 0 -dstnodata -99999 -of SAGA ${OUTPUT_SPK_VV} ${TMP_DIR}/tmp_vv_saga.sdat
+fi
 #-------------------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------------------
 echo "Masking out Layover/Shadow regions"
 saga_cmd -f=r grid_calculus 1 -GRIDS:${TMP_DIR}/tmp_hh_saga.sgrd -XGRIDS:${TMP_DIR}/tmp_mask.sgrd -RESULT ${TMP_DIR}/tmp_mask_hh_saga.sgrd -FORMULA:"a * b"
-saga_cmd -f=r grid_calculus 1 -GRIDS:${TMP_DIR}/tmp_hv_saga.sgrd -XGRIDS:${TMP_DIR}/tmp_mask.sgrd -RESULT ${TMP_DIR}/tmp_mask_hv_saga.sgrd -FORMULA:"a * b"
+
+if [[ "${MODE}" == "FBD" || "${MODE}" == "PLR" ]];then
+	saga_cmd -f=r grid_calculus 1 -GRIDS:${TMP_DIR}/tmp_hv_saga.sgrd -XGRIDS:${TMP_DIR}/tmp_mask.sgrd -RESULT ${TMP_DIR}/tmp_mask_hv_saga.sgrd -FORMULA:"a * b"
+elif [[ "${MODE}" == "PLR" ]];then
+	saga_cmd -f=r grid_calculus 1 -GRIDS:${TMP_DIR}/tmp_vh_saga.sgrd -XGRIDS:${TMP_DIR}/tmp_mask.sgrd -RESULT ${TMP_DIR}/tmp_mask_vh_saga.sgrd -FORMULA:"a * b"
+	saga_cmd -f=r grid_calculus 1 -GRIDS:${TMP_DIR}/tmp_vv_saga.sgrd -XGRIDS:${TMP_DIR}/tmp_mask.sgrd -RESULT ${TMP_DIR}/tmp_mask_vv_saga.sgrd -FORMULA:"a * b"
+fi
 #-------------------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------------------
 echo "Filling small data holes by IDW interpolation"
 saga_cmd -f=r grid_tools 25 -GRID:${TMP_DIR}/tmp_mask_hh_saga.sgrd -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:${TMP_DIR}/tmp_mask_hh_filled.sgrd
-saga_cmd -f=r grid_tools 25 -GRID:${TMP_DIR}/tmp_mask_hv_saga.sgrd -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:${TMP_DIR}/tmp_mask_hv_filled.sgrd
+
+if [[ "${MODE}" == "FBD" || "${MODE}" == "PLR" ]];then
+	saga_cmd -f=r grid_tools 25 -GRID:${TMP_DIR}/tmp_mask_hv_saga.sgrd -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:${TMP_DIR}/tmp_mask_hv_filled.sgrd
+elif [[ "${MODE}" == "PLR" ]];then
+	saga_cmd -f=r grid_tools 25 -GRID:${TMP_DIR}/tmp_mask_vh_saga.sgrd -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:${TMP_DIR}/tmp_mask_vh_filled.sgrd
+	saga_cmd -f=r grid_tools 25 -GRID:${TMP_DIR}/tmp_mask_vv_saga.sgrd -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:${TMP_DIR}/tmp_mask_vv_filled.sgrd
+fi
 #-------------------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------------------
 echo "Applying multi-directional Lee-Filter for further smoothing"
 saga_cmd -f=r grid_filter 3 -INPUT:${TMP_DIR}/tmp_mask_hh_filled.sgrd -RESULT:${TMP_DIR}/tmp_mask_hh_filtered.sgrd -NOISE_ABS:1000 -NOISE_REL:250 -METHOD:1
-saga_cmd -f=r grid_filter 3 -INPUT:${TMP_DIR}/tmp_mask_hv_filled.sgrd -RESULT:${TMP_DIR}/tmp_mask_hv_filtered.sgrd -NOISE_ABS:1000 -NOISE_REL:250 -METHOD:1
+
+if [[ "${MODE}" == "FBD" || "${MODE}" == "PLR" ]];then
+	saga_cmd -f=r grid_filter 3 -INPUT:${TMP_DIR}/tmp_mask_hv_filled.sgrd -RESULT:${TMP_DIR}/tmp_mask_hv_filtered.sgrd -NOISE_ABS:1000 -NOISE_REL:250 -METHOD:1
+elif [[ "${MODE}" == "PLR" ]];then
+	saga_cmd -f=r grid_filter 3 -INPUT:${TMP_DIR}/tmp_mask_vh_filled.sgrd -RESULT:${TMP_DIR}/tmp_mask_vh_filtered.sgrd -NOISE_ABS:1000 -NOISE_REL:250 -METHOD:1
+	saga_cmd -f=r grid_filter 3 -INPUT:${TMP_DIR}/tmp_mask_vv_filled.sgrd -RESULT:${TMP_DIR}/tmp_mask_vv_filtered.sgrd -NOISE_ABS:1000 -NOISE_REL:250 -METHOD:1
+fi
 #-------------------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------------------
 echo "Create Final Output files"
 gdalwarp -srcnodata -99999 -dstnodata 0 ${TMP_DIR}/tmp_mask_hh_filtered.sdat ${FINAL_DIR}/Gamma0_HH.tif
-gdalwarp -srcnodata -99999 -dstnodata 0 ${TMP_DIR}/tmp_mask_hv_filtered.sdat ${FINAL_DIR}/Gamma0_HV.tif
+
+if [[ "${MODE}" == "FBD" || "${MODE}" == "PLR" ]];then
+	gdalwarp -srcnodata -99999 -dstnodata 0 ${TMP_DIR}/tmp_mask_hv_filtered.sdat ${FINAL_DIR}/Gamma0_HV.tif
+elif [[ "${MODE}" == "PLR" ]];then
+	gdalwarp -srcnodata -99999 -dstnodata 0 ${TMP_DIR}/tmp_mask_vh_filtered.sdat ${FINAL_DIR}/Gamma0_VH.tif
+	gdalwarp -srcnodata -99999 -dstnodata 0 ${TMP_DIR}/tmp_mask_vv_filtered.sdat ${FINAL_DIR}/Gamma0_VV.tif
+fi
 #-------------------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------------------

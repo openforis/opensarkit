@@ -97,7 +97,7 @@ else # country case
 
 		# extract srtm grid as shape from the OpenSARKit DB
 		echo "Extracting shapefile from country database"	
-	   ogr2ogr -f "Esri Shapefile" ${PROC_DIR}/AOI/AOI.shp ${DB_GLOBAL} -dsco SPATIALITE=yes -where "\"iso3\" = \"${2}\"" -nln AOI countries
+	   	ogr2ogr -f "Esri Shapefile" ${PROC_DIR}/AOI/AOI.shp ${DB_GLOBAL} -dsco SPATIALITE=yes -where "\"iso3\" = \"${2}\"" -nln AOI countries
 		AOI=${PROC_DIR}/AOI/AOI.shp
 
 		# create convex hull for data search

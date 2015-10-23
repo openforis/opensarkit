@@ -75,10 +75,10 @@ cd ${HOME}/OSK/Programs
 
 #git clone https://github.com/asfadmin/ASF_MapReady
 wget https://github.com/asfadmin/ASF_MapReady/archive/3.6.6-117.tar.gz
-tar -xzvf /home/sarbuntu/OSK/Programs/3.6.6-117.tar.gz
-rm -f tar -xzvf /home/sarbuntu/OSK/Programs/3.6.6-117.tar.gz
+tar -xzvf ${HOME}/OSK/Programs/3.6.6-117.tar.gz
+rm -f ${HOME}/OSK/Programs/3.6.6-117.tar.gz
 cd ASF_MapReady-3.6.6-117
-./configure --prefix=$HOME/github/OpenSARKit/Programs/ASF_bin
+./configure --prefix=$HOME/OSK/Programs/ASF_bin
 make
 make install
 
