@@ -33,8 +33,9 @@ apt-get upgrade -y
 # 3 install packages
 #------------------------------------------------------------------
 # Gis Packages
-apt-get install --yes qgis  gdal-bin libgdal-dev python-gdal saga libsaga-dev python-saga otb-bin libotb-dev libotb-ice libotb-ice-dev monteverdi2 python-otb geotiff-bin libgeotiff-dev gmt libgmt-dev dans-gdal-scripts	
+#apt-get install --yes qgis gdal-bin libgdal-dev python-gdal saga libsaga-dev python-saga otb-bin libotb-dev libotb-ice libotb-ice-dev monteverdi2 python-otb geotiff-bin libgeotiff-dev gmt libgmt-dev dans-gdal-scripts	
 #libqgis-dev (problems with grass 7)
+apt-get install --yes gdal-bin libgdal-dev python-gdal saga libsaga-dev python-saga geotiff-bin libgeotiff-dev dans-gdal-scripts	
 
 ## Spatial-Database Spatialite
 apt-get install --yes spatialite-bin spatialite-gui #pgadmin3 postgresql postgis 
@@ -52,7 +53,7 @@ apt-get install --yes python-scipy python-h5py python-pyresample
 apt-get install --yes bwidget itcl3 itk3 iwidgets4 libtk-img 
 
 # Further tools (i.e. Aria for automated ASF download, unrar for unpacking, parallel for parallelization of processing)
-apt-get install --yes aria2 unrar parallel
+apt-get install --yes aria2 unrar parallel xml-twig-tools
 
 ## LEDAPS
 #apt-get install --yes zlib1g zlib1g-dev libtiff5 libtiff5-dev libgeotiff2 libgeotiff-dev libxml2 libxml2-dev ksh libhdf4-0 libhdf4-0-alt libhdf4-alt-dev libhdfeos0 libhdfeos-dev libgctp0d libgctp-dev hdf4-tools

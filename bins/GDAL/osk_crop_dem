@@ -26,6 +26,11 @@ if [ "$#" != "3" ]; then
 	echo -e ""
 	echo -e "Syntax: osk_crop_dem <zip-file> <dem> <dem-crop>"
 	echo -e ""
+	echo -e " description of input parameters:"
+	echo -e " zip-file		(input) downloaded zip file of the SAR scene"
+	echo -e " elevation		(input) filename to the digital elevation model"
+	echo -e " dem-crop		(output) cropped DEM file"
+	echo -e ""
   exit 1
 else
   FILE=`readlink -f $1`
