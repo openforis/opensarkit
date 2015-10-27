@@ -27,6 +27,7 @@ if [ "$#" != "2" ]; then
 	echo -e " description of input parameters:"
 	echo -e " filename		(input) filename of the downloaded zip file"
 	echo -e " output_folder		(output) pathname of the output folder"
+	echo -e ""
   exit 1
 else
 	echo -e ""

@@ -1,29 +1,5 @@
 #!/bin/bash
 
-#-------------------------------------------------------------------------------------------
-#	ALOS Level 1.5 FBD Preprocessing
-#
-#	Dependencies:
-#
-#		- SAGA GIS 
-#		- Sentinel 1 Toolbox
-#		- ASF Mapready
-#		- gdal
-#
-#	Written by:
-#
-#		Andreas Vollrath, FAO Rome
-#
-#-------------------------------------------------------------------------------------------
-
-#-------------------------------------------------------------------------------------------
-#	0 Set up Script variables
-#-------------------------------------------------------------------------------------------
-
-# TMP sourcing for Sepal env.
-#source /data/home/Andreas.Vollrath/github/OpenSARKit_source.bash >/dev/null 2>&1
-#source /home/avollrath/github/OpenSARKit/OpenSARKit_source.bash >/dev/null 2>&1
-
 #-------------------------------------------------------------------------------------------	
 # 	0.1 Check for right usage & set up basic Script Variables
 if [ "$#" != "3" ]; then
@@ -44,7 +20,7 @@ if [ "$#" != "3" ]; then
 	echo -e "	- gdal"
 	echo -e "----------------------------------"
 	echo -e ""
-	echo -e " syntax: osk_single_ALOS_L1.5_preprocess_asf <filename> <elevation> <output_folder>"
+	echo -e " syntax: osk_single_ALOS_L1.5_preprocess_asf_wo_lm <filename> <elevation> <output_folder>"
 	echo -e ""
 	echo -e " description of input parameters:"
 	echo -e " filename		(input) filename of the downloaded zip file"

@@ -1,0 +1,263 @@
+#! /bin/bash
+
+# 	0.1 Check for right usage & set up basic Script Variables
+if [ "$#" != "4" ]; then
+
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " OpenSARKit, v.01"
+	echo -e " Preparing K&C mosaics"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+#	echo -e " Author: Andreas Vollrath"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Software dependencies:"
+	echo -e "	- gdal-bin"
+	echo -e "	- SAGA GIS"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e " syntax: osk_prepare_KC_mosaics <output_folder> <ISO3_country_code/area_of_interest> <year> <filtering>"
+	echo -e ""
+	echo -e " description of input parameters:"
+	echo -e " output_folder		(output) pathname of the output folder"
+ 	echo -e " ISO3_country_code/area_of_interest	ISO3 country code or shapefile of your area of interest"
+	echo -e " Year		Acquisition Year (2007,2008,2009 or 2010)"
+	echo -e " filtering		Apply Multi-directional Lee Filter (Lee et al. 1998)"
+	echo -e "			  Available choices:"
+	echo -e "			  0: no filtering applied"
+	echo -e "			  1: filter applied"
+	echo -e ""		
+	echo -e ""
+
+  	exit 1
+else
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " OpenSARKit, v.01"
+	echo -e " Preparing K&C mosaics"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+#	echo -e " Author: Andreas Vollrath"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Software dependencies:"
+	echo -e "	- SAGA GIS"
+	echo -e "	- gdal"
+	echo -e "----------------------------------"
+	echo -e ""
+
+	# set up initial script variables
+	mkdir -p $1
+	cd $1
+	OUT_DIR=`pwd` 
+	ZIP_DIR=${OUT_DIR}/ZIP
+	mkdir -p ${ZIP_DIR}
+	export TMP_DIR=${OUT_DIR}/TMP/
+	mkdir -p ${TMP_DIR}
+	YEAR=$3
+	YEAR_SHORT=${YEAR:2:2}
+	mkdir -p ${OUT_DIR}/YEAR/
+fi
+
+# should be exported
+function ogr_extent() {
+    if [ -z "$1" ]; then 
+        echo "Missing arguments. Syntax:"
+        echo "  ogr_extent <input_vector>"
+        return
+    fi
+    EXTENT=$(ogrinfo -al -so $1 |\
+        grep Extent |\
+        sed 's/Extent: //g' |\
+        sed 's/(//g' |\
+        sed 's/)//g' |\
+        sed 's/ - /, /g')
+    EXTENT=`echo $EXTENT | awk -F ',' '{print $1 " " $4 " " $3 " " $2}'`
+    echo -n "$EXTENT"
+}
+
+
+
+# ask for user access
+read -r -p "Please type your K&C mosaic username:" UNAME
+read -s -p "Please type your K&C mosaic password:" PW
+
+#----------------------------------------------------------------------
+# check if AOI comes from country code or is already a shape
+mkdir -p ${OUT_DIR}/AOI/
+
+if [ `echo $2 | grep shp` ]; then # AOI case
+
+		AOI=$2
+		cp ${AOI} ${OUT_DIR}/AOI/				
+	
+else # country case
+	
+      		COUNTRY=`echo "SELECT name FROM countries WHERE \"iso3\" = '$2';" | spatialite $DB_GLOBAL | head -50`
+		echo "Extracting country boundaries for ${COUNTRY}"
+		
+		# extract srtm grid as shape from the OpenSARKit DB
+		echo "Exporting shapefile from country database"	
+	   	ogr2ogr -f "Esri Shapefile" ${OUT_DIR}/AOI/AOI.shp ${DB_GLOBAL} -dsco SPATIALITE=yes -where "\"iso3\" = \"${2}\"" -nln AOI countries
+		AOI=${OUT_DIR}/AOI/AOI.shp
+		echo "Exporting shapefile from country database with a 0.1 buffer around the borders"	
+	   	ogr2ogr -f "Esri Shapefile" ${OUT_DIR}/AOI/AOI_buffer.shp ${DB_GLOBAL} -dsco SPATIALITE=yes -sql "select ST_union(ST_buffer(geom,0.1)) from countries where \"iso3\" = \"${2}\""
+		AOI_BUF=${OUT_DIR}/AOI/AOI_buffer.shp
+fi
+#----------------------------------------------------------------------
+
+#----------------------------------------------------------------------
+# Get K&C 5x5 Tiles list
+LAYER=`ogrinfo ${AOI} | tail -1 | awk $'{print $2}'`
+
+# create a vrt layer for consequent interect operation with ogr2ogr
+echo "<OGRVRTDataSource>" > ${TMP_DIR}/intersect.vrt
+echo "   <OGRVRTLayer name=\"${LAYER}\">" >> ${TMP_DIR}/intersect.vrt
+echo "      <SrcDataSource>${AOI}</SrcDataSource>" >> ${TMP_DIR}/intersect.vrt
+echo "   </OGRVRTLayer>" >> ${TMP_DIR}/intersect.vrt
+echo "   <OGRVRTLayer name=\"kc_grid\">" >> ${TMP_DIR}/intersect.vrt
+echo "      <SrcDataSource>${DB_GLOBAL}</SrcDataSource>" >> ${TMP_DIR}/intersect.vrt
+echo "   </OGRVRTLayer>" >> ${TMP_DIR}/intersect.vrt
+echo "</OGRVRTDataSource>" >> ${TMP_DIR}/intersect.vrt
+
+# intersect with ogr2ogr
+ogr2ogr -f "csv" ${TMP_DIR}/tiles.csv ${TMP_DIR}/intersect.vrt -dialect sqlite -sql "SELECT b.x_min,b.y_max FROM ${LAYER} a, kc_grid b WHERE ST_Intersects(a.geometry, b.geometry)" 
+# get tile list
+cat ${TMP_DIR}/tiles.csv | tail -n +2 | tr ',' '\ ' > ${TMP_DIR}/kc_list
+#----------------------------------------------------------------------
+
+#----------------------------------------------------------------------
+# Download, and cut the data
+mkdir -p ${OUT_DIR}/YEAR/TILES/
+
+while read LINE; do
+
+	cd $1
+	#echo $LINE
+	COL=`echo ${LINE} | awk $'{print $1}'`
+	ROW=`echo ${LINE} | awk $'{print $2}'`
+
+	# Create the actual Grid code for exact download address
+	if [ `echo $ROW | grep -` ];then 
+
+		# eliminate - sign 
+		ROW=`echo ${ROW} | sed 's|-||g'`
+
+		# create ROW in Form SXX
+		if [ ${#ROW} == 1 ];then 
+
+			ROW=S0$ROW
+		else
+			ROW=S$ROW
+
+		fi
+
+	else
+		
+		# create ROW in Form NXX
+		if [ ${#ROW} == 1 ];then 
+
+			ROW=N0$ROW
+		else
+			ROW=N$ROW
+		fi
+
+	fi
+
+	echo $ROW
+	
+
+
+	if [ `echo $COL | grep -` ];then 
+
+		# eliminate - sign 
+		COL=`echo ${COL} | sed 's|-||g'`
+
+		# create COL in Form WXXX
+		if [ ${#COL}  == 3 ];then 
+
+			COL=W${COL}
+
+		elif [ ${#COL} == 2 ];then
+
+			COL=W0${COL}
+		else 
+			COL=W00${COL}
+		fi
+
+	else
+		# COL in Form EXXX
+		if [ ${#COL} == 3 ];then 
+
+			COL=E${COL}
+
+		elif [ ${#COL} == 2 ];then
+
+			COL=E0${COL}
+		else 
+			COL=E00${COL}
+		fi
+	fi
+
+	echo $COL
+
+	echo "Downloading Tile ${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz"
+	wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz
+
+	echo "Extracting Tile ${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz"
+	tar -xzf ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -C ${TMP_DIR}
+
+
+	if [ $4 -eq 1 ];then
+
+		mkdir -p ${TMP_DIR}/${ROW}${COL}
+		mv ${TMP_DIR}/*sl_HH* ${TMP_DIR}/${ROW}${COL}/
+		cd ${TMP_DIR}/${ROW}${COL}/
+
+		for DATA in `ls *sl_HH`;do
+		echo "Translate HH band to Saga GIS Format for subsequent filtering"
+		gdal_translate -of SAGA ${DATA} ${DATA}.saga.sdat
+		echo "Applying Lee multi-directional filter"
+		saga_cmd -f=r grid_filter 3 -INPUT:${DATA}.saga.sgrd -RESULT:${DATA}.saga.filtered.sgrd -NOISE_ABS:5000 -NOISE_REL:3000 -METHOD:1
+		echo "Exporting "
+		gdal_translate -of GTiff -ot UInt16 ${DATA}.saga.filtered.sdat ${OUT_DIR}/YEAR/TILES/${DATA}.tif
+		done
+
+		for DATA in `ls *sl_HV`;do
+		echo "Translate HH band to Saga GIS Format for subsequent filtering"
+		gdal_translate -of SAGA ${DATA} ${DATA}.saga.sdat
+		echo "Applying Lee multi-directional filter"
+		saga_cmd -f=r grid_filter 3 -INPUT:${DATA}.saga.sgrd -RESULT:${DATA}.saga.filtered.sgrd -NOISE_ABS:5000 -NOISE_REL:3000 -METHOD:1
+		echo "Exporting "
+		gdal_translate -of GTiff -ot UInt16 ${DATA}.saga.filtered.sdat ${OUT_DIR}/YEAR/TILES/${DATA}.tif
+		done
+	
+	else 
+
+		for DATA in `ls *sl_HH`;do
+		gdal_translate -of GTiff -ot UInt16 ${DATA} ${OUT_DIR}/YEAR/TILES/${DATA}.tif
+		done
+
+		for DATA in `ls *sl_HV`;do
+		gdal_translate -of GTiff -ot UInt16 ${DATA} ${OUT_DIR}/YEAR/TILES/${DATA}.tif
+		done
+
+	fi
+
+	rm -rf ${TMP_DIR}/${ROW}${COL}
+	rm -f N*
+	rm -f S*
+done < ${TMP_DIR}/kc_list
+#--------------------------------------------------------------
+
+
+#--------------------------------------------------------------
+#
+gdalbuildvrt ${OUT_DIR}/YEAR/mosaic_hh.vrt ${OUT_DIR}/YEAR/TILES/*sl_HH.tif
+gdalbuildvrt ${OUT_DIR}/YEAR/mosaic_hh.vrt ${OUT_DIR}/YEAR/TILES/*sl_HV.tif
+
+gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/YEAR/mosaic_hh.vrt ${OUT_DIR}/YEAR/final_mosaic_${YEAR}.tif
+gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/YEAR/mosaic_hv.vrt ${OUT_DIR}/YEAR/final_mosaic_${YEAR}.tif
+
+rm -rf ${TMP_DIR}

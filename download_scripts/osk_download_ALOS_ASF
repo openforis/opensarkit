@@ -46,6 +46,7 @@ elif [ "$#" == "8" ]; then
 	echo -e "	- curl"
 	echo -e "	- ogr2ogr"
 	echo -e "----------------------------------"
+	echo -e ""
 	cd $1
    PROC_DIR=`pwd`
    TMP_DIR=${PROC_DIR}/TMP
@@ -104,7 +105,7 @@ else
 	exit 1
 fi
 
-echo $1 $2 $3 $4 $5 $6 $7
+
 #get the cookie
 if [ "${SCRIPT_MODE}" = "NI" ];then
 	echo ""

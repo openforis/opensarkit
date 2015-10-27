@@ -138,7 +138,6 @@ if [[ $7 == 1 ]];then
 
 		echo "Downloading $SCENE"
 		DL_ADDRESS='https://scihub.esa.int/dhus/odata/v1/Products('"'${UUID}'"')/$value'
-		#wget --no-check-certificate --user="${USERNAME}" --password="${PW}" "${DL_ADDRESS}"
 		aria2c --check-certificate=false --http-user="${USERNAME}" --http-passwd="${PW}" "${DL_ADDRESS}"
 		echo "Moving $SCENE to ${PROC_DIR}/S1/ZIP"
 		mv ${SCENE}.zip ${PROC_DIR}/ZIP/${SCENE}.zip

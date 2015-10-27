@@ -8,7 +8,8 @@ if [ "$#" != "2" ]; then
 	echo -e "----------------------------------"
 	echo -e " OpenSARKit, v.01"
 	echo -e " Prepare mapping project"
-	echo -e " written by: Andreas Vollrath, UN-FAO, Rome"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+#	echo -e " Author: Andreas Vollrath"
 	echo -e "----------------------------------"
 	echo -e ""
 	echo -e "----------------------------------"
@@ -18,21 +19,22 @@ if [ "$#" != "2" ]; then
 	echo -e "	- Spatialite/SQlite"
 	echo -e "----------------------------------"
 	echo -e ""
-	echo -e "syntax: osk_prepare_project <project_folder> <ISO3_country_code/area_of_interest>"
+	echo -e " syntax: osk_prepare_project <project_folder> <ISO3_country_code/area_of_interest>"
 	echo -e ""
-	echo -e "input parameters:"
-	echo -e "project_folder		(output) folder where w2w mosaics are stored"
-	echo -e "ISO3_country_code/area_of_interest	ISO3 country code or shapefile of your area of interest"
+	echo -e " input parameters:"
+	echo -e " project_folder		(output) folder where w2w mosaics are stored"
+	echo -e " ISO3_country_code/area_of_interest	ISO3 country code or shapefile of your area of interest"
 	echo -e ""
-	echo -e "NOTE: For ISO3 code go to http://www.fao.org/countryprofiles/iso3list/en/"	
+	echo -e " NOTE: For ISO3 code go to http://www.fao.org/countryprofiles/iso3list/en/"	
 	echo -e ""
 	exit 1
 else
-		echo -e ""
+	echo -e ""
 	echo -e "----------------------------------"
 	echo -e " OpenSARKit, v.01"
 	echo -e " Prepare mapping project"
-	echo -e " written by: Andreas Vollrath, UN-FAO, Rome"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+#	echo -e " Author: Andreas Vollrath"
 	echo -e "----------------------------------"
 	echo -e ""
 	echo -e "----------------------------------"
@@ -92,18 +94,18 @@ if [ `echo $2 | grep shp` ]; then # AOI case
 
 else # country case
 	
-      COUNTRY=`echo "SELECT name FROM countries WHERE \"iso3\" = '$2';" | spatialite $DB_GLOBAL | head -50`
+      		COUNTRY=`echo "SELECT name FROM countries WHERE \"iso3\" = '$2';" | spatialite $DB_GLOBAL | head -50`
 		echo "Preparing your mapping project for ${COUNTRY}"
 
 		# extract srtm grid as shape from the OpenSARKit DB
 		echo "Extracting shapefile from country database"	
 	   	ogr2ogr -f "Esri Shapefile" ${PROC_DIR}/AOI/AOI.shp ${DB_GLOBAL} -dsco SPATIALITE=yes -where "\"iso3\" = \"${2}\"" -nln AOI countries
 		AOI=${PROC_DIR}/AOI/AOI.shp
-
+		echo "Extracting shapefile from country database with a 0.1 buffer around the borders"	
+	   	ogr2ogr -f "Esri Shapefile" ${PROC_DIR}/AOI/AOI_buffer.shp ${DB_GLOBAL} -dsco SPATIALITE=yes -sql  "select ST_union(ST_buffer(geom,0.1)) from countries where \"iso3\" = \"${2}\""
 		# create convex hull for data search
 		echo "Creating a convex hull for ${COUNTRY}"
 		osk_convex_hull.py --input ${PROC_DIR}/AOI/AOI.shp --output ${PROC_DIR}/AOI/convex_hull_aoi.shp
-
 		# downoad SRTM
 		echo "Downloading and preparing SRTM4 90m Digital Elevation Model"
 		osk_download_SRTM3 ${AOI} ${PROC_DIR}/DEM/DEM_final_90m.tif

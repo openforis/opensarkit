@@ -30,7 +30,7 @@
       <outputImageScaleInDb>false</outputImageScaleInDb>
       <createGammaBand>false</createGammaBand>
       <createBetaBand>true</createBetaBand>
-      <selectedPolarisations/>
+     <selectedPolarisations>VV</selectedPolarisations>
       <outputSigmaBand>false</outputSigmaBand>
       <outputGammaBand>false</outputGammaBand>
       <outputBetaBand>true</outputBetaBand>
