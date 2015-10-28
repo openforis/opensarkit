@@ -110,8 +110,10 @@ fi
 if [ "${SCRIPT_MODE}" = "NI" ];then
 	echo ""
 else
-	read -r -p "Please type your ASF DAAC Username:" UNAME
-	read -s -p "Please type your ASF DAAC Password:" PW
+	echo -e "If you have not done the registration, go to:"
+	echo -e "https://urs.earthdata.nasa.gov/"
+	read -r -p "Please type your NASA Earthdata Username:" UNAME
+	read -s -p "Please type your NASA Earthdata Password:" PW
 fi
 echo ""
 echo "Getting the inventory data"

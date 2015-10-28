@@ -8,17 +8,17 @@ export OPENSARKIT="${HOME}/OSK/OpenSARKit"
 # Folder of external program installations
 PROGRAMS="${OPENSARKIT}/../Programs"
 
-# Alias for Sentinel-1 Toolbox
+# source auxiliary Spatialite database
+export DB_GLOBAL=${OPENSARKIT}/../Database/global_info.sqlite	 
 
-alias S1TBX1="bash ${PROGRAMS}/S1TBX/gpt.sh"
+# source lib-functions
+source ${OPENSARKIT}/lib/bash_helpers.sh
+
+# PATHS
 export S1TBX_EXE="${PROGRAMS}/S1TBX/gpt.sh"
 export POLSAR="${PROGRAMS}/PolSARPro504"
 export POLSAR_BIN=${POLSAR}/data_import:${POLSAR}/data_convert:${POLSAR}/speckle_filter:${POLSAR}/bmp_process:${POLSAR}/tools
 export ASF_EXE="${PROGRAMS}/ASF_bin/bin"
-# ASF Mapready
-# GMTSAR
-# DORIS 
-#export NEST_EXE=${PROGRAMS}/NEST/gpt.sh
 
 # source worklows/graphs
 export NEST_GRAPHS="${OPENSARKIT}/workflows/NEST"
@@ -36,9 +36,8 @@ export GDAL_BIN="${OPENSARKIT}/bins/GDAL"
 export SAGA_BIN="${OPENSARKIT}/bins/SAGA"
 export RSGISLIB_BIN="${OPENSARKIT}/bins/RSGISLIB"
 
+# export to Path
 export PATH=$PATH:${PYTHON_BIN}:${RSGISLIB_BIN}:${ASF_BIN}:${POLSAR_BIN}:${SAGA_BIN}:${S1TBX_BIN}:${NEST_BIN}:${GDAL_BIN}:${DOWNLOAD_BIN}:${ASF_EXE}
 
-# source database
-export DB_GLOBAL=${OPENSARKIT}/DB/global_info.sqlite	 
 
 

@@ -60,26 +60,9 @@ else
 	mkdir -p ${OUT_DIR}/YEAR/
 fi
 
-# should be exported
-function ogr_extent() {
-    if [ -z "$1" ]; then 
-        echo "Missing arguments. Syntax:"
-        echo "  ogr_extent <input_vector>"
-        return
-    fi
-    EXTENT=$(ogrinfo -al -so $1 |\
-        grep Extent |\
-        sed 's/Extent: //g' |\
-        sed 's/(//g' |\
-        sed 's/)//g' |\
-        sed 's/ - /, /g')
-    EXTENT=`echo $EXTENT | awk -F ',' '{print $1 " " $4 " " $3 " " $2}'`
-    echo -n "$EXTENT"
-}
-
-
-
 # ask for user access
+echo -e "If you have not done the registration, go to:"
+echo -e "http://www.eorc.jaxa.jp/ALOS/en/palsar_fnf/registration.htm"
 read -r -p "Please type your K&C mosaic username:" UNAME
 read -s -p "Please type your K&C mosaic password:" PW
 
@@ -216,6 +199,8 @@ while read LINE; do
 		cd ${TMP_DIR}/${ROW}${COL}/
 
 		for DATA in `ls *sl_HH`;do
+				
+		
 		echo "Translate HH band to Saga GIS Format for subsequent filtering"
 		gdal_translate -of SAGA ${DATA} ${DATA}.saga.sdat
 		echo "Applying Lee multi-directional filter"
@@ -223,7 +208,8 @@ while read LINE; do
 		echo "Exporting "
 		gdal_translate -of GTiff -ot UInt16 ${DATA}.saga.filtered.sdat ${OUT_DIR}/YEAR/TILES/${DATA}.tif
 		done
-
+		
+		mv ${TMP_DIR}/*sl_HV* ${TMP_DIR}/${ROW}${COL}/
 		for DATA in `ls *sl_HV`;do
 		echo "Translate HH band to Saga GIS Format for subsequent filtering"
 		gdal_translate -of SAGA ${DATA} ${DATA}.saga.sdat

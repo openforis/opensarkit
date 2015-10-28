@@ -103,3 +103,14 @@ echo "source ${HOME}/OSK/OpenSARKit/OpenSARKit_source.bash" >> ${HOME}/.bashrc
 chmod -R 755 ${HOME}/OSK
 chown -R ${USER}:${USER} ${HOME}/OSK
 
+#------------------------------------------------------------------
+# 3 Download the additional Database
+#------------------------------------------------------------------
+
+mkdir -p ${HOME}/OSK/Database
+cd ${HOME}/OSK/Database
+wget https://www.dropbox.com/s/58cnjj8xymzkbac/global_info.sqlite?dl=0
+
+echo "---------------------------"
+echo "Installation of OFSK completed"
+echo "---------------------------"
