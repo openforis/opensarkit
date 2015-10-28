@@ -111,12 +111,12 @@ cat ${TMP_DIR}/tiles.csv | tail -n +2 | tr ',' '\ ' > ${TMP_DIR}/kc_list
 #----------------------------------------------------------------------
 
 #----------------------------------------------------------------------
-# Download, and cut the data
+# 1 Download, and unpack the data
 mkdir -p ${OUT_DIR}/YEAR/TILES/
 
 while read LINE; do
 
-	cd $1
+	cd ${OUT_DIR}
 	#echo $LINE
 	COL=`echo ${LINE} | awk $'{print $1}'`
 	ROW=`echo ${LINE} | awk $'{print $2}'`
@@ -186,60 +186,150 @@ while read LINE; do
 	echo $COL
 
 	echo "Downloading Tile ${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz"
-	wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz
+	#wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz
 
 	echo "Extracting Tile ${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz"
 	tar -xzf ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -C ${TMP_DIR}
 
-
-	if [ $4 -eq 1 ];then
-
-		mkdir -p ${TMP_DIR}/${ROW}${COL}
-		mv ${TMP_DIR}/*sl_HH* ${TMP_DIR}/${ROW}${COL}/
-		cd ${TMP_DIR}/${ROW}${COL}/
-
-		for DATA in `ls *sl_HH`;do
-				
-		
-		echo "Translate HH band to Saga GIS Format for subsequent filtering"
-		gdal_translate -of SAGA ${DATA} ${DATA}.saga.sdat
-		echo "Applying Lee multi-directional filter"
-		saga_cmd -f=r grid_filter 3 -INPUT:${DATA}.saga.sgrd -RESULT:${DATA}.saga.filtered.sgrd -NOISE_ABS:5000 -NOISE_REL:3000 -METHOD:1
-		echo "Exporting "
-		gdal_translate -of GTiff -ot UInt16 ${DATA}.saga.filtered.sdat ${OUT_DIR}/YEAR/TILES/${DATA}.tif
-		done
-		
-		mv ${TMP_DIR}/*sl_HV* ${TMP_DIR}/${ROW}${COL}/
-		for DATA in `ls *sl_HV`;do
-		echo "Translate HH band to Saga GIS Format for subsequent filtering"
-		gdal_translate -of SAGA ${DATA} ${DATA}.saga.sdat
-		echo "Applying Lee multi-directional filter"
-		saga_cmd -f=r grid_filter 3 -INPUT:${DATA}.saga.sgrd -RESULT:${DATA}.saga.filtered.sgrd -NOISE_ABS:5000 -NOISE_REL:3000 -METHOD:1
-		echo "Exporting "
-		gdal_translate -of GTiff -ot UInt16 ${DATA}.saga.filtered.sdat ${OUT_DIR}/YEAR/TILES/${DATA}.tif
-		done
-	
-	else 
-
-		for DATA in `ls *sl_HH`;do
-		gdal_translate -of GTiff -ot UInt16 ${DATA} ${OUT_DIR}/YEAR/TILES/${DATA}.tif
-		done
-
-		for DATA in `ls *sl_HV`;do
-		gdal_translate -of GTiff -ot UInt16 ${DATA} ${OUT_DIR}/YEAR/TILES/${DATA}.tif
-		done
-
-	fi
-
-	rm -rf ${TMP_DIR}/${ROW}${COL}
-	rm -f N*
-	rm -f S*
 done < ${TMP_DIR}/kc_list
+#----------------------------------------------------------------------
+
+
+
+#----------------------------------------------------------------------
+# 2 Mosaic the relevant data, apply the layover/shadow mask and filter, in case it is set to yes
+if [ $4 -eq 1 ];then #filter case
+
+cd ${TMP_DIR}/
+
+	for DATA in `ls *sl_HH`;do #filter HH1x1 tiles that fall in the AOI
+		
+		#-------------------------------------------------------------------------------------
+		# check if 1x1 tile intersects with AOI
+		# create a shapefile
+		gdal_trace_outline ${DATA} -out-cs ll -ogr-out ${DATA}.shp
+		LAYER_TILE=`ogrinfo ${DATA}.shp | tail -1 | awk $'{print $2}'`
+		DATA_PATH=`readlink -f ${DATA}`		
+		AOI_PATH=`readlink -f $AOI`
+
+		# create a vrt for intersect analysis
+		echo "<OGRVRTDataSource>" > ${TMP_DIR}/intersect_tile.vrt
+		echo "   <OGRVRTLayer name=\"${LAYER_TILE}\">" >> ${TMP_DIR}/intersect_tile.vrt
+		echo "      <SrcDataSource>${DATA_PATH}.shp</SrcDataSource>" >> ${TMP_DIR}/intersect_tile.vrt
+		echo "   </OGRVRTLayer>" >> ${TMP_DIR}/intersect_tile.vrt
+		echo "   <OGRVRTLayer name=\"${LAYER}\">" >> ${TMP_DIR}/intersect_tile.vrt
+		echo "      <SrcDataSource>${AOI_PATH}</SrcDataSource>" >> ${TMP_DIR}/intersect_tile.vrt
+		echo "   </OGRVRTLayer>" >> ${TMP_DIR}/intersect_tile.vrt
+		echo "</OGRVRTDataSource>" >> ${TMP_DIR}/intersect_tile.vrt	
+
+
+		# create intersect table	
+		ogr2ogr -f "csv" ${TMP_DIR}/grids.csv ${TMP_DIR}/intersect_tile.vrt -dialect sqlite -sql "SELECT * FROM ${LAYER} a, ${LAYER_TILE} b WHERE ST_Intersects(a.geometry, b.geometry)" 
+		#-------------------------------------------------------------------------------------
+
+		# do the actual check
+		if [ `cat ${TMP_DIR}/grids.csv | wc -l` -gt 1 ];then
+	
+			echo "Translate HV band to Saga GIS Format for subsequent filtering"
+			gdal_translate -of SAGA ${DATA} ${DATA}.saga.sdat
+			echo ""
+			echo "Apply the mask" 
+			gdal_calc.py -A ${DATA:0:10}"_mask" --outfile=${DATA}"_mask.tif" --calc="1*(A==255)" --NoDataValue=0
+			gdal_translate -of SAGA -a_nodata 0 ${DATA}"_mask.tif" ${DATA}"_mask.saga.sdat"
+			saga_cmd -f=r grid_calculus 1 -GRIDS:${DATA}.saga.sgrd -XGRIDS:${DATA}"_mask.saga.sgrd" -RESULT ${DATA}"_masked.sgrd" -FORMULA:"a * b"
+			echo ""
+			echo "Close small gaps by interpolation"
+			saga_cmd -f=r grid_tools 25 -GRID:${DATA}"_masked.sgrd" -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:${DATA}"_filled.sgrd"		
+			echo ""
+			echo "Applying multi-directional Lee filter (Lee et al. 1998)"
+			saga_cmd -f=r grid_filter 3 -INPUT:${DATA}"_filled.sgrd" -RESULT:${DATA}.saga.filtered.sgrd -NOISE_ABS:5000 -NOISE_REL:3000 -METHOD:1
+			echo ""			
+			echo "Exporting "
+			gdal_translate -of GTiff -ot UInt16 -a_nodata 0 ${DATA}.saga.filtered.sdat ${OUT_DIR}/YEAR/TILES/${DATA}.tif
+
+		else 
+
+			echo "------------------------------------------"
+			echo "No Overlap with AOI, going on with the next tile"
+			echo "------------------------------------------"
+		fi
+
+#		rm -f ${DATA}*	
+		rm -f ${TMP_DIR}/grids.csv
+			
+	done
+		
+		
+	for DATA in `ls *sl_HV`;do #filter HV 1x1 tiles that fall in the AOI
+		
+		#-------------------------------------------------------------------------------------
+		# check if 1x1 tile intersects with AOI
+		# create a shapefile
+		gdal_trace_outline ${DATA} -out-cs ll -ogr-out ${DATA}.shp
+		LAYER_TILE=`ogrinfo ${DATA}.shp | tail -1 | awk $'{print $2}'`
+		DATA_PATH=`readlink -f ${DATA}`		
+		AOI_PATH=`readlink -f $AOI`
+
+		# create a vrt for intersect analysis
+		echo "<OGRVRTDataSource>" > ${TMP_DIR}/intersect_tile.vrt
+		echo "   <OGRVRTLayer name=\"${LAYER_TILE}\">" >> ${TMP_DIR}/intersect_tile.vrt
+		echo "      <SrcDataSource>${DATA_PATH}.shp</SrcDataSource>" >> ${TMP_DIR}/intersect_tile.vrt
+		echo "   </OGRVRTLayer>" >> ${TMP_DIR}/intersect_tile.vrt
+		echo "   <OGRVRTLayer name=\"${LAYER}\">" >> ${TMP_DIR}/intersect_tile.vrt
+		echo "      <SrcDataSource>${AOI_PATH}</SrcDataSource>" >> ${TMP_DIR}/intersect_tile.vrt
+		echo "   </OGRVRTLayer>" >> ${TMP_DIR}/intersect_tile.vrt
+		echo "</OGRVRTDataSource>" >> ${TMP_DIR}/intersect_tile.vrt	
+
+
+		# create intersect table	
+		ogr2ogr -f "csv" ${TMP_DIR}/grids.csv ${TMP_DIR}/intersect_tile.vrt -dialect sqlite -sql "SELECT * FROM ${LAYER} a, ${LAYER_TILE} b WHERE ST_Intersects(a.geometry, b.geometry)" 
+		#-------------------------------------------------------------------------------------
+
+		# do the actual check
+		if [ `cat ${TMP_DIR}/grids.csv | wc -l` -gt 1 ];then
+		
+			echo "Translate HV band to Saga GIS Format for subsequent filtering"
+			gdal_translate -of SAGA ${DATA} ${DATA}.saga.sdat
+			echo ""
+			echo "Apply the mask" 
+			gdal_calc.py -A ${DATA:0:10}"_mask" --outfile=${DATA}"_mask.tif" --calc="1*(A==255)" --NoDataValue=0
+			gdal_translate -of SAGA -a_nodata 0 ${DATA}"_mask.tif" ${DATA}"_mask.saga.sdat"
+			saga_cmd -f=r grid_calculus 1 -GRIDS:${DATA}.saga.sgrd -XGRIDS:${DATA}"_mask.saga.sgrd" -RESULT ${DATA}"_masked.sgrd" -FORMULA:"a * b"
+			echo ""
+			echo "Close small gaps by interpolation"
+			saga_cmd -f=r grid_tools 25 -GRID:${DATA}"_masked.sgrd" -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:${DATA}"_filled.sgrd"		
+			echo ""
+			echo "Applying multi-directional Lee filter (Lee et al. 1998)"
+			saga_cmd -f=r grid_filter 3 -INPUT:${DATA}"_filled.sgrd" -RESULT:${DATA}.saga.filtered.sgrd -NOISE_ABS:5000 -NOISE_REL:3000 -METHOD:1
+			echo ""			
+			echo "Exporting "
+			gdal_translate -of GTiff -ot UInt16 -a_nodata 0 ${DATA}.saga.filtered.sdat ${OUT_DIR}/YEAR/TILES/${DATA}.tif
+
+		fi			
+
+#		rm -f ${DATA}*
+		rm -f ${TMP_DIR}/grids.csv
+
+	done
+
+else # no filter case
+	
+	for DATA in `ls *sl_HH`;do
+		gdal_translate -of GTiff -ot UInt16 ${DATA} ${OUT_DIR}/YEAR/TILES/${DATA}.tif
+	done
+	
+	for DATA in `ls *sl_HV`;do
+		gdal_translate -of GTiff -ot UInt16 ${DATA} ${OUT_DIR}/YEAR/TILES/${DATA}.tif
+	done
+
+fi # close filter/no-filter case
+#----------------------------------------------------------------------
+
 #--------------------------------------------------------------
 
 
 #--------------------------------------------------------------
-#
+# 3 build the final mosaic
 gdalbuildvrt ${OUT_DIR}/YEAR/mosaic_hh.vrt ${OUT_DIR}/YEAR/TILES/*sl_HH.tif
 gdalbuildvrt ${OUT_DIR}/YEAR/mosaic_hh.vrt ${OUT_DIR}/YEAR/TILES/*sl_HV.tif
 
