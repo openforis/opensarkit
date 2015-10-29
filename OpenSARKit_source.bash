@@ -1,9 +1,9 @@
 #! /bin/bash
 
 # Support script to source the original programs
-
+export OSK_HOME=/usr/local/lib/osk
 # Folder of OpenSARKit scripts and workflows
-export OPENSARKIT="${HOME}/OSK/OpenSARKit"
+export OPENSARKIT="${OSK_HOME}/OpenSARKit"
 
 # Folder of external program installations
 PROGRAMS="${OPENSARKIT}/../Programs"
