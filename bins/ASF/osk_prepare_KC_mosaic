@@ -57,7 +57,7 @@ else
 	mkdir -p ${TMP_DIR}
 	YEAR=$3
 	YEAR_SHORT=${YEAR:2:2}
-	mkdir -p ${OUT_DIR}/YEAR/
+	mkdir -p ${OUT_DIR}/${YEAR/
 fi
 
 # ask for user access
@@ -65,6 +65,9 @@ echo -e "If you have not done the registration, go to:"
 echo -e "http://www.eorc.jaxa.jp/ALOS/en/palsar_fnf/registration.htm"
 read -r -p "Please type your K&C mosaic username:" UNAME
 read -s -p "Please type your K&C mosaic password:" PW
+
+# source bash helpers lib
+source ${OPENSARKIT}/lib/bash_helpers.sh
 
 #----------------------------------------------------------------------
 # check if AOI comes from country code or is already a shape
@@ -112,7 +115,7 @@ cat ${TMP_DIR}/tiles.csv | tail -n +2 | tr ',' '\ ' > ${TMP_DIR}/kc_list
 
 #----------------------------------------------------------------------
 # 1 Download, and unpack the data
-mkdir -p ${OUT_DIR}/YEAR/TILES/
+mkdir -p ${OUT_DIR}/${YEAR}/TILES/
 
 while read LINE; do
 
@@ -148,10 +151,6 @@ while read LINE; do
 
 	fi
 
-	echo $ROW
-	
-
-
 	if [ `echo $COL | grep -` ];then 
 
 		# eliminate - sign 
@@ -182,8 +181,6 @@ while read LINE; do
 			COL=E00${COL}
 		fi
 	fi
-
-	echo $COL
 
 	echo "Downloading Tile ${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz"
 	wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz
@@ -245,7 +242,7 @@ cd ${TMP_DIR}/
 			saga_cmd -f=r grid_filter 3 -INPUT:${DATA}"_filled.sgrd" -RESULT:${DATA}.saga.filtered.sgrd -NOISE_ABS:5000 -NOISE_REL:3000 -METHOD:1
 			echo ""			
 			echo "Exporting "
-			gdal_translate -of GTiff -ot UInt16 -a_nodata 0 ${DATA}.saga.filtered.sdat ${OUT_DIR}/YEAR/TILES/${DATA}.tif
+			gdal_translate -of GTiff -ot UInt16 -a_nodata 0 ${DATA}.saga.filtered.sdat ${OUT_DIR}/${YEAR}/TILES/${DATA}.tif
 
 		else 
 
@@ -303,7 +300,7 @@ cd ${TMP_DIR}/
 			saga_cmd -f=r grid_filter 3 -INPUT:${DATA}"_filled.sgrd" -RESULT:${DATA}.saga.filtered.sgrd -NOISE_ABS:5000 -NOISE_REL:3000 -METHOD:1
 			echo ""			
 			echo "Exporting "
-			gdal_translate -of GTiff -ot UInt16 -a_nodata 0 ${DATA}.saga.filtered.sdat ${OUT_DIR}/YEAR/TILES/${DATA}.tif
+			gdal_translate -of GTiff -ot UInt16 -a_nodata 0 ${DATA}.saga.filtered.sdat ${OUT_DIR}/${YEAR}/TILES/${DATA}.tif
 
 		fi			
 
@@ -315,11 +312,11 @@ cd ${TMP_DIR}/
 else # no filter case
 	
 	for DATA in `ls *sl_HH`;do
-		gdal_translate -of GTiff -ot UInt16 ${DATA} ${OUT_DIR}/YEAR/TILES/${DATA}.tif
+		gdal_translate -of GTiff -ot UInt16 ${DATA} ${OUT_DIR}/${YEAR}/TILES/${DATA}.tif
 	done
 	
 	for DATA in `ls *sl_HV`;do
-		gdal_translate -of GTiff -ot UInt16 ${DATA} ${OUT_DIR}/YEAR/TILES/${DATA}.tif
+		gdal_translate -of GTiff -ot UInt16 ${DATA} ${OUT_DIR}/${YEAR}/TILES/${DATA}.tif
 	done
 
 fi # close filter/no-filter case
@@ -330,10 +327,10 @@ fi # close filter/no-filter case
 
 #--------------------------------------------------------------
 # 3 build the final mosaic
-gdalbuildvrt ${OUT_DIR}/YEAR/mosaic_hh.vrt ${OUT_DIR}/YEAR/TILES/*sl_HH.tif
-gdalbuildvrt ${OUT_DIR}/YEAR/mosaic_hh.vrt ${OUT_DIR}/YEAR/TILES/*sl_HV.tif
+gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/TILES/*sl_HH.tif
+gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_hv.vrt ${OUT_DIR}/${YEAR}/TILES/*sl_HV.tif
 
-gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/YEAR/mosaic_hh.vrt ${OUT_DIR}/YEAR/final_mosaic_${YEAR}.tif
-gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/YEAR/mosaic_hv.vrt ${OUT_DIR}/YEAR/final_mosaic_${YEAR}.tif
+gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/Gamma0_HH_${YEAR}.tif
+gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_hv.vrt ${OUT_DIR}/${YEAR}/Gamma0_HV_${YEAR}.tif
 
 rm -rf ${TMP_DIR}

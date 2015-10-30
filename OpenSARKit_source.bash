@@ -6,10 +6,10 @@ export OSK_HOME=/usr/local/lib/osk
 export OPENSARKIT="${OSK_HOME}/OpenSARKit"
 
 # Folder of external program installations
-PROGRAMS="${OPENSARKIT}/../Programs"
+PROGRAMS="${OPENSARKIT}/Programs"
 
 # source auxiliary Spatialite database
-export DB_GLOBAL=${OPENSARKIT}/../Database/global_info.sqlite	 
+export DB_GLOBAL=${OPENSARKIT}/Database/global_info.sqlite	 
 
 # source lib-functions
 source ${OPENSARKIT}/lib/bash_helpers.sh

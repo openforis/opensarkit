@@ -1,0 +1,64 @@
+#! /bin/bash 
+
+#-------------------------------------------------------------------------------------------	
+# 	0.1 Check for right usage & set up basic Script Variables
+if [ "$#" != "3" ]; then
+	
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " OpenSARKit, v.01"
+	echo -e " Preprocess Sentinel-1 SLC data from ESA Scihub"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+	echo -e " Author: Andreas Vollrath"
+	echo -e " Contact: andreas.vollrath@fao.org"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e "Software dependencies:"
+	echo -e "	- Sentinel 1 Toolbox (version 1.1.1)"
+	echo -e "	- gdal-bin"
+	echo -e "	- saga"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e "Usage: osk_single_S1_SLC_preprocess <filename> <elevation> <output_folder>"
+	echo -e ""
+	echo -e "input parameters:"
+	echo -e " filename		(input) filename of the downloaded zip file"
+	echo -e " elevation		(input) filename to the digital elevation model"
+	echo -e ""
+	echo -e " NOTE: The DEM file should be provided in Geotiff-format as a 16Bit Integer data type with 0 as the no data value."
+	echo -e ""
+	echo -e " output_folder		(output) pathname of the output folder"
+	exit 1
+else
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " OpenSARKit, v.01"
+	echo -e " Preprocessing ALOS Level 1.5 scene from ASF server"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+	echo -e " Author: Andreas Vollrath"
+	echo -e " Contact: andreas.vollrath@fao.org"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Software dependencies:"
+	echo -e "	- Sentinel 1 Toolbox (version 1.1.1)"
+	echo -e "	- gdal-bin"
+	echo -e "	- saga"
+	echo -e "----------------------------------"
+	echo -e ""
+
+	# set up initial script variables
+	FILE=`readlink -f $1`
+	BASE=`basename ${FILE}`
+	PROC_DIR=`dirname ${FILE}`
+	TMP1=${PROC_DIR}/TMP/
+	rm -rf ${TMP1}	
+	mkdir -p ${TMP1}
+	export TMP_DIR=${PROC_DIR}/TMP/${BASE}
+	mkdir -p ${TMP_DIR}
+	DEM_FILE=$2
+	mkdir -p $3
+	cd $3
+	OUT_DIR=`pwd`
+fi
