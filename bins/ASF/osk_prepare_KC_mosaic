@@ -1,7 +1,7 @@
 #! /bin/bash
 
 # 	0.1 Check for right usage & set up basic Script Variables
-if [ "$#" != "4" ]; then
+if [ "$#" != "5" ]; then
 
 	echo -e ""
 	echo -e "----------------------------------"
@@ -17,7 +17,7 @@ if [ "$#" != "4" ]; then
 	echo -e "	- SAGA GIS"
 	echo -e "----------------------------------"
 	echo -e ""
-	echo -e " syntax: osk_prepare_KC_mosaics <output_folder> <ISO3_country_code/area_of_interest> <year> <filtering>"
+	echo -e " syntax: osk_prepare_KC_mosaics <output_folder> <ISO3_country_code/area_of_interest> <year> <filtering> <texture>"
 	echo -e ""
 	echo -e " description of input parameters:"
 	echo -e " output_folder		(output) pathname of the output folder"
@@ -27,6 +27,10 @@ if [ "$#" != "4" ]; then
 	echo -e "			  Available choices:"
 	echo -e "			  0: no filtering applied"
 	echo -e "			  1: filter applied"
+	echo -e " texture		Calculate Texture measures"
+	echo -e "			  Available choices:"
+	echo -e "			  0: no calculation applied"
+	echo -e "			  1: texture measures will be applied"
 	echo -e ""		
 	echo -e ""
 
@@ -57,7 +61,7 @@ else
 	mkdir -p ${TMP_DIR}
 	YEAR=$3
 	YEAR_SHORT=${YEAR:2:2}
-	mkdir -p ${OUT_DIR}/${YEAR/
+	mkdir -p ${OUT_DIR}/${YEAR}/
 fi
 
 # ask for user access
@@ -183,7 +187,7 @@ while read LINE; do
 	fi
 
 	echo "Downloading Tile ${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz"
-	wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz
+	#wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz
 
 	echo "Extracting Tile ${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz"
 	tar -xzf ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -C ${TMP_DIR}
@@ -227,7 +231,9 @@ cd ${TMP_DIR}/
 		# do the actual check
 		if [ `cat ${TMP_DIR}/grids.csv | wc -l` -gt 1 ];then
 	
-			echo "Translate HV band to Saga GIS Format for subsequent filtering"
+			#---------------------------------------------------------------------------
+			# Mask, Gap-Closure & Multi-directional Filtering
+			echo "Translate HH band to Saga GIS Format for subsequent filtering"
 			gdal_translate -of SAGA ${DATA} ${DATA}.saga.sdat
 			echo ""
 			echo "Apply the mask" 
@@ -240,10 +246,22 @@ cd ${TMP_DIR}/
 			echo ""
 			echo "Applying multi-directional Lee filter (Lee et al. 1998)"
 			saga_cmd -f=r grid_filter 3 -INPUT:${DATA}"_filled.sgrd" -RESULT:${DATA}.saga.filtered.sgrd -NOISE_ABS:5000 -NOISE_REL:3000 -METHOD:1
-			echo ""			
 			echo "Exporting "
 			gdal_translate -of GTiff -ot UInt16 -a_nodata 0 ${DATA}.saga.filtered.sdat ${OUT_DIR}/${YEAR}/TILES/${DATA}.tif
+			#---------------------------------------------------------------------------
 
+			#---------------------------------------------------------------------------
+			# Texture Calculation
+			if [ $5 -eq 1 ];then # texture case
+			echo "Translate HH band to Geotiff Format for subsequent filtering"
+			gdal_translate -of GTiff ${DATA} ${DATA}.geotiff.tif
+			echo "Creating Texture Channels"
+			bash ${S1TBX_EXE} ${S1TBX_GRAPHS}/Texture_Measures.xml -Pinput=${TMP_DIR}/${DATA}.geotiff.tif -Poutput=${TMP_DIR}/${DATA}.texture.tif
+			gdal_translate -b 2 -b 3 -b 4 ${TMP_DIR}/${DATA}.texture.tif ${OUT_DIR}/${YEAR}/TILES/${DATA}.texture.tif
+			fi
+			#---------------------------------------------------------------------------
+
+			
 		else 
 
 			echo "------------------------------------------"
@@ -302,6 +320,27 @@ cd ${TMP_DIR}/
 			echo "Exporting "
 			gdal_translate -of GTiff -ot UInt16 -a_nodata 0 ${DATA}.saga.filtered.sdat ${OUT_DIR}/${YEAR}/TILES/${DATA}.tif
 
+			#---------------------------------------------------------------------------
+			# HH/HV ratio calculation
+			echo ""			
+			echo "Creating HH/HV Ratio channel"
+			saga_cmd grid_calculus 1 -GRIDS:${DATA:0:10}_sl_HH.saga.filtered.sgrd -XGRIDS:${DATA}.saga.filtered.sgrd -RESULT:${DATA:0:10}_HHHV.saga.filtered.sgrd -TYPE:7 -FORMULA:"a / b"
+
+			MIN=`gdal_min ${DATA:0:10}_HHHV.saga.filtered.sdat`
+			MAX=`gdal_max ${DATA:0:10}_HHHV.saga.filtered.sdat`
+			gdal_translate -of GTiff -ot UInt16 -scale ${MIN} ${MAX} 0 65535 -a_nodata 0 ${DATA:0:10}_HHHV.saga.filtered.sdat ${OUT_DIR}/${YEAR}/TILES/${DATA:0:10}_HHHV.tif
+			#---------------------------------------------------------------------------		
+
+			#---------------------------------------------------------------------------
+			# Texture Calculation
+			if [ $5 -eq 1 ];then # texture case
+			echo "Translate HV band to Geotiff Format for subsequent filtering"
+			gdal_translate -of GTiff ${DATA} ${DATA}.geotiff.tif
+			echo "Creating Texture Channels"
+			bash ${S1TBX_EXE} ${S1TBX_GRAPHS}/Texture_Measures.xml -Pinput=${TMP_DIR}/${DATA}.geotiff.tif -Poutput=${TMP_DIR}/${DATA}.texture.tif
+			gdal_translate -b 2 -b 3 -b 4 ${TMP_DIR}/${DATA}.texture.tif ${OUT_DIR}/${YEAR}/TILES/${DATA}.texture.tif
+			fi
+			#---------------------------------------------------------------------------
 		fi			
 
 #		rm -f ${DATA}*
@@ -333,4 +372,4 @@ gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_hv.vrt ${OUT_DIR}/${YEAR}/TILES/*sl_HV.ti
 gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/Gamma0_HH_${YEAR}.tif
 gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_hv.vrt ${OUT_DIR}/${YEAR}/Gamma0_HV_${YEAR}.tif
 
-rm -rf ${TMP_DIR}
+#rm -rf ${TMP_DIR}

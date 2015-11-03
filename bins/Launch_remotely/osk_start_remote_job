@@ -8,6 +8,7 @@ echo -e ""
 # start remote job
 read -r -p "Type in the username of the remote machine" USERNAME
 read -r -p "Type in the (IP)-Address of the remote machine" ADRESS
-read -r -p "Which country do you want to process? (english name)" COUNTRY
+#read -r -p "Which country do you want to process? (english name)" COUNTRY
+read -r -p "Type in the complete PATH where the processing should take place on the remote machine" WORK_DIR
 
 ssh -n -f ${USERNAME}@${ADRESS} "bash -c 'mkdir ~/${COUNTRY}; cd ~/${COUNTRY}; source ~/github/OpenSARKit_source.bash;nohup bash ~/github/OpenSARKit/bins/ASF/osk_bulk_preproc_ALOS_ASF_L1.5 /data/home/Andreas.Vollrath/datasets/Paraguay/ALOS/2010/FBD /data/home/Andreas.Vollrath/datasets/Paraguay/DEM/PRY_DEM_SRTM3V4.1.tif > log 2>&1 &'"

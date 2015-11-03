@@ -1,6 +1,48 @@
 #! /bin/bash
 
-# install dependencies of ASF
+VERSION="Version 0.1"
+
+if [ "$#" == "0" ];then
+
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " OpenSARKit, ${VERSION}"
+	echo -e " Install script"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+#	echo -e " Author: Andreas Vollrath"
+	echo -e "----------------------------------"
+	echo -e ""
+	export OSK_HOME=/usr/local/lib/osk
+
+elif [ "$#" == "1" ];then
+
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " OpenSARKit, ${VERSION}"
+	echo -e " Install script"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+#	echo -e " Author: Andreas Vollrath"
+	echo -e "----------------------------------"
+	echo -e ""
+	export OSK_HOME=$1
+
+else 
+
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " OpenSARKit, ${VERSION}"
+	echo -e " Install script"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+#	echo -e " Author: Andreas Vollrath"
+	echo -e "----------------------------------"
+	echo -e ""
+
+	echo -e " syntax: install_osk <installation_folder>"
+	echo -e ""
+	echo -e " description of input parameters:"
+	echo -e " installation_folder		(output) path to installation folder of OSK"
+	exit 1
+fi
 
 #----------------------------------
 # 1 Adding extra repositories
@@ -19,11 +61,14 @@ add-apt-repository -y "deb http://archive.ubuntu.com/ubuntu/ $(lsb_release -sc) 
 
 #QGIS for 14.04
 # add lines to sources
-echo "deb http://qgis.org/ubuntugis $(lsb_release -sc) main" >> /etc/apt/sources.list
-echo "deb-src http://qgis.org/ubuntugis $(lsb_release -sc) main" >> /etc/apt/sources.list
-# add key
-apt-key adv --keyserver keyserver.ubuntu.com --recv-key 3FF5FFCAD71472C4
-
+#if grep -q "qgis.org/ubuntugis" /etc/apt/sources.list;then 
+#	echo "Yeah, you are QGIS user, nice!"
+#else
+#	echo "deb http://qgis.org/ubuntugis $(lsb_release -sc) main" >> /etc/apt/sources.list
+#	echo "deb-src http://qgis.org/ubuntugis $(lsb_release -sc) main" >> /etc/apt/sources.list
+	# add key
+#	apt-key adv --keyserver keyserver.ubuntu.com --recv-key 3FF5FFCAD71472C4
+#fi
 
 #------------------------------------------------------------------
 # 2 run update to load new packages and upgrade all installed ones
@@ -68,45 +113,109 @@ apt-get install --yes aria2 unrar parallel xml-twig-tools
 # 3 Download & Install non-repository Software and OSK
 #------------------------------------------------------------------
 
-export OSK_HOME=/usr/local/lib/osk
+
 if [ -z "$OSK_GIT_URL" ]; then export OSK_GIT_URL=https://github.com/BuddyVolly/OpenSARKit; fi
-mkdir ${OSK_HOME}
+mkdir -p ${OSK_HOME}
 cd ${OSK_HOME}
 
-# OpenSARKit
+# write a source file
+echo "#! /bin/bash" > ${OSK_HOME}/OpenSARKit_source.bash
+echo "" >> ${OSK_HOME}/OpenSARKit_source.bash
+echo "export VERSION=${VERSION}" >> ${OSK_HOME}/OpenSARKit_source.bash
+echo "# Support script to source the original programs" >> ${OSK_HOME}/OpenSARKit_source.bash
+echo "export OSK_HOME=/usr/local/lib/osk" >> ${OSK_HOME}/OpenSARKit_source.bash
+echo "# Folder of OpenSARKit scripts and workflows" >> ${OSK_HOME}/OpenSARKit_source.bash
+echo "export OPENSARKIT=\"${OSK_HOME}/OpenSARKit\"" >> ${OSK_HOME}/OpenSARKit_source.bash
+echo "# source auxiliary Spatialite database" >> ${OSK_HOME}/OpenSARKit_source.bash
+echo "export DB_GLOBAL=${OPENSARKIT}/Database/global_info.sqlite" >> ${OSK_HOME}/OpenSARKit_source.bash	 
+echo "# source lib-functions" >> ${OSK_HOME}/OpenSARKit_source.bash
+echo "source ${OPENSARKIT}/lib/bash_helpers.sh" >> ${OSK_HOME}/OpenSARKit_source.bash
+echo "# source worklows/graphs" >> ${OSK_HOME}/OpenSARKit_source.bash
+echo "export NEST_GRAPHS=\"${OPENSARKIT}/workflows/NEST\"" >> ${OSK_HOME}/OpenSARKit_source.bash
+echo "export S1TBX_GRAPHS=\"${OPENSARKIT}/workflows/S1TBX\"" >> ${OSK_HOME}/OpenSARKit_source.bash
+echo "export ASF_CONF=\"${OPENSARKIT}/workflows/ASF\"" >> ${OSK_HOME}/OpenSARKit_source.bash
+echo "export POLSAR_CONF=\"${OPENSARKIT}/workflows/POLSAR\"" >> ${OSK_HOME}/OpenSARKit_source.bash
+echo "# source worklows/graphs" >> ${OSK_HOME}/OpenSARKit_source.bash
+echo "export NEST_BIN=\"${OPENSARKIT}/bins/NEST\"" >> ${OSK_HOME}/OpenSARKit_source.bash
+echo "export S1TBX_BIN=\"${OPENSARKIT}/bins/S1TBX\"" >> ${OSK_HOME}/OpenSARKit_source.bash
+echo "export ASF_BIN=\"${OPENSARKIT}/bins/ASF\"" >> ${OSK_HOME}/OpenSARKit_source.bash
+echo "export DOWNLOAD_BIN=\"${OPENSARKIT}/download_scripts\"" >> ${OSK_HOME}/OpenSARKit_source.bash
+echo "export PYTHON_BIN=\"${OPENSARKIT}/python\"" >> ${OSK_HOME}/OpenSARKit_source.bash
+echo "export GDAL_BIN=\"${OPENSARKIT}/bins/GDAL\"" >> ${OSK_HOME}/OpenSARKit_source.bash
+echo "export SAGA_BIN=\"${OPENSARKIT}/bins/SAGA\"" >> ${OSK_HOME}/OpenSARKit_source.bash
+echo "export RSGISLIB_BIN=\"${OPENSARKIT}/bins/RSGISLIB\"" >> ${OSK_HOME}/OpenSARKit_source.bash
+
+# get OpenSARKit from github
 git clone $OSK_GIT_URL
 
-#ASF Mapready
-
+# install dependend Software
 mkdir -p ${OSK_HOME}/Programs
 cd ${OSK_HOME}/Programs
 
-#git clone https://github.com/asfadmin/ASF_MapReady
-wget https://github.com/asfadmin/ASF_MapReady/archive/3.6.6-117.tar.gz
-tar -xzvf ${OSK_HOME}/Programs/3.6.6-117.tar.gz
-rm -f ${OSK_HOME}/Programs/3.6.6-117.tar.gz
-cd ASF_MapReady-3.6.6-117
-./configure --prefix=${OSK_HOME}/Programs/ASF_bin
-make
-make install
+#ASF Mapready
 
-# PolSARPro
-mkdir -p ${OSK_HOME}/Programs/PolSARPro504
-cd ${OSK_HOME}/Programs/PolSARPro504
-wget https://earth.esa.int/documents/653194/1960708/PolSARpro_v5.0.4_Linux_20150607
+# check if installed
+if [ `which asf_mapready | wc -c` > 0 ];then 
 
-unrar x PolSARpro_v5.0.4_Linux_20150607
-cd Soft
-bash Compil_PolSARpro_v5_Linux.bat 
+	AOI_EXE=`dirname \`which asf_mapready\``
+	echo "export AOI_EXE=${AOI_EXE}" >> ${OSK_HOME}/OpenSARKit_source.bash
+
+else
+
+	#git clone https://github.com/asfadmin/ASF_MapReady
+	wget https://github.com/asfadmin/ASF_MapReady/archive/3.6.6-117.tar.gz
+	tar -xzvf ${OSK_HOME}/Programs/3.6.6-117.tar.gz
+	rm -f ${OSK_HOME}/Programs/3.6.6-117.tar.gz
+	cd ASF_MapReady-3.6.6-117
+	./configure --prefix=${OSK_HOME}/Programs/ASF_bin
+	make
+	make install
+	echo "export ASF_EXE=\"${PROGRAMS}/ASF_bin/bin\"" >> ${OSK_HOME}/OpenSARKit_source.bash
+fi 
+
+if [ `which alos_header.exe | wc -c` > 0 ];then 
+
+	POLSAR_PRE=`dirname \`which alos_header.exe\``
+	cd ${POLSAR_PRE}/../
+	POLSAR=`pwd`
+	echo "export POLSAR=${POLSAR}" >> ${OSK_HOME}/OpenSARKit_source.bash
+	echo "export POLSAR_BIN=${POLSAR}/data_import:${POLSAR}/data_convert:${POLSAR}/speckle_filter:${POLSAR}/bmp_process:${POLSAR}/tools" >> ${OSK_HOME}/OpenSARKit_source.bash
+
+else
+
+	# PolSARPro
+	mkdir -p ${OSK_HOME}/Programs/PolSARPro504
+	cd ${OSK_HOME}/Programs/PolSARPro504
+	wget https://earth.esa.int/documents/653194/1960708/PolSARpro_v5.0.4_Linux_20150607
+	unrar x PolSARpro_v5.0.4_Linux_20150607
+	cd Soft
+	bash Compil_PolSARpro_v5_Linux.bat 
+	POLSAR=`pwd` 
+	echo "export POLSAR=\"${PROGRAMS}/PolSARPro504/Soft\"" >> ${OSK_HOME}/OpenSARKit_source.bash
+	echo "export POLSAR_BIN=${POLSAR}/data_import:${POLSAR}/data_convert:${POLSAR}/speckle_filter:${POLSAR}/bmp_process:${POLSAR}/tools" >> ${OSK_HOME}/OpenSARKit_source.bash
+fi
 
 # SNAP
-mkdir -p ${OSK_HOME}/Programs/
-wget http://sentinel1.s3.amazonaws.com/1.0/s1tbx_1.1.1_Linux64_installer.sh
-sh s1tbx_1.1.1_Linux64_installer.sh -q -overwrite
+# check if installed
+if [ `which s1tbx | wc -c` > 0 ];then 
 
-# Update global environment variables
+	S1TBX=`dirname \`which s1tbx\``
+	echo "export S1TBX=${S1TBX}" >> ${OSK_HOME}/OpenSARKit_source.bash
+	echo "export S1TBX_EXE=\"${S1TBX}/gpt.sh\""  >> ${OSK_HOME}/OpenSARKit_source.bash
+else
+	cd ${OSK_HOME}/Programs/
+	wget http://sentinel1.s3.amazonaws.com/1.0/s1tbx_1.1.1_Linux64_installer.sh
+	sh s1tbx_1.1.1_Linux64_installer.sh -q -overwrite
+	rm -f s1tbx_1.1.1_Linux64_installer.sh
+	echo "export S1TBX=\"${PROGRAMS}/S1TBX\"" >> ${OSK_HOME}/OpenSARKit_source.bash
+	echo "export S1TBX_EXE=\"${S1TBX}/gpt.sh\""  >> ${OSK_HOME}/OpenSARKit_source.bash
+fi
+
+echo "#export to Path" >> ${OSK_HOME}/OpenSARKit_source.bash
+echo "export PATH=$PATH:${PYTHON_BIN}:${RSGISLIB_BIN}:${ASF_BIN}:${POLSAR_BIN}:${SAGA_BIN}:${S1TBX_BIN}:${NEST_BIN}:${GDAL_BIN}:${DOWNLOAD_BIN}:${ASF_EXE}:${S1TBX}" >> ${OSK_HOME}/OpenSARKit_source.bash
+
+# Update global environment variables"
 cp ${OSK_HOME}/OpenSARKit/OpenSARKit_source.bash /etc/profile.d/OpenSARKit.sh
-
 chmod -R 755 ${OSK_HOME}
 
 #------------------------------------------------------------------
@@ -117,6 +226,6 @@ mkdir -p ${OSK_HOME}/Database
 cd ${OSK_HOME}/Database
 wget https://www.dropbox.com/s/58cnjj8xymzkbac/global_info.sqlite?dl=0
 
-echo "---------------------------"
-echo "Installation of OFSK completed"
-echo "---------------------------"
+echo "--------------------------------"
+echo " Installation of OFSK completed"
+echo "--------------------------------"

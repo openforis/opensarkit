@@ -69,3 +69,52 @@ function ogr_layer_extent() {
     EXTENT=`echo $EXTENT | awk -F ',' '{print $1 " " $4 " " $3 " " $2}'`
     echo -n "$EXTENT"
 }
+
+function gdal_max() {
+    if [ -z "$1" ]; then 
+        echo "Missing arguments. Syntax:"
+        echo "  gdal_max <input_raster>"
+        return
+    fi
+    MAX=$(gdalinfo -stats $1 |\
+	grep STATISTICS_MAXIMUM |\
+        awk -F "=" $'{print $2}')
+    echo -n "$MAX"
+}
+
+function gdal_min() {
+    if [ -z "$1" ]; then 
+        echo "Missing arguments. Syntax:"
+        echo "  gdal_max <input_raster>"
+        return
+    fi
+    MIN=$(gdalinfo -stats $1 |\
+	grep STATISTICS_MINIMUM |\
+        awk -F "=" $'{print $2}')
+    echo -n "$MIN"
+}
+
+function gdal_mean() {
+    if [ -z "$1" ]; then 
+        echo "Missing arguments. Syntax:"
+        echo "  gdal_max <input_raster>"
+        return
+    fi
+    MEAN=$(gdalinfo -stats $1 |\
+	grep STATISTICS_MEAN |\
+        awk -F "=" $'{print $2}')
+    echo -n "$MEAN"
+}
+
+function gdal_stddev() {
+    if [ -z "$1" ]; then 
+        echo "Missing arguments. Syntax:"
+        echo "  gdal_max <input_raster>"
+        return
+    fi
+    STDDEV=$(gdalinfo -stats $1 |\
+	grep STATISTICS_STDDEV |\
+        awk -F "=" $'{print $2}')
+    echo -n "$STDDEV"
+}
+

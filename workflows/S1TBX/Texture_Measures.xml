@@ -1,0 +1,58 @@
+<graph id="Graph">
+  <version>1.0</version>
+  <node id="Read">
+    <operator>Read</operator>
+    <sources/>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <file>${input}</file>
+    </parameters>
+  </node>
+  <node id="Write">
+    <operator>Write</operator>
+    <sources>
+      <sourceProduct refid="GLCM"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <file>${output}</file>
+      <formatName>Geotiff</formatName>
+    </parameters>
+  </node>
+  <node id="GLCM">
+    <operator>GLCM</operator>
+    <sources>
+      <sourceProduct refid="Read"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <sourceBands>
+        <band>band_1</band>
+      </sourceBands>
+      <windowSizeStr>5x5</windowSizeStr>
+      <angleStr>ALL</angleStr>
+      <quantizerStr>Probabilistic Quantizer</quantizerStr>
+      <quantizationLevelsStr>64</quantizationLevelsStr>
+      <displacement>1</displacement>
+      <outputContrast>false</outputContrast>
+      <outputDissimilarity>true</outputDissimilarity>
+      <outputHomogeneity>true</outputHomogeneity>
+      <outputASM>false</outputASM>
+      <outputEnergy>false</outputEnergy>
+      <outputMAX>false</outputMAX>
+      <outputEntropy>false</outputEntropy>
+      <outputMean>false</outputMean>
+      <outputVariance>true</outputVariance>
+      <outputCorrelation>false</outputCorrelation>
+    </parameters>
+  </node>
+  <applicationData id="Presentation">
+    <Description/>
+    <node id="Read">
+      <displayPosition x="37.0" y="134.0"/>
+    </node>
+    <node id="Write">
+      <displayPosition x="455.0" y="135.0"/>
+    </node>
+    <node id="GLCM">
+      <displayPosition x="254.0" y="134.0"/>
+    </node>
+  </applicationData>
+</graph>

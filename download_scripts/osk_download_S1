@@ -27,7 +27,7 @@ if [ "$#" != "7" ]; then
 	echo -e "end_date		End date of search in format YYYY-MM-DD"
 	echo -e "Product_type			Acquisition Mode of Sentinel-1 SAR instrument"
 	echo -e "			Available choices"
-	echo -e "			  RAW (unfocused Raw data)"
+	echo -e "			  RAW (Unfocused Raw data)"
 	echo -e "			  SLC (Single-Look-Complex)"
 	echo -e "			  GRD (Detected Ground Range product)"
 	echo -e ""
