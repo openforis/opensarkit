@@ -45,7 +45,7 @@ else
 	echo -e "----------------------------------"
 	echo -e ""
 	echo -e ""
-
+fi
 
 # start remote job
 read -r -p "Type in the username of the remote machine" USERNAME

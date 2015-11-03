@@ -67,8 +67,8 @@ fi
 # ask for user access
 echo -e "If you have not done the registration, go to:"
 echo -e "http://www.eorc.jaxa.jp/ALOS/en/palsar_fnf/registration.htm"
-read -r -p "Please type your K&C mosaic username:" UNAME
-read -s -p "Please type your K&C mosaic password:" PW
+#read -r -p "Please type your K&C mosaic username:" UNAME
+#read -s -p "Please type your K&C mosaic password:" PW
 
 # source bash helpers lib
 source ${OPENSARKIT}/lib/bash_helpers.sh
@@ -187,7 +187,7 @@ while read LINE; do
 	fi
 
 	echo "Downloading Tile ${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz"
-	#wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz
+	wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz
 
 	echo "Extracting Tile ${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz"
 	tar -xzf ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -C ${TMP_DIR}
