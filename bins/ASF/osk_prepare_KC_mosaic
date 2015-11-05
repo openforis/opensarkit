@@ -70,9 +70,6 @@ echo -e "http://www.eorc.jaxa.jp/ALOS/en/palsar_fnf/registration.htm"
 #read -r -p "Please type your K&C mosaic username:" UNAME
 #read -s -p "Please type your K&C mosaic password:" PW
 
-# source bash helpers lib
-source ${OPENSARKIT}/lib/bash_helpers.sh
-
 #----------------------------------------------------------------------
 # check if AOI comes from country code or is already a shape
 mkdir -p ${OUT_DIR}/AOI/
