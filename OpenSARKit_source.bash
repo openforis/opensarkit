@@ -12,7 +12,7 @@ PROGRAMS="${OPENSARKIT}/Programs"
 export DB_GLOBAL=${OPENSARKIT}/Database/global_info.sqlite	 
 
 # source lib-functions
-source ${OPENSARKIT}/lib/bash_helpers.sh
+source ${OPENSARKIT}/lib/gdal_helpers.sh
 
 # PATHS
 export S1TBX="${PROGRAMS}/S1TBX"

@@ -118,3 +118,15 @@ function gdal_stddev() {
     echo -n "$STDDEV"
 }
 
+function gdal_format() { 
+    if [ -z "$1" ]; then 
+        echo "Missing arguments. Syntax:"
+        echo "  gdal_format <input_raster>"
+        return
+    fi
+    FORMAT=$(gdalinfo $1 |\
+	     grep Driver |\
+	     sed 's/Driver: //g' |\
+             awk -F"/" $'{print $1}')
+	echo -n "$FORMAT"
+}

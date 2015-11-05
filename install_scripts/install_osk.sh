@@ -118,12 +118,12 @@ if [ -z "$OSK_GIT_URL" ]; then export OSK_GIT_URL=https://github.com/BuddyVolly/
 mkdir -p ${OSK_HOME}
 cd ${OSK_HOME}
 
-VERSION=0.1
+OSK_VERSION=0.1beta
 
 # write a source file
 echo '#! /bin/bash' > ${OSK_HOME}/OpenSARKit_source.bash
 echo '' >> ${OSK_HOME}/OpenSARKit_source.bash
-echo "export VERSION=${VERSION}" >> ${OSK_HOME}/OpenSARKit_source.bash
+echo "export OSK_VERSION=${OSK_VERSION}" >> ${OSK_HOME}/OpenSARKit_source.bash
 echo '# Support script to source the original programs' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo "export OSK_HOME=${OSK_HOME}" >> ${OSK_HOME}/OpenSARKit_source.bash
 echo '# Folder of OpenSARKit scripts and workflows' >> ${OSK_HOME}/OpenSARKit_source.bash
@@ -131,7 +131,7 @@ echo 'export OPENSARKIT=${OSK_HOME}/OpenSARKit' >> ${OSK_HOME}/OpenSARKit_source
 echo '# source auxiliary Spatialite database' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export DB_GLOBAL=${OPENSARKIT}/Database/global_info.sqlite' >> ${OSK_HOME}/OpenSARKit_source.bash	 
 echo '# source lib-functions' >> ${OSK_HOME}/OpenSARKit_source.bash
-echo 'source ${OPENSARKIT}/lib/bash_helpers.sh' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'source ${OPENSARKIT}/lib/gdal_helpers.sh' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo '# source worklows/graphs' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export NEST_GRAPHS=${OPENSARKIT}/workflows/NEST' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export S1TBX_GRAPHS=${OPENSARKIT}/workflows/S1TBX' >> ${OSK_HOME}/OpenSARKit_source.bash
@@ -146,6 +146,7 @@ echo 'export PYTHON_BIN=${OPENSARKIT}/python' >> ${OSK_HOME}/OpenSARKit_source.b
 echo 'export GDAL_BIN=${OPENSARKIT}/bins/GDAL' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export SAGA_BIN=${OPENSARKIT}/bins/SAGA' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export RSGISLIB_BIN=${OPENSARKIT}/bins/RSGISLIB' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'export PROGRAMS=${OSK_HOME}/Programs' >> ${OSK_HOME}/OpenSARKit_source.bash
 
 # get OpenSARKit from github
 git clone $OSK_GIT_URL
@@ -217,7 +218,7 @@ echo '#export to Path' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export PATH=$PATH:${PYTHON_BIN}:${RSGISLIB_BIN}:${ASF_BIN}:${POLSAR_BIN}:${SAGA_BIN}:${S1TBX_BIN}:${NEST_BIN}:${GDAL_BIN}:${DOWNLOAD_BIN}:${ASF_EXE}:${S1TBX}' >> ${OSK_HOME}/OpenSARKit_source.bash
 
 # Update global environment variables"
-cp ${OSK_HOME}/OpenSARKit/OpenSARKit_source.bash /etc/profile.d/OpenSARKit.sh
+cp ${OSK_HOME}/OpenSARKit_source.bash /etc/profile.d/OpenSARKit.sh
 chmod -R 755 ${OSK_HOME}
 
 #------------------------------------------------------------------

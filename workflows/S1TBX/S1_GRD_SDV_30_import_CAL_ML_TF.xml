@@ -1,0 +1,92 @@
+<graph id="Graph">
+  <version>1.0</version>
+  <node id="Read">
+    <operator>Read</operator>
+    <sources/>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <file>${input}</file>
+    </parameters>
+  </node>
+  <node id="Write">
+    <operator>Write</operator>
+    <sources>
+      <sourceProduct refid="Terrain-Flattening"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <file>${output}</file>
+      <formatName>BEAM-DIMAP</formatName>
+    </parameters>
+  </node>
+  <node id="Calibration">
+    <operator>Calibration</operator>
+    <sources>
+      <sourceProduct refid="Read"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <sourceBands/>
+      <auxFile>Product Auxiliary File</auxFile>
+      <externalAuxFile/>
+      <outputImageInComplex>false</outputImageInComplex>
+      <outputImageScaleInDb>false</outputImageScaleInDb>
+      <createGammaBand>false</createGammaBand>
+      <createBetaBand>true</createBetaBand>
+      <selectedPolarisations/>
+      <outputSigmaBand>false</outputSigmaBand>
+      <outputGammaBand>false</outputGammaBand>
+      <outputBetaBand>true</outputBetaBand>
+      <outputDNBand>false</outputDNBand>
+    </parameters>
+  </node>
+  <node id="Terrain-Flattening">
+    <operator>Terrain-Flattening</operator>
+    <sources>
+      <sourceProduct refid="Multilook"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <sourceBands>
+        <band>Beta0_VH</band>
+        <band>Beta0_VV</band>
+      </sourceBands>
+      <demName>SRTM 3Sec</demName>
+      <demResamplingMethod>BILINEAR_INTERPOLATION</demResamplingMethod>
+      <externalDEMFile/>
+      <externalDEMNoDataValue>0.0</externalDEMNoDataValue>
+      <outputSimulatedImage>false</outputSimulatedImage>
+    </parameters>
+  </node>
+  <node id="Multilook">
+    <operator>Multilook</operator>
+    <sources>
+      <sourceProduct refid="Calibration"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <sourceBands>
+        <band>Beta0_VH</band>
+        <band>Beta0_VV</band>
+      </sourceBands>
+      <nRgLooks>3</nRgLooks>
+      <nAzLooks>3</nAzLooks>
+      <outputIntensity>true</outputIntensity>
+      <grSquarePixel>true</grSquarePixel>
+      <note>Currently, detection for complex data is performed without any resampling</note>
+    </parameters>
+  </node>
+  <applicationData id="Presentation">
+    <Description/>
+    <node id="Read">
+      <displayPosition x="27.0" y="26.0"/>
+    </node>
+    <node id="Write">
+      <displayPosition x="455.0" y="135.0"/>
+    </node>
+    <node id="Calibration">
+      <displayPosition x="53.0" y="64.0"/>
+    </node>
+    <node id="Terrain-Flattening">
+      <displayPosition x="148.0" y="140.0"/>
+    </node>
+    <node id="Multilook">
+      <displayPosition x="100.0" y="105.0"/>
+    </node>
+  </applicationData>
+</graph>
