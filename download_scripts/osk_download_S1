@@ -140,7 +140,8 @@ if [[ $7 == 1 ]];then
 		DL_ADDRESS='https://scihub.esa.int/dhus/odata/v1/Products('"'${UUID}'"')/$value'
 		aria2c --check-certificate=false --http-user="${USERNAME}" --http-passwd="${PW}" "${DL_ADDRESS}"
 		echo "Moving $SCENE to ${PROC_DIR}/S1/ZIP"
-		mv ${SCENE}.zip ${PROC_DIR}/ZIP/${SCENE}.zip
+		DATE=${SCENE:17:8}
+		mv ${SCENE}.zip ${PROC_DIR}/ZIP/${DATE}/${SCENE}.zip
 
 	done  < ${TMP_DIR}/data
 fi

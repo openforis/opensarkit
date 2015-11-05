@@ -118,32 +118,34 @@ if [ -z "$OSK_GIT_URL" ]; then export OSK_GIT_URL=https://github.com/BuddyVolly/
 mkdir -p ${OSK_HOME}
 cd ${OSK_HOME}
 
+VERSION=0.1
+
 # write a source file
-echo "#! /bin/bash" > ${OSK_HOME}/OpenSARKit_source.bash
-echo "" >> ${OSK_HOME}/OpenSARKit_source.bash
+echo '#! /bin/bash' > ${OSK_HOME}/OpenSARKit_source.bash
+echo '' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo "export VERSION=${VERSION}" >> ${OSK_HOME}/OpenSARKit_source.bash
-echo "# Support script to source the original programs" >> ${OSK_HOME}/OpenSARKit_source.bash
-echo "export OSK_HOME=/usr/local/lib/osk" >> ${OSK_HOME}/OpenSARKit_source.bash
-echo "# Folder of OpenSARKit scripts and workflows" >> ${OSK_HOME}/OpenSARKit_source.bash
-echo "export OPENSARKIT=\"${OSK_HOME}/OpenSARKit\"" >> ${OSK_HOME}/OpenSARKit_source.bash
-echo "# source auxiliary Spatialite database" >> ${OSK_HOME}/OpenSARKit_source.bash
-echo "export DB_GLOBAL=${OPENSARKIT}/Database/global_info.sqlite" >> ${OSK_HOME}/OpenSARKit_source.bash	 
-echo "# source lib-functions" >> ${OSK_HOME}/OpenSARKit_source.bash
-echo "source ${OPENSARKIT}/lib/bash_helpers.sh" >> ${OSK_HOME}/OpenSARKit_source.bash
-echo "# source worklows/graphs" >> ${OSK_HOME}/OpenSARKit_source.bash
-echo "export NEST_GRAPHS=\"${OPENSARKIT}/workflows/NEST\"" >> ${OSK_HOME}/OpenSARKit_source.bash
-echo "export S1TBX_GRAPHS=\"${OPENSARKIT}/workflows/S1TBX\"" >> ${OSK_HOME}/OpenSARKit_source.bash
-echo "export ASF_CONF=\"${OPENSARKIT}/workflows/ASF\"" >> ${OSK_HOME}/OpenSARKit_source.bash
-echo "export POLSAR_CONF=\"${OPENSARKIT}/workflows/POLSAR\"" >> ${OSK_HOME}/OpenSARKit_source.bash
-echo "# source worklows/graphs" >> ${OSK_HOME}/OpenSARKit_source.bash
-echo "export NEST_BIN=\"${OPENSARKIT}/bins/NEST\"" >> ${OSK_HOME}/OpenSARKit_source.bash
-echo "export S1TBX_BIN=\"${OPENSARKIT}/bins/S1TBX\"" >> ${OSK_HOME}/OpenSARKit_source.bash
-echo "export ASF_BIN=\"${OPENSARKIT}/bins/ASF\"" >> ${OSK_HOME}/OpenSARKit_source.bash
-echo "export DOWNLOAD_BIN=\"${OPENSARKIT}/download_scripts\"" >> ${OSK_HOME}/OpenSARKit_source.bash
-echo "export PYTHON_BIN=\"${OPENSARKIT}/python\"" >> ${OSK_HOME}/OpenSARKit_source.bash
-echo "export GDAL_BIN=\"${OPENSARKIT}/bins/GDAL\"" >> ${OSK_HOME}/OpenSARKit_source.bash
-echo "export SAGA_BIN=\"${OPENSARKIT}/bins/SAGA\"" >> ${OSK_HOME}/OpenSARKit_source.bash
-echo "export RSGISLIB_BIN=\"${OPENSARKIT}/bins/RSGISLIB\"" >> ${OSK_HOME}/OpenSARKit_source.bash
+echo '# Support script to source the original programs' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo "export OSK_HOME=${OSK_HOME}" >> ${OSK_HOME}/OpenSARKit_source.bash
+echo '# Folder of OpenSARKit scripts and workflows' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'export OPENSARKIT=${OSK_HOME}/OpenSARKit' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo '# source auxiliary Spatialite database' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'export DB_GLOBAL=${OPENSARKIT}/Database/global_info.sqlite' >> ${OSK_HOME}/OpenSARKit_source.bash	 
+echo '# source lib-functions' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'source ${OPENSARKIT}/lib/bash_helpers.sh' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo '# source worklows/graphs' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'export NEST_GRAPHS=${OPENSARKIT}/workflows/NEST' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'export S1TBX_GRAPHS=${OPENSARKIT}/workflows/S1TBX' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'export ASF_CONF=${OPENSARKIT}/workflows/ASF' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'export POLSAR_CONF=${OPENSARKIT}/workflows/POLSAR' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo '# source worklows/graphs' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'export NEST_BIN=${OPENSARKIT}/bins/NEST' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'export S1TBX_BIN=${OPENSARKIT}/bins/S1TBX' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'export ASF_BIN=${OPENSARKIT}/bins/ASF' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'export DOWNLOAD_BIN=${OPENSARKIT}/download_scripts' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'export PYTHON_BIN=${OPENSARKIT}/python' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'export GDAL_BIN=${OPENSARKIT}/bins/GDAL' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'export SAGA_BIN=${OPENSARKIT}/bins/SAGA' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'export RSGISLIB_BIN=${OPENSARKIT}/bins/RSGISLIB' >> ${OSK_HOME}/OpenSARKit_source.bash
 
 # get OpenSARKit from github
 git clone $OSK_GIT_URL
@@ -155,10 +157,10 @@ cd ${OSK_HOME}/Programs
 #ASF Mapready
 
 # check if installed
-if [ `which asf_mapready | wc -c` > 0 ];then 
+if [ `which asf_mapready | wc -c` -gt 0 ];then 
 
 	AOI_EXE=`dirname \`which asf_mapready\``
-	echo "export AOI_EXE=${AOI_EXE}" >> ${OSK_HOME}/OpenSARKit_source.bash
+	echo 'export AOI_EXE=${AOI_EXE}' >> ${OSK_HOME}/OpenSARKit_source.bash
 
 else
 
@@ -170,16 +172,16 @@ else
 	./configure --prefix=${OSK_HOME}/Programs/ASF_bin
 	make
 	make install
-	echo "export ASF_EXE=\"${PROGRAMS}/ASF_bin/bin\"" >> ${OSK_HOME}/OpenSARKit_source.bash
+	echo 'export ASF_EXE=${PROGRAMS}/ASF_bin/bin' >> ${OSK_HOME}/OpenSARKit_source.bash
 fi 
 
-if [ `which alos_header.exe | wc -c` > 0 ];then 
+if [ `which alos_header.exe | wc -c` -gt 0 ];then 
 
 	POLSAR_PRE=`dirname \`which alos_header.exe\``
 	cd ${POLSAR_PRE}/../
 	POLSAR=`pwd`
-	echo "export POLSAR=${POLSAR}" >> ${OSK_HOME}/OpenSARKit_source.bash
-	echo "export POLSAR_BIN=${POLSAR}/data_import:${POLSAR}/data_convert:${POLSAR}/speckle_filter:${POLSAR}/bmp_process:${POLSAR}/tools" >> ${OSK_HOME}/OpenSARKit_source.bash
+	echo 'export POLSAR=${POLSAR}' >> ${OSK_HOME}/OpenSARKit_source.bash
+	echo 'export POLSAR_BIN=${POLSAR}/data_import:${POLSAR}/data_convert:${POLSAR}/speckle_filter:${POLSAR}/bmp_process:${POLSAR}/tools' >> ${OSK_HOME}/OpenSARKit_source.bash
 
 else
 
@@ -191,28 +193,28 @@ else
 	cd Soft
 	bash Compil_PolSARpro_v5_Linux.bat 
 	POLSAR=`pwd` 
-	echo "export POLSAR=\"${PROGRAMS}/PolSARPro504/Soft\"" >> ${OSK_HOME}/OpenSARKit_source.bash
-	echo "export POLSAR_BIN=${POLSAR}/data_import:${POLSAR}/data_convert:${POLSAR}/speckle_filter:${POLSAR}/bmp_process:${POLSAR}/tools" >> ${OSK_HOME}/OpenSARKit_source.bash
+	echo 'export POLSAR=${PROGRAMS}/PolSARPro504/Soft' >> ${OSK_HOME}/OpenSARKit_source.bash
+	echo 'export POLSAR_BIN=${POLSAR}/data_import:${POLSAR}/data_convert:${POLSAR}/speckle_filter:${POLSAR}/bmp_process:${POLSAR}/tools' >> ${OSK_HOME}/OpenSARKit_source.bash
 fi
 
 # SNAP
 # check if installed
-if [ `which s1tbx | wc -c` > 0 ];then 
+if [ `which s1tbx | wc -c` -gt 0 ];then 
 
 	S1TBX=`dirname \`which s1tbx\``
-	echo "export S1TBX=${S1TBX}" >> ${OSK_HOME}/OpenSARKit_source.bash
-	echo "export S1TBX_EXE=\"${S1TBX}/gpt.sh\""  >> ${OSK_HOME}/OpenSARKit_source.bash
+	echo 'export S1TBX=${S1TBX}' >> ${OSK_HOME}/OpenSARKit_source.bash
+	echo 'export S1TBX_EXE=${S1TBX}/gpt.sh'  >> ${OSK_HOME}/OpenSARKit_source.bash
 else
 	cd ${OSK_HOME}/Programs/
 	wget http://sentinel1.s3.amazonaws.com/1.0/s1tbx_1.1.1_Linux64_installer.sh
 	sh s1tbx_1.1.1_Linux64_installer.sh -q -overwrite
 	rm -f s1tbx_1.1.1_Linux64_installer.sh
-	echo "export S1TBX=\"${PROGRAMS}/S1TBX\"" >> ${OSK_HOME}/OpenSARKit_source.bash
-	echo "export S1TBX_EXE=\"${S1TBX}/gpt.sh\""  >> ${OSK_HOME}/OpenSARKit_source.bash
+	echo 'export S1TBX=${PROGRAMS}/S1TBX' >> ${OSK_HOME}/OpenSARKit_source.bash
+	echo 'export S1TBX_EXE=${S1TBX}/gpt.sh'  >> ${OSK_HOME}/OpenSARKit_source.bash
 fi
 
-echo "#export to Path" >> ${OSK_HOME}/OpenSARKit_source.bash
-echo "export PATH=$PATH:${PYTHON_BIN}:${RSGISLIB_BIN}:${ASF_BIN}:${POLSAR_BIN}:${SAGA_BIN}:${S1TBX_BIN}:${NEST_BIN}:${GDAL_BIN}:${DOWNLOAD_BIN}:${ASF_EXE}:${S1TBX}" >> ${OSK_HOME}/OpenSARKit_source.bash
+echo '#export to Path' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'export PATH=$PATH:${PYTHON_BIN}:${RSGISLIB_BIN}:${ASF_BIN}:${POLSAR_BIN}:${SAGA_BIN}:${S1TBX_BIN}:${NEST_BIN}:${GDAL_BIN}:${DOWNLOAD_BIN}:${ASF_EXE}:${S1TBX}' >> ${OSK_HOME}/OpenSARKit_source.bash
 
 # Update global environment variables"
 cp ${OSK_HOME}/OpenSARKit/OpenSARKit_source.bash /etc/profile.d/OpenSARKit.sh
