@@ -129,7 +129,7 @@ echo "export OSK_HOME=${OSK_HOME}" >> ${OSK_HOME}/OpenSARKit_source.bash
 echo '# Folder of OpenSARKit scripts and workflows' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export OPENSARKIT=${OSK_HOME}/OpenSARKit' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo '# source auxiliary Spatialite database' >> ${OSK_HOME}/OpenSARKit_source.bash
-echo 'export DB_GLOBAL=${OPENSARKIT}/Database/global_info.sqlite' >> ${OSK_HOME}/OpenSARKit_source.bash	 
+echo 'export DB_GLOBAL=${OSK_HOME}/Database/global_info.sqlite' >> ${OSK_HOME}/OpenSARKit_source.bash	 
 echo '# source lib-functions' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'source ${OPENSARKIT}/lib/gdal_helpers.sh' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo '# source worklows/graphs' >> ${OSK_HOME}/OpenSARKit_source.bash
@@ -228,6 +228,7 @@ chmod -R 755 ${OSK_HOME}
 mkdir -p ${OSK_HOME}/Database
 cd ${OSK_HOME}/Database
 wget https://www.dropbox.com/s/58cnjj8xymzkbac/global_info.sqlite?dl=0
+mv global_info.sqlite?dl=0 global_info.sqlite
 
 echo "--------------------------------"
 echo " Installation of OFSK completed"
