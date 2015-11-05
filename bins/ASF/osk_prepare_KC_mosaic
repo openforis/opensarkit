@@ -17,12 +17,12 @@ if [ "$#" != "5" ]; then
 	echo -e "	- SAGA GIS"
 	echo -e "----------------------------------"
 	echo -e ""
-	echo -e " syntax: osk_prepare_KC_mosaics <output_folder> <ISO3_country_code/area_of_interest> <year> <filtering> <texture>"
+	echo -e " syntax: osk_prepare_KC_mosaics <output_folder> <ISO3/AOI> <year> <filtering> <texture>"
 	echo -e ""
 	echo -e " description of input parameters:"
 	echo -e " output_folder		(output) pathname of the output folder"
- 	echo -e " ISO3_country_code/area_of_interest	ISO3 country code or shapefile of your area of interest"
-	echo -e " Year		Acquisition Year (2007,2008,2009 or 2010)"
+ 	echo -e " ISO3/AOI		ISO3 country code or shapefile of your area of interest"
+	echo -e " Year			Acquisition Year (2007,2008,2009 or 2010)"
 	echo -e " filtering		Apply Multi-directional Lee Filter (Lee et al. 1998)"
 	echo -e "			  Available choices:"
 	echo -e "			  0: no filtering applied"
@@ -80,7 +80,7 @@ mkdir -p ${OUT_DIR}/AOI/
 if [ `echo $2 | grep shp` ]; then # AOI case
 
 		AOI=$2
-		cp ${AOI} ${OUT_DIR}/AOI/				
+		cp ${AOI} ${OUT_DIR}/AOI/
 	
 else # country case
 	
@@ -187,7 +187,7 @@ while read LINE; do
 	fi
 
 	echo "Downloading Tile ${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz"
-	wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz
+	#wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz
 
 	echo "Extracting Tile ${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz"
 	tar -xzf ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -C ${TMP_DIR}
@@ -253,11 +253,39 @@ cd ${TMP_DIR}/
 			#---------------------------------------------------------------------------
 			# Texture Calculation
 			if [ $5 -eq 1 ];then # texture case
-			echo "Translate HH band to Geotiff Format for subsequent filtering"
-			gdal_translate -of GTiff ${DATA} ${DATA}.geotiff.tif
-			echo "Creating Texture Channels"
-			bash ${S1TBX_EXE} ${S1TBX_GRAPHS}/Texture_Measures.xml -Pinput=${TMP_DIR}/${DATA}.geotiff.tif -Poutput=${TMP_DIR}/${DATA}.texture.tif
-			gdal_translate -b 2 -b 3 -b 4 ${TMP_DIR}/${DATA}.texture.tif ${OUT_DIR}/${YEAR}/TILES/${DATA}.texture.tif
+				
+				echo "Translate HH band to Geotiff Format for subsequent filtering"
+				gdal_translate -of GTiff ${DATA} ${DATA}.geotiff.tif
+				echo "Creating Texture Channels"
+				bash ${S1TBX_EXE} ${S1TBX_GRAPHS}/Texture_Measures.xml -Pinput=${TMP_DIR}/${DATA}.geotiff.tif -Poutput=${TMP_DIR}/${DATA}.texture.tif
+				# extract the single channels
+				gdal_translate -b 3 -of SAGA ${TMP_DIR}/${DATA}.texture.tif ${TMP_DIR}/${DATA}.dissimilarity.sdat
+				gdal_translate -b 2 -of SAGA ${TMP_DIR}/${DATA}.texture.tif ${TMP_DIR}/${DATA}.variance.sdat
+				gdal_translate -b 4 -of SAGA ${TMP_DIR}/${DATA}.texture.tif ${TMP_DIR}/${DATA}.homogeneity.sdat
+
+				# mask the single channels
+				echo "Mask the Dissimilarity Band"
+				saga_cmd -f=r grid_calculus 1 -GRIDS:${TMP_DIR}/${DATA}.dissimilarity.sgrd -XGRIDS:${DATA}"_mask.saga.sgrd" -RESULT ${TMP_DIR}/${DATA}.dissimilarity.mask.sgrd -FORMULA:"a * b"
+				echo "Mask the GLCM Variance Band"
+				saga_cmd -f=r grid_calculus 1 -GRIDS:${TMP_DIR}/${DATA}.variance.sgrd -XGRIDS:${DATA}"_mask.saga.sgrd" -RESULT ${TMP_DIR}/${DATA}.variance.mask.sgrd -FORMULA:"a * b"
+				echo "Mask the Homogeneity Band"
+				saga_cmd -f=r grid_calculus 1 -GRIDS:${TMP_DIR}/${DATA}.homogeneity.sgrd -XGRIDS:${DATA}"_mask.saga.sgrd" -RESULT ${TMP_DIR}/${DATA}.homogeneity.mask.sgrd -FORMULA:"a * b"
+				
+				echo "Scale the final Dissimilarity Band"
+				MIN=`gdal_min ${TMP_DIR}/${DATA}.dissimilarity.mask.sdat`
+				MAX=`gdal_max ${TMP_DIR}/${DATA}.dissimilarity.mask.sdat`
+				gdal_translate -a_nodata 0 -of GTiff -ot UInt16 -scale ${MIN} ${MAX} 0 65535  ${TMP_DIR}/${DATA}.dissimilarity.mask.sdat ${OUT_DIR}/${YEAR}/TILES/${DATA}.dissimilarity.tif
+
+				echo "Scale the final GLCM Variance Band"
+				MIN=`gdal_min ${TMP_DIR}/${DATA}.variance.mask.sdat`
+				MAX=`gdal_max ${TMP_DIR}/${DATA}.variance.mask.sdat`
+				gdal_translate -a_nodata 0 -of GTiff -ot UInt16 -scale ${MIN} ${MAX} 0 65535  ${TMP_DIR}/${DATA}.variance.mask.sdat ${OUT_DIR}/${YEAR}/TILES/${DATA}.variance.tif
+
+				echo "Scale the final Dissimilarity Band"
+				MIN=`gdal_min ${TMP_DIR}/${DATA}.homogeneity.mask.sdat`
+				MAX=`gdal_max ${TMP_DIR}/${DATA}.homogeneity.mask.sdat`
+				gdal_translate -a_nodata 0 -of GTiff -ot UInt16 -scale ${MIN} ${MAX} 0 65535  ${TMP_DIR}/${DATA}.homogeneity.mask.sdat ${OUT_DIR}/${YEAR}/TILES/${DATA}.homogeneity.tif
+
 			fi
 			#---------------------------------------------------------------------------
 
@@ -269,7 +297,7 @@ cd ${TMP_DIR}/
 			echo "------------------------------------------"
 		fi
 
-#		rm -f ${DATA}*	
+		rm -f ${DATA}*	
 		rm -f ${TMP_DIR}/grids.csv
 			
 	done
@@ -334,16 +362,45 @@ cd ${TMP_DIR}/
 			#---------------------------------------------------------------------------
 			# Texture Calculation
 			if [ $5 -eq 1 ];then # texture case
-			echo "Translate HV band to Geotiff Format for subsequent filtering"
-			gdal_translate -of GTiff ${DATA} ${DATA}.geotiff.tif
-			echo "Creating Texture Channels"
-			bash ${S1TBX_EXE} ${S1TBX_GRAPHS}/Texture_Measures.xml -Pinput=${TMP_DIR}/${DATA}.geotiff.tif -Poutput=${TMP_DIR}/${DATA}.texture.tif
-			gdal_translate -b 2 -b 3 -b 4 ${TMP_DIR}/${DATA}.texture.tif ${OUT_DIR}/${YEAR}/TILES/${DATA}.texture.tif
+				
+				echo "Translate HV band to Geotiff Format for subsequent filtering"
+				gdal_translate -of GTiff ${DATA} ${DATA}.geotiff.tif
+				echo "Creating Texture Channels"
+				bash ${S1TBX_EXE} ${S1TBX_GRAPHS}/Texture_Measures.xml -Pinput=${TMP_DIR}/${DATA}.geotiff.tif -Poutput=${TMP_DIR}/${DATA}.texture.tif
+				# extract the single channels
+				gdal_translate -b 3 -of SAGA ${TMP_DIR}/${DATA}.texture.tif ${TMP_DIR}/${DATA}.dissimilarity.sdat
+				gdal_translate -b 2 -of SAGA ${TMP_DIR}/${DATA}.texture.tif ${TMP_DIR}/${DATA}.variance.sdat
+				gdal_translate -b 4 -of SAGA ${TMP_DIR}/${DATA}.texture.tif ${TMP_DIR}/${DATA}.homogeneity.sdat
+
+				# mask the single channels
+				echo "Mask the Dissimilarity Band"
+				saga_cmd -f=r grid_calculus 1 -GRIDS:${TMP_DIR}/${DATA}.dissimilarity.sgrd -XGRIDS:${DATA}"_mask.saga.sgrd" -RESULT ${TMP_DIR}/${DATA}.dissimilarity.mask.sgrd -FORMULA:"a * b"
+				echo "Mask the GLCM Variance Band"
+				saga_cmd -f=r grid_calculus 1 -GRIDS:${TMP_DIR}/${DATA}.variance.sgrd -XGRIDS:${DATA}"_mask.saga.sgrd" -RESULT ${TMP_DIR}/${DATA}.variance.mask.sgrd -FORMULA:"a * b"
+				echo "Mask the Homogeneity Band"
+				saga_cmd -f=r grid_calculus 1 -GRIDS:${TMP_DIR}/${DATA}.homogeneity.sgrd -XGRIDS:${DATA}"_mask.saga.sgrd" -RESULT ${TMP_DIR}/${DATA}.homogeneity.mask.sgrd -FORMULA:"a * b"
+				
+				echo "Scale the final Dissimilarity Band"
+				MIN=`gdal_min ${TMP_DIR}/${DATA}.dissimilarity.mask.sdat`
+				MAX=`gdal_max ${TMP_DIR}/${DATA}.dissimilarity.mask.sdat`
+				gdal_translate -a_nodata 0 -of GTiff -ot UInt16 -scale ${MIN} ${MAX} 0 65535  ${TMP_DIR}/${DATA}.dissimilarity.mask.sdat ${OUT_DIR}/${YEAR}/TILES/${DATA}.dissimilarity.tif
+
+				echo "Scale the final GLCM Variance Band"
+				MIN=`gdal_min ${TMP_DIR}/${DATA}.variance.mask.sdat`
+				MAX=`gdal_max ${TMP_DIR}/${DATA}.variance.mask.sdat`
+				gdal_translate -a_nodata 0 -of GTiff -ot UInt16 -scale ${MIN} ${MAX} 0 65535  ${TMP_DIR}/${DATA}.variance.mask.sdat ${OUT_DIR}/${YEAR}/TILES/${DATA}.variance.tif
+
+				echo "Scale the final Dissimilarity Band"
+				MIN=`gdal_min ${TMP_DIR}/${DATA}.homogeneity.mask.sdat`
+				MAX=`gdal_max ${TMP_DIR}/${DATA}.homogeneity.mask.sdat`
+				gdal_translate -a_nodata 0 -of GTiff -ot UInt16 -scale ${MIN} ${MAX} 0 65535  ${TMP_DIR}/${DATA}.homogeneity.mask.sdat ${OUT_DIR}/${YEAR}/TILES/${DATA}.homogeneity.tif
+
+
 			fi
 			#---------------------------------------------------------------------------
 		fi			
 
-#		rm -f ${DATA}*
+		rm -f ${DATA}*
 		rm -f ${TMP_DIR}/grids.csv
 
 	done
@@ -368,8 +425,52 @@ fi # close filter/no-filter case
 # 3 build the final mosaic
 gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/TILES/*sl_HH.tif
 gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_hv.vrt ${OUT_DIR}/${YEAR}/TILES/*sl_HV.tif
+gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_hhhv.vrt ${OUT_DIR}/${YEAR}/TILES/*HHHV.tif
 
-gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/Gamma0_HH_${YEAR}.tif
-gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_hv.vrt ${OUT_DIR}/${YEAR}/Gamma0_HV_${YEAR}.tif
+if [ `echo $2 | grep shp` ]; then # AOI case
+	gdal_translate -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/Gamma0_HH_${YEAR}.tif
+	gdal_translate -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/mosaic_hv.vrt ${OUT_DIR}/${YEAR}/Gamma0_HV_${YEAR}.tif
+	gdal_translate -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/mosaic_hhhv.vrt ${OUT_DIR}/${YEAR}/HHHV_ratio_${YEAR}.tif
 
-#rm -rf ${TMP_DIR}
+	if [ $5 = 1 ];then
+	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HHdis.vrt ${OUT_DIR}/${YEAR}/TILES/*HH.dissimilarity.tif
+	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HHvar.vrt ${OUT_DIR}/${YEAR}/TILES/*HH.variance.tif
+	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HHhom.vrt ${OUT_DIR}/${YEAR}/TILES/*HH.homogeneity.tif
+	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HVdis.vrt ${OUT_DIR}/${YEAR}/TILES/*HV.dissimilarity.tif
+	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HVvar.vrt ${OUT_DIR}/${YEAR}/TILES/*HV.variance.tif
+	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HVhom.vrt ${OUT_DIR}/${YEAR}/TILES/*HV.homogeneity.tif
+
+	gdal_translate -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/mosaic_HHhom.vrt ${OUT_DIR}/${YEAR}/04_Homogeneity_HH_${YEAR}.tif
+	gdal_translate -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/mosaic_HHvar.vrt ${OUT_DIR}/${YEAR}/04_Variance_HH_${YEAR}.tif
+	gdal_translate -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/mosaic_HHdis.vrt ${OUT_DIR}/${YEAR}/04_Dissimilarity_HH_${YEAR}.tif
+
+	gdal_translate -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/mosaic_HVhom.vrt ${OUT_DIR}/${YEAR}/04_Homogeneity_HV_${YEAR}.tif
+	gdal_translate -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/mosaic_HVvar.vrt ${OUT_DIR}/${YEAR}/04_Variance_HV_${YEAR}.tif
+	gdal_translate -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/mosaic_HVdis.vrt ${OUT_DIR}/${YEAR}/04_Dissimilarity_HV_${YEAR}.tif
+	fi
+
+else
+	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/Gamma0_HH_${YEAR}.tif
+	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_hv.vrt ${OUT_DIR}/${YEAR}/Gamma0_HV_${YEAR}.tif
+	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_hhhv.vrt ${OUT_DIR}/${YEAR}/HHHV_ratio_${YEAR}.tif
+
+	if [ $5 = 1 ];then
+	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HHdis.vrt ${OUT_DIR}/${YEAR}/TILES/*HH.dissimilarity.tif
+	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HHvar.vrt ${OUT_DIR}/${YEAR}/TILES/*HH.variance.tif
+	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HHhom.vrt ${OUT_DIR}/${YEAR}/TILES/*HH.homogeneity.tif
+	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HVdis.vrt ${OUT_DIR}/${YEAR}/TILES/*HV.dissimilarity.tif
+	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HVvar.vrt ${OUT_DIR}/${YEAR}/TILES/*HV.variance.tif
+	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HVhom.vrt ${OUT_DIR}/${YEAR}/TILES/*HV.homogeneity.tif
+
+	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_HHhom.vrt ${OUT_DIR}/${YEAR}/04_Homogeneity_HH_${YEAR}.tif
+	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_HHvar.vrt ${OUT_DIR}/${YEAR}/04_Variance_HH_${YEAR}.tif
+	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_HHdis.vrt ${OUT_DIR}/${YEAR}/04_Dissimilarity_HH_${YEAR}.tif
+
+	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_HVhom.vrt ${OUT_DIR}/${YEAR}/04_Homogeneity_HV_${YEAR}.tif
+	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_HVvar.vrt ${OUT_DIR}/${YEAR}/04_Variance_HV_${YEAR}.tif
+	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_HVdis.vrt ${OUT_DIR}/${YEAR}/04_Dissimilarity_HV_${YEAR}.tif
+	fi
+fi
+
+
+rm -rf ${TMP_DIR}
