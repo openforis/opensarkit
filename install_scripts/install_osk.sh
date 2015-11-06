@@ -218,9 +218,9 @@ echo '#export to Path' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export PATH=$PATH:${PYTHON_BIN}:${RSGISLIB_BIN}:${ASF_BIN}:${POLSAR_BIN}:${SAGA_BIN}:${S1TBX_BIN}:${NEST_BIN}:${GDAL_BIN}:${DOWNLOAD_BIN}:${ASF_EXE}:${S1TBX}' >> ${OSK_HOME}/OpenSARKit_source.bash
 
 # Update global environment variables"
-cp ${OSK_HOME}/OpenSARKit_source.bash /etc/profile.d/OpenSARKit.sh
+mv ${OSK_HOME}/OpenSARKit_source.bash /etc/profile.d/OpenSARKit.sh
 chmod -R 755 ${OSK_HOME}
-
+source /etc/profile.d/OpenSARKit.sh
 #------------------------------------------------------------------
 # 3 Download the additional Database
 #------------------------------------------------------------------
