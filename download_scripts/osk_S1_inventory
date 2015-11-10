@@ -64,7 +64,10 @@ else
    	mkdir -p ${TMP_DIR}
 	PERIOD="( beginPosition:["$3"T00:00:00.000Z TO "$4"T23:59:59.999Z] AND endPosition:["$3"T00:00:00.000Z TO "$4"T23:59:59.999Z] )"
 	PRODUCT_TYPE=$5
-	POL_MODE=$6
+	POLAR=$6
+
+	# source necessary OSK libs
+	source ${OPENSARKIT}/lib/s1_helpers
 fi
 
 #	Credentials
@@ -90,23 +93,41 @@ AOI="POLYGON(($X_MIN$Y_MIN, $X_MIN$Y_MAX, $X_MAX$Y_MAX, $X_MAX$Y_MIN, $X_MIN$Y_M
 
 # get the OpenSearch result
 echo "data inventory from scihub server"
-wget --no-check-certificate --user=${USERNAME} --password=${PW} -O ${TMP_DIR}/datalist "https://scihub.esa.int/dhus//search?q=producttype:${PRODUCT_TYPE}+AND+polarisationMode:${POL_MODE}+AND+( footprint:\"Intersects($AOI)\")+AND+${PERIOD}&rows=10000&start=0"
+wget --no-check-certificate --user=${USERNAME} --password=${PW} -O ${TMP_DIR}/datalist "https://scihub.esa.int/dhus//search?q=producttype:${PRODUCT_TYPE}+AND+polarisationMode:${POLAR}+AND+( footprint:\"Intersects($AOI)\")+AND+${PERIOD}&rows=10000&start=0"
 
 # get the important info out of the xml result
-xml_grep title ${TMP_DIR}/datalist --text_only | tail -n +2 > ${TMP_DIR}/scenes
-xml_grep title ${TMP_DIR}/datalist --text_only | tail -n +2 | cut -c 18-25 > ${TMP_DIR}/dates
-xml_grep id ${TMP_DIR}/datalist --text_only | tail -n +2 > ${TMP_DIR}/uuid
-xml_grep str ${TMP_DIR}/datalist --text_only | grep "POLYGON ((" | sed 's|POLY|\"POLY|g' | sed 's|))|))"|g' > ${TMP_DIR}/polys
-xml_grep str ${TMP_DIR}/datalist --text_only | grep "orbitDirection" > ${TMP_DIR}/orbit
-xml_grep str ${TMP_DIR}/datalist --text_only | grep "swathidentifier" > ${TMP_DIR}/swath
-	 
+#xml_grep title ${TMP_DIR}/datalist --text_only | tail -n +2 > ${TMP_DIR}/scenes
+#xml_grep title ${TMP_DIR}/datalist --text_only | tail -n +2 | cut -c 18-25 > ${TMP_DIR}/dates
+#xml_grep id ${TMP_DIR}/datalist --text_only | tail -n +2 > ${TMP_DIR}/uuid
+#xml_grep str ${TMP_DIR}/datalist --text_only | grep "POLYGON ((" | sed 's|POLY|\"POLY|g' | sed 's|))|))"|g' > ${TMP_DIR}/polys
+#xml_grep str ${TMP_DIR}/datalist --text_only | grep "orbitdirection" > ${TMP_DIR}/orbit
+#xml_grep str ${TMP_DIR}/datalist --text_only | grep "swathidentifier" > ${TMP_DIR}/swath
+
+# get nr. of products
+NR_OF_PRODUCTS=`s1_ident ${TMP_DIR}/datalist | wc -l `
+echo "-------------------------------------------------"
+echo " There are ${NR_OF_PRODUCTS} Products in the Hub"
+echo "-------------------------------------------------"
+echo ""
+
+s1_ident ${TMP_DIR}/datalist > ${TMP_DIR}/scenes
+s1_date ${TMP_DIR}/datalist > ${TMP_DIR}/dates
+s1_uuid ${TMP_DIR}/datalist > ${TMP_DIR}/uuid
+s1_footprint ${TMP_DIR}/datalist > ${TMP_DIR}/polys
+s1_orbit_dir ${TMP_DIR}/datalist > ${TMP_DIR}/orbit
+s1_swath ${TMP_DIR}/datalist > ${TMP_DIR}/swath
+s1_pol_mode ${TMP_DIR}/datalist > ${TMP_DIR}/pol_mode
+s1_track ${TMP_DIR}/datalist > ${TMP_DIR}/track
+s1_slice_start ${TMP_DIR}/datalist > ${TMP_DIR}/slice_end
+s1_slice_end ${TMP_DIR}/datalist > ${TMP_DIR}/slice_start
+
 # write header
-echo "Scene_ID,Product_ID,Date,Swath,Orbit_Dir,WKTGeom" > ${TMP_DIR}/wkt.csv
-echo '"String(68)","String(37)","Integer(8)","String(5)","String(11)","String"' > ${TMP_DIR}/wkt.csvt
+echo "Scene_ID,Product_ID,Date,Track,Start_Sli,End_Slice,Swath,Orbit_Dir,Pol_Mode,WKTGeom" > ${TMP_DIR}/wkt.csv
+echo '"String(68)","String(37)","Integer(8)","Integer(3)","Integer(3)","Integer(3)","String(5)","String(11)","String(11)","String"' > ${TMP_DIR}/wkt.csvt
 
 # write data
-paste -d "," ${TMP_DIR}/scenes ${TMP_DIR}/uuid ${TMP_DIR}/dates ${TMP_DIR}/swath ${TMP_DIR}/orbit ${TMP_DIR}/polys > ${TMP_DIR}/data
-cat ${TMP_DIR}/data >> ${TMP_DIR}/wkt.csv
+paste -d "," ${TMP_DIR}/scenes ${TMP_DIR}/uuid ${TMP_DIR}/dates ${TMP_DIR}/track ${TMP_DIR}/slice_start ${TMP_DIR}/slice_end ${TMP_DIR}/swath ${TMP_DIR}/orbit ${TMP_DIR}/pol_mode ${TMP_DIR}/polys >> ${TMP_DIR}/wkt.csv
+#cat ${TMP_DIR}/data >> ${TMP_DIR}/wkt.csv
 
 mkdir -p ${PROC_DIR}/
 mkdir -p ${PROC_DIR}/Inventory
@@ -122,9 +143,8 @@ echo "		<GeometryField encoding=\"WKT\" field=\"WKTGeom\"> </GeometryField >" >>
 echo "	</OGRVRTLayer>" >> ${TMP_DIR}/wkt.vrt
 echo "</OGRVRTDataSource>" >> ${TMP_DIR}/wkt.vrt
 
-cd ${PROC_DIR}
 # convert to final schapefile
-ogr2ogr -f "Esri Shapefile" ${INV}/S1_${POL_MODE}.shp ${TMP_DIR}/wkt.vrt
+ogr2ogr -f "Esri Shapefile" "${INV}/S1_${POLAR}.shp" "${TMP_DIR}/wkt.vrt"
 
 if [[ $7 == 1 ]];then
 	osk_S1_download ${PROC_DIR} ${INV}/S1_${POL_MODE}.shp
@@ -161,4 +181,4 @@ fi
 
 #	done  < ${TMP_DIR}/data
 #fi
-rm -rf ${TMP_DIR}
+#rm -rf ${TMP_DIR}

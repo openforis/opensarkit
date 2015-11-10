@@ -1,0 +1,123 @@
+function s1_orbit_dir() {
+    if [ -z "$1" ]; then 
+    echo "Missing arguments. Syntax:"
+    echo "  s1_orbit <input_list>"
+    return
+    fi
+    ORBIT=$(xml_grep str $1 |\
+          grep orbitdirection |\
+	  sed 's/  <str name="orbitdirection">//g' |\
+	  sed 's|</str>||g')
+    echo "$ORBIT"
+}
+
+function s1_pol_mode() {
+    if [ -z "$1" ]; then 
+    echo "Missing arguments. Syntax:"
+    echo "  s1_pol_mode <input_list>"
+    return
+    fi
+    POL_MODE=$(xml_grep str $1 |\
+	grep polarisationmode |\
+	sed 's/  <str name="polarisationmode">//g' |\
+	sed 's|</str>||g')
+    echo "$POL_MODE"
+}
+
+function s1_swath() {
+    if [ -z "$1" ]; then 
+    echo "Missing arguments. Syntax:"
+    echo "  s1_swath <input_list>"
+    return
+    fi
+    SWATH=$(xml_grep str $1 |\
+	grep swathidentifier |\
+	sed 's/  <str name="swathidentifier">//g' |\
+	sed 's|</str>||g')
+    echo "$SWATH"
+}
+
+function s1_ident() {
+    if [ -z "$1" ]; then 
+    echo "Missing arguments. Syntax:"
+    echo "  s1_ident <input_list>"
+    return
+    fi
+    IDENT=$(xml_grep str $1 |\
+	grep \"identifier |\
+	sed 's/  <str name="identifier">//g' |\
+	sed 's|</str>||g')
+    echo "$IDENT"
+}
+
+function s1_uuid() {
+    if [ -z "$1" ]; then 
+    echo "Missing arguments. Syntax:"
+    echo "  s1_uuid <input_list>"
+    return
+    fi
+    UUID=$(xml_grep id $1 --text_only |\
+	tail -n +2)
+    echo "$UUID"
+}
+
+function s1_date() {
+    if [ -z "$1" ]; then 
+    echo "Missing arguments. Syntax:"
+    echo "  s1_date <input_list>"
+    return
+    fi
+    DATE=$(xml_grep title $1 --text_only |\
+ 	tail -n +2 |\
+	cut -c 18-25)
+    echo "$DATE"
+}
+
+function s1_footprint() {
+    if [ -z "$1" ]; then 
+    echo "Missing arguments. Syntax:"
+    echo "  s1_footprint <input_list>"
+    return
+    fi
+    FOOT=$(xml_grep str $1 --text_only |\
+	 grep "POLYGON ((" |\
+	 sed 's|POLY|\"POLY|g' |\
+	 sed 's|))|))"|g')
+    echo "$FOOT"
+}
+
+function s1_track() {
+    if [ -z "$1" ]; then 
+    echo "Missing arguments. Syntax:"
+    echo "  s1_track <input_list>"
+    return
+    fi
+    TRACK=$(xml_grep title $1 --text_only |\
+ 	tail -n +2 |\
+	cut -c 27-29)
+    echo "$TRACK"
+}
+
+function s1_slice_start() {
+    if [ -z "$1" ]; then 
+    echo "Missing arguments. Syntax:"
+    echo "  s1_slice_start <input_list>"
+    return
+    fi
+    TRACK=$(xml_grep title $1 --text_only |\
+ 	tail -n +2 |\
+	cut -c 30-32)
+    echo "$TRACK"
+}
+
+function s1_slice_end() {
+    if [ -z "$1" ]; then 
+    echo "Missing arguments. Syntax:"
+    echo "  s1_slice_start <input_list>"
+    return
+    fi
+    TRACK=$(xml_grep title $1 --text_only |\
+ 	tail -n +2 |\
+	cut -c 46-48)
+    echo "$TRACK"
+}

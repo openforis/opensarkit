@@ -2,6 +2,11 @@
 #This size function echos the pixel dimensions of a given file in the format expected by gdalwarp.
 
 function gdal_size() {
+    if [ -z "$1" ]; then 
+        echo "Missing arguments. Syntax:"
+        echo "  gdal_size <input_raster>"
+        return
+    fi
     SIZE=$(gdalinfo $1 |\
         grep 'Size is ' |\
         cut -d\   -f3-4 |\
