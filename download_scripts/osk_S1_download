@@ -1,0 +1,89 @@
+#! /bin/bash 
+
+#-------------------------------------------------------------------------------------------	
+# 	0.1 Check for right usage & set up basic Script Variables
+if [ "$#" != "2" ]; then
+
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " OpenSARKit, v.01"
+	echo -e " Download Sentinel-1 data by providing a data list"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+#	echo -e " Author: Andreas Vollrath"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e "Software dependencies:"
+	echo -e "	- aria2"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e "syntax: osk_download_S1_list <output_folder> <Inventory Shapefile>"
+	echo -e ""
+	echo -e "input parameters:"
+	echo -e "output_folder		(output) folder where the downloaded data will be saved"
+	echo -e "Inventory shapefile		(input) shapefile created and maybe edited from osk_download_S1 script"
+	exit 1
+else
+	echo -e "----------------------------------"
+	echo -e " OpenSARKit, v.01"
+	echo -e " Download Sentinel-1 data by providing a data list"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+#	echo -e " Author: Andreas Vollrath"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e "Software dependencies:"
+	echo -e "	- aria2"
+	echo -e "	- ogrinfo"
+	echo -e "----------------------------------"
+	echo -e ""
+
+  	cd $1
+   	PROC_DIR=`pwd`
+	TMP_DIR=${PROC_DIR}/TMP
+	mkdir -p ${TMP_DIR}
+fi
+
+
+
+#	Credentials
+read -r -p "Please type your ESA Scihub Username:" USERNAME
+read -s -p "Please type your ESA Scihub Password:" PW
+echo ""
+
+echo "Creating the data list"
+ogrinfo $2 -al | grep Product_ID | sed 's/  Product_ID (String) = //g' | tail -n +2 > ${PROC_DIR}/download_list
+
+while read line; do 
+
+	# get the data via the UUID
+#	SCENE=`echo $line | awk -F "," $'{print $1}'`			  
+#	UUID=`echo $line | awk -F "," $'{print $2}'`
+	UUID=$line		
+	DL_ADDRESS='https://scihub.esa.int/dhus/odata/v1/Products('"'${UUID}'"')/$value'
+	echo "Downloading Product $line"
+
+	# prepare a loop to avoid uncomplete data downloads		
+	i=1
+	echo "bla" > ${TMP_DIR}/tmp_error
+	# do the loop 
+	for(( i=1; i<=2; i++ ));do
+
+		if grep -q "download completed" ${TMP_DIR}/tmp_error;then
+			i=3
+		else
+			i=1
+			aria2c --dir=${TMP_DIR} --check-certificate=false --continue=true --http-user="${USERNAME}" --http-passwd="${PW}" "${DL_ADDRESS}" > ${TMP_DIR}/tmp_error
+		fi
+	done
+	rm -f ${TMP_DIR}/tmp_error
+	SCENE=`ls ${TMP_DIR}`
+	SCENE_ID=`echo ${SCENE} | rev | cut -c 5- | rev`
+	DATE=${SCENE_ID:17:8}
+
+	echo "Moving $SCENE to ${PROC_DIR}/S1/ZIP"
+	mkdir -p ${PROC_DIR}/DATA/
+	mkdir -p ${PROC_DIR}/DATA/${DATE}/
+	mv ${TMP_DIR}/${SCENE} ${PROC_DIR}/DATA/${DATE}/
+
+done  < ${PROC_DIR}/download_list

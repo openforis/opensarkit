@@ -57,11 +57,12 @@ else
 	OUT_DIR=`pwd` 
 	ZIP_DIR=${OUT_DIR}/ZIP
 	mkdir -p ${ZIP_DIR}
-	export TMP_DIR=${OUT_DIR}/TMP/
-	mkdir -p ${TMP_DIR}
 	YEAR=$3
 	YEAR_SHORT=${YEAR:2:2}
 	mkdir -p ${OUT_DIR}/${YEAR}/
+	export TMP_DIR=${OUT_DIR}/TMP${YEAR}/
+	mkdir -p ${TMP_DIR}
+	
 
 	# source libs
 	source ${OPENSARKIT}/lib/gdal_helpers.sh
@@ -352,11 +353,11 @@ cd ${TMP_DIR}/
 			# HH/HV ratio calculation
 			echo ""			
 			echo "Creating HH/HV Ratio channel"
-			saga_cmd grid_calculus 1 -GRIDS:${DATA:0:10}_sl_HH.saga.filtered.sgrd -XGRIDS:${DATA}.saga.filtered.sgrd -RESULT:${DATA:0:10}_HHHV.saga.filtered.sgrd -TYPE:7 -FORMULA:"a / b"
+			saga_cmd grid_calculus 1 -GRIDS:${DATA:0:10}_sl_HH.saga.filtered.sgrd -XGRIDS:${DATA}.saga.filtered.sgrd -RESULT:${OUT_DIR}/${YEAR}/TILES/${DATA:0:10}_HHHV.sgrd -TYPE:7 -FORMULA:"a / b"
 
-			MIN=`gdal_min ${DATA:0:10}_HHHV.saga.filtered.sdat`
-			MAX=`gdal_max ${DATA:0:10}_HHHV.saga.filtered.sdat`
-			gdal_translate -of GTiff -ot UInt16 -scale ${MIN} ${MAX} 0 65535 -a_nodata 0 ${DATA:0:10}_HHHV.saga.filtered.sdat ${OUT_DIR}/${YEAR}/TILES/${DATA:0:10}_HHHV.tif
+			#MIN=`gdal_min ${DATA:0:10}_HHHV.saga.filtered.sdat`
+			#MAX=`gdal_max ${DATA:0:10}_HHHV.saga.filtered.sdat`
+			#gdal_translate -of GTiff -ot UInt16 -scale ${MIN} ${MAX} 0 65535 -a_nodata 0 ${DATA:0:10}_HHHV.saga.filtered.sdat ${OUT_DIR}/${YEAR}/TILES/${DATA:0:10}_HHHV.tif
 			#---------------------------------------------------------------------------		
 
 			#---------------------------------------------------------------------------
@@ -425,12 +426,15 @@ fi # close filter/no-filter case
 # 3 build the final mosaic
 gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/TILES/*sl_HH.tif
 gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_hv.vrt ${OUT_DIR}/${YEAR}/TILES/*sl_HV.tif
-gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_hhhv.vrt ${OUT_DIR}/${YEAR}/TILES/*HHHV.tif
+gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_hhhv.vrt ${OUT_DIR}/${YEAR}/TILES/*HHHV.sdat
 
 if [ `echo $2 | grep shp` ]; then # AOI case
 	gdal_translate -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/Gamma0_HH_${YEAR}.tif
 	gdal_translate -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/mosaic_hv.vrt ${OUT_DIR}/${YEAR}/Gamma0_HV_${YEAR}.tif
-	gdal_translate -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/mosaic_hhhv.vrt ${OUT_DIR}/${YEAR}/HHHV_ratio_${YEAR}.tif
+	
+	MIN=`gdal_min ${OUT_DIR}/${YEAR}/mosaic_hhhv.vrt`
+	MAX=`gdal_max ${OUT_DIR}/${YEAR}/mosaic_hhhv.vrt`
+	gdal_translate -projwin $(ogr_extent ${AOI}) -scale ${MIN} ${MAX} 0 65535 -a_nodata 0 -ot UInt16 ${OUT_DIR}/${YEAR}/mosaic_hhhv.vrt ${OUT_DIR}/${YEAR}/HHHV_ratio_${YEAR}.tif
 
 	if [ $5 = 1 ];then
 	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HHdis.vrt ${OUT_DIR}/${YEAR}/TILES/*HH.dissimilarity.tif
@@ -452,7 +456,10 @@ if [ `echo $2 | grep shp` ]; then # AOI case
 else
 	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/Gamma0_HH_${YEAR}.tif
 	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_hv.vrt ${OUT_DIR}/${YEAR}/Gamma0_HV_${YEAR}.tif
-	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_hhhv.vrt ${OUT_DIR}/${YEAR}/HHHV_ratio_${YEAR}.tif
+	
+	MIN=`gdal_min ${OUT_DIR}/${YEAR}/mosaic_hhhv.vrt`
+	MAX=`gdal_max ${OUT_DIR}/${YEAR}/mosaic_hhhv.vrt`
+	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) -scale ${MIN} ${MAX} 0 65535 -a_nodata 0 -ot UInt16 ${OUT_DIR}/${YEAR}/mosaic_hhhv.vrt ${OUT_DIR}/${YEAR}/HHHV_ratio_${YEAR}.tif
 
 	if [ $5 = 1 ];then
 	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HHdis.vrt ${OUT_DIR}/${YEAR}/TILES/*HH.dissimilarity.tif

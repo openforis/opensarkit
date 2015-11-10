@@ -122,9 +122,12 @@ cd ${TMP_DIR}
 #-------------------------------------------------------------------------------------------
 # actual preprocessing according to the graphs
 echo "Importing S1 GRD data file and do the calibration (beta), multilooking (3x3) and terrain flattening (gamma)"
-bash ${S1TBX_EXE} ${S1TBX_GRAPHS}/S1_GRD_SDV_30_import_SPK_TC.xml -Pinput=${INPUT_RAW} -Poutput=${TMP_DIR}/TF.dim
+bash ${S1TBX_EXE} ${S1TBX_GRAPHS}/S1_GRD_SDV_30_import_CAL_ML_TF.xml -Pinput=${INPUT_RAW} -Poutput=${TMP_DIR}/TF.dim
 echo "Speckle Filtering and Geometric Terrain Correction (i.e. Geocoding)"
-bash ${S1TBX_EXE} ${S1TBX_GRAPHS}/S1_GRD_SDV_30_import_SPK_TC.xml -Pinput=${TMP_DIR}/TF.dim -Poutput=${TMP_DIR}/TF_TC.dim
+bash ${S1TBX_EXE} ${S1TBX_GRAPHS}/S1_GRD_SDV_30_SPK_TC.xml -Pinput=${TMP_DIR}/TF.dim -Poutput=${TMP_DIR}/TF_TC.dim
+
+
+
 
 
 

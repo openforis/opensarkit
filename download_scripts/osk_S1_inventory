@@ -127,35 +127,38 @@ cd ${PROC_DIR}
 ogr2ogr -f "Esri Shapefile" ${INV}/S1_${POL_MODE}.shp ${TMP_DIR}/wkt.vrt
 
 if [[ $7 == 1 ]];then
+	osk_S1_download ${PROC_DIR} ${INV}/S1_${POL_MODE}.shp
+fi
 
-	mkdir -p ${PROC_DIR}/ZIP
+#	mkdir -p ${PROC_DIR}/ZIP
 
-	while read line; do 
+#	while read line; do 
 
 		# get the data via the UUID
-   		SCENE=`echo $line | awk -F "," $'{print $1}'`			  
-		UUID=`echo $line | awk -F "," $'{print $2}'`		
-		DL_ADDRESS='https://scihub.esa.int/dhus/odata/v1/Products('"'${UUID}'"')/$value'
-		echo "Downloading $SCENE"
+#  		SCENE=`echo $line | awk -F "," $'{print $1}'`			  
+#		UUID=`echo $line | awk -F "," $'{print $2}'`		
+#		DL_ADDRESS='https://scihub.esa.int/dhus/odata/v1/Products('"'${UUID}'"')/$value'
+#		echo "Downloading $SCENE"
 
 		# prepare a loop to avoid uncomplete data downloads		
-		i=1
-		echo "bla" > ${TMP_DIR}/tmp_error
+#		i=1
+#		echo "bla" > ${TMP_DIR}/tmp_error
 		# do the loop 
-		for(( i=1; i<=2; i++ ));do
+#		for(( i=1; i<=2; i++ ));do
 
-			if grep -q "download completed" ${TMP_DIR}/tmp_error;then
-				i=3
-			else
-				i=1
-				aria2c --check-certificate=false --continue=true --http-user="${USERNAME}" --http-passwd="${PW}" "${DL_ADDRESS}" > ${TMP_DIR}/tmp_error
-			fi
-		done
+#			if grep -q "download completed" ${TMP_DIR}/tmp_error;then
+#				i=3
+#			else
+#				i=1
+#				aria2c --check-certificate=false --continue=true --http-user="${USERNAME}" --http-passwd="${PW}" "${DL_ADDRESS}" > ${TMP_DIR}/tmp_error
+#			fi
+#		done
 
-		echo "Moving $SCENE to ${PROC_DIR}/S1/ZIP"
-		DATE=${SCENE:17:8}
-		mv ${SCENE}.zip ${PROC_DIR}/ZIP/${DATE}/${SCENE}.zip
+#		echo "Moving $SCENE to ${PROC_DIR}/S1/ZIP"
+#		DATE=${SCENE:17:8}
+#		mkdir -p ${PROC_DIR}/ZIP/${DATE}/
+#		mv ${SCENE}.zip ${PROC_DIR}/ZIP/${DATE}/${SCENE}.zip
 
-	done  < ${TMP_DIR}/data
-fi
+#	done  < ${TMP_DIR}/data
+#fi
 rm -rf ${TMP_DIR}
