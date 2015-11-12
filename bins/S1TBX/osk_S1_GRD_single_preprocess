@@ -61,6 +61,10 @@ else
 	mkdir -p $3
 	cd $3
 	OUT_DIR=`pwd`
+
+	#
+	source ${OPENSARKIT}/lib/saga_helpers
+	source ${OPENSARKIT}/lib/gdal_helpers.sh
 fi
 
 
@@ -69,32 +73,38 @@ fi
 #-------------------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------------------
-# extract filenames
-echo $FILE
-echo $BASE
-SCENE_ID=`echo ${BASE} | rev | cut -c 5- | rev`
-DATE=${SCENE_ID:17:8}
-TRACK=${SCENE_ID:26:3}
-FRAME_START=${SCENE_ID:29:3}
-FRAME_END=${SCENE_ID:45:3}
-ORBIT=${SCENE_ID:49:6}
-MODE=${SCENE_ID:7:3}
-POL_MODE=${SCENE_ID:13:3}
-export SATELLITE="Sentinel-1"
-#-------------------------------------------------------------------------------------------
+# check input file
+if [ `echo ${FILE} | rev | cut -c 1-3 | rev` == "dim" ];then
 
-echo "----------------------------------------------------------------"
-echo "Processing Scene: 		${SCENE_ID}"
-echo "Satellite/Sensor: 		${SATELLITE}"
-echo "Acquisiton Mode:		${MODE}"
-echo "Polarization Mode:		${POL_MODE}"
-echo "Acquisition Date (YYYYMMDD):	${DATE}"
-echo "Relative Satellite Track: 	${TRACK}"
-echo "Absolute Satellite Track: 	${ORBIT}"
-echo "Start Frame: 			${FRAME_START}"
-echo "End Frame: 			${FRAME_END}"
-echo "----------------------------------------------------------------"
+	echo "----------------------------------------------------------------"
+	echo "Processing Scene: ${FILE}"
+	echo "----------------------------------------------------------------"
+else
+	#-------------------------------------------------------------------------------------------
+	# extract filenames
+	SCENE_ID=`echo ${BASE} | rev | cut -c 5- | rev`
+	DATE=${SCENE_ID:17:8}
+	TRACK=${SCENE_ID:26:3}
+	FRAME_START=${SCENE_ID:29:3}
+	FRAME_END=${SCENE_ID:45:3}
+	ORBIT=${SCENE_ID:49:6}
+	MODE=${SCENE_ID:7:3}
+	POL_MODE=${SCENE_ID:13:3}
+	export SATELLITE="Sentinel-1"
+	#-------------------------------------------------------------------------------------------
 
+	echo "----------------------------------------------------------------"
+	echo "Processing Scene: 		${SCENE_ID}"
+	echo "Satellite/Sensor: 		${SATELLITE}"
+	echo "Acquisiton Mode:		${MODE}"
+	echo "Polarization Mode:		${POL_MODE}"
+	echo "Acquisition Date (YYYYMMDD):	${DATE}"
+	echo "Relative Satellite Track: 	${TRACK}"
+	echo "Absolute Satellite Track: 	${ORBIT}"
+	echo "Start Frame: 			${FRAME_START}"
+	echo "End Frame: 			${FRAME_END}"
+	echo "----------------------------------------------------------------"
+fi
 #-------------------------------------------------------------------------------------------
 # 3 Preprocess imagery part I - Terrain Correction & Geocoding
 #-------------------------------------------------------------------------------------------
@@ -105,18 +115,14 @@ INPUT_RAW=${FILE}
 OUTPUT_S1TBX=${TMP_DIR}/${SCENE_ID}
 #-------------------------------------------------------------------------------------------
 
-#-------------------------------------------------------------------------------------------
-# set up final output directory
-FINAL_DIR=$OUT_DIR/${TRACK}-${FRAME_START}-${ORBIT}
-mkdir -p ${FINAL_DIR}
-#-------------------------------------------------------------------------------------------
+
 
 #-------------------------------------------------------------------------------------------
 # prepare DEM
-echo "create DEM crop"
-CROP_DEM=${TMP_DIR}/tmp_crop_dem.tif
-osk_crop_dem ${FILE} ${DEM_FILE} ${CROP_DEM}
-cd ${TMP_DIR}
+#echo "create DEM crop"
+#CROP_DEM=${TMP_DIR}/tmp_crop_dem.tif
+#osk_crop_dem ${FILE} ${DEM_FILE} ${CROP_DEM}
+#cd ${TMP_DIR}
 #-------------------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------------------
@@ -126,11 +132,25 @@ bash ${S1TBX_EXE} ${S1TBX_GRAPHS}/S1_GRD_SDV_30_import_CAL_ML_TF.xml -Pinput=${I
 echo "Speckle Filtering and Geometric Terrain Correction (i.e. Geocoding)"
 bash ${S1TBX_EXE} ${S1TBX_GRAPHS}/S1_GRD_SDV_30_SPK_TC.xml -Pinput=${TMP_DIR}/TF.dim -Poutput=${TMP_DIR}/TF_TC.dim
 
+rm -rf ${PROC_DIR}/target*
 
 
+if [ `echo ${FILE} | rev | cut -c 1-3 | rev` == "dim" ];then
+	
+	osk_md_filter ${TMP_DIR}/TF_TC.data/Gamma0_VV.img ${OUT_DIR}/Gamma0_VV.md-filtered.tif
+	osk_md_filter ${TMP_DIR}/TF_TC.data/Gamma0_VH.img ${OUT_DIR}/Gamma0_VH.md-filtered.tif
 
+else
 
+	#-------------------------------------------------------------------------------------------
+	# set up final output directory
+	FINAL_DIR=$OUT_DIR/${TRACK}-${FRAME_START}-${ORBIT}
+	mkdir -p ${FINAL_DIR}
+	#-------------------------------------------------------------------------------------------
+	osk_md_filter ${TMP_DIR}/TF_TC.data/Gamma0_VV.img ${FINAL_DIR}/Gamma0_VV.md-filtered.tif
+	osk_md_filter ${TMP_DIR}/TF_TC.data/Gamma0_VH.img ${FINAL_DIR}/Gamma0_VH.md-filtered.tif
 
+fi
 
 
 

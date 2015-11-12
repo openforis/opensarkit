@@ -436,7 +436,7 @@ if [ `echo $2 | grep shp` ]; then # AOI case
 	MAX=`gdal_max ${OUT_DIR}/${YEAR}/mosaic_hhhv.vrt`
 	gdal_translate -projwin $(ogr_extent ${AOI}) -scale ${MIN} ${MAX} 0 65535 -a_nodata 0 -ot UInt16 ${OUT_DIR}/${YEAR}/mosaic_hhhv.vrt ${OUT_DIR}/${YEAR}/HHHV_ratio_${YEAR}.tif
 
-	gdalbuildvrt ${OUT_DIR}/${YEAR}/RGB_${YEAR}.vrt ${OUT_DIR}/${YEAR}/Gamma0_HH_${YEAR}.tif ${OUT_DIR}/${YEAR}/Gamma0_HV_${YEAR}.tif ${OUT_DIR}/${YEAR}/HHHV_ratio_${YEAR}.tif
+	gdalbuildvrt -separate -vrtnodata 0 ${OUT_DIR}/${YEAR}/RGB_${YEAR}.vrt ${OUT_DIR}/${YEAR}/Gamma0_HH_${YEAR}.tif ${OUT_DIR}/${YEAR}/Gamma0_HV_${YEAR}.tif ${OUT_DIR}/${YEAR}/HHHV_ratio_${YEAR}.tif
 	
 	if [ $5 = 1 ];then
 	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HHdis.vrt ${OUT_DIR}/${YEAR}/TILES/*HH.dissimilarity.tif
@@ -463,7 +463,7 @@ else
 	MAX=`gdal_max ${OUT_DIR}/${YEAR}/mosaic_hhhv.vrt`
 	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) -scale ${MIN} ${MAX} 0 65535 -a_nodata 0 -ot UInt16 ${OUT_DIR}/${YEAR}/mosaic_hhhv.vrt ${OUT_DIR}/${YEAR}/HHHV_ratio_${YEAR}.tif
 
-	gdalbuildvrt ${OUT_DIR}/${YEAR}/RGB_${YEAR}.vrt ${OUT_DIR}/${YEAR}/Gamma0_HH_${YEAR}.tif ${OUT_DIR}/${YEAR}/Gamma0_HV_${YEAR}.tif ${OUT_DIR}/${YEAR}/HHHV_ratio_${YEAR}.tif
+	gdalbuildvrt -separate -vrtnodata 0 ${OUT_DIR}/${YEAR}/RGB_${YEAR}.vrt ${OUT_DIR}/${YEAR}/Gamma0_HH_${YEAR}.tif ${OUT_DIR}/${YEAR}/Gamma0_HV_${YEAR}.tif ${OUT_DIR}/${YEAR}/HHHV_ratio_${YEAR}.tif
 	
 	if [ $5 = 1 ];then
 	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HHdis.vrt ${OUT_DIR}/${YEAR}/TILES/*HH.dissimilarity.tif

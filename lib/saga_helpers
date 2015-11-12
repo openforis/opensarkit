@@ -1,0 +1,57 @@
+
+#SAGA multidirectional filtering
+function osk_md_filter() {
+    if [ -z "$2" ]; then 
+    echo "Missing arguments. Syntax:"
+    echo "  osk_md_filter <input_file> <output_file> [GDAL-Format Output] [Absolute Noise] [Relative Noise] [Filter Method]"
+    return
+    fi
+    
+    if [ -z "$3" ]; then 
+	GDAL_saga=GTiff
+    else
+	GDAL_saga=$3
+    fi
+
+    if [ -z "$4" ]; then 
+	ABS_NOISE=5000
+    else
+	ABS_NOISE=$4
+    fi
+
+    if [ -z "$5" ]; then 
+	REL_NOISE=3000
+    else
+	REL_NOISE=$5
+    fi
+
+    if [ -z "$6" ]; then 
+	METHOD=1
+    else
+	METHOD=$6
+    fi
+
+    # use tmp directory for intermediate products
+    SEC=`date +%s`
+    TMP_DIR_saga=/tmp/process_saga${SEC}
+
+    mkdir -p ${TMP_DIR_saga}
+
+echo $METHOD
+echo $ABS_NOISE
+echo $REL_NOISE
+    # check input format
+    IN_FORMAT=`gdalformat $1`
+
+    # do the filtering
+    if [ "$IN_FORMAT" == "SAGA" ];then
+	    saga_cmd -f=r grid_filter 3 -INPUT:$1 -RESULT:${TMP_DIR_saga}/tmp.saga.filtered.sgrd -NOISE_ABS:${ABS_NOISE} -NOISE_REL:${REL_NOISE} -METHOD:${METHOD}
+    else
+	    gdalwarp -srcnodata 0 -dstnodata -99999 -of SAGA $1 ${TMP_DIR_saga}/tmp.saga.sdat
+	    saga_cmd -f=r grid_filter 3 -INPUT:${TMP_DIR_saga}/tmp.saga.sgrd -RESULT:${TMP_DIR_saga}/tmp.saga.filtered.sgrd -NOISE_ABS:${ABS_NOISE} -NOISE_REL:${REL_NOISE} -METHOD:${METHOD}
+    fi
+
+gdalwarp -srcnodata -99999 -dstnodata 0 -of $GDAL_saga ${TMP_DIR_saga}/tmp.saga.filtered.sdat $2
+
+rm -rf ${TMP_DIR_saga}
+}

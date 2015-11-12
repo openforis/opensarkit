@@ -27,15 +27,15 @@ if [ "$#" != "7" ]; then
 	echo -e "end_date		End date of search in format YYYY-MM-DD"
 	echo -e "Product_type			Acquisition Mode of Sentinel-1 SAR instrument"
 	echo -e "			Available choices"
-	echo -e "			  RAW (Unfocused Raw data)"
 	echo -e "			  SLC (Single-Look-Complex)"
 	echo -e "			  GRD (Detected Ground Range product)"
 	echo -e ""
 	echo -e "Polarization_Mode"			
 	echo -e "			Available choices"
-	echo -e "			  HH (for IWS HH/HV)"
+	echo -e "			  VV (for IWS Mode VV & VV/VH)"
 	echo -e "			  VH (for IWS Mode VV/VH)"
-	echo -e "			  VV (for IWS VV)"
+	echo -e "			  HH (for IWS Mode HH & HH/HV)"
+	echo -e "			  HV (for IWS Mode HH/HV)"
 	echo -e ""
 	echo -e "Script_Mode"			
 	echo -e "			Available choices"
@@ -181,4 +181,4 @@ fi
 
 #	done  < ${TMP_DIR}/data
 #fi
-#rm -rf ${TMP_DIR}
+rm -rf ${TMP_DIR}
