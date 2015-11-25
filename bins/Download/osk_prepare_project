@@ -6,10 +6,11 @@ if [ "$#" != "2" ]; then
 
 	echo -e ""
 	echo -e "----------------------------------"
-	echo -e " OpenSARKit, v.01"
-	echo -e " Prepare mapping project"
+	echo -e " OpenSARKit, version ${OSK_VERSION}"
+	echo -e " Prepare a SAR project"
 	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
-#	echo -e " Author: Andreas Vollrath"
+	echo -e " Author: ${AUTHOR_1}"
+	echo -e " Contact: ${CONTACT_1}"
 	echo -e "----------------------------------"
 	echo -e ""
 	echo -e "----------------------------------"
@@ -31,10 +32,11 @@ if [ "$#" != "2" ]; then
 else
 	echo -e ""
 	echo -e "----------------------------------"
-	echo -e " OpenSARKit, v.01"
-	echo -e " Prepare mapping project"
+	echo -e " OpenSARKit, version ${OSK_VERSION}"
+	echo -e " Prepare a SAR project"
 	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
-#	echo -e " Author: Andreas Vollrath"
+	echo -e " Author: ${AUTHOR_1}"
+	echo -e " Contact: ${CONTACT_1}"
 	echo -e "----------------------------------"
 	echo -e ""
 	echo -e "----------------------------------"
@@ -44,12 +46,13 @@ else
 	echo -e "	- Spatialite/SQlite"
 	echo -e "----------------------------------"
 	echo -e ""
-# set up input data
-   cd $1
-   PROC_DIR=`pwd`
-   TMP_DIR=${PROC_DIR}/TMP
-   mkdir -p ${TMP_DIR}
-   echo "Processing folder: ${PROC_DIR}"
+	
+	# set up input data
+	cd $1
+	PROC_DIR=`pwd`
+	TMP_DIR=${PROC_DIR}/TMP
+	mkdir -p ${TMP_DIR}
+	echo "Setting up SAR Project in: ${PROC_DIR}"
 fi
 #---------------------------------------------------------------------------------------------
 
@@ -58,8 +61,6 @@ fi
 mkdir -p ${PROC_DIR}/AOI
 mkdir -p ${TMP_DIR}/SRTM
 mkdir -p ${PROC_DIR}/DEM
-#mkdir -p ${PROC_DIR}/LSAT
-#mkdir -p ${PROC_DIR}/LSAT/Inventory
 mkdir -p ${PROC_DIR}/ALOS
 #--------------------------------------------------------------------------
 
@@ -87,10 +88,7 @@ if [ `echo $2 | grep shp` ]; then # AOI case
 
 		# download SRTM
 		echo "Downloading and preparing SRTM4 90m Digital Elevation Model"
-		osk_download_SRTM3 ${AOI} ${PROC_DIR}/DEM/DEM_final_90m.tif
-		
-		# download Landsat
-		#osk_download_LSAT ${AOI} ${PROC_DIR}/LSAT
+		osk_SRTM3_download ${AOI} ${PROC_DIR}/DEM/DEM_final_90m.tif
 
 else # country case
 	
@@ -108,29 +106,10 @@ else # country case
 		osk_convex_hull.py --input ${PROC_DIR}/AOI/AOI.shp --output ${PROC_DIR}/AOI/convex_hull_aoi.shp
 		# downoad SRTM
 		echo "Downloading and preparing SRTM4 90m Digital Elevation Model"
-		osk_download_SRTM3 ${AOI} ${PROC_DIR}/DEM/DEM_final_90m.tif
-		
-		# download landsat		
-		#osk_download_LSAT ${AOI} ${PROC_DIR}/LSAT
-	
+		osk_SRTM3_download ${AOI} ${PROC_DIR}/DEM/DEM_final_90m.tif
+			
 fi
 #--------------------------------------------------------------------------
 
-
-#echo "get wkt"
-#ogr2ogr -f CSV ${TMP_DIR}/tmp_AOI_WKT.csv ${PROC_DIR}/AOI/${ISO3}"_convex_hull.shp" -lco GEOMETRY=AS_WKT
-#AOI=`grep POLYGON ${TMP_DIR}/tmp_AOI_WKT.csv | sed 's|\"POLYGON ((||g' | awk -F "))" $'{print $1}' | sed 's/\ /,/g'`
-#echo $AOI
-
-
 # remove tmp folder
 rm -rf ${TMP_DIR}
-
-#-----------------------
-# To-dos
-#-----------------------
-
-# include Sentinel data inventory
-# include ALOS inventory
-# include ERS/Envisat inventory
-# include TerraSAR-X inventory

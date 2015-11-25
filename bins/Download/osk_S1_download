@@ -6,33 +6,37 @@ if [ "$#" != "2" ]; then
 
 	echo -e ""
 	echo -e "----------------------------------"
-	echo -e " OpenSARKit, v.01"
-	echo -e " Download Sentinel-1 data by providing a data list"
+	echo -e " OpenSARKit, version ${OSK_VERSION}"
+	echo -e " Download Sentinel-1 data with an inventory shapefile"
 	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
-#	echo -e " Author: Andreas Vollrath"
+	echo -e " Author: ${AUTHOR_1}"
+	echo -e " Contact: ${CONTACT_1}"
 	echo -e "----------------------------------"
 	echo -e ""
 	echo -e "----------------------------------"
-	echo -e "Software dependencies:"
+	echo -e " Software dependencies:"
 	echo -e "	- aria2"
+	echo -e "	- ogrinfo"
 	echo -e "----------------------------------"
 	echo -e ""
-	echo -e "syntax: osk_download_S1_list <output_folder> <Inventory Shapefile>"
+	echo -e " syntax: osk_S1_download <output_folder> <Inventory Shapefile>"
 	echo -e ""
-	echo -e "input parameters:"
-	echo -e "output_folder		(output) folder where the downloaded data will be saved"
-	echo -e "Inventory shapefile		(input) shapefile created and maybe edited from osk_download_S1 script"
+	echo -e " input parameters:"
+	echo -e " output_folder			(output) folder where the downloaded data will be saved"
+	echo -e " Inventory shapefile		(input) shapefile created and maybe edited from osk_S1_inventory script"
 	exit 1
 else
+	echo -e ""
 	echo -e "----------------------------------"
-	echo -e " OpenSARKit, v.01"
-	echo -e " Download Sentinel-1 data by providing a data list"
+	echo -e " OpenSARKit, version ${OSK_VERSION}"
+	echo -e " Download Sentinel-1 data with an inventory shapefile"
 	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
-#	echo -e " Author: Andreas Vollrath"
+	echo -e " Author: ${AUTHOR_1}"
+	echo -e " Contact: ${CONTACT_1}"
 	echo -e "----------------------------------"
 	echo -e ""
 	echo -e "----------------------------------"
-	echo -e "Software dependencies:"
+	echo -e " Software dependencies:"
 	echo -e "	- aria2"
 	echo -e "	- ogrinfo"
 	echo -e "----------------------------------"
@@ -51,17 +55,19 @@ read -r -p "Please type your ESA Scihub Username:" USERNAME
 read -s -p "Please type your ESA Scihub Password:" PW
 echo ""
 
-echo "Creating the data list"
-ogrinfo $2 -al | grep Product_ID | sed 's/  Product_ID (String) = //g' | tail -n +2 > ${PROC_DIR}/download_list
+echo "Preparing download"
+ogrinfo $2 -al | grep Product_ID | sed 's/  Product_ID (String) = //g' | tail -n +2 > tmp_download_list
+
+# counter for info on number of download products
+NR=`cat tmp_download_list | wc -l`
+COUNT=1
 
 while read line; do 
 
 	# get the data via the UUID
-#	SCENE=`echo $line | awk -F "," $'{print $1}'`			  
-#	UUID=`echo $line | awk -F "," $'{print $2}'`
 	UUID=$line		
 	DL_ADDRESS='https://scihub.esa.int/dhus/odata/v1/Products('"'${UUID}'"')/$value'
-	echo "Downloading Product $line"
+	echo "Downloading Product ${COUNT} of ${NR} (UUID=${UUID})"
 
 	# prepare a loop to avoid uncomplete data downloads		
 	i=1
@@ -76,6 +82,7 @@ while read line; do
 			aria2c --dir=${TMP_DIR} --check-certificate=false --continue=true --http-user="${USERNAME}" --http-passwd="${PW}" "${DL_ADDRESS}" > ${TMP_DIR}/tmp_error
 		fi
 	done
+
 	rm -f ${TMP_DIR}/tmp_error
 	SCENE=`ls ${TMP_DIR}`
 	SCENE_ID=`echo ${SCENE} | rev | cut -c 5- | rev`
@@ -86,4 +93,9 @@ while read line; do
 	mkdir -p ${PROC_DIR}/DATA/${DATE}/
 	mv ${TMP_DIR}/${SCENE} ${PROC_DIR}/DATA/${DATE}/
 
-done  < ${PROC_DIR}/download_list
+	COUNT=`expr ${COUNT} + 1`
+
+done  < tmp_download_list
+
+rm -rf ${TMP_DIR}
+rm -f tmp_download_list

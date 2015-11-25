@@ -68,8 +68,9 @@ for LINE in `ls -1 ${PROC_DIR}`;do
 	
 	if [ `ls -1 | wc -l` -eq 1 ];then
 
-		echo "Processing the swath image"
-		osk_S1_GRD_single_preprocess ${TMP_DIR}/${LINE} ${DEM_FILE} .
+		SCENE=`ls` 
+		echo "Processing Scene ${SCENE} "
+		osk_S1_GRD_single_preprocess ${SCENE} ${DEM_FILE} .
 
 	else
 

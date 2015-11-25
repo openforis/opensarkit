@@ -51,7 +51,7 @@ fi
 add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
 
 ## II InSAR Packages Antonio Valentinos eotools 
-add-apt-repository -y ppa:a.valentino/eotools
+#add-apt-repository -y ppa:a.valentino/eotools
 
 ## III Java Official Packages
 add-apt-repository -y ppa:webupd8team/java
@@ -83,6 +83,7 @@ apt-get upgrade -y
 # Gis Packages
 #apt-get install --yes qgis gdal-bin libgdal-dev python-gdal saga libsaga-dev python-saga otb-bin libotb-dev libotb-ice libotb-ice-dev monteverdi2 python-otb geotiff-bin libgeotiff-dev gmt libgmt-dev dans-gdal-scripts
 #libqgis-dev (problems with grass 7)
+
 apt-get install --yes gdal-bin libgdal-dev python-gdal saga libsaga-dev python-saga geotiff-bin libgeotiff-dev dans-gdal-scripts
 
 ## Spatial-Database Spatialite
@@ -105,10 +106,6 @@ apt-get install --yes bwidget itcl3 itk3 iwidgets4 libtk-img
 # Further tools (i.e. Aria for automated ASF download, unrar for unpacking, parallel for parallelization of processing)
 apt-get install --yes aria2 unrar parallel xml-twig-tools
 
-## LEDAPS
-#apt-get install --yes zlib1g zlib1g-dev libtiff5 libtiff5-dev libgeotiff2 libgeotiff-dev libxml2 libxml2-dev ksh libhdf4-0 libhdf4-0-alt libhdf4-alt-dev libhdfeos0 libhdfeos-dev libgctp0d libgctp-dev hdf4-tools
-
-
 #------------------------------------------------------------------
 # 3 Download & Install non-repository Software and OSK
 #------------------------------------------------------------------
@@ -118,30 +115,41 @@ if [ -z "$OSK_GIT_URL" ]; then export OSK_GIT_URL=https://github.com/BuddyVolly/
 mkdir -p ${OSK_HOME}
 cd ${OSK_HOME}
 
-OSK_VERSION=0.1beta
+OSK_VERSION=0.1-beta
 
 # write a source file
 echo '#! /bin/bash' > ${OSK_HOME}/OpenSARKit_source.bash
-echo '' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo "" >> ${OSK_HOME}/OpenSARKit_source.bash
+
 echo "export OSK_VERSION=${OSK_VERSION}" >> ${OSK_HOME}/OpenSARKit_source.bash
+echo "export AUTHOR_1=\"Andreas Vollrath\"" >> ${OSK_HOME}/OpenSARKit_source.bash
+echo "export CONTACT_1=\"andreas.vollrath@fao.org\"" >> ${OSK_HOME}/OpenSARKit_source.bash
+
 echo '# Support script to source the original programs' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo "export OSK_HOME=${OSK_HOME}" >> ${OSK_HOME}/OpenSARKit_source.bash
+
 echo '# Folder of OpenSARKit scripts and workflows' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export OPENSARKIT=${OSK_HOME}/OpenSARKit' >> ${OSK_HOME}/OpenSARKit_source.bash
+
 echo '# source auxiliary Spatialite database' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export DB_GLOBAL=${OSK_HOME}/Database/global_info.sqlite' >> ${OSK_HOME}/OpenSARKit_source.bash	 
+
 echo '# source lib-functions' >> ${OSK_HOME}/OpenSARKit_source.bash
-echo 'source ${OPENSARKIT}/lib/gdal_helpers.sh' >> ${OSK_HOME}/OpenSARKit_source.bash
-echo '# source worklows/graphs' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'source ${OPENSARKIT}/lib/gdal_helpers' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'source ${OPENSARKIT}/lib/saga_helpers' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'source ${OPENSARKIT}/lib/s1_helpers' >> ${OSK_HOME}/OpenSARKit_source.bash
+
+echo '# source workflows/graphs' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export NEST_GRAPHS=${OPENSARKIT}/workflows/NEST' >> ${OSK_HOME}/OpenSARKit_source.bash
-echo 'export S1TBX_GRAPHS=${OPENSARKIT}/workflows/S1TBX' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'export SNAP_GRAPHS=${OPENSARKIT}/workflows/SNAP' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export ASF_CONF=${OPENSARKIT}/workflows/ASF' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export POLSAR_CONF=${OPENSARKIT}/workflows/POLSAR' >> ${OSK_HOME}/OpenSARKit_source.bash
-echo '# source worklows/graphs' >> ${OSK_HOME}/OpenSARKit_source.bash
+# 
+echo '# export bins' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export NEST_BIN=${OPENSARKIT}/bins/NEST' >> ${OSK_HOME}/OpenSARKit_source.bash
-echo 'export S1TBX_BIN=${OPENSARKIT}/bins/S1TBX' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'export SNAP_BIN=${OPENSARKIT}/bins/SNAP' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export ASF_BIN=${OPENSARKIT}/bins/ASF' >> ${OSK_HOME}/OpenSARKit_source.bash
-echo 'export DOWNLOAD_BIN=${OPENSARKIT}/download_scripts' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'export DOWNLOAD_BIN=${OPENSARKIT}/bins/Download' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export PYTHON_BIN=${OPENSARKIT}/python' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export GDAL_BIN=${OPENSARKIT}/bins/GDAL' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export SAGA_BIN=${OPENSARKIT}/bins/SAGA' >> ${OSK_HOME}/OpenSARKit_source.bash
@@ -200,22 +208,26 @@ fi
 
 # SNAP
 # check if installed
-if [ `which s1tbx | wc -c` -gt 0 ];then 
+if [ `which snap | wc -c` -gt 0 ];then 
 
-	S1TBX=`dirname \`which s1tbx\``
-	echo 'export S1TBX=${S1TBX}' >> ${OSK_HOME}/OpenSARKit_source.bash
-	echo 'export S1TBX_EXE=${S1TBX}/gpt.sh'  >> ${OSK_HOME}/OpenSARKit_source.bash
+	SNAP=`dirname \`which gpt\``
+	echo 'export SNAP=${SNAP}' >> ${OSK_HOME}/OpenSARKit_source.bash
+	echo 'export SNAP_EXE=${SNAP}/bin/gpt'  >> ${OSK_HOME}/OpenSARKit_source.bash
 else
 	cd ${OSK_HOME}/Programs/
-	wget http://sentinel1.s3.amazonaws.com/1.0/s1tbx_1.1.1_Linux64_installer.sh
-	sh s1tbx_1.1.1_Linux64_installer.sh -q -overwrite
-	rm -f s1tbx_1.1.1_Linux64_installer.sh
-	echo 'export S1TBX=${PROGRAMS}/S1TBX' >> ${OSK_HOME}/OpenSARKit_source.bash
-	echo 'export S1TBX_EXE=${S1TBX}/gpt.sh'  >> ${OSK_HOME}/OpenSARKit_source.bash
+	#wget http://sentinel1.s3.amazonaws.com/1.0/s1tbx_1.1.1_Linux64_installer.sh
+	#sh s1tbx_1.1.1_Linux64_installer.sh -q -overwrite
+	#rm -f s1tbx_1.1.1_Linux64_installer.sh
+
+	wget http://step.esa.int/downloads/2.0/esa-snap_unix_2_0.sh
+	sh esa-snap_unix_2_0.sh -q -overwrite
+	rm -f esa-snap_unix_2_0.sh
+	echo 'export SNAP=${HOME}/snap' >> ${OSK_HOME}/OpenSARKit_source.bash
+	echo 'export SNAP_EXE=${SNAP}/bin/gpt'  >> ${OSK_HOME}/OpenSARKit_source.bash
 fi
 
 echo '#export to Path' >> ${OSK_HOME}/OpenSARKit_source.bash
-echo 'export PATH=$PATH:${PYTHON_BIN}:${RSGISLIB_BIN}:${ASF_BIN}:${POLSAR_BIN}:${SAGA_BIN}:${S1TBX_BIN}:${NEST_BIN}:${GDAL_BIN}:${DOWNLOAD_BIN}:${ASF_EXE}:${S1TBX}' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'export PATH=$PATH:${PYTHON_BIN}:${RSGISLIB_BIN}:${ASF_BIN}:${POLSAR_BIN}:${SAGA_BIN}:${S1TBX_BIN}:${NEST_BIN}:${GDAL_BIN}:${DOWNLOAD_BIN}:${ASF_EXE}:${SNAP}' >> ${OSK_HOME}/OpenSARKit_source.bash
 
 # Update global environment variables"
 mv ${OSK_HOME}/OpenSARKit_source.bash /etc/profile.d/OpenSARKit.sh

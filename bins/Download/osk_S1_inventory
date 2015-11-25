@@ -6,10 +6,11 @@ if [ "$#" != "7" ]; then
 
 	echo -e ""
 	echo -e "----------------------------------"
-	echo -e " OpenSARKit, v.01"
-	echo -e " Download Sentinel-1 data from ESA Scihub"
+	echo -e " OpenSARKit, version ${OSK_VERSION}"
+	echo -e " Search Sentinel-1 data on ESA Scihub"
 	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
-#	echo -e " Author: Andreas Vollrath"
+	echo -e " Author: ${AUTHOR_1}"
+	echo -e " Contact: ${CONTACT_1}"
 	echo -e "----------------------------------"
 	echo -e ""
 	echo -e "----------------------------------"
@@ -43,11 +44,13 @@ if [ "$#" != "7" ]; then
 	echo -e "			  1 (data inventory + direct data download)"
 	exit 1
 else
+	echo -e ""
 	echo -e "----------------------------------"
-	echo -e " OpenSARKit, v.01"
-	echo -e " Download Sentinel-1 data from ESA Scihub"
+	echo -e " OpenSARKit, version ${OSK_VERSION}"
+	echo -e " Search Sentinel-1 data on ESA Scihub"
 	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
-	echo -e " Author: Andreas Vollrath"
+	echo -e " Author: ${AUTHOR_1}"
+	echo -e " Contact: ${CONTACT_1}"
 	echo -e "----------------------------------"
 	echo -e ""
 	echo -e "----------------------------------"
@@ -95,14 +98,6 @@ AOI="POLYGON(($X_MIN$Y_MIN, $X_MIN$Y_MAX, $X_MAX$Y_MAX, $X_MAX$Y_MIN, $X_MIN$Y_M
 echo "data inventory from scihub server"
 wget --no-check-certificate --user=${USERNAME} --password=${PW} -O ${TMP_DIR}/datalist "https://scihub.esa.int/dhus//search?q=producttype:${PRODUCT_TYPE}+AND+polarisationMode:${POLAR}+AND+( footprint:\"Intersects($AOI)\")+AND+${PERIOD}&rows=10000&start=0"
 
-# get the important info out of the xml result
-#xml_grep title ${TMP_DIR}/datalist --text_only | tail -n +2 > ${TMP_DIR}/scenes
-#xml_grep title ${TMP_DIR}/datalist --text_only | tail -n +2 | cut -c 18-25 > ${TMP_DIR}/dates
-#xml_grep id ${TMP_DIR}/datalist --text_only | tail -n +2 > ${TMP_DIR}/uuid
-#xml_grep str ${TMP_DIR}/datalist --text_only | grep "POLYGON ((" | sed 's|POLY|\"POLY|g' | sed 's|))|))"|g' > ${TMP_DIR}/polys
-#xml_grep str ${TMP_DIR}/datalist --text_only | grep "orbitdirection" > ${TMP_DIR}/orbit
-#xml_grep str ${TMP_DIR}/datalist --text_only | grep "swathidentifier" > ${TMP_DIR}/swath
-
 # get nr. of products
 NR_OF_PRODUCTS=`s1_ident ${TMP_DIR}/datalist | wc -l `
 echo "-------------------------------------------------"
@@ -110,6 +105,7 @@ echo " There are ${NR_OF_PRODUCTS} Products in the Hub"
 echo "-------------------------------------------------"
 echo ""
 
+# get the important info out of the xml JSON file
 s1_ident ${TMP_DIR}/datalist > ${TMP_DIR}/scenes
 s1_date ${TMP_DIR}/datalist > ${TMP_DIR}/dates
 s1_uuid ${TMP_DIR}/datalist > ${TMP_DIR}/uuid
@@ -143,42 +139,13 @@ echo "		<GeometryField encoding=\"WKT\" field=\"WKTGeom\"> </GeometryField >" >>
 echo "	</OGRVRTLayer>" >> ${TMP_DIR}/wkt.vrt
 echo "</OGRVRTDataSource>" >> ${TMP_DIR}/wkt.vrt
 
-# convert to final schapefile
+# convert to final shapefile
 ogr2ogr -f "Esri Shapefile" "${INV}/S1_${POLAR}.shp" "${TMP_DIR}/wkt.vrt"
 
+# download if needed
 if [[ $7 == 1 ]];then
 	osk_S1_download ${PROC_DIR} ${INV}/S1_${POL_MODE}.shp
 fi
 
-#	mkdir -p ${PROC_DIR}/ZIP
-
-#	while read line; do 
-
-		# get the data via the UUID
-#  		SCENE=`echo $line | awk -F "," $'{print $1}'`			  
-#		UUID=`echo $line | awk -F "," $'{print $2}'`		
-#		DL_ADDRESS='https://scihub.esa.int/dhus/odata/v1/Products('"'${UUID}'"')/$value'
-#		echo "Downloading $SCENE"
-
-		# prepare a loop to avoid uncomplete data downloads		
-#		i=1
-#		echo "bla" > ${TMP_DIR}/tmp_error
-		# do the loop 
-#		for(( i=1; i<=2; i++ ));do
-
-#			if grep -q "download completed" ${TMP_DIR}/tmp_error;then
-#				i=3
-#			else
-#				i=1
-#				aria2c --check-certificate=false --continue=true --http-user="${USERNAME}" --http-passwd="${PW}" "${DL_ADDRESS}" > ${TMP_DIR}/tmp_error
-#			fi
-#		done
-
-#		echo "Moving $SCENE to ${PROC_DIR}/S1/ZIP"
-#		DATE=${SCENE:17:8}
-#		mkdir -p ${PROC_DIR}/ZIP/${DATE}/
-#		mv ${SCENE}.zip ${PROC_DIR}/ZIP/${DATE}/${SCENE}.zip
-
-#	done  < ${TMP_DIR}/data
-#fi
+# remove TMP folder
 rm -rf ${TMP_DIR}

@@ -7,20 +7,21 @@
       <file>${input}</file>
     </parameters>
   </node>
-  <node id="Write">
-    <operator>Write</operator>
+  <node id="Remove-GRD-Border-Noise">
+    <operator>Remove-GRD-Border-Noise</operator>
     <sources>
-      <sourceProduct refid="Terrain-Flattening"/>
+      <sourceProduct refid="Apply-Orbit-File"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <file>${output}</file>
-      <formatName>BEAM-DIMAP</formatName>
+      <selectedPolarisations/>
+      <borderLimit>400</borderLimit>
+      <trimThreshold>50.0</trimThreshold>
     </parameters>
   </node>
   <node id="Calibration">
     <operator>Calibration</operator>
     <sources>
-      <sourceProduct refid="Read"/>
+      <sourceProduct refid="Remove-GRD-Border-Noise"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
       <sourceBands/>
@@ -37,56 +38,43 @@
       <outputDNBand>false</outputDNBand>
     </parameters>
   </node>
-  <node id="Terrain-Flattening">
-    <operator>Terrain-Flattening</operator>
+  <node id="Apply-Orbit-File">
+    <operator>Apply-Orbit-File</operator>
     <sources>
-      <sourceProduct refid="Multilook"/>
+      <sourceProduct refid="Read"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <sourceBands>
-        <band>Beta0_VH</band>
-        <band>Beta0_VV</band>
-      </sourceBands>
-      <demName>SRTM 3Sec</demName>
-      <demResamplingMethod>BILINEAR_INTERPOLATION</demResamplingMethod>
-      <externalDEMFile/>
-      <externalDEMNoDataValue>0.0</externalDEMNoDataValue>
-      <outputSimulatedImage>false</outputSimulatedImage>
+      <orbitType>Sentinel Precise (Auto Download)</orbitType>
+      <polyDegree>3</polyDegree>
+      <continueOnFail>true</continueOnFail>
     </parameters>
   </node>
-  <node id="Multilook">
-    <operator>Multilook</operator>
+  <node id="Write">
+    <operator>Write</operator>
     <sources>
       <sourceProduct refid="Calibration"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <sourceBands>
-        <band>Beta0_VH</band>
-        <band>Beta0_VV</band>
-      </sourceBands>
-      <nRgLooks>3</nRgLooks>
-      <nAzLooks>3</nAzLooks>
-      <outputIntensity>true</outputIntensity>
-      <grSquarePixel>true</grSquarePixel>
-      <note>Currently, detection for complex data is performed without any resampling</note>
+      <file>${output}</file>
+      <formatName>BEAM-DIMAP</formatName>
     </parameters>
   </node>
   <applicationData id="Presentation">
     <Description/>
     <node id="Read">
-      <displayPosition x="27.0" y="26.0"/>
+      <displayPosition x="15.0" y="11.0"/>
     </node>
-    <node id="Write">
-      <displayPosition x="455.0" y="135.0"/>
+    <node id="Remove-GRD-Border-Noise">
+      <displayPosition x="95.0" y="97.0"/>
     </node>
     <node id="Calibration">
-      <displayPosition x="53.0" y="64.0"/>
+      <displayPosition x="250.0" y="146.0"/>
     </node>
-    <node id="Terrain-Flattening">
-      <displayPosition x="148.0" y="140.0"/>
+    <node id="Apply-Orbit-File">
+      <displayPosition x="23.0" y="52.0"/>
     </node>
-    <node id="Multilook">
-      <displayPosition x="100.0" y="105.0"/>
+    <node id="Write">
+      <displayPosition x="321.0" y="188.0"/>
     </node>
   </applicationData>
 </graph>

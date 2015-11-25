@@ -10,9 +10,11 @@ if [ "$#" != "7" ]; then
 
 	echo -e ""
 	echo -e "----------------------------------"
-	echo -e " OpenSARKit, v.01"
-	echo -e " Bulk download, preprocess ALOS Path mosaics for a specific Area of Interest"
-	echo -e " written by: Andreas Vollrath, UN-FAO, Rome"
+	echo -e " OpenSARKit, version ${OSK_VERSION}"
+	echo -e " Bulk download, preprocess ALOS Path mosaics for a specific Area of Interest from ASF"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+	echo -e " Author: ${AUTHOR_1}"
+	echo -e " Contact: ${CONTACT_1}"
 	echo -e "----------------------------------"
 	echo -e ""
 	echo -e "----------------------------------"
@@ -102,14 +104,14 @@ osk_prepare_project ${PROC_DIR} ${AOI}
 #--------------------------------------------------------------------------
 # 3 download scenes
 cd ${PROC_DIR}/ALOS
-osk_download_ALOS_ASF ${PROC_DIR}/ALOS ${PROC_DIR}/AOI/convex_hull_aoi.shp ${START} ${END} ${MODE} ${PROCESSING} ${UNAME} ${PW}
+osk_ALOS_ASF_download ${PROC_DIR}/ALOS ${PROC_DIR}/AOI/convex_hull_aoi.shp ${START} ${END} ${MODE} ${PROCESSING} ${UNAME} ${PW}
 unset PW
 #--------------------------------------------------------------------------
 
 #--------------------------------------------------------------------------
 # 4 preproces scenes
 cd ${PROC_DIR}/ALOS/${MODE}
-osk_bulk_preproc_ALOS_ASF_L1.5 . ${PROC_DIR}/DEM/DEM_SRTM3V4.1.tif
+osk_ALOS_ASF_L1.5_bulk_preproc . ${PROC_DIR}/DEM/DEM_SRTM3V4.1.tif
 #--------------------------------------------------------------------------
 
 #--------------------------------------------------------------------------

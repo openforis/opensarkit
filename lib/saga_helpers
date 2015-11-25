@@ -37,11 +37,8 @@ function osk_md_filter() {
 
     mkdir -p ${TMP_DIR_saga}
 
-echo $METHOD
-echo $ABS_NOISE
-echo $REL_NOISE
     # check input format
-    IN_FORMAT=`gdalformat $1`
+    IN_FORMAT=`gdal_format $1`
 
     # do the filtering
     if [ "$IN_FORMAT" == "SAGA" ];then
@@ -51,7 +48,13 @@ echo $REL_NOISE
 	    saga_cmd -f=r grid_filter 3 -INPUT:${TMP_DIR_saga}/tmp.saga.sgrd -RESULT:${TMP_DIR_saga}/tmp.saga.filtered.sgrd -NOISE_ABS:${ABS_NOISE} -NOISE_REL:${REL_NOISE} -METHOD:${METHOD}
     fi
 
-gdalwarp -srcnodata -99999 -dstnodata 0 -of $GDAL_saga ${TMP_DIR_saga}/tmp.saga.filtered.sdat $2
+    if [ ${GDAL_saga} == "SAGA" ];then
 
+	gdalwarp -dstnodata -99999 -of ${GDAL_saga} ${TMP_DIR_saga}/tmp.saga.filtered.sdat $2
+
+    else	
+	
+	gdalwarp -srcnodata -99999 -dstnodata 0 -of ${GDAL_saga} ${TMP_DIR_saga}/tmp.saga.filtered.sdat $2
+    fi
 rm -rf ${TMP_DIR_saga}
 }

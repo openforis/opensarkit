@@ -13,7 +13,7 @@ if [ "$#" != "2" ]; then
 	echo -e " OpenSARKit, v.01"
 	echo -e " Preprocessing ALOS RTC data from ASF server"
 	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
-#	echo -e " Author: Andreas Vollrath"
+#	echo -e " Author: ${AUTHOR_1}"
 	echo -e "----------------------------------"
 	echo -e ""
 	echo -e "----------------------------------"
@@ -35,7 +35,7 @@ else
 	echo -e " OpenSARKit, v.01"
 	echo -e " Preprocessing ALOS Level 1.5 scene from ASF server"
 	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
-#	echo -e " Author: Andreas Vollrath"
+#	echo -e " Author: ${AUTHOR_1}"
 	echo -e "----------------------------------"
 	echo -e ""
 	echo -e "----------------------------------"
@@ -125,9 +125,9 @@ OUTPUT_SPK_VV=${TMP_DIR}/Gamma0_VV.tif
 #-------------------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------------------
-# Launch S1TBX for HH channel speckle filtering
+# Launch SNAP for HH channel speckle filtering
 echo "Apply Lee Speckle Filter to ${SCENE_ID}"
-bash ${S1TBX_EXE} ${S1TBX_GRAPHS}/Refined_Lee.xml -Pinput=${GAMMA_HH} -Poutput=${OUTPUT_SPK_HH} 2>&1 | tee  ${TMP_DIR}/tmplog
+bash ${SNAP_EXE} ${SNAP_GRAPHS}/Refined_Lee.xml -Pinput=${GAMMA_HH} -Poutput=${OUTPUT_SPK_HH} 2>&1 | tee  ${TMP_DIR}/tmplog
 #-------------------------------------------------------------------------------------------
 
 
@@ -136,7 +136,7 @@ bash ${S1TBX_EXE} ${S1TBX_GRAPHS}/Refined_Lee.xml -Pinput=${GAMMA_HH} -Poutput=$
 if grep -q Error ${TMP_DIR}/tmplog; then 	
 	echo "2nd try"
 	rm -rf ${OUTPUT_SPK_HH} 
-	sh ${S1TBX_EXE} ${TMP_DIR}/Refined_Lee.xml -Pinput=${GAMMA_HH} -Poutput=$${OUTPUT_SPK_HH} 2>&1 | tee  ${TMP_DIR}/tmplog
+	sh ${SNAP_EXE} ${TMP_DIR}/Refined_Lee.xml -Pinput=${GAMMA_HH} -Poutput=$${OUTPUT_SPK_HH} 2>&1 | tee  ${TMP_DIR}/tmplog
 fi
 rm -f ${TMP_DIR}/Refined_Lee.xml 
 #-------------------------------------------------------------------------------------------
@@ -144,9 +144,9 @@ rm -f ${TMP_DIR}/Refined_Lee.xml
 if [[ "${MODE}" == "FBD" || "${MODE}" == "PLR" ]];then
 
 	#-------------------------------------------------------------------------------------------
-	# Launch S1TBX for HV channel speckle filtering
+	# Launch SNAP for HV channel speckle filtering
 	echo "Apply Lee Speckle Filter to ${SCENE_ID}"
-	bash ${S1TBX_EXE} ${S1TBX_GRAPHS}/Refined_Lee.xml -Pinput=${GAMMA_HV} -Poutput=${OUTPUT_SPK_HV} 2>&1 | tee  ${TMP_DIR}/tmplog
+	bash ${SNAP_EXE} ${SNAP_GRAPHS}/Refined_Lee.xml -Pinput=${GAMMA_HV} -Poutput=${OUTPUT_SPK_HV} 2>&1 | tee  ${TMP_DIR}/tmplog
 	#-------------------------------------------------------------------------------------------
 
 	#-------------------------------------------------------------------------------------------
@@ -154,7 +154,7 @@ if [[ "${MODE}" == "FBD" || "${MODE}" == "PLR" ]];then
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
 		echo "2nd try"
 		rm -rf ${OUTPUT_SPK_HH} 
-		sh ${S1TBX_EXE} ${TMP_DIR}/Refined_Lee.xml -Pinput=${GAMMA_HH} -Poutput=$${OUTPUT_SPK_HH} 2>&1 | tee  ${TMP_DIR}/tmplog
+		sh ${SNAP_EXE} ${TMP_DIR}/Refined_Lee.xml -Pinput=${GAMMA_HH} -Poutput=$${OUTPUT_SPK_HH} 2>&1 | tee  ${TMP_DIR}/tmplog
 	fi
 	rm -f ${TMP_DIR}/Refined_Lee.xml 
 	#-------------------------------------------------------------------------------------------
@@ -162,9 +162,9 @@ if [[ "${MODE}" == "FBD" || "${MODE}" == "PLR" ]];then
 elif [[ "${MODE}" == "PLR" ]];then
 
 	#-------------------------------------------------------------------------------------------
-	# Launch S1TBX for VH channel speckle filtering
+	# Launch SNAP for VH channel speckle filtering
 	echo "Apply Lee Speckle Filter to ${SCENE_ID}"
-	bash ${S1TBX_EXE} ${S1TBX_GRAPHS}/Refined_Lee.xml -Pinput=${GAMMA_VH} -Poutput=${OUTPUT_SPK_VH} 2>&1 | tee  ${TMP_DIR}/tmplog
+	bash ${SNAP_EXE} ${SNAP_GRAPHS}/Refined_Lee.xml -Pinput=${GAMMA_VH} -Poutput=${OUTPUT_SPK_VH} 2>&1 | tee  ${TMP_DIR}/tmplog
 	#-------------------------------------------------------------------------------------------
 
 
@@ -173,15 +173,15 @@ elif [[ "${MODE}" == "PLR" ]];then
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
 		echo "2nd try"
 		rm -rf ${OUTPUT_SPK_HH} 
-		sh ${S1TBX_EXE} ${TMP_DIR}/Refined_Lee.xml -Pinput=${GAMMA_VH} -Poutput=$${OUTPUT_SPK_VH} 2>&1 | tee  ${TMP_DIR}/tmplog
+		sh ${SNAP_EXE} ${TMP_DIR}/Refined_Lee.xml -Pinput=${GAMMA_VH} -Poutput=$${OUTPUT_SPK_VH} 2>&1 | tee  ${TMP_DIR}/tmplog
 	fi
 	rm -f ${TMP_DIR}/Refined_Lee.xml 
 	#-------------------------------------------------------------------------------------------
 
 	#-------------------------------------------------------------------------------------------
-	# Launch S1TBX for VV channel speckle filtering
+	# Launch SNAP for VV channel speckle filtering
 	echo "Apply Lee Speckle Filter to ${SCENE_ID}"
-	bash ${S1TBX_EXE} ${S1TBX_GRAPHS}/Refined_Lee.xml -Pinput=${GAMMA_VV} -Poutput=${OUTPUT_SPK_VV} 2>&1 | tee  ${TMP_DIR}/tmplog
+	bash ${SNAP_EXE} ${SNAP_GRAPHS}/Refined_Lee.xml -Pinput=${GAMMA_VV} -Poutput=${OUTPUT_SPK_VV} 2>&1 | tee  ${TMP_DIR}/tmplog
 	#-------------------------------------------------------------------------------------------
 
 
@@ -190,7 +190,7 @@ elif [[ "${MODE}" == "PLR" ]];then
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
 		echo "2nd try"
 		rm -rf ${OUTPUT_SPK_HH} 
-		sh ${S1TBX_EXE} ${TMP_DIR}/Refined_Lee.xml -Pinput=${GAMMA_VV} -Poutput=$${OUTPUT_SPK_VV} 2>&1 | tee  ${TMP_DIR}/tmplog
+		sh ${SNAP_EXE} ${TMP_DIR}/Refined_Lee.xml -Pinput=${GAMMA_VV} -Poutput=$${OUTPUT_SPK_VV} 2>&1 | tee  ${TMP_DIR}/tmplog
 	fi
 	rm -f ${TMP_DIR}/Refined_Lee.xml 
 	#-------------------------------------------------------------------------------------------

@@ -1,23 +1,43 @@
 #! /bin/bash
 
 if [ "$#" != "3" ]; then  
-	echo -e "*** Postprocessing script ***"
-	echo -e "*** OpenSARKit, v.01  ***"
 	echo -e ""
-	echo -e "usage: osk_w2w_mosaic <mosaic_folder> <DEM> <output_folder>"
+	echo -e "----------------------------------"
+	echo -e " Postprocessing script"
+	echo -e " OpenSARKit, version ${VERSION}"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+	echo -e " Author: ${AUTHOR}"
+	echo -e " Contact: ${CONTACT}"
+	echo -e "----------------------------------"
 	echo -e ""
-	echo -e "input parameters:"
-	echo -e "mosaic_folder		(input) folder where w2w mosaics are stored"
-	echo -e "DEM			(input) Digital Elevation model, that covers the area of the w2w mosaics"
-	echo -e "output_folder		(output) folder, where the output stack will be saved"
+	echo -e " syntax: osk_w2w_mosaic <mosaic_folder> <DEM> <output_folder>"
 	echo -e ""
-	echo -e "Software components:"
+	echo -e " input parameters:"
+	echo -e " mosaic_folder		(input) folder where w2w mosaic files are stored (outcome of osk_w2w_mosaic)"
+	echo -e " DEM			(input) Digital Elevation model, that covers the area of the w2w mosaics"
+	echo -e " output_folder		(output) folder, where the output stack will be saved"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Software components:"
 	echo -e "	- gdal-libraries"
-	echo -e "	- Sentinel-1 Toolbox"
+	echo -e "	- SNAP Toolbox"
+	echo -e "----------------------------------"
 	exit 1
 else
-	echo -e "*** Postprocessing script ***"
-	echo -e "*** OpenSARKit, v.01  ***"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Postprocessing script"
+	echo -e " OpenSARKit, version ${VERSION}"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+	echo -e " Author: ${AUTHOR}"
+	echo -e " Contact: ${CONTACT}"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Software components:"
+	echo -e "	- gdal-libraries"
+	echo -e "	- SNAP Toolbox"
+	echo -e "----------------------------------"
 	echo -e ""
 
 	cd $1
@@ -51,7 +71,7 @@ sed -i "s|INPUT_TR|${INPUT_HH}|g" ${TMP_DIR}/TEXTURE_HH.xml
 sed -i "s|OUTPUT_TR|${OUTPUT_TEXTURE_HH}|g" ${TMP_DIR}/TEXTURE_HH.xml
 
 echo "Calculate GLCM Texture measurements for HH channel"
-sh ${S1TBX_EXE} ${TMP_DIR}/TEXTURE_HH.xml 2>&1 | tee  ${TMP_DIR}/tmplog
+sh ${S1TBX_EXE} ${TMP_DIR}/TEXTURE_HH.xml 2>&1 | tee ${TMP_DIR}/tmplog
 
 # in case it fails try a second time	
 if grep -q Error ${TMP_DIR}/tmplog; then 	
