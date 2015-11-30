@@ -6,11 +6,11 @@ if [ "$#" != "3" ]; then
 	
 	echo -e ""
 	echo -e "----------------------------------"
-	echo -e " OpenSARKit, v.01"
+	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
 	echo -e " Bulk preprocessing Sentinel-1 GRD data"
 	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
-#	echo -e " Author: Andreas Vollrath"
-#	echo -e " Contact: andreas.vollrath@fao.org"
+	echo -e " Author: ${AUTHOR_1}"
+	echo -e " Contact: ${CONTACT_1}"
 	echo -e "----------------------------------"
 	echo -e ""
 	echo -e "----------------------------------"
@@ -20,9 +20,9 @@ if [ "$#" != "3" ]; then
 	echo -e "	- saga"
 	echo -e "----------------------------------"
 	echo -e ""
-	echo -e "Usage: osk_S1_GRD_bulk_preprocess <input_folder> <elevation> <output_folder>"
+	echo -e " Usage: osk_S1_GRD_bulk_preprocess <input_folder> <elevation> <output_folder>"
 	echo -e ""
-	echo -e "input parameters:"
+	echo -e " input parameters:"
 	echo -e " filename		(input) filename of the downloaded zip file"
 	echo -e " elevation		(input) filename to the digital elevation model"
 	echo -e ""
@@ -32,29 +32,20 @@ if [ "$#" != "3" ]; then
 	exit 1
 else
 	echo -e ""
-	echo -e "----------------------------------"
-	echo -e " OpenSARKit, v.01"
-	echo -e " Bulk preprocessing Sentinel-1 GRD data"
-	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
-#	echo -e " Author: Andreas Vollrath"
-#	echo -e " Contact: andreas.vollrath@fao.org"
-	echo -e "----------------------------------"
-	echo -e ""
-	echo -e "----------------------------------"
-	echo -e " Software dependencies:"
-	echo -e "	- Sentinel 1 Toolbox (version 1.1.1)"
-	echo -e "	- gdal-bin"
-	echo -e "	- saga"
-	echo -e "----------------------------------"
+	echo -e "----------------------------------------------------------------------------------"
+	echo -e " Launching bulk processing script for Sentinel-1 GRD products"
+	echo -e "----------------------------------------------------------------------------------"
 	echo -e ""
 
 	# set up initial script variables
 	cd $1
 	PROC_DIR=`pwd`
-	TMP=${PROC_DIR}/TMP/
-	export TMP_DIR=${PROC_DIR}/TMP/
+	export TMP_DIR=${PROC_DIR}/TMP
 	mkdir -p ${TMP_DIR}
 	DEM_FILE=$2
+	CPU=`nproc`
+	source ${OPENSARKIT}/lib/saga_helpers
+	source ${OPENSARKIT}/lib/gdal_helpers
 	#mkdir -p $3
 	#cd $3
 	#OUT_DIR=`pwd`
@@ -68,31 +59,58 @@ for LINE in `ls -1 ${PROC_DIR}`;do
 	
 	if [ `ls -1 | wc -l` -eq 1 ];then
 
+
 		SCENE=`ls` 
-		echo "Processing Scene ${SCENE} "
+		echo " Processing File ${SCENE} "
 		osk_S1_GRD_single_preprocess ${SCENE} ${DEM_FILE} .
 
-	else
+	else # in case of more
 
-		ls -1 | tr '\n' ',' > $TMP_DIR/slicelist
+		
 
-		echo "Assembling the products of the same swath"
-		bash ${S1TBX_EXE} ${S1TBX_GRAPHS}/S1_GRD_slice_assembly.xml -Pfilelist=`cat ${TMP_DIR}/slicelist` -Poutput=${TMP_DIR}/${LINE}.dim
 
-		echo "Processing the swath image"
-		osk_S1_GRD_single_preprocess ${TMP_DIR}/${LINE}.dim ${DEM_FILE} .
+		for FILE in `ls -1 -d ${PWD}/*zip`;do
+			# get the basic filename
+			BASE=`basename ${FILE}`
+			
+			echo " Preprocessing File: ${FILE}"
+			echo " Importing S1 GRD data file and apply the precise orbit file, remove border noise and calibrate the data to beta0"
+			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_Orb_Noise_Brd_Cal.xml -x -Pinput=${FILE} -Poutput=${TMP_DIR}/${BASE}-CAL.dim
+	
+		done
+
+		
+
+		echo " Assembling the products of the same swath"
+		bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_slice_assembly.xml -Pfilelist=$(ls -d -1 ${TMP_DIR}/*.dim | tr '\n' ',' | rev | cut -c 2- | rev) -Poutput=${TMP_DIR}/${LINE}.dim
+
+		echo " Applying the Terrain Flattening and multilook the data with a factor of 3"
+		bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TF_ML.xml -x -Pinput=${TMP_DIR}/${LINE}.dim -Poutput=${TMP_DIR}/TF.dim
+
+		echo " Applying the Refined Lee Speckle Filter and doing the Geometric Terrain Correction (i.e. Geocoding)"
+		bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_SPK_TC.xml -x -Pinput=${TMP_DIR}/TF.dim -Poutput=${TMP_DIR}/TF_TC.dim
+
+		OUT_DIR=${PROC_DIR}/${LINE}
+
+		osk_md_filter ${TMP_DIR}/TF_TC.data/Gamma0_VV.img ${OUT_DIR}/Gamma0_VV.md-filtered.sdat SAGA 
+		osk_md_filter ${TMP_DIR}/TF_TC.data/Gamma0_VH.img ${OUT_DIR}/Gamma0_VH.md-filtered.sdat SAGA
+
+		saga_cmd -f=r -c=${CPU} grid_calculus 1 -GRIDS:${OUT_DIR}/Gamma0_VV.md-filtered.sgrd -XGRIDS:${OUT_DIR}/Gamma0_VH.md-filtered.sgrd -RESULT:${OUT_DIR}/VVVH_ratio.sgrd -FORMULA:"a / b"
+
+		gdalbuildvrt -vrtnodata 0 -separate ${OUT_DIR}/RGB_${DATE}.vrt ${OUT_DIR}/Gamma0_VV.md-filtered.sdat ${OUT_DIR}/Gamma0_VH.md-filtered.sdat ${OUT_DIR}/VVVH_ratio.sdat
 	fi
 
 	mkdir -p ZIP
 	mv *.zip ZIP
 	rm -rf target*
+	rm -rf ${TMP_DIR}/*
 
 	cd ../
 
 done
 
 
-
+rm -rf ${TMP_DIR}
 
 
 

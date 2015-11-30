@@ -5,7 +5,7 @@ if [ "$#" != "4" ]; then
 
 	echo -e ""
 	echo -e "----------------------------------"
-	echo -e " Open Foris SAR Kit Remote, ${VERSION}"
+	echo -e " Open Foris SARKit - Remote Access Scripts, ${OSK_VERSION}"
 	echo -e " Preparing K&C mosaics on a remote machine"
 	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
 #	echo -e " Author: Andreas Vollrath"
@@ -48,9 +48,9 @@ else
 fi
 
 # start remote job
-read -r -p "Type in the username of the remote machine" USERNAME
-read -r -p "Type in the (IP)-Address of the remote machine" ADRESS
-read -r -p "Type in the name of your Project (will be the folder in your remote home directory where the processed data will be stored)" PROJECT
+read -r -p "Type in the username of the remote machine: " USERNAME
+read -r -p "Type in the (IP)-Address of the remote machine: " ADRESS
+read -r -p "Type in the name of your Project (will be the folder in your remote home directory where the processed data will be stored): " PROJECT
 
 #execute 
 ssh -n -f ${USERNAME}@${ADRESS} "bash -c \"mkdir ~/${PROJECT}; nohup bash osk_prepare_KC_mosaic ~/${PROJECT}/ $1 $2 $3 $4 > log 2>&1 &\""
