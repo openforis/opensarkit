@@ -1,12 +1,12 @@
 #! /bin/bash
 
-VERSION="Version 0.1"
+OSK_VERSION="Version 0.1"
 
 if [ "$#" == "0" ];then
 
 	echo -e ""
 	echo -e "----------------------------------"
-	echo -e " OpenSARKit, ${VERSION}"
+	echo -e " Open FOris SAR Toolkit, version ${OSK_VERSION}"
 	echo -e " Install script"
 	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
 #	echo -e " Author: Andreas Vollrath"
@@ -18,7 +18,7 @@ elif [ "$#" == "1" ];then
 
 	echo -e ""
 	echo -e "----------------------------------"
-	echo -e " OpenSARKit, ${VERSION}"
+	echo -e " Open FOris SAR Toolkit, version ${OSK_VERSION}"
 	echo -e " Install script"
 	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
 #	echo -e " Author: Andreas Vollrath"
@@ -30,7 +30,7 @@ else
 
 	echo -e ""
 	echo -e "----------------------------------"
-	echo -e " OpenSARKit, ${VERSION}"
+	echo -e " Open FOris SAR Toolkit, version ${OSK_VERSION}"
 	echo -e " Install script"
 	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
 #	echo -e " Author: Andreas Vollrath"
@@ -149,6 +149,7 @@ echo '# export bins' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export NEST_BIN=${OPENSARKIT}/bins/NEST' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export SNAP_BIN=${OPENSARKIT}/bins/SNAP' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export ASF_BIN=${OPENSARKIT}/bins/ASF' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'export KC_BIN=${OPENSARKIT}/bins/KC' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export DOWNLOAD_BIN=${OPENSARKIT}/bins/Download' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export PYTHON_BIN=${OPENSARKIT}/python' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export GDAL_BIN=${OPENSARKIT}/bins/GDAL' >> ${OSK_HOME}/OpenSARKit_source.bash
@@ -243,5 +244,5 @@ wget https://www.dropbox.com/s/58cnjj8xymzkbac/global_info.sqlite?dl=0
 mv global_info.sqlite?dl=0 global_info.sqlite
 
 echo "--------------------------------"
-echo " Installation of OFSK completed"
+echo " Installation of OFST completed"
 echo "--------------------------------"

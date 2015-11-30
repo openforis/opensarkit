@@ -40,8 +40,7 @@ else
 	# set up initial script variables
 	cd $1
 	PROC_DIR=`pwd`
-	export TMP_DIR=${PROC_DIR}/TMP
-	mkdir -p ${TMP_DIR}
+	
 	DEM_FILE=$2
 	CPU=`nproc`
 	source ${OPENSARKIT}/lib/saga_helpers
@@ -56,7 +55,9 @@ for LINE in `ls -1 ${PROC_DIR}`;do
 	
 	cd ${LINE}
 	# list zip files
-	
+	export TMP_DIR=${PROC_DIR}/TMP
+	mkdir -p ${TMP_DIR}
+
 	if [ `ls -1 | wc -l` -eq 1 ];then
 
 
@@ -103,15 +104,8 @@ for LINE in `ls -1 ${PROC_DIR}`;do
 	mkdir -p ZIP
 	mv *.zip ZIP
 	rm -rf target*
-	rm -rf ${TMP_DIR}/*
+	rm -rf ${TMP_DIR}
 
 	cd ../
 
 done
-
-
-rm -rf ${TMP_DIR}
-
-
-
-
