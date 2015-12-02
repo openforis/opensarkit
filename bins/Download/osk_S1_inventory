@@ -6,7 +6,7 @@ if [ "$#" != "7" ]; then
 
 	echo -e ""
 	echo -e "----------------------------------"
-	echo -e " OpenSARKit, version ${OSK_VERSION}"
+	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
 	echo -e " Search Sentinel-1 data on ESA Scihub"
 	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
 	echo -e " Author: ${AUTHOR_1}"
@@ -46,7 +46,7 @@ if [ "$#" != "7" ]; then
 else
 	echo -e ""
 	echo -e "----------------------------------"
-	echo -e " OpenSARKit, version ${OSK_VERSION}"
+	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
 	echo -e " Search Sentinel-1 data on ESA Scihub"
 	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
 	echo -e " Author: ${AUTHOR_1}"

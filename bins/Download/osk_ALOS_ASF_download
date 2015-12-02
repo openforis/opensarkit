@@ -1,75 +1,13 @@
-#! /bin/bash
-
-#----------------------------------------------------------------------
-#	0 Set up Script variables
-#----------------------------------------------------------------------
+#! /bin/bash 
 
 #-------------------------------------------------------------------------------------------	
 # 	0.1 Check for right usage & set up basic Script Variables
-if [ "$#" == "6" ]; then
+if [ "$#" != "2" ]; then
 
 	echo -e ""
 	echo -e "----------------------------------"
-	echo -e " OpenSARKit, version ${OSK_VERSION}"
-	echo -e " Download ALOS data from ASF server"
-	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
-	echo -e " Author: ${AUTHOR_1}"
-	echo -e " Contact: ${CONTACT_1}"
-	echo -e "----------------------------------"
-	echo -e ""
-	echo -e "----------------------------------"
-	echo -e " Software packages used"
-	echo -e "	- aria2"
-	echo -e "	- curl"
-	echo -e "	- ogr2ogr"
-	echo -e "----------------------------------"
-   cd $1
-   PROC_DIR=`pwd`
-   TMP_DIR=${PROC_DIR}/TMP
-   mkdir -p ${TMP_DIR}
-	AOI=$2
-	START=$3
-	END=$4
-	MODE=$5
-	PROCESSING="processingLevel=$6"
-
-elif [ "$#" == "8" ]; then
-
-	echo -e ""
-	echo -e "----------------------------------"
-	echo -e " OpenSARKit, version ${OSK_VERSION}"
-	echo -e " Download ALOS data from ASF server"
-	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
-	echo -e " Author: ${AUTHOR_1}"
-	echo -e " Contact: ${CONTACT_1}"
-	echo -e "----------------------------------"
-	echo -e ""
-	echo -e "----------------------------------"
-	echo -e " Software packages used"
-	echo -e "	- aria2"
-	echo -e "	- curl"
-	echo -e "	- ogr2ogr"
-	echo -e "----------------------------------"
-	echo -e ""
-	cd $1
-   PROC_DIR=`pwd`
-   TMP_DIR=${PROC_DIR}/TMP
-   mkdir -p ${TMP_DIR}
-	AOI=$2
-	START=$3
-	END=$4
-	MODE=$5
-	PROCESSING="processingLevel=$6"
-	SCRIPT_MODE=NI
-	UNAME=$7
-	PW=$8
-
-else
-
-	echo -e ""
-	echo -e "----------------------------------"
-	echo -e " OpenSARKit, version ${OSK_VERSION}"
-	echo -e " Download ALOS data from ASF server"
+	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
+	echo -e " Download ALOS data from an ASF server with an inventory shapefile"
 	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
 	echo -e " Author: ${AUTHOR_1}"
 	echo -e " Contact: ${CONTACT_1}"
@@ -78,116 +16,91 @@ else
 	echo -e "----------------------------------"
 	echo -e " Software dependencies:"
 	echo -e "	- aria2"
-	echo -e "	- curl"
-	echo -e "	- ogr2ogr"
+	echo -e "	- ogrinfo"
 	echo -e "----------------------------------"
 	echo -e ""
-	echo -e " syntax: osk_download_ALOS_ASF <output_folder> <area_of_interest> <start_date> <end_date> <mode> <processing_level>"
+	echo -e " syntax: osk_ALOS_ASF_download <output_folder> <Inventory Shapefile>"
 	echo -e ""
-	echo -e " description of input parameters:"
-	echo -e " output_folder		(output) folder where the downloaded data will be saved"
-	echo -e " area_of_interest	(input) shapefile of your area of interest"
-	echo -e ""
-	echo -e " NOTE: Use the convex_hull_aoi.shp prepared by osk_prepare_project script." 
-	echo -e "      Otherwise the URL will be too long and the download won't start."
-	echo -e ""
-	echo -e " start_date		start date of search in format YYYY-MM-DD"
-	echo -e " end_date		end date of search in format YYYY-MM-DD"
-	echo -e " mode			acquisition Mode of PALSAR instrument"
-	echo -e "			  available choices:"
-	echo -e "			  FBS (Fine-Beam Single Polarization)"
-	echo -e "			  FBD (Fine-Beam Double Polarization)"
-	echo -e "			  PLR (Polarimetric Mode)"
-	echo -e "			  WB1 (Wide-swath)"
-	echo -e " processing_level	choose the product level"			
-	echo -e "			  Available choices:"
-	echo -e "			  L1.0 (RAW - Level 1.0)"
-	echo -e "			  L1.1 (SLC - Level 1.1)"
-	echo -e "			  L1.5 (GRD - Level 1.5)"
-	echo -e "			  RTC_HI_RES (12.5m High-resolution Terrain Corrected)"
-	echo -e "			  RTC_LOW_RES (30m Low-resolution Terrain Corrected)"
-	echo -e ""
+	echo -e " input parameters:"
+	echo -e " output_folder			(output) folder where the downloaded data will be saved"
+	echo -e " Inventory shapefile		(input) shapefile created and maybe edited from osk_ALOS_ASF_inventory script"
 	exit 1
-fi
-
-
-#get the cookie
-if [ "${SCRIPT_MODE}" = "NI" ];then
-	echo ""
 else
-	echo -e "If you have not done the registration, go to:"
-	echo -e "https://urs.earthdata.nasa.gov/"
-	read -r -p "Please type your NASA Earthdata Username:" UNAME
-	read -s -p "Please type your NASA Earthdata Password:" PW
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
+	echo -e " Download ALOS data from ASF server with an inventory shapefile"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+	echo -e " Author: ${AUTHOR_1}"
+	echo -e " Contact: ${CONTACT_1}"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Software dependencies:"
+	echo -e "	- aria2"
+	echo -e "	- ogrinfo"
+	echo -e "----------------------------------"
+	echo -e ""
+
+  	cd $1
+   	PROC_DIR=`pwd`
+	TMP_DIR=${PROC_DIR}/TMP
+	mkdir -p ${TMP_DIR}
 fi
+
+
+
+#	Credentials
+read -r -p "Please type your NASA Earthdata Username:" USERNAME
+read -s -p "Please type your NASA Earthdata Password:" PW
 echo ""
-echo "Getting the inventory data"
-wget --save-cookies cookies.txt --post-data 'user_name='$UNAME'&user_password='${PW}'' --no-check-certificate https://ursa.asfdaac.alaska.edu/cgi-bin/login -o /dev/null -O /dev/null
+
+echo ""
+echo "Getting cookie file"
+wget --save-cookies ${TMP_DIR}/cookies.txt --post-data 'user_name='$USERNAME'&user_password='${PW}'' --no-check-certificate https://ursa.asfdaac.alaska.edu/cgi-bin/login -o /dev/null -O /dev/null
 unset PW
 
-# get the footprint from the shapefile 
-ogr2ogr -f CSV tmp_AOI_WKT.csv $2 -lco GEOMETRY=AS_WKT
-AOI=`grep POLYGON tmp_AOI_WKT.csv | sed 's|\"POLYGON ((||g' | awk -F "))" $'{print $1}' | sed 's/\ /,/g'`
+echo "Preparing download"
+ogrinfo $2 -al | grep DL_Path | sed 's/  DL_Path (String) = //g' | tail -n +2 > ${TMP_DIR}/download_list
+ogrinfo $2 -al | grep Date | sed 's/  Date (Integer) = //g' | tail -n +2 > ${TMP_DIR}/acq_date
+ogrinfo $2 -al | grep Mode | sed 's/  Mode (String) = //g' | tail -n +2 > ${TMP_DIR}/mode
+ogrinfo $2 -al | grep Track | sed 's/  Track (Integer) = //g' | tail -n +2 > ${TMP_DIR}/track
+ogrinfo $2 -al | grep Scene_ID | sed 's/  Scene_ID (String) = //g' | tail -n +2 > ${TMP_DIR}/scene
 
-# Search Parameters
-PERIOD="start="${START}"T11:59:59UTC&end="${END}"T00:00:00UTC"
-PLATFORM="platform=A3"
-BEAM="beamMode=${MODE}"  
-# search part of the URL
-ASK="\&polygon=${AOI}&${PLATFORM}&${BEAM}&${PERIOD}&${PROCESSING}&${OUTPUT_FORMAT}"
-mkdir -p ${PROC_DIR}/Coverage
+# counter for info on number of download products
+NR=`cat ${TMP_DIR}/download_list | wc -l`
+COUNT=1
 
-#----------------------------------------------------------------------------------
-# download the csv inventory file
-OUTPUT_FORMAT="output=csv"
-OUTPUT="${MODE}-data_coverage"
-curl -s https://api.daac.asf.alaska.edu/services/search/param?keyword=value$ASK | tail -n +2 > ${PROC_DIR}/Coverage/$OUTPUT.csv
-echo "" >>  ${PROC_DIR}/Coverage/$OUTPUT.csv
-NR_OF_PRODUCTS=`wc -l ${PROC_DIR}/Coverage/$OUTPUT.csv`
-echo "Found ${NR_OF_PRODUCTS} products"
-#----------------------------------------------------------------------------------
+while read line; do 
 
-#----------------------------------------------------------------------------------
-# download the kml footprints
-OUTPUT_FORMAT="output=kml"
-ASK="\&polygon=${AOI}&${PLATFORM}&${BEAM}&${PERIOD}&${PROCESSING}&${OUTPUT_FORMAT}"
-curl -s https://api.daac.asf.alaska.edu/services/search/param?keyword=value$ASK > ${PROC_DIR}/Coverage/$OUTPUT.kml
-#----------------------------------------------------------------------------------
+	MODE=`cat ${TMP_DIR}/mode | awk "NR==${COUNT}"`
+	ACQ_DATE=`cat ${TMP_DIR}/acq_date | awk "NR==${COUNT}"`
+	TRACK=`cat ${TMP_DIR}/track | awk "NR==${COUNT}"`
+	SCENE=`cat ${TMP_DIR}/scene | awk "NR==${COUNT}"`
 
-#----------------------------------------------------------------------------------
-# convert downloaded kml to shape
-ogr2ogr -f "Esri Shapefile" ${PROC_DIR}/Coverage/${MODE}-coverage.shp ${PROC_DIR}/Coverage/${OUTPUT}.kml 
-#rm -f ${PROC_DIR}/Coverage/${OUTPUT}.kml 
-#----------------------------------------------------------------------------------
-
-
-#----------------------------------------------------------------------------------
-# download the data sorted by Acquisition Mode and Acquisition Date
-while read line;do 
-	
-	ACQ_YEAR=`echo $line | awk -F "," $'{print $9}' | cut -c 2-5`
-	ACQ_MONTH=`echo $line | awk -F "," $'{print $9}' | cut -c 7-8`
-	ACQ_DAY=`echo $line | awk -F "," $'{print $9}' | cut -c 10-11`
-	ACQ_DATE=${ACQ_YEAR}${ACQ_MONTH}${ACQ_DAY}
-	SAT_TRACK=`echo $line | awk -F "," $'{print $7}' | sed "s|\"||g"`
-	DOWNLOAD=`echo $line | awk -F "," $'{print $26}' | sed "s|\"||g"`
-	GRANULE=`echo $line | awk -F "," $'{print $1}' | sed "s|\"||g"`
-	ORBIT=`echo $line | awk -F "," $'{print $1}' | cut -c 8-12`
-
+	echo " Downloading Product ${COUNT} of ${NR} (Granule: ${SCENE}) "
 	mkdir -p ${PROC_DIR}/${MODE} 
-	mkdir -p ${PROC_DIR}/${MODE}/${ACQ_DATE}
+	mkdir -p ${PROC_DIR}/${MODE}/${ACQ_DATE}-${TRACK}
+
+	# prepare a loop to avoid uncomplete data downloads		
+	i=1
+	echo "bla" > ${TMP_DIR}/tmp_error
+	# do the loop 
+	for(( i=1; i<=2; i++ ));do
+
+		if grep -q "download completed" ${TMP_DIR}/tmp_error;then
+			i=3
+		else
+			i=1
+			aria2c --load-cookies="${TMP_DIR}/cookies.txt" --dir=${PROC_DIR}/${MODE}/${ACQ_DATE}-${TRACK} --continue=true "${line}" > ${TMP_DIR}/tmp_error
+		fi
+	done
 	
+	COUNT=`expr ${COUNT} + 1`
 
-	cd ${PROC_DIR}/${MODE}/${ACQ_DATE}
-	echo "Downloading ALOS FBD scene: ${GRANULE}"
-	echo "from: ${DOWNLOAD}"
-	echo "into: ${PROC_DIR}/${MODE}/${ACQ_DATE}"
-	aria2c --load-cookies="${PROC_DIR}/cookies.txt" ${DOWNLOAD}
+done < ${TMP_DIR}/download_list
 
-done < ${PROC_DIR}/Coverage/${OUTPUT}.csv 
-#----------------------------------------------------------------------------------
-
-# remove temp folder
-rm -rf ${PROC_DIR}/cookies.txt ${PROC_DIR}/tmp*
-
+echo "---------------------------------------------"
+echo " Download of all scenes succesfully completed"
+echo "---------------------------------------------"
 

@@ -6,7 +6,7 @@ if [ "$#" != "2" ]; then
 
 	echo -e ""
 	echo -e "----------------------------------"
-	echo -e " OpenSARKit, version ${OSK_VERSION}"
+	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
 	echo -e " Download Sentinel-1 data with an inventory shapefile"
 	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
 	echo -e " Author: ${AUTHOR_1}"
@@ -28,7 +28,7 @@ if [ "$#" != "2" ]; then
 else
 	echo -e ""
 	echo -e "----------------------------------"
-	echo -e " OpenSARKit, version ${OSK_VERSION}"
+	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
 	echo -e " Download Sentinel-1 data with an inventory shapefile"
 	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
 	echo -e " Author: ${AUTHOR_1}"

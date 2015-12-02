@@ -88,23 +88,25 @@ for LINE in `ls -1 ${PROC_DIR}`;do
 		echo " Applying the Terrain Flattening and multilook the data with a factor of 3"
 		bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TF_ML.xml -x -Pinput=${TMP_DIR}/${LINE}.dim -Poutput=${TMP_DIR}/TF.dim
 
-		echo " Applying the Refined Lee Speckle Filter and doing the Geometric Terrain Correction (i.e. Geocoding)"
-		bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_SPK_TC.xml -x -Pinput=${TMP_DIR}/TF.dim -Poutput=${TMP_DIR}/TF_TC.dim
-
 		OUT_DIR=${PROC_DIR}/${LINE}
 
-		osk_md_filter ${TMP_DIR}/TF_TC.data/Gamma0_VV.img ${OUT_DIR}/Gamma0_VV.md-filtered.sdat SAGA 
-		osk_md_filter ${TMP_DIR}/TF_TC.data/Gamma0_VH.img ${OUT_DIR}/Gamma0_VH.md-filtered.sdat SAGA
+		echo " Applying the Refined Lee Speckle Filter and doing the Geometric Terrain Correction (i.e. Geocoding)"
+		bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_SPK_TC.xml -x -Pinput=${TMP_DIR}/TF.dim -Poutput=${OUT_DIR}/TF_TC.dim
 
-		saga_cmd -f=r -c=${CPU} grid_calculus 1 -GRIDS:${OUT_DIR}/Gamma0_VV.md-filtered.sgrd -XGRIDS:${OUT_DIR}/Gamma0_VH.md-filtered.sgrd -RESULT:${OUT_DIR}/VVVH_ratio.sgrd -FORMULA:"a / b"
+		
 
-		gdalbuildvrt -vrtnodata 0 -separate ${OUT_DIR}/RGB_${DATE}.vrt ${OUT_DIR}/Gamma0_VV.md-filtered.sdat ${OUT_DIR}/Gamma0_VH.md-filtered.sdat ${OUT_DIR}/VVVH_ratio.sdat
+		#osk_md_filter ${TMP_DIR}/TF_TC.data/Gamma0_VV.img ${OUT_DIR}/Gamma0_VV.md-filtered.sdat SAGA 
+		#osk_md_filter ${TMP_DIR}/TF_TC.data/Gamma0_VH.img ${OUT_DIR}/Gamma0_VH.md-filtered.sdat SAGA
+
+		#saga_cmd -f=r -c=${CPU} grid_calculus 1 -GRIDS:${OUT_DIR}/Gamma0_VV.md-filtered.sgrd -XGRIDS:${OUT_DIR}/Gamma0_VH.md-filtered.sgrd -RESULT:${OUT_DIR}/VVVH_ratio.sgrd -FORMULA:"a / b"
+
+		#gdalbuildvrt -vrtnodata 0 -separate ${OUT_DIR}/RGB_${DATE}.vrt ${OUT_DIR}/Gamma0_VV.md-filtered.sdat ${OUT_DIR}/Gamma0_VH.md-filtered.sdat ${OUT_DIR}/VVVH_ratio.sdat
 	fi
 
 	mkdir -p ZIP
 	mv *.zip ZIP
 	rm -rf target*
-	rm -rf ${TMP_DIR}
+	#rm -rf ${TMP_DIR}
 
 	cd ../
 
