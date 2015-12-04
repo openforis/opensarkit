@@ -6,7 +6,7 @@
 
 #-------------------------------------------------------------------------------------------	
 # 	0.1 Check for right usage & set up basic Script Variables
-if [ "$#" == "6" ]; then
+if [ "$#" == "7" ]; then
 
 	echo -e ""
 	echo -e "----------------------------------"
@@ -61,8 +61,8 @@ elif [ "$#" == "8" ]; then
 	MODE=$5
 	PROCESSING="processingLevel=$6"
 	SCRIPT_MODE=NI
-	UNAME=$7
-	PW=$8
+	UNAME=$8
+	PW=$9
 
 else
 
@@ -82,7 +82,7 @@ else
 	echo -e "	- ogr2ogr"
 	echo -e "----------------------------------"
 	echo -e ""
-	echo -e " syntax: osk_ALOS_ASF_inventory <output_folder> <area_of_interest> <start_date> <end_date> <mode> <processing_level>"
+	echo -e " syntax: osk_ALOS_ASF_inventory <output_folder> <area_of_interest> <start_date> <end_date> <mode> <processing_level> <Script_Mode>"
 	echo -e ""
 	echo -e " description of input parameters:"
 	echo -e " output_folder		(output) folder where the downloaded data will be saved"
@@ -107,6 +107,11 @@ else
 	echo -e "			  RTC_HI_RES (12.5m High-resolution Terrain Corrected)"
 	echo -e "			  RTC_LOW_RES (30m Low-resolution Terrain Corrected)"
 	echo -e ""
+	echo -e " Script_Mode"			
+	echo -e "			Available choices"
+	echo -e "			  0 (only do the data inventory)"
+	echo -e "			  1 (data inventory + direct data download)"
+	echo -e ""
 	exit 1
 fi
 
@@ -115,8 +120,11 @@ fi
 if [ "${SCRIPT_MODE}" = "NI" ];then
 	echo ""
 else
-	echo -e "If you have not done the registration, go to:"
+	echo -e "-------------------------------------------------"
+	echo -e "If you have not done the registration yet, go to:"
 	echo -e "https://urs.earthdata.nasa.gov/"
+	echo -e "-------------------------------------------------"
+	echo -e ""
 	read -r -p "Please type your NASA Earthdata Username:" UNAME
 	read -s -p "Please type your NASA Earthdata Password:" PW
 fi
@@ -180,7 +188,7 @@ for LINE in `cat $OUT_FILE | awk -F "," $'{print $16 "," $17 "," $18 "," $19 ","
 	N_END_LAT=`echo $N_END | awk $'{print $2}'`
 
 
-	if [ $(echo " ${N_START_LAT} < ${N_END_LAT}" | bc) -eq 1  ];then
+	if [[ $(echo " ${N_START_LAT} < ${N_END_LAT}" | bc) -eq "1" ]];then
 
 		echo "\"POLYGON (("${N_START},${F_START},${F_END},${N_END},${N_START}"))\"" >> ${TMP_DIR}/polys
 

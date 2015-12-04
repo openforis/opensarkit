@@ -135,3 +135,15 @@ function gdal_format() {
              awk -F"/" $'{print $1}')
 	echo -n "$FORMAT"
 }
+
+function gdal_nodata() { 
+    if [ -z "$1" ]; then 
+        echo "Missing arguments. Syntax:"
+        echo "  gdal_nodata <input_raster>"
+        return
+    fi
+    NODATA=$(gdalinfo $1 |\
+             grep NoData |\
+	     awk -F "=" '{print $2}')
+	echo -n "$NODATA"
+}
