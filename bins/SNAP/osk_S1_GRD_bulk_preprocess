@@ -76,30 +76,30 @@ for LINE in `ls -1 ${PROC_DIR}`;do
 			
 			echo " Preprocessing File: ${FILE}"
 			echo " Importing S1 GRD data file and apply the precise orbit file, remove border noise and calibrate the data to beta0"
-			#bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_Orb_Noise_Brd_Cal.xml -x -Pinput=${FILE} -Poutput=${TMP_DIR}/${BASE}-CAL.dim
+			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_Orb_Noise_Brd_Cal.xml -x -Pinput=${FILE} -Poutput=${TMP_DIR}/${BASE}-CAL.dim
 	
 		done
 
 		
 
 		echo " Assembling the products of the same swath"
-		#bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_slice_assembly.xml -Pfilelist=$(ls -d -1 ${TMP_DIR}/*.dim | tr '\n' ',' | rev | cut -c 2- | rev) -Poutput=${TMP_DIR}/${LINE}.dim
+		bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_slice_assembly.xml -Pfilelist=$(ls -d -1 ${TMP_DIR}/*.dim | tr '\n' ',' | rev | cut -c 2- | rev) -Poutput=${TMP_DIR}/${LINE}.dim
 
 		echo " Applying the Terrain Flattening and multilook the data with a factor of 3"
-		#bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TF_ML.xml -x -Pinput=${TMP_DIR}/${LINE}.dim -Poutput=${TMP_DIR}/TF.dim
+		bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TF_ML.xml -x -Pinput=${TMP_DIR}/${LINE}.dim -Poutput=${TMP_DIR}/TF.dim
 
 		OUT_DIR=${PROC_DIR}/${LINE}
 
 		echo " Applying the Refined Lee Speckle Filter and doing the Geometric Terrain Correction (i.e. Geocoding)"
-		#bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_SPK_TC.xml -x -Pinput=${TMP_DIR}/TF.dim -Poutput=${TMP_DIR}/TF_TC.dim
+		bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_SPK_TC.xml -x -Pinput=${TMP_DIR}/TF.dim -Poutput=${TMP_DIR}/TF_TC.dim
 
 		#valid values
-		#osk_valid_range ${TMP_DIR}/TF_TC.data/Gamma0_VV.img ${TMP_DIR}/TF_TC.data/Gamma0_VV.rerange.sdat SAGA 0.001 1 -99999 
-		#osk_valid_range ${TMP_DIR}/TF_TC.data/Gamma0_VH.img ${TMP_DIR}/TF_TC.data/Gamma0_VH.rerange.sdat SAGA 0.001 1 -99999 
+		osk_valid_range ${TMP_DIR}/TF_TC.data/Gamma0_VV.img ${TMP_DIR}/TF_TC.data/Gamma0_VV.rerange.sdat SAGA 0.001 1 -99999 
+		osk_valid_range ${TMP_DIR}/TF_TC.data/Gamma0_VH.img ${TMP_DIR}/TF_TC.data/Gamma0_VH.rerange.sdat SAGA 0.001 1 -99999 
 		
 		#filter
-		#osk_md_filter ${TMP_DIR}/TF_TC.data/Gamma0_VV.rerange.sdat ${OUT_DIR}/Gamma0_VV.md-filtered.sdat SAGA 
-		#osk_md_filter ${TMP_DIR}/TF_TC.data/Gamma0_VH.rerange.sdat ${OUT_DIR}/Gamma0_VH.md-filtered.sdat SAGA
+		osk_md_filter ${TMP_DIR}/TF_TC.data/Gamma0_VV.rerange.sdat ${OUT_DIR}/Gamma0_VV.md-filtered.sdat SAGA 
+		osk_md_filter ${TMP_DIR}/TF_TC.data/Gamma0_VH.rerange.sdat ${OUT_DIR}/Gamma0_VH.md-filtered.sdat SAGA
 
 		#ratio
 		saga_cmd -f=r -c=${CPU} grid_calculus 1 -GRIDS:${OUT_DIR}/Gamma0_VV.md-filtered.sgrd -XGRIDS:${OUT_DIR}/Gamma0_VH.md-filtered.sgrd -RESULT:${TMP_DIR}/VVVH_ratio.sgrd -FORMULA:"a / b"
@@ -118,7 +118,7 @@ for LINE in `ls -1 ${PROC_DIR}`;do
 	mkdir -p ZIP
 	mv *.zip ZIP
 	rm -rf target*
-	#rm -rf ${TMP_DIR}
+	rm -rf ${TMP_DIR}
 
 	cd ../
 

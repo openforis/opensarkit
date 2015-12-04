@@ -71,7 +71,7 @@ for DATE in `ls -1 -d [0-9]*`;do
 
 	# serial version
 	for FILE in `ls -1 *.zip`;do
-		osk_single_ALOS_ASF_TC_preprocess ${FILE} ${PROC_DIR}/${DATE}  
+		osk_ALOS_ASF_RT1_single_preproc ${FILE} ${PROC_DIR}/${DATE}  
 	done
 
 	# parallel version
