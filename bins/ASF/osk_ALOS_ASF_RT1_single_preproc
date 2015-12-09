@@ -75,9 +75,10 @@ unzip -o -q ${FILE} -d ${TMP_DIR}
 # extract filenames
 SCENE_ID=`ls ${TMP_DIR}`
 cd ${TMP_DIR}/${SCENE_ID}
-GAMMA_HH=`ls *HH*`
-echo $GAMMA_HH
-#GAMMA_HV=`ls *HV*`
+GAMMA_HH=`readlink -f *HH*`
+GAMMA_HV=`readlink -f *HV*`
+GAMMA_VH=`readlink -f *VH*`
+GAMMA_VV=`readlink -f *VV*`
 LS_MAP=`ls *ls*`
 XML_FILE=`ls *iso.xml*`
 
