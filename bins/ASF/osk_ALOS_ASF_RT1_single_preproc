@@ -126,8 +126,8 @@ OUTPUT_SPK_VV=${TMP_DIR}/Gamma0_VV.tif
 
 #-------------------------------------------------------------------------------------------
 # Launch SNAP for HH channel speckle filtering
-echo "Apply Lee Speckle Filter to ${SCENE_ID}"
-bash ${SNAP_EXE} ${SNAP_GRAPHS}/Refined_Lee.xml -Pinput=${GAMMA_HH} -Poutput=${OUTPUT_SPK_HH} 2>&1 | tee  ${TMP_DIR}/tmplog
+echo "Apply Lee Speckle Filter to the HH channel of ${SCENE_ID}"
+bash $SNAP_EXE Speckle-Filter -Ssource=${GAMMA_HH} -Pfilter='Refined Lee' -t ${OUTPUT_SPK_HH} -f 'GeoTiff' 2>&1 | tee  ${TMP_DIR}/tmplog
 #-------------------------------------------------------------------------------------------
 
 
@@ -136,27 +136,25 @@ bash ${SNAP_EXE} ${SNAP_GRAPHS}/Refined_Lee.xml -Pinput=${GAMMA_HH} -Poutput=${O
 if grep -q Error ${TMP_DIR}/tmplog; then 	
 	echo "2nd try"
 	rm -rf ${OUTPUT_SPK_HH} 
-	sh ${SNAP_EXE} ${TMP_DIR}/Refined_Lee.xml -Pinput=${GAMMA_HH} -Poutput=$${OUTPUT_SPK_HH} 2>&1 | tee  ${TMP_DIR}/tmplog
+	bash ${SNAP_EXE} Speckle-Filter -Ssource=${GAMMA_HH} -Pfilter='Refined Lee' -t ${OUTPUT_SPK_HH} -f 'GeoTiff'
 fi
-rm -f ${TMP_DIR}/Refined_Lee.xml 
 #-------------------------------------------------------------------------------------------
 
 if [[ "${MODE}" == "FBD" || "${MODE}" == "PLR" ]];then
 
 	#-------------------------------------------------------------------------------------------
 	# Launch SNAP for HV channel speckle filtering
-	echo "Apply Lee Speckle Filter to ${SCENE_ID}"
-	bash ${SNAP_EXE} ${SNAP_GRAPHS}/Refined_Lee.xml -Pinput=${GAMMA_HV} -Poutput=${OUTPUT_SPK_HV} 2>&1 | tee  ${TMP_DIR}/tmplog
+	echo "Apply Lee Speckle Filter to the HV channel of ${SCENE_ID}"
+	bash ${SNAP_EXE} Speckle-Filter -Ssource=${GAMMA_HV} -Pfilter='Refined Lee' -t ${OUTPUT_SPK_HV} -f 'GeoTiff' 2>&1 | tee  ${TMP_DIR}/tmplog
 	#-------------------------------------------------------------------------------------------
 
 	#-------------------------------------------------------------------------------------------
 	# in case it fails because of Java error, try it a second time
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
 		echo "2nd try"
-		rm -rf ${OUTPUT_SPK_HH} 
-		sh ${SNAP_EXE} ${TMP_DIR}/Refined_Lee.xml -Pinput=${GAMMA_HH} -Poutput=$${OUTPUT_SPK_HH} 2>&1 | tee  ${TMP_DIR}/tmplog
+		rm -rf ${OUTPUT_SPK_HV} 
+		bash ${SNAP_EXE} Speckle-Filter -Ssource=${GAMMA_HV} -Pfilter='Refined Lee' -t ${OUTPUT_SPK_HV} -f 'GeoTiff'
 	fi
-	rm -f ${TMP_DIR}/Refined_Lee.xml 
 	#-------------------------------------------------------------------------------------------
 
 elif [[ "${MODE}" == "PLR" ]];then
@@ -164,7 +162,7 @@ elif [[ "${MODE}" == "PLR" ]];then
 	#-------------------------------------------------------------------------------------------
 	# Launch SNAP for VH channel speckle filtering
 	echo "Apply Lee Speckle Filter to ${SCENE_ID}"
-	bash ${SNAP_EXE} ${SNAP_GRAPHS}/Refined_Lee.xml -Pinput=${GAMMA_VH} -Poutput=${OUTPUT_SPK_VH} 2>&1 | tee  ${TMP_DIR}/tmplog
+	bash ${SNAP_EXE} Speckle-Filter -Ssource=${GAMMA_VH} -Pfilter='Refined Lee' -t ${OUTPUT_SPK_VH} -f 'GeoTiff' 2>&1 | tee  ${TMP_DIR}/tmplog
 	#-------------------------------------------------------------------------------------------
 
 
@@ -172,10 +170,9 @@ elif [[ "${MODE}" == "PLR" ]];then
 	# in case it fails because of Java error, try it a second time
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
 		echo "2nd try"
-		rm -rf ${OUTPUT_SPK_HH} 
-		sh ${SNAP_EXE} ${TMP_DIR}/Refined_Lee.xml -Pinput=${GAMMA_VH} -Poutput=$${OUTPUT_SPK_VH} 2>&1 | tee  ${TMP_DIR}/tmplog
+		rm -rf ${OUTPUT_SPK_VH} 
+		bash ${SNAP_EXE} Speckle-Filter -Ssource=${GAMMA_VH} -Pfilter='Refined Lee' -t ${OUTPUT_SPK_VH} -f 'GeoTiff'
 	fi
-	rm -f ${TMP_DIR}/Refined_Lee.xml 
 	#-------------------------------------------------------------------------------------------
 
 	#-------------------------------------------------------------------------------------------
@@ -189,10 +186,9 @@ elif [[ "${MODE}" == "PLR" ]];then
 	# in case it fails because of Java error, try it a second time
 	if grep -q Error ${TMP_DIR}/tmplog; then 	
 		echo "2nd try"
-		rm -rf ${OUTPUT_SPK_HH} 
-		sh ${SNAP_EXE} ${TMP_DIR}/Refined_Lee.xml -Pinput=${GAMMA_VV} -Poutput=$${OUTPUT_SPK_VV} 2>&1 | tee  ${TMP_DIR}/tmplog
-	fi
-	rm -f ${TMP_DIR}/Refined_Lee.xml 
+		rm -rf ${OUTPUT_SPK_VV} 
+		bash ${SNAP_EXE} Speckle-Filter -Ssource=${GAMMA_VV} -Pfilter='Refined Lee' -t ${OUTPUT_SPK_VV} -f 'GeoTiff' 2>&1 | tee  ${TMP_DIR}/tmplog
+	fi 
 	#-------------------------------------------------------------------------------------------
 fi
 
@@ -272,6 +268,6 @@ fi
 rm -rf ${TMP_DIR}
 #-------------------------------------------------------------------------------------------
 echo "------------------------------------------------------------"
-echo "Successfully preprocessed ${SCENE_ID} (OpenSARKit Statement)"
+echo "Successfully preprocessed ${SCENE_ID}"
 echo "------------------------------------------------------------"
 #EOF
