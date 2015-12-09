@@ -221,10 +221,10 @@ echo "Masking out Layover/Shadow regions"
 saga_cmd -f=r grid_calculus 1 -GRIDS:${TMP_DIR}/tmp_hh_saga.sgrd -XGRIDS:${TMP_DIR}/tmp_mask.sgrd -RESULT ${TMP_DIR}/tmp_mask_hh_saga.sgrd -FORMULA:"a * b"
 
 if [[ "${MODE}" == "FBD" || "${MODE}" == "PLR" ]];then
-	saga_cmd -f=r grid_calculus 1 -GRIDS:${TMP_DIR}/tmp_hv_saga.sgrd -XGRIDS:${TMP_DIR}/tmp_mask.sgrd -RESULT ${TMP_DIR}/tmp_mask_hv_saga.sgrd -FORMULA:"a * b"
+	saga_cmd -f=s grid_calculus 1 -GRIDS:${TMP_DIR}/tmp_hv_saga.sgrd -XGRIDS:${TMP_DIR}/tmp_mask.sgrd -RESULT ${TMP_DIR}/tmp_mask_hv_saga.sgrd -FORMULA:"a * b"
 elif [[ "${MODE}" == "PLR" ]];then
-	saga_cmd -f=r grid_calculus 1 -GRIDS:${TMP_DIR}/tmp_vh_saga.sgrd -XGRIDS:${TMP_DIR}/tmp_mask.sgrd -RESULT ${TMP_DIR}/tmp_mask_vh_saga.sgrd -FORMULA:"a * b"
-	saga_cmd -f=r grid_calculus 1 -GRIDS:${TMP_DIR}/tmp_vv_saga.sgrd -XGRIDS:${TMP_DIR}/tmp_mask.sgrd -RESULT ${TMP_DIR}/tmp_mask_vv_saga.sgrd -FORMULA:"a * b"
+	saga_cmd -f=s grid_calculus 1 -GRIDS:${TMP_DIR}/tmp_vh_saga.sgrd -XGRIDS:${TMP_DIR}/tmp_mask.sgrd -RESULT ${TMP_DIR}/tmp_mask_vh_saga.sgrd -FORMULA:"a * b"
+	saga_cmd -f=s grid_calculus 1 -GRIDS:${TMP_DIR}/tmp_vv_saga.sgrd -XGRIDS:${TMP_DIR}/tmp_mask.sgrd -RESULT ${TMP_DIR}/tmp_mask_vv_saga.sgrd -FORMULA:"a * b"
 fi
 #-------------------------------------------------------------------------------------------
 
@@ -233,10 +233,10 @@ echo "Filling small data holes by IDW interpolation"
 saga_cmd -f=r grid_tools 25 -GRID:${TMP_DIR}/tmp_mask_hh_saga.sgrd -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:${TMP_DIR}/tmp_mask_hh_filled.sgrd
 
 if [[ "${MODE}" == "FBD" || "${MODE}" == "PLR" ]];then
-	saga_cmd -f=r grid_tools 25 -GRID:${TMP_DIR}/tmp_mask_hv_saga.sgrd -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:${TMP_DIR}/tmp_mask_hv_filled.sgrd
+	saga_cmd -f=s grid_tools 25 -GRID:${TMP_DIR}/tmp_mask_hv_saga.sgrd -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:${TMP_DIR}/tmp_mask_hv_filled.sgrd
 elif [[ "${MODE}" == "PLR" ]];then
-	saga_cmd -f=r grid_tools 25 -GRID:${TMP_DIR}/tmp_mask_vh_saga.sgrd -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:${TMP_DIR}/tmp_mask_vh_filled.sgrd
-	saga_cmd -f=r grid_tools 25 -GRID:${TMP_DIR}/tmp_mask_vv_saga.sgrd -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:${TMP_DIR}/tmp_mask_vv_filled.sgrd
+	saga_cmd -f=s grid_tools 25 -GRID:${TMP_DIR}/tmp_mask_vh_saga.sgrd -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:${TMP_DIR}/tmp_mask_vh_filled.sgrd
+	saga_cmd -f=s grid_tools 25 -GRID:${TMP_DIR}/tmp_mask_vv_saga.sgrd -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:${TMP_DIR}/tmp_mask_vv_filled.sgrd
 fi
 #-------------------------------------------------------------------------------------------
 
@@ -245,10 +245,10 @@ echo "Applying multi-directional Lee-Filter for further smoothing"
 saga_cmd -f=r grid_filter 3 -INPUT:${TMP_DIR}/tmp_mask_hh_filled.sgrd -RESULT:${TMP_DIR}/tmp_mask_hh_filtered.sgrd -NOISE_ABS:1000 -NOISE_REL:250 -METHOD:1
 
 if [[ "${MODE}" == "FBD" || "${MODE}" == "PLR" ]];then
-	saga_cmd -f=r grid_filter 3 -INPUT:${TMP_DIR}/tmp_mask_hv_filled.sgrd -RESULT:${TMP_DIR}/tmp_mask_hv_filtered.sgrd -NOISE_ABS:1000 -NOISE_REL:250 -METHOD:1
+	saga_cmd -f=s grid_filter 3 -INPUT:${TMP_DIR}/tmp_mask_hv_filled.sgrd -RESULT:${TMP_DIR}/tmp_mask_hv_filtered.sgrd -NOISE_ABS:1000 -NOISE_REL:250 -METHOD:1
 elif [[ "${MODE}" == "PLR" ]];then
-	saga_cmd -f=r grid_filter 3 -INPUT:${TMP_DIR}/tmp_mask_vh_filled.sgrd -RESULT:${TMP_DIR}/tmp_mask_vh_filtered.sgrd -NOISE_ABS:1000 -NOISE_REL:250 -METHOD:1
-	saga_cmd -f=r grid_filter 3 -INPUT:${TMP_DIR}/tmp_mask_vv_filled.sgrd -RESULT:${TMP_DIR}/tmp_mask_vv_filtered.sgrd -NOISE_ABS:1000 -NOISE_REL:250 -METHOD:1
+	saga_cmd -f=s grid_filter 3 -INPUT:${TMP_DIR}/tmp_mask_vh_filled.sgrd -RESULT:${TMP_DIR}/tmp_mask_vh_filtered.sgrd -NOISE_ABS:1000 -NOISE_REL:250 -METHOD:1
+	saga_cmd -f=s grid_filter 3 -INPUT:${TMP_DIR}/tmp_mask_vv_filled.sgrd -RESULT:${TMP_DIR}/tmp_mask_vv_filtered.sgrd -NOISE_ABS:1000 -NOISE_REL:250 -METHOD:1
 fi
 #-------------------------------------------------------------------------------------------
 

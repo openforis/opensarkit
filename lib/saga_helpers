@@ -46,10 +46,10 @@ function osk_md_filter() {
     if [ "$IN_FORMAT" == "SAGA" ];then
 	    FILE_BASE=`echo $1 | rev | cut -c 6- | rev`
             FILE_SAGA=`echo $FILE_BASE.sgrd`
-	    saga_cmd -c=${CPU} -f=r grid_filter 3 -INPUT:$FILE_SAGA -RESULT:${TMP_DIR_saga}/tmp.saga.filtered.sgrd -NOISE_ABS:${ABS_NOISE} -NOISE_REL:${REL_NOISE} -METHOD:${METHOD}
+	    saga_cmd -c=${CPU} -f=s grid_filter 3 -INPUT:$FILE_SAGA -RESULT:${TMP_DIR_saga}/tmp.saga.filtered.sgrd -NOISE_ABS:${ABS_NOISE} -NOISE_REL:${REL_NOISE} -METHOD:${METHOD}
     else
 	    gdalwarp -srcnodata ${IN_NODATA} -dstnodata -99999 -of SAGA $1 ${TMP_DIR_saga}/tmp.saga.sdat
-	    saga_cmd -c=${CPU} -f=r grid_filter 3 -INPUT:${TMP_DIR_saga}/tmp.saga.sgrd -RESULT:${TMP_DIR_saga}/tmp.saga.filtered.sgrd -NOISE_ABS:${ABS_NOISE} -NOISE_REL:${REL_NOISE} -METHOD:${METHOD}
+	    saga_cmd -c=${CPU} -f=s grid_filter 3 -INPUT:${TMP_DIR_saga}/tmp.saga.sgrd -RESULT:${TMP_DIR_saga}/tmp.saga.filtered.sgrd -NOISE_ABS:${ABS_NOISE} -NOISE_REL:${REL_NOISE} -METHOD:${METHOD}
     fi
 
     if [ ${GDAL_saga} == "SAGA" ];then
@@ -84,8 +84,8 @@ function osk_valid_range() {
 		FILE_BASE=`echo $1 | rev | cut -c 6- | rev`
 		FILE_SAGA=`echo $FILE_BASE.sgrd`
 
-		saga_cmd -c=${CPU} -f=r grid_tools 15 -INPUT:$FILE_SAGA -RESULT:${TMP_DIR_saga}/tmp.saga.rerange1.sgrd -OLD:$4 -NEW:-99999 -NODATA:-99999 -SOPERATOR:1 -RESULT_NODATA_VALUE:-99999
-		saga_cmd -c=${CPU} -f=r grid_tools 15 -INPUT:${TMP_DIR_saga}/tmp.saga.rerange1.sgrd -RESULT:${TMP_DIR_saga}/tmp.saga.rerange.sgrd -OLD:$5 -NEW:$5 -NODATA:-99999 -SOPERATOR:4 -RESULT_NODATA_VALUE:-99999
+		saga_cmd -c=${CPU} -f=s grid_tools 15 -INPUT:$FILE_SAGA -RESULT:${TMP_DIR_saga}/tmp.saga.rerange1.sgrd -OLD:$4 -NEW:-99999 -NODATA:-99999 -SOPERATOR:1 -RESULT_NODATA_VALUE:-99999
+		saga_cmd -c=${CPU} -f=s grid_tools 15 -INPUT:${TMP_DIR_saga}/tmp.saga.rerange1.sgrd -RESULT:${TMP_DIR_saga}/tmp.saga.rerange.sgrd -OLD:$5 -NEW:$5 -NODATA:-99999 -SOPERATOR:4 -RESULT_NODATA_VALUE:-99999
 
 
 		
@@ -93,12 +93,12 @@ function osk_valid_range() {
 
 		if [ -z "${IN_NODATA}" ];then
 		    	gdalwarp -multi -srcnodata 0 -dstnodata "-99999" -of SAGA $1 ${TMP_DIR_saga}/tmp.saga.sdat
-			saga_cmd -c=${CPU} -f=r grid_tools 15 -INPUT:${TMP_DIR_saga}/tmp.saga.sgrd -RESULT:${TMP_DIR_saga}/tmp.saga.rerange1.sgrd -OLD:$4 -NEW:-99999 -NODATA:0 -SOPERATOR:1 -RESULT_NODATA_VALUE:-99999
+			saga_cmd -c=${CPU} -f=s grid_tools 15 -INPUT:${TMP_DIR_saga}/tmp.saga.sgrd -RESULT:${TMP_DIR_saga}/tmp.saga.rerange1.sgrd -OLD:$4 -NEW:-99999 -NODATA:0 -SOPERATOR:1 -RESULT_NODATA_VALUE:-99999
 		else
 	    		gdalwarp -multi -srcnodata "${IN_NODATA}" -dstnodata "-99999" -of SAGA $1 ${TMP_DIR_saga}/tmp.saga.sdat
-		    	saga_cmd -c=${CPU} -f=r grid_tools 15 -INPUT:${TMP_DIR_saga}/tmp.saga.sgrd -RESULT:${TMP_DIR_saga}/tmp.saga.rerange1.sgrd -OLD:$4 -NEW:-99999 -NODATA:-99999 -SOPERATOR:1 -RESULT_NODATA_VALUE:-99999
+		    	saga_cmd -c=${CPU} -f=s grid_tools 15 -INPUT:${TMP_DIR_saga}/tmp.saga.sgrd -RESULT:${TMP_DIR_saga}/tmp.saga.rerange1.sgrd -OLD:$4 -NEW:-99999 -NODATA:-99999 -SOPERATOR:1 -RESULT_NODATA_VALUE:-99999
 		fi
-		saga_cmd -c=${CPU} -f=r grid_tools 15 -INPUT:${TMP_DIR_saga}/tmp.saga.rerange1.sgrd -RESULT:${TMP_DIR_saga}/tmp.saga.rerange.sgrd -OLD:$5 -NEW:$5 -NODATA:-99999 -SOPERATOR:4 -RESULT_NODATA_VALUE:-99999
+		saga_cmd -c=${CPU} -f=s grid_tools 15 -INPUT:${TMP_DIR_saga}/tmp.saga.rerange1.sgrd -RESULT:${TMP_DIR_saga}/tmp.saga.rerange.sgrd -OLD:$5 -NEW:$5 -NODATA:-99999 -SOPERATOR:4 -RESULT_NODATA_VALUE:-99999
 	fi
 
 	

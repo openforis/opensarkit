@@ -102,12 +102,12 @@ for LINE in `ls -1 ${PROC_DIR}`;do
 		osk_md_filter ${TMP_DIR}/TF_TC.data/Gamma0_VH.rerange.sdat ${OUT_DIR}/Gamma0_VH.md-filtered.sdat SAGA
 
 		echo " Calculate the VV/VH ratio"
-		saga_cmd -f=r -c=${CPU} grid_calculus 1 -GRIDS:${OUT_DIR}/Gamma0_VV.md-filtered.sgrd -XGRIDS:${OUT_DIR}/Gamma0_VH.md-filtered.sgrd -RESULT:${TMP_DIR}/VVVH_ratio.sgrd -FORMULA:"a / b"
+		saga_cmd -f=s -c=${CPU} grid_calculus 1 -GRIDS:${OUT_DIR}/Gamma0_VV.md-filtered.sgrd -XGRIDS:${OUT_DIR}/Gamma0_VH.md-filtered.sgrd -RESULT:${TMP_DIR}/VVVH_ratio.sgrd -FORMULA:"a / b"
 		osk_valid_range ${TMP_DIR}/VVVH_ratio.sdat ${OUT_DIR}/VVVH_ratio.md-filtered.sdat SAGA 0 10 -99999 
 
 		echo " Transform to the dB scaling"
-		saga_cmd -f=r -c=${CPU} grid_calculus 1 -GRIDS:${OUT_DIR}/Gamma0_VV.md-filtered.sgrd -RESULT:${OUT_DIR}/Gamma0_VV.db.sgrd -FORMULA:"10 *log(a)"
-		saga_cmd -f=r -c=${CPU} grid_calculus 1 -GRIDS:${OUT_DIR}/Gamma0_VH.md-filtered.sgrd -RESULT:${OUT_DIR}/Gamma0_VH.db.sgrd -FORMULA:"10 *log(a)"
+		saga_cmd -f=s -c=${CPU} grid_calculus 1 -GRIDS:${OUT_DIR}/Gamma0_VV.md-filtered.sgrd -RESULT:${OUT_DIR}/Gamma0_VV.db.sgrd -FORMULA:"10 *log(a)"
+		saga_cmd -f=s -c=${CPU} grid_calculus 1 -GRIDS:${OUT_DIR}/Gamma0_VH.md-filtered.sgrd -RESULT:${OUT_DIR}/Gamma0_VH.db.sgrd -FORMULA:"10 *log(a)"
 
 		echo " Creating 8bit channels"
 		gdal_contrast_stretch -ndv '-99999' -outndv 0 -percentile-range 0.02 0.98 ${OUT_DIR}/VVVH_ratio.md-filtered.sdat ${OUT_DIR}/VVVH_ratio.md-filtered.8bit.tif
