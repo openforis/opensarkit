@@ -1,0 +1,20 @@
+#! /bin/bash
+
+echo -e ""
+echo -e "----------------------------------"
+echo -e " Open Foris SARKit - Remote Access Scripts, ${OSK_VERSION}"
+echo -e " Run Sentinel-1 GRD bulk processing remotely"
+echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+echo -e " Author: ${AUTHOR_1}"
+echo -e " Contact: ${CONTACT_1}"
+echo -e "----------------------------------"
+echo -e ""
+echo -e ""
+
+# start remote job
+read -r -p "Type in the username of the remote machine: " USERNAME
+read -r -p "Type in the (IP)-Address of the remote machine: " ADRESS
+read -r -p "Type in the name of your data folder " PROJECT
+
+#execute 
+ssh -n -f ${USERNAME}@${ADRESS} "bash -c \"cd ${PROJECT}; nohup bash osk_S1_GRD_bulk_preproc_KC_mosaic . bla . > log 2>&1 &\""

@@ -146,10 +146,10 @@ echo 'export ASF_CONF=${OPENSARKIT}/workflows/ASF' >> ${OSK_HOME}/OpenSARKit_sou
 echo 'export POLSAR_CONF=${OPENSARKIT}/workflows/POLSAR' >> ${OSK_HOME}/OpenSARKit_source.bash
 # 
 echo '# export bins' >> ${OSK_HOME}/OpenSARKit_source.bash
-echo 'export NEST_BIN=${OPENSARKIT}/bins/NEST' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export SNAP_BIN=${OPENSARKIT}/bins/SNAP' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export ASF_BIN=${OPENSARKIT}/bins/ASF' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export KC_BIN=${OPENSARKIT}/bins/KC' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'export REMOTE_BIN=${OPENSARKIT}/bins/Remote_scripts' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export DOWNLOAD_BIN=${OPENSARKIT}/bins/Download' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export PYTHON_BIN=${OPENSARKIT}/python' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export GDAL_BIN=${OPENSARKIT}/bins/GDAL' >> ${OSK_HOME}/OpenSARKit_source.bash
@@ -233,7 +233,7 @@ snap --nosplash --modules --refresh --install org.csa.rstb.rstb.op.polarimetric.
 snap --nosplash --modules --refresh --enable org.esa.s1tbx.s1tbx.kit org.openide.util.enumerations org.openide.compat org.netbeans.core.multiview org.netbeans.api.visual jcl.over.slf4j org.openide.options org.netbeans.core.osgi org.netbeans.modules.netbinox org.netbeans.api.search org.netbeans.modules.uihandler org.netbeans.modules.spi.actions org.netbeans.libs.javafx org.esa.s3tbx.s3tbx.kit org.jdesktop.layout org.netbeans.lib.uihandler org.netbeans.libs.jsr223 
 
 echo '#export to Path' >> ${OSK_HOME}/OpenSARKit_source.bash
-echo 'export PATH=$PATH:${PYTHON_BIN}:${RSGISLIB_BIN}:${ASF_BIN}:${POLSAR_BIN}:${SAGA_BIN}:${S1TBX_BIN}:${NEST_BIN}:${GDAL_BIN}:${DOWNLOAD_BIN}:${ASF_EXE}:${SNAP}' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'export PATH=$PATH:${PYTHON_BIN}:${RSGISLIB_BIN}:${ASF_BIN}:${POLSAR_BIN}:${SAGA_BIN}:${SNAP_BIN}:${GDAL_BIN}:${DOWNLOAD_BIN}:${ASF_EXE}:${SNAP}:${KC_BIN}:${REMOTE}' >> ${OSK_HOME}/OpenSARKit_source.bash
 
 # Update global environment variables"
 mv ${OSK_HOME}/OpenSARKit_source.bash /etc/profile.d/OpenSARKit.sh
