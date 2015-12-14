@@ -42,6 +42,7 @@ export NEST_BIN="${OPENSARKIT}/bins/NEST"
 export SNAP_BIN="${OPENSARKIT}/bins/SNAP"
 export ASF_BIN="${OPENSARKIT}/bins/ASF"
 export KC_BIN="${OPENSARKIT}/bins/KC"
+export REMOTE_BIN="${OPENSARKIT}/bins/Remote_scripts"
 export DOWNLOAD_BIN="${OPENSARKIT}/bins/Download"
 export PYTHON_BIN="${OPENSARKIT}/python"
 export GDAL_BIN="${OPENSARKIT}/bins/GDAL"
@@ -49,7 +50,7 @@ export SAGA_BIN="${OPENSARKIT}/bins/SAGA"
 export RSGISLIB_BIN="${OPENSARKIT}/bins/RSGISLIB"
 
 # export to Path
-export PATH=$PATH:${PYTHON_BIN}:${RSGISLIB_BIN}:${ASF_BIN}:${POLSAR_BIN}:${SAGA_BIN}:${SNAP_BIN}:${NEST_BIN}:${GDAL_BIN}:${DOWNLOAD_BIN}:${ASF_EXE}:${SNAP}:${KC_BIN}
+export PATH=$PATH:${PYTHON_BIN}:${RSGISLIB_BIN}:${ASF_BIN}:${POLSAR_BIN}:${SAGA_BIN}:${SNAP_BIN}:${NEST_BIN}:${GDAL_BIN}:${DOWNLOAD_BIN}:${ASF_EXE}:${SNAP}:${KC_BIN}:${REMOTE_BIN}
 
 
 

@@ -3,7 +3,7 @@
 function osk_md_filter() {
     if [ -z "$2" ]; then 
     echo "Missing arguments. Syntax:"
-    echo "  osk_md_filter <input_file> <output_file> [GDAL-Format Output] [Absolute Noise] [Relative Noise] [Filter Method]"
+    echo "  osk_md_filter <input_file> <output_file> [GDAL-Format Output] [Absolute Noise] [Relative Noise] [Filter Method] [TMP folder]"
     return
     fi
     
@@ -31,13 +31,18 @@ function osk_md_filter() {
 	METHOD=$6
     fi
 
-    # use tmp directory for intermediate products
-    SEC=`date +%s`
-    TMP_DIR_saga=/tmp/process_saga${SEC}
+    if [ -z "$7" ]; then 
+	SEC=`date +%s`
+	TMP_DIR_saga=/tmp/process_saga${SEC}
+	mkdir -p ${TMP_DIR_saga}
+	
+    else
+	TMP_DIR_saga=$7
+    fi
+
     CPU=`nproc`
 
-    mkdir -p ${TMP_DIR_saga}
-
+   
     # check input format
     IN_FORMAT=`gdal_format $1`
     IN_NODATA=`gdal_nodata $1`
@@ -67,15 +72,21 @@ function osk_valid_range() {
 	
 	if [ -z "$6" ]; then 
 	echo "Missing arguments. Syntax:"
-	echo "osk_reclass_values <input_file> <output_file> <GDAL-Format Output> <Min> <Max> <Output NoData>"
+	echo "osk_reclass_values <input_file> <output_file> <GDAL-Format Output> <Min> <Max> <Output NoData> [TMP_DIR]"
 	return
 	fi
 
+	if [ -z "$7" ]; then 
+		SEC=`date +%s`
+		TMP_DIR_saga=/tmp/process_saga${SEC}
+		mkdir -p $TMP_DIR_saga
+	else
+		TMP_DIR_saga=$7
+	fi
+
+	CPU=`nproc`
 	GDAL_saga=$3
-	# use tmp directory for intermediate products
-   	SEC=`date +%s`
-	TMP_DIR_saga=/tmp/process_saga${SEC}
-	mkdir -p $TMP_DIR_saga
+
 	# check input format
         IN_FORMAT=`gdal_format $1`
     	IN_NODATA=`gdal_nodata $1`

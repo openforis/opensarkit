@@ -17,4 +17,4 @@ read -r -p "Type in the (IP)-Address of the remote machine: " ADRESS
 read -r -p "Type in the name of your data folder " PROJECT
 
 #execute 
-ssh -n -f ${USERNAME}@${ADRESS} "bash -c \"cd ${PROJECT}; nohup bash osk_S1_GRD_bulk_preproc_KC_mosaic . bla . > log 2>&1 &\""
+ssh -n -f ${USERNAME}@${ADRESS} "bash -c \"cd ${PROJECT}; source /etc/profile.d/OpenSARKit.sh; nohup bash osk_S1_GRD_bulk_preprocess . bla . > log 2>&1 &\""
