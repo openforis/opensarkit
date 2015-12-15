@@ -15,7 +15,7 @@ if [ "$#" != "3" ]; then
 	echo -e ""
 	echo -e "----------------------------------"
 	echo -e "Software dependencies:"
-	echo -e "	- Sentinel 1 Toolbox (version 1.1.1)"
+	echo -e "	- SNAP Toolbox"
 	echo -e "	- gdal-bin"
 	echo -e "	- saga"
 	echo -e "----------------------------------"

@@ -65,7 +65,12 @@ function osk_md_filter() {
 	
 	gdalwarp -multi -srcnodata -99999 -dstnodata 0 -of ${GDAL_saga} ${TMP_DIR_saga}/tmp.saga.filtered.sdat $2
     fi
-rm -rf ${TMP_DIR_saga}
+
+    if [ -z "$7" ]; then 
+	rm -rf ${TMP_DIR_saga}
+    else
+	rm -rf ${TMP_DIR_saga}/*
+    fi
 }
 
 function osk_valid_range() {
@@ -127,6 +132,10 @@ function osk_valid_range() {
 		gdalwarp -multi -srcnodata -99999 -dstnodata 0 -of ${GDAL_saga} ${TMP_DIR_saga}/tmp.saga.rerange.sdat $2
     	fi
 
-	rm -rf ${TMP_DIR_saga}
 
+	if [ -z "$7" ]; then 
+		rm -rf ${TMP_DIR_saga}
+	else
+		rm -rf ${TMP_DIR_saga}/*
+	fi
 }
