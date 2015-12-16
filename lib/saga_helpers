@@ -37,7 +37,8 @@ function osk_md_filter() {
 	mkdir -p ${TMP_DIR_saga}
 	
     else
-	TMP_DIR_saga=$7
+	TMP_DIR_saga=$7/TMP_SAGA
+	mkdir -p ${TMP_DIR_saga}
     fi
 
     CPU=`nproc`
@@ -65,19 +66,14 @@ function osk_md_filter() {
 	
 	gdalwarp -multi -srcnodata -99999 -dstnodata 0 -of ${GDAL_saga} ${TMP_DIR_saga}/tmp.saga.filtered.sdat $2
     fi
-
-    if [ -z "$7" ]; then 
-	rm -rf ${TMP_DIR_saga}
-    else
-	rm -rf ${TMP_DIR_saga}/*
-    fi
+    rm -rf ${TMP_DIR_saga}
 }
 
 function osk_valid_range() {
 	
 	if [ -z "$6" ]; then 
 	echo "Missing arguments. Syntax:"
-	echo "osk_reclass_values <input_file> <output_file> <GDAL-Format Output> <Min> <Max> <Output NoData> [TMP_DIR]"
+	echo "osk_reclass_values <input_file> <output_file> <GDAL-Format Output> <Min> <Max> <Output NoData> <TMP_DIR>"
 	return
 	fi
 
@@ -86,7 +82,8 @@ function osk_valid_range() {
 		TMP_DIR_saga=/tmp/process_saga${SEC}
 		mkdir -p $TMP_DIR_saga
 	else
-		TMP_DIR_saga=$7
+		TMP_DIR_saga=$7/TMP_SAGA
+		mkdir -p ${TMP_DIR_saga}
 	fi
 
 	CPU=`nproc`
@@ -131,11 +128,5 @@ function osk_valid_range() {
 
 		gdalwarp -multi -srcnodata -99999 -dstnodata 0 -of ${GDAL_saga} ${TMP_DIR_saga}/tmp.saga.rerange.sdat $2
     	fi
-
-
-	if [ -z "$7" ]; then 
-		rm -rf ${TMP_DIR_saga}
-	else
-		rm -rf ${TMP_DIR_saga}/*
-	fi
+	rm -rf ${TMP_DIR_saga}
 }
