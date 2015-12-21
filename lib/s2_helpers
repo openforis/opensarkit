@@ -1,0 +1,95 @@
+#get the orbit directions
+function s2_orbit_dir() {
+    if [ -z "$1" ]; then 
+    echo "Missing arguments. Syntax:"
+    echo "  s1_orbit <input_list>"
+    return
+    fi
+    ORBIT=$(xml_grep str $1 |\
+          grep orbitdirection |\
+	  sed 's/  <str name="orbitdirection">//g' |\
+	  sed 's|</str>||g')
+    echo "$ORBIT"
+}
+
+
+# get Scene ID
+function s2_ident() {
+    if [ -z "$1" ]; then 
+    echo "Missing arguments. Syntax:"
+    echo "  s1_ident <input_list>"
+    return
+    fi
+    IDENT=$(xml_grep str $1 |\
+	grep \"identifier |\
+	sed 's/  <str name="identifier">//g' |\
+	sed 's|</str>||g')
+    echo "$IDENT"
+}
+
+# get UUID for download
+function s2_uuid() {
+    if [ -z "$1" ]; then 
+    echo "Missing arguments. Syntax:"
+    echo "  s1_uuid <input_list>"
+    return
+    fi
+    UUID=$(xml_grep id $1 --text_only |\
+	tail -n +2)
+    echo "$UUID"
+}
+
+# get acquisition date
+function s2_date() {
+    if [ -z "$1" ]; then 
+    echo "Missing arguments. Syntax:"
+    echo "  s1_date <input_list>"
+    return
+    fi
+    DATE=$(xml_grep title $1 --text_only |\
+ 	tail -n +2 |\
+	cut -c 26-33)
+    echo "$DATE"
+}
+
+# get scene footprint
+function s2_footprint() {
+    if [ -z "$1" ]; then 
+    echo "Missing arguments. Syntax:"
+    echo "  s1_footprint <input_list>"
+    return
+    fi
+    FOOT=$(xml_grep str $1 --text_only |\
+	 grep "POLYGON ((" |\
+	 sed 's|POLY|\"POLY|g' |\
+	 sed 's|))|))"|g')
+    echo "$FOOT"
+}
+
+# get track
+function s2_track() {
+    if [ -z "$1" ]; then 
+    echo "Missing arguments. Syntax:"
+    echo "  s1_track <input_list>"
+    return
+    fi
+    TRACK=$(xml_grep title $1 --text_only |\
+ 	tail -n +2 |\
+	cut -c 34-37)
+    echo "$TRACK"
+}
+
+# get cloud cover
+function s2_cloud() {
+    if [ -z "$1" ]; then 
+    echo "Missing arguments. Syntax:"
+    echo "  s1_cloud <input_list>"
+    return
+    fi
+    CLOUD=$(xml_grep double $1 |\
+    grep cloudcover |\
+    sed 's/  <double name="cloudcoverpercentage">//g' |\
+    sed 's|</double>||g')
+    echo "$CLOUD"
+}
+

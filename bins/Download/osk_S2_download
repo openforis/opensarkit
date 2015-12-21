@@ -7,7 +7,7 @@ if [ "$#" != "2" ]; then
 	echo -e ""
 	echo -e "----------------------------------"
 	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
-	echo -e " Download Sentinel-1 data with an inventory shapefile"
+	echo -e " Download Sentinel-2 data with an inventory shapefile"
 	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
 	echo -e " Author: ${AUTHOR_1}"
 	echo -e " Contact: ${CONTACT_1}"
@@ -19,7 +19,7 @@ if [ "$#" != "2" ]; then
 	echo -e "	- ogrinfo"
 	echo -e "----------------------------------"
 	echo -e ""
-	echo -e " syntax: osk_S1_download <output_folder> <Inventory Shapefile>"
+	echo -e " syntax: osk_S2_download <output_folder> <Inventory Shapefile>"
 	echo -e ""
 	echo -e " input parameters:"
 	echo -e " output_folder			(output) folder where the downloaded data will be saved"
@@ -29,7 +29,7 @@ else
 	echo -e ""
 	echo -e "----------------------------------"
 	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
-	echo -e " Download Sentinel-1 data with an inventory shapefile"
+	echo -e " Download Sentinel-2 data with an inventory shapefile"
 	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
 	echo -e " Author: ${AUTHOR_1}"
 	echo -e " Contact: ${CONTACT_1}"
@@ -67,7 +67,7 @@ while read line; do
 	# get the data via the UUID
 	UUID=$line		
 #	DL_ADDRESS='https://scihub.esa.int/dhus/odata/v1/Products('"'${UUID}'"')/$value'
-	DL_ADDRESS='https://scihub.esa.int/apihub/odata/v1/Products('"'${UUID}'"')/$value'
+	DL_ADDRESS='https://scihub.esa.int/s2/odata/v1/Products('"'${UUID}'"')/$value'
 	echo "Downloading Product ${COUNT} of ${NR} (UUID=${UUID})"
 
 	# prepare a loop to avoid uncomplete data downloads		
@@ -78,25 +78,26 @@ while read line; do
 
 		i=1
 		aria2c --dir=${TMP_DIR} --check-certificate=false --continue=true --http-user="${USERNAME}" --http-passwd="${PW}" "${DL_ADDRESS}" > ${TMP_DIR}/tmp_error
-		
+			
 		if grep -q "download completed" ${TMP_DIR}/tmp_error;then
 
 			echo "Download of ${UUID} completed"
 			i=3
 
 		else
-			
+				
 			echo " Connection problems, will try again in 5 minutes"
 			sleep 5m				
 		fi		
+
 	done
 
 	rm -f ${TMP_DIR}/tmp_error
 	SCENE=`ls ${TMP_DIR}`
 	SCENE_ID=`echo ${SCENE} | rev | cut -c 5- | rev`
-	DATE=${SCENE_ID:17:8}
+	DATE=${SCENE_ID:25:8}
 
-	echo "Moving $SCENE to ${PROC_DIR}/S1/ZIP"
+	echo "Moving $SCENE to ${PROC_DIR}/DATA/${DATE}/"
 	mkdir -p ${PROC_DIR}/DATA/
 	mkdir -p ${PROC_DIR}/DATA/${DATE}/
 	mv ${TMP_DIR}/${SCENE} ${PROC_DIR}/DATA/${DATE}/

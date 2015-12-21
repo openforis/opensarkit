@@ -100,8 +100,6 @@ function osk_valid_range() {
 		saga_cmd -c=${CPU} -f=s grid_tools 15 -INPUT:$FILE_SAGA -RESULT:${TMP_DIR_saga}/tmp.saga.rerange1.sgrd -OLD:$4 -NEW:-99999 -NODATA:-99999 -SOPERATOR:1 -RESULT_NODATA_VALUE:-99999
 		saga_cmd -c=${CPU} -f=s grid_tools 15 -INPUT:${TMP_DIR_saga}/tmp.saga.rerange1.sgrd -RESULT:${TMP_DIR_saga}/tmp.saga.rerange.sgrd -OLD:$5 -NEW:$5 -NODATA:-99999 -SOPERATOR:4 -RESULT_NODATA_VALUE:-99999
 
-
-		
 	else
 
 		if [ -z "${IN_NODATA}" ];then
