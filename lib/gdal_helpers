@@ -147,3 +147,17 @@ function gdal_nodata() {
 	     awk -F "=" '{print $2}')
 	echo -n "$NODATA"
 }
+
+function gdal_EPSG() { 
+    if [ -z "$1" ]; then 
+        echo "Missing arguments. Syntax:"
+        echo "  gdal_EPSG <input_raster>"
+        return
+    fi
+    EPSG=$(gdalinfo $1 |\
+           grep AUTHORITY |\
+	   tail -1 |\
+	   sed 's/    AUTHORITY\[\"EPSG\"\,\"//g' |\
+	   sed 's/\"\]\]//')
+	echo -n "$EPSG"
+}

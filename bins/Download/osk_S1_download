@@ -100,7 +100,7 @@ while read line; do
 	SCENE_ID=`echo ${SCENE} | rev | cut -c 5- | rev`
 	DATE=${SCENE_ID:17:8}
 
-	echo "Moving $SCENE to ${PROC_DIR}/S1/ZIP"
+	echo "Moving $SCENE to ${PROC_DIR}/DATA/${DATE}/"
 	mkdir -p ${PROC_DIR}/DATA/
 	mkdir -p ${PROC_DIR}/DATA/${DATE}/
 	mv ${TMP_DIR}/${SCENE} ${PROC_DIR}/DATA/${DATE}/

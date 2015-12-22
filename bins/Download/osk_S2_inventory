@@ -107,7 +107,6 @@ echo '"String(79)","String(37)","Integer(8)","Real(3.2)","Integer(3)","String(11
 # write data
 paste -d "," ${TMP_DIR}/scenes ${TMP_DIR}/uuid ${TMP_DIR}/dates ${TMP_DIR}/cloud ${TMP_DIR}/track ${TMP_DIR}/orbit ${TMP_DIR}/polys >> ${TMP_DIR}/wkt.csv
 
-
 mkdir -p ${PROC_DIR}/
 mkdir -p ${PROC_DIR}/Inventory
 INV=${PROC_DIR}/Inventory
@@ -132,4 +131,3 @@ fi
 
 # remove TMP folder
 rm -rf ${TMP_DIR}
-
