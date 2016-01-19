@@ -80,7 +80,7 @@ mkdir -p ${OUT_DIR}/AOI/
 
 if [ `echo $2 | grep shp` ]; then # AOI case
 
-		AOI=$2
+		AOI=`readlink -f $2`
 		cp ${AOI} ${OUT_DIR}/AOI/
 	
 else # country case
@@ -197,7 +197,7 @@ while read LINE; do
 
 done < ${TMP_DIR}/kc_list
 
-mkdir -p $1/FNF
+#mkdir -p $1/FNF
 #gdal_merge.py -o ${TMP_DIR}/FNF_map.tif ${TMP_DIR}/*_C
 #gdalwarp -cutline ${AOI_BUF} -crop_to_cutline ${TMP_DIR}/FNF_map.tif $1/FNF/KC_FNF_map.tif
 #----------------------------------------------------------------------
@@ -215,7 +215,7 @@ cd ${TMP_DIR}/
 		#-------------------------------------------------------------------------------------
 		# check if 1x1 tile intersects with AOI
 		# create a shapefile
-		gdal_trace_outline ${DATA} -out-cs ll -ogr-out ${DATA}.shp
+		gdal_trace_outline ${DATA} -out-cs ll -ogr-out ${DATA}.shp > ${TMP_DIR}/bla
 		LAYER_TILE=`ogrinfo ${DATA}.shp | tail -1 | awk $'{print $2}'`
 		DATA_PATH=`readlink -f ${DATA}`		
 		AOI_PATH=`readlink -f $AOI`
@@ -232,7 +232,7 @@ cd ${TMP_DIR}/
 
 
 		# create intersect table	
-		ogr2ogr -f "csv" ${TMP_DIR}/grids.csv ${TMP_DIR}/intersect_tile.vrt -dialect sqlite -sql "SELECT * FROM ${LAYER} a, ${LAYER_TILE} b WHERE ST_Intersects(a.geometry, b.geometry)" 
+		ogr2ogr -f "csv" ${TMP_DIR}/grids.csv ${TMP_DIR}/intersect_tile.vrt -dialect sqlite -sql "SELECT * FROM ${LAYER} a, ${LAYER_TILE} b WHERE ST_Intersects(a.geometry, b.geometry)"  > ${TMP_DIR}/bla
 		#-------------------------------------------------------------------------------------
 
 		# do the actual check
@@ -252,9 +252,9 @@ cd ${TMP_DIR}/
 			saga_cmd -f=r grid_tools 25 -GRID:${DATA}"_masked.sgrd" -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:${DATA}"_filled.sgrd"		
 			echo ""
 			echo "Applying multi-directional Lee filter (Lee et al. 1998)"
-			saga_cmd -f=r grid_filter 3 -INPUT:${DATA}"_filled.sgrd" -RESULT:${DATA}.saga.filtered.sgrd -NOISE_ABS:5000 -NOISE_REL:3000 -METHOD:1
-			echo "Exporting "
-			gdal_translate -of GTiff -ot UInt16 -a_nodata 0 ${DATA}.saga.filtered.sdat ${OUT_DIR}/${YEAR}/TILES/${DATA}.tif
+			saga_cmd -f=r grid_filter 3 -INPUT:${DATA}"_filled.sgrd" -RESULT:${OUT_DIR}/${YEAR}/TILES/${DATA}.saga.filtered.sgrd -NOISE_ABS:5000 -NOISE_REL:3000 -METHOD:1
+			#echo "Exporting "
+			#gdal_translate -of GTiff -ot UInt16 -a_nodata 0 ${DATA}.saga.filtered.sdat ${OUT_DIR}/${YEAR}/TILES/${DATA}.tif
 			#---------------------------------------------------------------------------
 
 			#---------------------------------------------------------------------------
@@ -300,7 +300,7 @@ cd ${TMP_DIR}/
 		else 
 
 			echo "------------------------------------------"
-			echo "No Overlap with AOI, going on with the next tile"
+			echo "No Overlap for $DATA with AOI, going on with the next 1x1 degree tile"
 			echo "------------------------------------------"
 		fi
 
@@ -315,7 +315,7 @@ cd ${TMP_DIR}/
 		#-------------------------------------------------------------------------------------
 		# check if 1x1 tile intersects with AOI
 		# create a shapefile
-		gdal_trace_outline ${DATA} -out-cs ll -ogr-out ${DATA}.shp
+		gdal_trace_outline ${DATA} -out-cs ll -ogr-out ${DATA}.shp > ${TMP_DIR}/bla
 		LAYER_TILE=`ogrinfo ${DATA}.shp | tail -1 | awk $'{print $2}'`
 		DATA_PATH=`readlink -f ${DATA}`		
 		AOI_PATH=`readlink -f $AOI`
@@ -332,7 +332,7 @@ cd ${TMP_DIR}/
 
 
 		# create intersect table	
-		ogr2ogr -f "csv" ${TMP_DIR}/grids.csv ${TMP_DIR}/intersect_tile.vrt -dialect sqlite -sql "SELECT * FROM ${LAYER} a, ${LAYER_TILE} b WHERE ST_Intersects(a.geometry, b.geometry)" 
+		ogr2ogr -f "csv" ${TMP_DIR}/grids.csv ${TMP_DIR}/intersect_tile.vrt -dialect sqlite -sql "SELECT * FROM ${LAYER} a, ${LAYER_TILE} b WHERE ST_Intersects(a.geometry, b.geometry)" > ${TMP_DIR}/bla
 		#-------------------------------------------------------------------------------------
 
 		# do the actual check
@@ -350,16 +350,16 @@ cd ${TMP_DIR}/
 			saga_cmd -f=r grid_tools 25 -GRID:${DATA}"_masked.sgrd" -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:${DATA}"_filled.sgrd"		
 			echo ""
 			echo "Applying multi-directional Lee filter (Lee et al. 1998)"
-			saga_cmd -f=r grid_filter 3 -INPUT:${DATA}"_filled.sgrd" -RESULT:${DATA}.saga.filtered.sgrd -NOISE_ABS:5000 -NOISE_REL:3000 -METHOD:1
+			saga_cmd -f=r grid_filter 3 -INPUT:${DATA}"_filled.sgrd" -RESULT:${OUT_DIR}/${YEAR}/TILES/${DATA}.saga.filtered.sgrd -NOISE_ABS:5000 -NOISE_REL:3000 -METHOD:1
 			echo ""			
-			echo "Exporting "
-			gdal_translate -of GTiff -ot UInt16 -a_nodata 0 ${DATA}.saga.filtered.sdat ${OUT_DIR}/${YEAR}/TILES/${DATA}.tif
+			#echo "Exporting "
+			#gdal_translate -of GTiff -ot UInt16 -a_nodata 0 ${DATA}.saga.filtered.sdat ${OUT_DIR}/${YEAR}/TILES/${DATA}.tif
 
 			#---------------------------------------------------------------------------
 			# HH/HV ratio calculation
 			echo ""			
 			echo "Creating HH/HV Ratio channel"
-			saga_cmd grid_calculus 1 -GRIDS:${DATA:0:10}_sl_HH.saga.filtered.sgrd -XGRIDS:${DATA}.saga.filtered.sgrd -RESULT:${OUT_DIR}/${YEAR}/TILES/${DATA:0:10}_HHHV.sgrd -TYPE:7 -FORMULA:"a / b"
+			saga_cmd grid_calculus 1 -GRIDS:${OUT_DIR}/${YEAR}/TILES/${DATA:0:10}_sl_HH.saga.filtered.sgrd -XGRIDS:${OUT_DIR}/${YEAR}/TILES/${DATA}.saga.filtered.sgrd -RESULT:${OUT_DIR}/${YEAR}/TILES/${DATA:0:10}_HHHV.sgrd -TYPE:7 -FORMULA:"a / b"
 
 			#MIN=`gdal_min ${DATA:0:10}_HHHV.saga.filtered.sdat`
 			#MAX=`gdal_max ${DATA:0:10}_HHHV.saga.filtered.sdat`
@@ -405,7 +405,14 @@ cd ${TMP_DIR}/
 
 			fi
 			#---------------------------------------------------------------------------
-		fi			
+		
+		else 
+
+			echo "------------------------------------------"
+			echo "No Overlap for $DATA with AOI, going on with the next 1x1 degree tile"
+			echo "------------------------------------------"
+		fi
+					
 
 		rm -f ${DATA}*
 		rm -f ${TMP_DIR}/grids.csv
@@ -413,13 +420,111 @@ cd ${TMP_DIR}/
 	done
 
 else # no filter case
-	
+
+	cd ${TMP_DIR}/	
 	for DATA in `ls *sl_HH`;do
-		gdal_translate -of GTiff -ot UInt16 ${DATA} ${OUT_DIR}/${YEAR}/TILES/${DATA}.tif
+
+		#-------------------------------------------------------------------------------------
+		# check if 1x1 tile intersects with AOI
+		# create a shapefile
+		gdal_trace_outline ${DATA} -out-cs ll -ogr-out ${DATA}.shp > ${TMP_DIR}/bla
+		LAYER_TILE=`ogrinfo ${DATA}.shp | tail -1 | awk $'{print $2}'`
+		DATA_PATH=`readlink -f ${DATA}`		
+		AOI_PATH=`readlink -f $AOI`
+
+		# create a vrt for intersect analysis
+		echo "<OGRVRTDataSource>" > ${TMP_DIR}/intersect_tile.vrt
+		echo "   <OGRVRTLayer name=\"${LAYER_TILE}\">" >> ${TMP_DIR}/intersect_tile.vrt
+		echo "      <SrcDataSource>${DATA_PATH}.shp</SrcDataSource>" >> ${TMP_DIR}/intersect_tile.vrt
+		echo "   </OGRVRTLayer>" >> ${TMP_DIR}/intersect_tile.vrt
+		echo "   <OGRVRTLayer name=\"${LAYER}\">" >> ${TMP_DIR}/intersect_tile.vrt
+		echo "      <SrcDataSource>${AOI_PATH}</SrcDataSource>" >> ${TMP_DIR}/intersect_tile.vrt
+		echo "   </OGRVRTLayer>" >> ${TMP_DIR}/intersect_tile.vrt
+		echo "</OGRVRTDataSource>" >> ${TMP_DIR}/intersect_tile.vrt	
+
+
+		# create intersect table	
+		ogr2ogr -f "csv" ${TMP_DIR}/grids.csv ${TMP_DIR}/intersect_tile.vrt -dialect sqlite -sql "SELECT * FROM ${LAYER} a, ${LAYER_TILE} b WHERE ST_Intersects(a.geometry, b.geometry)" > ${TMP_DIR}/bla
+
+		# do the actual check
+		if [ `cat ${TMP_DIR}/grids.csv | wc -l` -gt 1 ];then
+		
+			echo "Translate HV band to Saga GIS Format for subsequent filtering"
+			gdal_translate -of SAGA ${DATA} ${DATA}.saga.sdat
+			echo ""
+			echo "Apply the mask" 
+			gdal_calc.py -A ${DATA:0:10}"_mask" --outfile=${DATA}"_mask.tif" --calc="1*(A==255)" --NoDataValue=0
+			gdal_translate -of SAGA -a_nodata 0 ${DATA}"_mask.tif" ${DATA}"_mask.saga.sdat"
+			saga_cmd -f=r grid_calculus 1 -GRIDS:${DATA}.saga.sgrd -XGRIDS:${DATA}"_mask.saga.sgrd" -RESULT ${DATA}"_masked.sgrd" -FORMULA:"a * b"
+			echo ""
+			echo "Close small gaps by interpolation"
+			saga_cmd -f=r grid_tools 25 -GRID:${DATA}"_masked.sgrd" -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:${OUT_DIR}/${YEAR}/TILES/${DATA}".filled.sgrd"	
+
+		else
+			
+			echo "------------------------------------------"
+			echo "No Overlap for $DATA with AOI, going on with the next 1x1 degree tile"
+			echo "------------------------------------------"
+
+		fi
+
+		rm -f ${DATA}*
+		rm -f ${TMP_DIR}/grids.csv
 	done
 	
 	for DATA in `ls *sl_HV`;do
-		gdal_translate -of GTiff -ot UInt16 ${DATA} ${OUT_DIR}/${YEAR}/TILES/${DATA}.tif
+		
+
+		#-------------------------------------------------------------------------------------
+		# check if 1x1 tile intersects with AOI
+		# create a shapefile
+		gdal_trace_outline ${DATA} -out-cs ll -ogr-out ${DATA}.shp > ${TMP_DIR}/bla
+		LAYER_TILE=`ogrinfo ${DATA}.shp | tail -1 | awk $'{print $2}'`
+		DATA_PATH=`readlink -f ${DATA}`		
+		AOI_PATH=`readlink -f $AOI`
+
+		# create a vrt for intersect analysis
+		echo "<OGRVRTDataSource>" > ${TMP_DIR}/intersect_tile.vrt
+		echo "   <OGRVRTLayer name=\"${LAYER_TILE}\">" >> ${TMP_DIR}/intersect_tile.vrt
+		echo "      <SrcDataSource>${DATA_PATH}.shp</SrcDataSource>" >> ${TMP_DIR}/intersect_tile.vrt
+		echo "   </OGRVRTLayer>" >> ${TMP_DIR}/intersect_tile.vrt
+		echo "   <OGRVRTLayer name=\"${LAYER}\">" >> ${TMP_DIR}/intersect_tile.vrt
+		echo "      <SrcDataSource>${AOI_PATH}</SrcDataSource>" >> ${TMP_DIR}/intersect_tile.vrt
+		echo "   </OGRVRTLayer>" >> ${TMP_DIR}/intersect_tile.vrt
+		echo "</OGRVRTDataSource>" >> ${TMP_DIR}/intersect_tile.vrt	
+
+
+		# create intersect table	
+		ogr2ogr -f "csv" ${TMP_DIR}/grids.csv ${TMP_DIR}/intersect_tile.vrt -dialect sqlite -sql "SELECT * FROM ${LAYER} a, ${LAYER_TILE} b WHERE ST_Intersects(a.geometry, b.geometry)" > ${TMP_DIR}/bla
+
+		# do the actual check
+		if [ `cat ${TMP_DIR}/grids.csv | wc -l` -gt 1 ];then
+			echo "Translate HV band to Saga GIS Format for subsequent filtering"
+			gdal_translate -of SAGA ${DATA} ${DATA}.saga.sdat
+			echo ""
+			echo "Apply the mask" 
+			gdal_calc.py -A ${DATA:0:10}"_mask" --outfile=${DATA}"_mask.tif" --calc="1*(A==255)" --NoDataValue=0
+			gdal_translate -of SAGA -a_nodata 0 ${DATA}"_mask.tif" ${DATA}"_mask.saga.sdat"
+			saga_cmd -f=r grid_calculus 1 -GRIDS:${DATA}.saga.sgrd -XGRIDS:${DATA}"_mask.saga.sgrd" -RESULT ${DATA}"_masked.sgrd" -FORMULA:"a * b"
+			echo ""
+			echo "Close small gaps by interpolation"
+			saga_cmd -f=r grid_tools 25 -GRID:${DATA}"_masked.sgrd" -MAXGAPCELLS:250 -MAXPOINTS:500 -LOCALPOINTS:25 -CLOSED:${OUT_DIR}/${YEAR}/TILES/${DATA}".filled.sgrd"	
+
+			echo ""			
+			echo "Creating HH/HV Ratio channel"
+			saga_cmd grid_calculus 1 -GRIDS:${OUT_DIR}/${YEAR}/TILES/${DATA:0:10}_sl_HH.sgrd -XGRIDS:${OUT_DIR}/${YEAR}/TILES/${DATA}.sgrd -RESULT:${OUT_DIR}/${YEAR}/TILES/${DATA:0:10}_HHHV.sgrd -TYPE:7 -FORMULA:"a / b"
+
+		else
+			
+			echo "------------------------------------------"
+			echo "No Overlap for $DATA with AOI, going on with the next 1x1 degree tile"
+			echo "------------------------------------------"
+
+	
+		fi
+	
+		rm -f ${DATA}*
+		rm -f ${TMP_DIR}/grids.csv
 	done
 
 fi # close filter/no-filter case
@@ -430,64 +535,69 @@ fi # close filter/no-filter case
 
 #--------------------------------------------------------------
 # 3 build the final mosaic
-gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/TILES/*sl_HH.tif
-gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_hv.vrt ${OUT_DIR}/${YEAR}/TILES/*sl_HV.tif
-gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_hhhv.vrt ${OUT_DIR}/${YEAR}/TILES/*HHHV.sdat
+gdalbuildvrt ${OUT_DIR}/${YEAR}/TILES/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/TILES/*sl_HH*.sdat
+gdalbuildvrt ${OUT_DIR}/${YEAR}/TILES/mosaic_hv.vrt ${OUT_DIR}/${YEAR}/TILES/*sl_HV*.sdat
+gdalbuildvrt ${OUT_DIR}/${YEAR}/TILES/mosaic_hhhv.vrt ${OUT_DIR}/${YEAR}/TILES/*HHHV.sdat
 
 if [ `echo $2 | grep shp` ]; then # AOI case
-	gdal_translate -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/Gamma0_HH_${YEAR}.tif
-	gdal_translate -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/mosaic_hv.vrt ${OUT_DIR}/${YEAR}/Gamma0_HV_${YEAR}.tif
-	
-	MIN=`gdal_min ${OUT_DIR}/${YEAR}/mosaic_hhhv.vrt`
-	MAX=`gdal_max ${OUT_DIR}/${YEAR}/mosaic_hhhv.vrt`
-	gdal_translate -projwin $(ogr_extent ${AOI}) -scale ${MIN} ${MAX} 0 65535 -a_nodata 0 -ot UInt16 ${OUT_DIR}/${YEAR}/mosaic_hhhv.vrt ${OUT_DIR}/${YEAR}/HHHV_ratio_${YEAR}.tif
-
-	gdalbuildvrt -separate -vrtnodata 0 ${OUT_DIR}/${YEAR}/RGB_${YEAR}.vrt ${OUT_DIR}/${YEAR}/Gamma0_HH_${YEAR}.tif ${OUT_DIR}/${YEAR}/Gamma0_HV_${YEAR}.tif ${OUT_DIR}/${YEAR}/HHHV_ratio_${YEAR}.tif
-	
-	if [ $5 = 1 ];then
-	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HHdis.vrt ${OUT_DIR}/${YEAR}/TILES/*HH.dissimilarity.tif
-	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HHvar.vrt ${OUT_DIR}/${YEAR}/TILES/*HH.variance.tif
-	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HHhom.vrt ${OUT_DIR}/${YEAR}/TILES/*HH.homogeneity.tif
-	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HVdis.vrt ${OUT_DIR}/${YEAR}/TILES/*HV.dissimilarity.tif
-	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HVvar.vrt ${OUT_DIR}/${YEAR}/TILES/*HV.variance.tif
-	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HVhom.vrt ${OUT_DIR}/${YEAR}/TILES/*HV.homogeneity.tif
-
-	gdal_translate -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/mosaic_HHhom.vrt ${OUT_DIR}/${YEAR}/04_Homogeneity_HH_${YEAR}.tif
-	gdal_translate -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/mosaic_HHvar.vrt ${OUT_DIR}/${YEAR}/04_Variance_HH_${YEAR}.tif
-	gdal_translate -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/mosaic_HHdis.vrt ${OUT_DIR}/${YEAR}/04_Dissimilarity_HH_${YEAR}.tif
-
-	gdal_translate -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/mosaic_HVhom.vrt ${OUT_DIR}/${YEAR}/04_Homogeneity_HV_${YEAR}.tif
-	gdal_translate -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/mosaic_HVvar.vrt ${OUT_DIR}/${YEAR}/04_Variance_HV_${YEAR}.tif
-	gdal_translate -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/mosaic_HVdis.vrt ${OUT_DIR}/${YEAR}/04_Dissimilarity_HV_${YEAR}.tif
-	fi
-
+	echo "creating RGB mosaic (R: HH, G: HV, B:HH/HV)"
 else
-	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/Gamma0_HH_${YEAR}.tif
-	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_hv.vrt ${OUT_DIR}/${YEAR}/Gamma0_HV_${YEAR}.tif
+	echo "creating RGB mosaic (R: HH, G: HV, B:HH/HV)"
+	AOI=$AOI_BUF
+fi
+	gdal_translate -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/TILES/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/Gamma0_HH_${YEAR}.tif
+	gdal_translate -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/TILES/mosaic_hv.vrt ${OUT_DIR}/${YEAR}/Gamma0_HV_${YEAR}.tif
 	
-	MIN=`gdal_min ${OUT_DIR}/${YEAR}/mosaic_hhhv.vrt`
-	MAX=`gdal_max ${OUT_DIR}/${YEAR}/mosaic_hhhv.vrt`
-	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) -scale ${MIN} ${MAX} 0 65535 -a_nodata 0 -ot UInt16 ${OUT_DIR}/${YEAR}/mosaic_hhhv.vrt ${OUT_DIR}/${YEAR}/HHHV_ratio_${YEAR}.tif
+	MIN=`gdal_min ${OUT_DIR}/${YEAR}/TILES/mosaic_hhhv.vrt`
+	MAX=`gdal_max ${OUT_DIR}/${YEAR}/TILES/mosaic_hhhv.vrt`
+	gdal_translate -projwin $(ogr_extent ${AOI}) -scale ${MIN} ${MAX} 0 65535 -a_nodata 0 -ot UInt16 ${OUT_DIR}/${YEAR}/TILES/mosaic_hhhv.vrt ${OUT_DIR}/${YEAR}/HHHV_ratio_${YEAR}.tif
 
 	gdalbuildvrt -separate -vrtnodata 0 ${OUT_DIR}/${YEAR}/RGB_${YEAR}.vrt ${OUT_DIR}/${YEAR}/Gamma0_HH_${YEAR}.tif ${OUT_DIR}/${YEAR}/Gamma0_HV_${YEAR}.tif ${OUT_DIR}/${YEAR}/HHHV_ratio_${YEAR}.tif
 	
 	if [ $5 = 1 ];then
-	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HHdis.vrt ${OUT_DIR}/${YEAR}/TILES/*HH.dissimilarity.tif
-	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HHvar.vrt ${OUT_DIR}/${YEAR}/TILES/*HH.variance.tif
-	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HHhom.vrt ${OUT_DIR}/${YEAR}/TILES/*HH.homogeneity.tif
-	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HVdis.vrt ${OUT_DIR}/${YEAR}/TILES/*HV.dissimilarity.tif
-	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HVvar.vrt ${OUT_DIR}/${YEAR}/TILES/*HV.variance.tif
-	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HVhom.vrt ${OUT_DIR}/${YEAR}/TILES/*HV.homogeneity.tif
+	gdalbuildvrt ${OUT_DIR}/${YEAR}/TILES/mosaic_HHdis.vrt ${OUT_DIR}/${YEAR}/TILES/*HH.dissimilarity.tif
+	gdalbuildvrt ${OUT_DIR}/${YEAR}/TILES/mosaic_HHvar.vrt ${OUT_DIR}/${YEAR}/TILES/*HH.variance.tif
+	gdalbuildvrt ${OUT_DIR}/${YEAR}/TILES/mosaic_HHhom.vrt ${OUT_DIR}/${YEAR}/TILES/*HH.homogeneity.tif
+	gdalbuildvrt ${OUT_DIR}/${YEAR}/TILES/mosaic_HVdis.vrt ${OUT_DIR}/${YEAR}/TILES/*HV.dissimilarity.tif
+	gdalbuildvrt ${OUT_DIR}/${YEAR}/TILES/mosaic_HVvar.vrt ${OUT_DIR}/${YEAR}/TILES/*HV.variance.tif
+	gdalbuildvrt ${OUT_DIR}/${YEAR}/TILES/mosaic_HVhom.vrt ${OUT_DIR}/${YEAR}/TILES/*HV.homogeneity.tif
 
-	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_HHhom.vrt ${OUT_DIR}/${YEAR}/04_Homogeneity_HH_${YEAR}.tif
-	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_HHvar.vrt ${OUT_DIR}/${YEAR}/04_Variance_HH_${YEAR}.tif
-	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_HHdis.vrt ${OUT_DIR}/${YEAR}/04_Dissimilarity_HH_${YEAR}.tif
+	gdal_translate -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/TILES/mosaic_HHhom.vrt ${OUT_DIR}/${YEAR}/04_Homogeneity_HH_${YEAR}.tif
+	gdal_translate -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/TILES/mosaic_HHvar.vrt ${OUT_DIR}/${YEAR}/04_Variance_HH_${YEAR}.tif
+	gdal_translate -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/TILES/mosaic_HHdis.vrt ${OUT_DIR}/${YEAR}/04_Dissimilarity_HH_${YEAR}.tif
 
-	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_HVhom.vrt ${OUT_DIR}/${YEAR}/04_Homogeneity_HV_${YEAR}.tif
-	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_HVvar.vrt ${OUT_DIR}/${YEAR}/04_Variance_HV_${YEAR}.tif
-	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_HVdis.vrt ${OUT_DIR}/${YEAR}/04_Dissimilarity_HV_${YEAR}.tif
+	gdal_translate -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/TILES/mosaic_HVhom.vrt ${OUT_DIR}/${YEAR}/04_Homogeneity_HV_${YEAR}.tif
+	gdal_translate -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/TILES/mosaic_HVvar.vrt ${OUT_DIR}/${YEAR}/04_Variance_HV_${YEAR}.tif
+	gdal_translate -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/TILES/mosaic_HVdis.vrt ${OUT_DIR}/${YEAR}/04_Dissimilarity_HV_${YEAR}.tif
 	fi
-fi
+
+#else
+#	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/Gamma0_HH_${YEAR}.tif
+#	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_hv.vrt ${OUT_DIR}/${YEAR}/Gamma0_HV_${YEAR}.tif
+	
+#	MIN=`gdal_min ${OUT_DIR}/${YEAR}/mosaic_hhhv.vrt`
+#	MAX=`gdal_max ${OUT_DIR}/${YEAR}/mosaic_hhhv.vrt`
+#	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) -scale ${MIN} ${MAX} 0 65535 -a_nodata 0 -ot UInt16 ${OUT_DIR}/${YEAR}/mosaic_hhhv.vrt ${OUT_DIR}/${YEAR}/HHHV_ratio_${YEAR}.tif
+
+#	gdalbuildvrt -separate -vrtnodata 0 ${OUT_DIR}/${YEAR}/RGB_${YEAR}.vrt ${OUT_DIR}/${YEAR}/Gamma0_HH_${YEAR}.tif ${OUT_DIR}/${YEAR}/Gamma0_HV_${YEAR}.tif ${OUT_DIR}/${YEAR}/HHHV_ratio_${YEAR}.tif
+	
+#	if [ $5 = 1 ];then
+#	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HHdis.vrt ${OUT_DIR}/${YEAR}/TILES/*HH.dissimilarity.tif
+#	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HHvar.vrt ${OUT_DIR}/${YEAR}/TILES/*HH.variance.tif
+#	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HHhom.vrt ${OUT_DIR}/${YEAR}/TILES/*HH.homogeneity.tif
+#	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HVdis.vrt ${OUT_DIR}/${YEAR}/TILES/*HV.dissimilarity.tif
+#	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HVvar.vrt ${OUT_DIR}/${YEAR}/TILES/*HV.variance.tif
+#	gdalbuildvrt ${OUT_DIR}/${YEAR}/mosaic_HVhom.vrt ${OUT_DIR}/${YEAR}/TILES/*HV.homogeneity.tif
+
+#	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_HHhom.vrt ${OUT_DIR}/${YEAR}/04_Homogeneity_HH_${YEAR}.tif
+#	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_HHvar.vrt ${OUT_DIR}/${YEAR}/04_Variance_HH_${YEAR}.tif
+#	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_HHdis.vrt ${OUT_DIR}/${YEAR}/04_Dissimilarity_HH_${YEAR}.tif
+
+#	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_HVhom.vrt ${OUT_DIR}/${YEAR}/04_Homogeneity_HV_${YEAR}.tif
+#	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_HVvar.vrt ${OUT_DIR}/${YEAR}/04_Variance_HV_${YEAR}.tif
+#	gdal_translate -projwin $(ogr_extent ${AOI_BUF}) ${OUT_DIR}/${YEAR}/mosaic_HVdis.vrt ${OUT_DIR}/${YEAR}/04_Dissimilarity_HV_${YEAR}.tif
+#	fi
+#fi
 
 # remove Temp Folder
 rm -rf ${TMP_DIR}

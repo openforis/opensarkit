@@ -233,7 +233,7 @@ snap --nosplash --modules --refresh --install org.csa.rstb.rstb.op.polarimetric.
 snap --nosplash --modules --refresh --enable org.esa.s1tbx.s1tbx.kit org.openide.util.enumerations org.openide.compat org.netbeans.core.multiview org.netbeans.api.visual jcl.over.slf4j org.openide.options org.netbeans.core.osgi org.netbeans.modules.netbinox org.netbeans.api.search org.netbeans.modules.uihandler org.netbeans.modules.spi.actions org.netbeans.libs.javafx org.esa.s3tbx.s3tbx.kit org.jdesktop.layout org.netbeans.lib.uihandler org.netbeans.libs.jsr223 
 
 echo '#export to Path' >> ${OSK_HOME}/OpenSARKit_source.bash
-echo 'export PATH=$PATH:${PYTHON_BIN}:${RSGISLIB_BIN}:${ASF_BIN}:${POLSAR_BIN}:${SAGA_BIN}:${SNAP_BIN}:${GDAL_BIN}:${DOWNLOAD_BIN}:${ASF_EXE}:${SNAP}:${KC_BIN}:${REMOTE}' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'export PATH=$PATH:${PYTHON_BIN}:${RSGISLIB_BIN}:${ASF_BIN}:${POLSAR_BIN}:${SAGA_BIN}:${SNAP_BIN}:${GDAL_BIN}:${DOWNLOAD_BIN}:${ASF_EXE}:${SNAP}:${KC_BIN}:${REMOTE_BIN}' >> ${OSK_HOME}/OpenSARKit_source.bash
 
 # Update global environment variables"
 mv ${OSK_HOME}/OpenSARKit_source.bash /etc/profile.d/OpenSARKit.sh
