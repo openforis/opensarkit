@@ -188,7 +188,7 @@ while read LINE; do
 	fi
 
 	echo "Downloading Tile ${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz"
-	wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz
+	#wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz
 	#wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz
 
 	echo "Extracting Tile ${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz"
@@ -198,8 +198,8 @@ while read LINE; do
 done < ${TMP_DIR}/kc_list
 
 mkdir -p $1/FNF
-gdal_merge.py -o ${TMP_DIR}/FNF_map.tif ${TMP_DIR}/*_C
-gdalwarp -cutline ${AOI_BUF} -crop_to_cutline ${TMP_DIR}/FNF_map.tif $1/FNF/KC_FNF_map.tif
+#gdal_merge.py -o ${TMP_DIR}/FNF_map.tif ${TMP_DIR}/*_C
+#gdalwarp -cutline ${AOI_BUF} -crop_to_cutline ${TMP_DIR}/FNF_map.tif $1/FNF/KC_FNF_map.tif
 #----------------------------------------------------------------------
 
 
