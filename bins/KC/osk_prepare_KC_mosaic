@@ -512,7 +512,7 @@ else # no filter case
 
 			echo ""			
 			echo "Creating HH/HV Ratio channel"
-			saga_cmd grid_calculus 1 -GRIDS:${OUT_DIR}/${YEAR}/TILES/${DATA:0:10}_sl_HH.sgrd -XGRIDS:${OUT_DIR}/${YEAR}/TILES/${DATA}.sgrd -RESULT:${OUT_DIR}/${YEAR}/TILES/${DATA:0:10}_HHHV.sgrd -TYPE:7 -FORMULA:"a / b"
+			saga_cmd grid_calculus 1 -GRIDS:${OUT_DIR}/${YEAR}/TILES/${DATA:0:10}_sl_HH.filled.sgrd -XGRIDS:${OUT_DIR}/${YEAR}/TILES/${DATA}.filled.sgrd -RESULT:${OUT_DIR}/${YEAR}/TILES/${DATA:0:10}_HHHV.sgrd -TYPE:7 -FORMULA:"a / b"
 
 		else
 			
@@ -600,5 +600,6 @@ fi
 #fi
 
 # remove Temp Folder
+
 rm -rf ${TMP_DIR}
 rm -rf ${OUT_DIR}/${YEAR}/TILES
