@@ -1,7 +1,43 @@
 #! /bin/bash
 
 # 	0.1 Check for right usage & set up basic Script Variables
-if [ "$#" != "5" ]; then
+
+if [ "$#" == "7" ];then
+
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " OpenSARKit, v.01"
+	echo -e " Preparing K&C mosaics"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+#	echo -e " Author: Andreas Vollrath"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Software dependencies:"
+	echo -e "	- SAGA GIS"
+	echo -e "	- gdal"
+	echo -e "----------------------------------"
+	echo -e ""
+
+
+	# set up initial script variables
+	mkdir -p $1
+	cd $1
+	OUT_DIR=`pwd` 
+	ZIP_DIR=${OUT_DIR}/ZIP
+	mkdir -p ${ZIP_DIR}
+	YEAR=$3
+	YEAR_SHORT=${YEAR:2:2}
+	mkdir -p ${OUT_DIR}/${YEAR}/
+	export TMP_DIR=${OUT_DIR}/TMP${YEAR}/
+	mkdir -p ${TMP_DIR}
+	UNAME=$6	
+	PW=$7
+
+	# source libs
+	source ${OPENSARKIT}/lib/gdal_helpers
+
+elif [ "$#" != "5" ]; then
 
 	echo -e ""
 	echo -e "----------------------------------"
@@ -71,9 +107,13 @@ fi
 # ask for user access
 echo -e "If you have not done the registration, go to:"
 echo -e "http://www.eorc.jaxa.jp/ALOS/en/palsar_fnf/registration.htm"
-read -r -p "Please type your K&C mosaic username:" UNAME
-read -s -p "Please type your K&C mosaic password:" PW
+if [ "$#" == "7" ];then
+	echo "non-interactive mode"
 
+else
+	read -r -p "Please type your K&C mosaic username:" UNAME
+	read -s -p "Please type your K&C mosaic password:" PW
+fi
 #----------------------------------------------------------------------
 # check if AOI comes from country code or is already a shape
 mkdir -p ${OUT_DIR}/AOI/

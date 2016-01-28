@@ -17,10 +17,9 @@ if [ "$#" != "4" ]; then
 	echo -e "	- SAGA GIS"
 	echo -e "----------------------------------"
 	echo -e ""
-	echo -e " syntax: osk_prepare_KC_mosaics <ISO3_country_code/area_of_interest> <year> <filtering> <texture>"
+	echo -e " syntax: osk_remote_prepare_KC_mosaics <ISO3_country_code/area_of_interest> <year> <filtering> <texture>"
 	echo -e ""
 	echo -e " description of input parameters:"
-	echo -e " output_folder		(output) pathname of the output folder"
  	echo -e " ISO3_country_code/area_of_interest	ISO3 country code or shapefile of your area of interest"
 	echo -e " Year		Acquisition Year (2007,2008,2009 or 2010)"
 	echo -e " filtering		Apply Multi-directional Lee Filter (Lee et al. 1998)"
@@ -51,6 +50,8 @@ fi
 read -r -p "Type in the username of the remote machine: " USERNAME
 read -r -p "Type in the (IP)-Address of the remote machine: " ADRESS
 read -r -p "Type in the name of your Project (will be the folder in your remote home directory where the processed data will be stored): " PROJECT
+read -r -p "Please type your K&C mosaic username:" UNAME
+read -s -p "Please type your K&C mosaic password:" PW
 
 #execute 
-ssh -n -f ${USERNAME}@${ADRESS} "bash -c \"mkdir -p ~/${PROJECT};source ${OPENSARKIT}/lib/gdal_helpers; nohup bash ${OPENSARKIT}/bins/KC/osk_prepare_KC_mosaic ~/${PROJECT}/ $1 $2 $3 $4 > log 2>&1 &\""
+ssh -n -f ${USERNAME}@${ADRESS} "bash -c \"mkdir -p ~/${PROJECT};source ${OPENSARKIT}/lib/gdal_helpers; nohup bash ${OPENSARKIT}/bins/KC/osk_prepare_KC_mosaic ~/${PROJECT}/ $1 $2 $3 $4 $UNAME $PW > log 2>&1 &\""
