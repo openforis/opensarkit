@@ -22,7 +22,7 @@ if [ "$#" != "5" ]; then
 	echo -e " description of input parameters:"
 	echo -e " output_folder		(output) pathname of the output folder"
  	echo -e " ISO3/AOI		ISO3 country code or shapefile of your area of interest"
-	echo -e " Year			Acquisition Year (2007,2008,2009 or 2010)"
+	echo -e " Year			Acquisition Year (2007, 2008, 2009, 2010 or 2015)"
 	echo -e " filtering		Apply Multi-directional Lee Filter (Lee et al. 1998)"
 	echo -e "			  Available choices:"
 	echo -e "			  0: no filtering applied"
@@ -71,8 +71,8 @@ fi
 # ask for user access
 echo -e "If you have not done the registration, go to:"
 echo -e "http://www.eorc.jaxa.jp/ALOS/en/palsar_fnf/registration.htm"
-#read -r -p "Please type your K&C mosaic username:" UNAME
-#read -s -p "Please type your K&C mosaic password:" PW
+read -r -p "Please type your K&C mosaic username:" UNAME
+read -s -p "Please type your K&C mosaic password:" PW
 
 #----------------------------------------------------------------------
 # check if AOI comes from country code or is already a shape
@@ -188,18 +188,25 @@ while read LINE; do
 	fi
 
 	echo "Downloading Tile ${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz"
-	#wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz
-	#wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz
+
+	if [ ${YEAR} -gt 2010 ];then
+		wget -q	ftp://ftp.eorc.jaxa.jp/pub/ALOS-2/ext1/PALSAR-2_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS_F02DAR.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz
+		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS-2/ext1/PALSAR-2_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF_F02DAR.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz
+	else
+		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz
+		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz
+	fi
+
 
 	echo "Extracting Tile ${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz"
 	tar -xzf ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -C ${TMP_DIR}
-	#tar -xzf ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz -C ${TMP_DIR}
+	tar -xzf ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz -C ${TMP_DIR}
 
 done < ${TMP_DIR}/kc_list
 
-#mkdir -p $1/FNF
-#gdal_merge.py -o ${TMP_DIR}/FNF_map.tif ${TMP_DIR}/*_C
-#gdalwarp -cutline ${AOI_BUF} -crop_to_cutline ${TMP_DIR}/FNF_map.tif $1/FNF/KC_FNF_map.tif
+mkdir -p $1/FNF
+gdal_merge.py -o ${TMP_DIR}/FNF_map.tif ${TMP_DIR}/*_C
+gdalwarp -cutline ${AOI_BUF} -crop_to_cutline ${TMP_DIR}/FNF_map.tif $1/FNF/KC_FNF_map.tif
 #----------------------------------------------------------------------
 
 
