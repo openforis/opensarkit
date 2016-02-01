@@ -99,7 +99,8 @@ echo debconf shared/accepted-oracle-license-v1-1 select true | sudo debconf-set-
 apt-get install --yes oracle-java8-installer oracle-java8-set-default
 
 ## Python libraries
-apt-get install --yes python-scipy python-h5py python-pyresample  
+apt-get install --yes python-scipy python-h5py 
+#python-pyresample  --> needs grass devel. repo
 
 # Dependencies for PolSARPro
 #apt-get install --yes bwidget itcl3 itk3 iwidgets4 libtk-img 
@@ -231,10 +232,10 @@ else
 	#rm -f s1tbx_1.1.1_Linux64_installer.sh
 
 	wget http://step.esa.int/downloads/2.0/esa-snap_all_unix_2_0_2.sh
-	sh esa-snap_unix_2_0.sh -q -overwrite
-	rm -f esa-snap_unix_2_0.sh
-	#echo 'export SNAP=/usr/local/snap' >> ${OSK_HOME}/OpenSARKit_source.bash
-	echo 'export SNAP=${HOME}/snap' >> ${OSK_HOME}/OpenSARKit_source.bash
+	sh esa-snap_all_unix_2_0_2.sh -q -overwrite
+	rm -f esa-snap_all_unix_2_0_2.sh
+	echo 'export SNAP=/usr/local/snap' >> ${OSK_HOME}/OpenSARKit_source.bash
+	#echo 'export SNAP=${HOME}/snap' >> ${OSK_HOME}/OpenSARKit_source.bash
 	echo 'export SNAP_EXE=${SNAP}/bin/gpt'  >> ${OSK_HOME}/OpenSARKit_source.bash
 fi
 
