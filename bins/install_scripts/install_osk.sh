@@ -6,7 +6,7 @@ if [ "$#" == "0" ];then
 
 	echo -e ""
 	echo -e "----------------------------------"
-	echo -e " Open FOris SAR Toolkit, version ${OSK_VERSION}"
+	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
 	echo -e " Install script"
 	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
 #	echo -e " Author: Andreas Vollrath"
@@ -18,7 +18,7 @@ elif [ "$#" == "1" ];then
 
 	echo -e ""
 	echo -e "----------------------------------"
-	echo -e " Open FOris SAR Toolkit, version ${OSK_VERSION}"
+	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
 	echo -e " Install script"
 	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
 #	echo -e " Author: Andreas Vollrath"
@@ -30,7 +30,7 @@ else
 
 	echo -e ""
 	echo -e "----------------------------------"
-	echo -e " Open FOris SAR Toolkit, version ${OSK_VERSION}"
+	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
 	echo -e " Install script"
 	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
 #	echo -e " Author: Andreas Vollrath"
@@ -49,6 +49,7 @@ fi
 #----------------------------------
 ## I GIS packages from ubuntugis (unstable)
 add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
+
 
 ## II InSAR Packages Antonio Valentinos eotools 
 #add-apt-repository -y ppa:a.valentino/eotools
@@ -101,7 +102,7 @@ apt-get install --yes oracle-java8-installer oracle-java8-set-default
 apt-get install --yes python-scipy python-h5py python-pyresample  
 
 # Dependencies for PolSARPro
-apt-get install --yes bwidget itcl3 itk3 iwidgets4 libtk-img 
+#apt-get install --yes bwidget itcl3 itk3 iwidgets4 libtk-img 
 
 # Further tools (i.e. Aria for automated ASF download, unrar for unpacking, parallel for parallelization of processing)
 apt-get install --yes aria2 unrar parallel xml-twig-tools
@@ -110,14 +111,15 @@ apt-get install --yes aria2 unrar parallel xml-twig-tools
 # 3 Download & Install non-repository Software and OSK
 #------------------------------------------------------------------
 
-
+#-------------------------------------
+# get OSK from github repository
 if [ -z "$OSK_GIT_URL" ]; then export OSK_GIT_URL=https://github.com/BuddyVolly/OpenSARKit; fi
 mkdir -p ${OSK_HOME}
 cd ${OSK_HOME}
 
 OSK_VERSION=0.1-beta
 
-# write a source file
+# write a preliminary source file
 echo '#! /bin/bash' > ${OSK_HOME}/OpenSARKit_source.bash
 echo "" >> ${OSK_HOME}/OpenSARKit_source.bash
 
@@ -159,12 +161,15 @@ echo 'export PROGRAMS=${OSK_HOME}/Programs' >> ${OSK_HOME}/OpenSARKit_source.bas
 
 # get OpenSARKit from github
 git clone $OSK_GIT_URL
+#-------------------------------------
+
 
 # install dependend Software
 mkdir -p ${OSK_HOME}/Programs
 cd ${OSK_HOME}/Programs
 
-#ASF Mapready
+#-------------------------------------
+# Install ASF Mapready
 
 # check if installed
 if [ `which asf_mapready | wc -c` -gt 0 ];then 
@@ -184,30 +189,35 @@ else
 	make install
 	echo 'export ASF_EXE=${PROGRAMS}/ASF_bin/bin' >> ${OSK_HOME}/OpenSARKit_source.bash
 fi 
+#-------------------------------------
 
-if [ `which alos_header.exe | wc -c` -gt 0 ];then 
+#-------------------------------------
+# Insatll PolsARPro
+#if [ `which alos_header.exe | wc -c` -gt 0 ];then 
 
-	POLSAR_PRE=`dirname \`which alos_header.exe\``
-	cd ${POLSAR_PRE}/../
-	POLSAR=`pwd`
-	echo 'export POLSAR=${POLSAR}' >> ${OSK_HOME}/OpenSARKit_source.bash
-	echo 'export POLSAR_BIN=${POLSAR}/data_import:${POLSAR}/data_convert:${POLSAR}/speckle_filter:${POLSAR}/bmp_process:${POLSAR}/tools' >> ${OSK_HOME}/OpenSARKit_source.bash
+#	POLSAR_PRE=`dirname \`which alos_header.exe\``
+#	cd ${POLSAR_PRE}/../
+#	POLSAR=`pwd`
+#	echo 'export POLSAR=${POLSAR}' >> ${OSK_HOME}/OpenSARKit_source.bash
+#	echo 'export POLSAR_BIN=${POLSAR}/data_import:${POLSAR}/data_convert:${POLSAR}/speckle_filter:${POLSAR}/bmp_process:${POLSAR}/tools' >> ${OSK_HOME}/OpenSARKit_source.bash
 
-else
+#else
 
 	# PolSARPro
-	mkdir -p ${OSK_HOME}/Programs/PolSARPro504
-	cd ${OSK_HOME}/Programs/PolSARPro504
-	wget https://earth.esa.int/documents/653194/1960708/PolSARpro_v5.0.4_Linux_20150607
-	unrar x PolSARpro_v5.0.4_Linux_20150607
-	cd Soft
-	bash Compil_PolSARpro_v5_Linux.bat 
-	POLSAR=`pwd` 
-	echo 'export POLSAR=${PROGRAMS}/PolSARPro504/Soft' >> ${OSK_HOME}/OpenSARKit_source.bash
-	echo 'export POLSAR_BIN=${POLSAR}/data_import:${POLSAR}/data_convert:${POLSAR}/speckle_filter:${POLSAR}/bmp_process:${POLSAR}/tools' >> ${OSK_HOME}/OpenSARKit_source.bash
-fi
+#	mkdir -p ${OSK_HOME}/Programs/PolSARPro504
+#	cd ${OSK_HOME}/Programs/PolSARPro504
+#	wget https://earth.esa.int/documents/653194/1960708/PolSARpro_v5.0.4_Linux_20150607
+#	unrar x PolSARpro_v5.0.4_Linux_20150607
+#	cd Soft
+#	bash Compil_PolSARpro_v5_Linux.bat 
+#	POLSAR=`pwd` 
+#	echo 'export POLSAR=${PROGRAMS}/PolSARPro504/Soft' >> ${OSK_HOME}/OpenSARKit_source.bash
+#	echo 'export POLSAR_BIN=${POLSAR}/data_import:${POLSAR}/data_convert:${POLSAR}/speckle_filter:${POLSAR}/bmp_process:${POLSAR}/tools' >> ${OSK_HOME}/OpenSARKit_source.bash
+#fi
+#-------------------------------------
 
-# SNAP
+#-------------------------------------
+# Insatll SNAP
 # check if installed
 if [ `which snap | wc -c` -gt 0 ];then 
 
@@ -220,7 +230,7 @@ else
 	#sh s1tbx_1.1.1_Linux64_installer.sh -q -overwrite
 	#rm -f s1tbx_1.1.1_Linux64_installer.sh
 
-	wget http://step.esa.int/downloads/2.0/esa-snap_unix_2_0.sh
+	wget http://step.esa.int/downloads/2.0/esa-snap_all_unix_2_0_2.sh
 	sh esa-snap_unix_2_0.sh -q -overwrite
 	rm -f esa-snap_unix_2_0.sh
 	#echo 'export SNAP=/usr/local/snap' >> ${OSK_HOME}/OpenSARKit_source.bash
@@ -228,10 +238,14 @@ else
 	echo 'export SNAP_EXE=${SNAP}/bin/gpt'  >> ${OSK_HOME}/OpenSARKit_source.bash
 fi
 
-snap --nosplash --modules --refresh --install org.csa.rstb.rstb.op.polarimetric.tools org.esa.s2tbx.s2tbx.s2msi.reader org.esa.s3tbx.s3tbx.landsat.reader org.esa.s3tbx.s3tbx.sentinel3.reader org.esa.s1tbx.s1tbx.kit org.esa.s3tbx.s3tbx.spot.vgt.reader org.esa.s3tbx.s3tbx.sentinel3.reader.ui org.esa.s1tbx.s1tbx.commons org.esa.s3tbx.s3tbx.aatsr.sst.ui org.esa.s1tbx.s1tbx.op.analysis.ui org.esa.snap.seadas.seadas.reader.ui org.esa.s3tbx.s3tbx.proba.v.reader org.esa.s2tbx.sen2cor org.esa.s1tbx.s1tbx.op.feature.extraction org.esa.s3tbx.s3tbx.merisl3.reader org.jlinda.jlinda.nest org.esa.s2tbx.s2tbx.spot.reader org.esa.s3tbx.s3tbx.meris.smac org.esa.smostbx.smos.tools org.esa.s1tbx.s1tbx.op.sar.processing org.esa.s2tbx.s2tbx.rapideye.reader org.esa.smostbx.smos.gui org.esa.s1tbx.s1tbx.rcp org.csa.rstb.rstb.op.classification.ui org.esa.s3tbx.s3tbx.atsr.reader org.esa.s1tbx.s1tbx.op.insar org.esa.s1tbx.s1tbx.op.calibration.ui org.esa.s2tbx.s2tbx.jp2.reader org.csa.rstb.rstb.kit org.esa.smostbx.smos.reader org.esa.s1tbx.s1tbx.op.utilities.ui org.esa.snap.seadas.seadas.reader org.esa.s1tbx.s1tbx.op.ocean.ui org.esa.smostbx.smos.kit org.esa.s3tbx.s3tbx.alos.reader org.esa.s1tbx.s1tbx.op.utilities org.jlinda.jlinda.core org.esa.s1tbx.s1tbx.op.feature.extraction.ui org.esa.s3tbx.s3tbx.avhrr.reader org.jlinda.jlinda.nest.ui org.esa.s3tbx.s3tbx.modis.reader org.csa.rstb.rstb.op.classification org.csa.rstb.rstb.op.polarimetric.tools.ui org.esa.s2tbx.lib.openjpeg org.esa.s3tbx.s3tbx.slstr.pdu.stitching.ui org.esa.s3tbx.s3tbx.flhmci org.esa.s2tbx.s2tbx.commons org.esa.s3tbx.s3tbx.aatsr.sst org.esa.smostbx.smos.ee2netcdf.ui org.esa.s3tbx.s3tbx.meris.ops org.esa.s3tbx.s3tbx.meris.radiometry org.esa.smostbx.smos.dgg org.esa.s3tbx.s3tbx.kit org.esa.s3tbx.s3tbx.meris.radiometry.ui org.esa.smostbx.smos.lsmask org.esa.s1tbx.s1tbx.op.sar.processing.ui org.esa.s3tbx.s3tbx.chris.reader org.esa.s2tbx.s2tbx.deimos.reader org.esa.s1tbx.s1tbx.op.sentinel1.ui org.esa.s1tbx.s1tbx.op.sentinel1 org.esa.s1tbx.s1tbx.op.insar.ui org.esa.smostbx.smos.ee2netcdf org.esa.s3tbx.s3tbx.slstr.pdu.stitching org.esa.s2tbx.s2tbx.sta.adapters.help org.esa.s2tbx.s2tbx.kit org.esa.s1tbx.s1tbx.io org.esa.s3tbx.s3tbx.meris.cloud org.esa.s1tbx.s1tbx.op.calibration org.esa.s3tbx.s3tbx.flhmci.ui
+# update SNAP - not necessary at the moment (1.2.2016)
+#snap --nosplash --modules --refresh --install org.csa.rstb.rstb.op.polarimetric.tools org.esa.s2tbx.s2tbx.s2msi.reader org.esa.s3tbx.s3tbx.landsat.reader org.esa.s3tbx.s3tbx.sentinel3.reader org.esa.s1tbx.s1tbx.kit org.esa.s3tbx.s3tbx.spot.vgt.reader org.esa.s3tbx.s3tbx.sentinel3.reader.ui org.esa.s1tbx.s1tbx.commons org.esa.s3tbx.s3tbx.aatsr.sst.ui org.esa.s1tbx.s1tbx.op.analysis.ui org.esa.snap.seadas.seadas.reader.ui org.esa.s3tbx.s3tbx.proba.v.reader org.esa.s2tbx.sen2cor org.esa.s1tbx.s1tbx.op.feature.extraction org.esa.s3tbx.s3tbx.merisl3.reader org.jlinda.jlinda.nest org.esa.s2tbx.s2tbx.spot.reader org.esa.s3tbx.s3tbx.meris.smac org.esa.smostbx.smos.tools org.esa.s1tbx.s1tbx.op.sar.processing org.esa.s2tbx.s2tbx.rapideye.reader org.esa.smostbx.smos.gui org.esa.s1tbx.s1tbx.rcp org.csa.rstb.rstb.op.classification.ui org.esa.s3tbx.s3tbx.atsr.reader org.esa.s1tbx.s1tbx.op.insar org.esa.s1tbx.s1tbx.op.calibration.ui org.esa.s2tbx.s2tbx.jp2.reader org.csa.rstb.rstb.kit org.esa.smostbx.smos.reader org.esa.s1tbx.s1tbx.op.utilities.ui org.esa.snap.seadas.seadas.reader org.esa.s1tbx.s1tbx.op.ocean.ui org.esa.smostbx.smos.kit org.esa.s3tbx.s3tbx.alos.reader org.esa.s1tbx.s1tbx.op.utilities org.jlinda.jlinda.core org.esa.s1tbx.s1tbx.op.feature.extraction.ui org.esa.s3tbx.s3tbx.avhrr.reader org.jlinda.jlinda.nest.ui org.esa.s3tbx.s3tbx.modis.reader org.csa.rstb.rstb.op.classification org.csa.rstb.rstb.op.polarimetric.tools.ui org.esa.s2tbx.lib.openjpeg org.esa.s3tbx.s3tbx.slstr.pdu.stitching.ui org.esa.s3tbx.s3tbx.flhmci org.esa.s2tbx.s2tbx.commons org.esa.s3tbx.s3tbx.aatsr.sst org.esa.smostbx.smos.ee2netcdf.ui org.esa.s3tbx.s3tbx.meris.ops org.esa.s3tbx.s3tbx.meris.radiometry org.esa.smostbx.smos.dgg org.esa.s3tbx.s3tbx.kit org.esa.s3tbx.s3tbx.meris.radiometry.ui org.esa.smostbx.smos.lsmask org.esa.s1tbx.s1tbx.op.sar.processing.ui org.esa.s3tbx.s3tbx.chris.reader org.esa.s2tbx.s2tbx.deimos.reader org.esa.s1tbx.s1tbx.op.sentinel1.ui org.esa.s1tbx.s1tbx.op.sentinel1 org.esa.s1tbx.s1tbx.op.insar.ui org.esa.smostbx.smos.ee2netcdf org.esa.s3tbx.s3tbx.slstr.pdu.stitching org.esa.s2tbx.s2tbx.sta.adapters.help org.esa.s2tbx.s2tbx.kit org.esa.s1tbx.s1tbx.io org.esa.s3tbx.s3tbx.meris.cloud org.esa.s1tbx.s1tbx.op.calibration org.esa.s3tbx.s3tbx.flhmci.ui
 
-snap --nosplash --modules --refresh --enable org.esa.s1tbx.s1tbx.kit org.openide.util.enumerations org.openide.compat org.netbeans.core.multiview org.netbeans.api.visual jcl.over.slf4j org.openide.options org.netbeans.core.osgi org.netbeans.modules.netbinox org.netbeans.api.search org.netbeans.modules.uihandler org.netbeans.modules.spi.actions org.netbeans.libs.javafx org.esa.s3tbx.s3tbx.kit org.jdesktop.layout org.netbeans.lib.uihandler org.netbeans.libs.jsr223 
+#snap --nosplash --modules --refresh --enable org.esa.s1tbx.s1tbx.kit org.openide.util.enumerations org.openide.compat org.netbeans.core.multiview org.netbeans.api.visual jcl.over.slf4j org.openide.options org.netbeans.core.osgi org.netbeans.modules.netbinox org.netbeans.api.search org.netbeans.modules.uihandler org.netbeans.modules.spi.actions org.netbeans.libs.javafx org.esa.s3tbx.s3tbx.kit org.jdesktop.layout org.netbeans.lib.uihandler org.netbeans.libs.jsr223 
+#-------------------------------------
 
+#-------------------------------------
+## Adding executalble to path for CL availability
 echo '#export to Path' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export PATH=$PATH:${PYTHON_BIN}:${RSGISLIB_BIN}:${ASF_BIN}:${POLSAR_BIN}:${SAGA_BIN}:${SNAP_BIN}:${GDAL_BIN}:${DOWNLOAD_BIN}:${ASF_EXE}:${SNAP}:${KC_BIN}:${REMOTE_BIN}' >> ${OSK_HOME}/OpenSARKit_source.bash
 
@@ -239,6 +253,9 @@ echo 'export PATH=$PATH:${PYTHON_BIN}:${RSGISLIB_BIN}:${ASF_BIN}:${POLSAR_BIN}:$
 mv ${OSK_HOME}/OpenSARKit_source.bash /etc/profile.d/OpenSARKit.sh
 chmod -R 755 ${OSK_HOME}
 source /etc/profile.d/OpenSARKit.sh
+#-------------------------------------
+
+
 #------------------------------------------------------------------
 # 3 Download the additional Database
 #------------------------------------------------------------------

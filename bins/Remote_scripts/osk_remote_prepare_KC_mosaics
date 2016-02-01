@@ -52,6 +52,6 @@ read -r -p "Type in the (IP)-Address of the remote machine: " ADRESS
 read -r -p "Type in the name of your Project (will be the folder in your remote home directory where the processed data will be stored): " PROJECT
 read -r -p "Please type your K&C mosaic username:" UNAME
 read -s -p "Please type your K&C mosaic password:" PW
-
+echo ""
 #execute 
 ssh -n -f ${USERNAME}@${ADRESS} "bash -c \"mkdir -p ~/${PROJECT};source ${OPENSARKIT}/lib/gdal_helpers; nohup bash ${OPENSARKIT}/bins/KC/osk_prepare_KC_mosaic ~/${PROJECT}/ $1 $2 $3 $4 $UNAME $PW > log 2>&1 &\""

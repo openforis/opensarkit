@@ -35,8 +35,8 @@ function gdal_extent() {
         return
     fi
     EXTENT=$(gdalinfo $1 |\
-        grep "Upper Left\|Lower Right" |\
-        sed "s/Upper Left  //g;s/Lower Right //g;s/).*//g" |\
+        grep "Lower Left\|Upper Right" |\
+        sed "s/Lower Left  //g;s/Upper Right //g;s/).*//g" |\
         tr "\n" " " |\
         sed 's/ *$//g' |\
         tr -d "[(,]")
