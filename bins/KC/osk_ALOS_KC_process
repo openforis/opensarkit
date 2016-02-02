@@ -19,7 +19,7 @@ if [ "$#" != "5" ]; then
 	echo -e "	- SAGA GIS"
 	echo -e "----------------------------------"
 	echo -e ""
-	echo -e " syntax: osk_prepare_KC_mosaics <project_folder> <ISO3/AOI> <year> <filtering> <texture>"
+	echo -e " syntax: osk_ALOS_KC_process <project_folder> <ISO3/AOI> <year> <filtering> <texture>"
 	echo -e ""
 	echo -e " description of input parameters:"
 	echo -e " project_folder	(output) pathname of the project folder (i.e. the folder created by osk_ALOS_KC_download script)"

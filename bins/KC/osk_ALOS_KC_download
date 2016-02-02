@@ -25,8 +25,8 @@ if [ "$#" == "5" ];then
 	YEAR_SHORT=${YEAR:2:2}
 	export TMP_DIR=${OUT_DIR}/TMP${YEAR}/
 	mkdir -p ${TMP_DIR}
-	UNAME=$6	
-	PW=$7
+	UNAME=$4	
+	PW=$5
 
 	# source libs
 	source ${OPENSARKIT}/lib/gdal_helpers

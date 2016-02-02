@@ -17,7 +17,7 @@ if [ "$#" != "4" ]; then
 	echo -e "	- SAGA GIS"
 	echo -e "----------------------------------"
 	echo -e ""
-	echo -e " syntax: osk_remote_prepare_KC_mosaics <ISO3_country_code/area_of_interest> <year> <filtering> <texture>"
+	echo -e " syntax: osk_remote_ALOS_KC_mosaic <ISO3_country_code/area_of_interest> <year> <filtering> <texture>"
 	echo -e ""
 	echo -e " description of input parameters:"
  	echo -e " ISO3_country_code/area_of_interest	ISO3 country code or shapefile of your area of interest"
@@ -54,4 +54,4 @@ read -r -p "Please type your K&C mosaic username:" UNAME
 read -s -p "Please type your K&C mosaic password:" PW
 echo ""
 #execute 
-ssh -n -f ${USERNAME}@${ADRESS} "bash -c \"mkdir -p ~/${PROJECT};source ${OPENSARKIT}/lib/gdal_helpers; nohup bash ${OPENSARKIT}/bins/KC/osk_prepare_KC_mosaic ~/${PROJECT}/ $1 $2 $3 $4 $UNAME $PW > log 2>&1 &\""
+ssh -n -f ${USERNAME}@${ADRESS} "bash -c \"mkdir -p ~/${PROJECT};source /etc/profile.d/OpenSARKit.sh; nohup bash ${OPENSARKIT}/bins/KC/osk_ALOS_KC_download ~/${PROJECT}/ $1 $2 $UNAME $PW; nohup bash ${OPENSARKIT}/bins/KC/osk_ALOS_KC_process ~/${PROJECT}/ $1 $2 $3 $4 > log 2>&1 &\""
