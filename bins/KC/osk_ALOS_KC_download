@@ -1,0 +1,234 @@
+#! /bin/bash
+
+# 	0.1 Check for right usage & set up basic Script Variables
+
+if [ "$#" == "5" ];then
+
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
+	echo -e " Download ALOS K&C mosaics"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+	echo -e " Author: ${AUTHOR_1}"
+	echo -e " Contact: ${CONTACT_1}"
+	echo -e "----------------------------------"
+	echo -e ""
+
+
+	# set up initial script variables
+	mkdir -p $1
+	cd $1
+	OUT_DIR=`pwd` 
+	ZIP_DIR=${OUT_DIR}/ZIP
+	mkdir -p ${ZIP_DIR}
+	YEAR=$3
+	YEAR_SHORT=${YEAR:2:2}
+	export TMP_DIR=${OUT_DIR}/TMP${YEAR}/
+	mkdir -p ${TMP_DIR}
+	UNAME=$6	
+	PW=$7
+
+	# source libs
+	source ${OPENSARKIT}/lib/gdal_helpers
+
+elif [ "$#" != "3" ]; then
+
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
+	echo -e " Download ALOS K&C mosaics"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+	echo -e " Author: ${AUTHOR_1}"
+	echo -e " Contact: ${CONTACT_1}"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Software dependencies:"
+	echo -e "	- gdal-bin"
+	echo -e "	- SAGA GIS"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e " syntax: osk_ALOS_KC_download <project_folder> <ISO3/AOI> <year>"
+	echo -e ""
+	echo -e " description of input parameters:"
+	echo -e " project_folder	(output) pathname of the folder where the data will be stored (will create a subfolder ZIP with the downloaded files)"
+ 	echo -e " ISO3/AOI		ISO3 country code or shapefile of your area of interest"
+	echo -e " Year			Acquisition Year (2007, 2008, 2009, 2010 or 2015)"
+	echo -e ""		
+
+  	exit 1
+else
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
+	echo -e " Download K&C mosaics"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+	echo -e " Author: ${AUTHOR_1}"
+	echo -e " Contact: ${CONTACT_1}"
+	echo -e "----------------------------------"
+	echo -e ""
+
+	# set up initial script variables
+	mkdir -p $1
+	cd $1
+	OUT_DIR=`pwd` 
+	ZIP_DIR=${OUT_DIR}/ZIP
+	mkdir -p ${ZIP_DIR}
+	YEAR=$3
+	YEAR_SHORT=${YEAR:2:2}
+	export TMP_DIR=${OUT_DIR}/TMP${YEAR}/
+	mkdir -p ${TMP_DIR}
+	
+	# source libs
+	source ${OPENSARKIT}/lib/gdal_helpers
+fi
+
+
+#----------------------------------------------------------------------
+# 1 ask for user access
+echo -e "If you have not done the registration, go to:"
+echo -e "http://www.eorc.jaxa.jp/ALOS/en/palsar_fnf/registration.htm"
+if [ "$#" == "7" ];then
+	
+	echo "non-interactive mode"
+
+else
+	read -r -p "Please type your K&C mosaic username:" UNAME
+	read -s -p "Please type your K&C mosaic password:" PW
+fi
+#----------------------------------------------------------------------
+
+
+#----------------------------------------------------------------------
+# 2 check if AOI comes from country code or is already a shapefile
+mkdir -p ${OUT_DIR}/AOI/
+
+if [ `echo $2 | grep shp` ]; then # AOI case
+
+		AOI=`readlink -f $2`
+		cp ${AOI} ${OUT_DIR}/AOI/
+	
+else # country case
+	
+      		COUNTRY=`echo "SELECT name FROM countries WHERE \"iso3\" = '$2';" | spatialite $DB_GLOBAL | head -50`
+		echo "Extracting country boundaries for ${COUNTRY}"
+		
+		# extract srtm grid as shape from the OpenSARKit DB
+		echo "Exporting shapefile from country database"	
+	   	ogr2ogr -f "Esri Shapefile" ${OUT_DIR}/AOI/AOI.shp ${DB_GLOBAL} -dsco SPATIALITE=yes -where "\"iso3\" = \"${2}\"" -nln AOI countries
+		AOI=${OUT_DIR}/AOI/AOI.shp
+		echo "Exporting shapefile from country database with a 0.1 buffer around the borders"	
+	   	ogr2ogr -f "Esri Shapefile" ${OUT_DIR}/AOI/AOI_buffer.shp ${DB_GLOBAL} -dsco SPATIALITE=yes -sql "select ST_union(ST_buffer(geom,0.1)) from countries where \"iso3\" = \"${2}\""
+		AOI_BUF=${OUT_DIR}/AOI/AOI_buffer.shp
+fi
+#----------------------------------------------------------------------
+
+
+#----------------------------------------------------------------------
+# 3 Get K&C 5x5 Tiles list
+LAYER=`ogrinfo ${AOI} | tail -1 | awk $'{print $2}'`
+
+# create a vrt layer for consequent interect operation with ogr2ogr
+echo "<OGRVRTDataSource>" > ${TMP_DIR}/intersect.vrt
+echo "   <OGRVRTLayer name=\"${LAYER}\">" >> ${TMP_DIR}/intersect.vrt
+echo "      <SrcDataSource>${AOI}</SrcDataSource>" >> ${TMP_DIR}/intersect.vrt
+echo "   </OGRVRTLayer>" >> ${TMP_DIR}/intersect.vrt
+echo "   <OGRVRTLayer name=\"kc_grid\">" >> ${TMP_DIR}/intersect.vrt
+echo "      <SrcDataSource>${DB_GLOBAL}</SrcDataSource>" >> ${TMP_DIR}/intersect.vrt
+echo "   </OGRVRTLayer>" >> ${TMP_DIR}/intersect.vrt
+echo "</OGRVRTDataSource>" >> ${TMP_DIR}/intersect.vrt
+
+# intersect with ogr2ogr
+ogr2ogr -f "csv" ${TMP_DIR}/tiles.csv ${TMP_DIR}/intersect.vrt -dialect sqlite -sql "SELECT b.x_min,b.y_max FROM ${LAYER} a, kc_grid b WHERE ST_Intersects(a.geometry, b.geometry)" 
+# get tile list
+cat ${TMP_DIR}/tiles.csv | tail -n +2 | tr ',' '\ ' > ${TMP_DIR}/kc_list
+#----------------------------------------------------------------------
+
+
+#----------------------------------------------------------------------
+# 4 Download the data
+
+while read LINE; do
+
+	cd ${OUT_DIR}
+	#echo $LINE
+	COL=`echo ${LINE} | awk $'{print $1}'`
+	ROW=`echo ${LINE} | awk $'{print $2}'`
+
+	# Create the actual Grid code for exact download address
+	if [ `echo $ROW | grep -` ];then 
+
+		# eliminate - sign 
+		ROW=`echo ${ROW} | sed 's|-||g'`
+
+		# create ROW in Form SXX
+		if [ ${#ROW} == 1 ];then 
+
+			ROW=S0$ROW
+		else
+			ROW=S$ROW
+
+		fi
+
+	else
+		
+		# create ROW in Form NXX
+		if [ ${#ROW} == 1 ];then 
+
+			ROW=N0$ROW
+		else
+			ROW=N$ROW
+		fi
+
+	fi
+
+	if [ `echo $COL | grep -` ];then 
+
+		# eliminate - sign 
+		COL=`echo ${COL} | sed 's|-||g'`
+
+		# create COL in Form WXXX
+		if [ ${#COL}  == 3 ];then 
+
+			COL=W${COL}
+
+		elif [ ${#COL} == 2 ];then
+
+			COL=W0${COL}
+		else 
+			COL=W00${COL}
+		fi
+
+	else
+		# COL in Form EXXX
+		if [ ${#COL} == 3 ];then 
+
+			COL=E${COL}
+
+		elif [ ${#COL} == 2 ];then
+
+			COL=E0${COL}
+		else 
+			COL=E00${COL}
+		fi
+	fi
+
+	echo "Downloading Tile ${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz"
+
+	if [ ${YEAR} -gt 2010 ];then
+		wget -q	ftp://ftp.eorc.jaxa.jp/pub/ALOS-2/ext1/PALSAR-2_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS_F02DAR.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz
+		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS-2/ext1/PALSAR-2_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF_F02DAR.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz
+	else
+		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz
+		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz
+	fi
+
+
+	#echo "Extracting Tile ${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz"
+	#tar -xzf ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -C ${TMP_DIR}
+	#tar -xzf ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz -C ${TMP_DIR}
+
+done < ${TMP_DIR}/kc_list
+
+
+rm -rf ${TMP_DIR}
