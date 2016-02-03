@@ -230,7 +230,7 @@ if [[ $7 == 1 ]];then
 	osk_ALOS_ASF_download ${PROC_DIR} ${INV}/ALOS_ASF_${MODE}.shp
 fi
 
-
+rm -rf ${TMP_DIR}
 
 
 

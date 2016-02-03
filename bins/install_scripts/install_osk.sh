@@ -269,5 +269,5 @@ mv global_info.sqlite?dl=0 global_info.sqlite
 echo "--------------------------------"
 echo " Installation of OFST succesfully completed"
 echo " In order to be able to launch the scripts immediately on the command line, type: source /etc/profile.d/OpenSARKit.sh "
-echo " Otherwise close and re-open the terminal window.
+echo " Otherwise close and re-open the terminal window."
 echo "--------------------------------"
