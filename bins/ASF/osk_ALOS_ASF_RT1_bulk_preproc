@@ -6,7 +6,7 @@
 
 #-------------------------------------------------------------------------------------------	
 # 	0.1 Check for right usage & set up basic Script Variables
-if [ "$#" != "2" ]; then
+if [ "$#" != "1" ]; then
 
 	echo -e ""
 	echo -e "----------------------------------"
@@ -23,16 +23,13 @@ if [ "$#" != "2" ]; then
 	echo -e "	- gdal"
 	echo -e "----------------------------------"
 	echo -e ""
-	echo -e " syntax: osk_bulk_ALOS_L1.5_preprocess_asf <path_to_zips> <elevation>"
+	echo -e " syntax: osk_bulk_ALOS_L1.5_preprocess_asf <project_path> "
 	echo -e ""
 	echo -e " description of input parameters:"
-	echo -e " path_to_zips		pathname, where the ASF downloaded zips are located"
+	echo -e " project_path		pathname, where the ASF downloaded zips are located"
 	echo -e ""
-	echo -e " NOTE: This should lead to the path where the osk_download_ALOS_ASF script has stored and sorted the data by date"
+	echo -e " NOTE: This should lead to the directory where the osk_download_ALOS_ASF script has stored and sorted the data by date (e.g. /path/to/project/FBD)"
 	echo -e ""
-	echo -e " elevation		(input) filename to the digital elevation model"
-	echo -e ""
-	echo -e " NOTE: The DEM file should be provided in Geotiff-format as a 16Bit Integer data type with 0 as the no data value."
 	echo -e ""
   exit 1
 else
@@ -54,7 +51,6 @@ else
 # set up input data
   	cd $1
   	PROC_DIR=`pwd`
-  	DEM_FILE=$2
   	echo "Bulk processing folder: ${PROC_DIR}"
 fi
 #-------------------------------------------------------------------------------------------	
