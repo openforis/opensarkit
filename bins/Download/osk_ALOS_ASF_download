@@ -104,3 +104,5 @@ echo "---------------------------------------------"
 echo " Download of all scenes succesfully completed"
 echo "---------------------------------------------"
 
+rm -rf ${TMP_DIR}
+
