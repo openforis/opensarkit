@@ -48,7 +48,16 @@ else
 	echo -e ""
 	
 	# set up input data
-	cd $1
+	
+	if [ -d $1 ];then
+	
+		cd $1
+	else
+
+		mkdir -p $1
+		cd $1
+	fi
+	
 	PROC_DIR=`pwd`
 	TMP_DIR=${PROC_DIR}/TMP
 	mkdir -p ${TMP_DIR}

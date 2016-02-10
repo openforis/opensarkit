@@ -23,10 +23,19 @@ if [ "$#" == "7" ]; then
 	echo -e "	- curl"
 	echo -e "	- ogr2ogr"
 	echo -e "----------------------------------"
-   cd $1
-   PROC_DIR=`pwd`
-   TMP_DIR=${PROC_DIR}/TMP
-   mkdir -p ${TMP_DIR}
+	
+	if [ -d $1 ];then
+	
+		cd $1
+	else
+
+		mkdir -p $1
+		cd $1
+	fi
+	
+   	PROC_DIR=`pwd`
+   	TMP_DIR=${PROC_DIR}/TMP
+   	mkdir -p ${TMP_DIR}
 	AOI=$2
 	START=$3
 	END=$4
@@ -51,10 +60,20 @@ elif [ "$#" == "8" ]; then
 	echo -e "	- ogr2ogr"
 	echo -e "----------------------------------"
 	echo -e ""
-	cd $1
-   PROC_DIR=`pwd`
-   TMP_DIR=${PROC_DIR}/TMP
-   mkdir -p ${TMP_DIR}
+	
+
+	if [ -d $1 ];then
+	
+		cd $1
+	else
+
+		mkdir -p $1
+		cd $1
+	fi
+	
+	PROC_DIR=`pwd`
+	TMP_DIR=${PROC_DIR}/TMP
+	mkdir -p ${TMP_DIR}
 	AOI=$2
 	START=$3
 	END=$4
@@ -82,7 +101,7 @@ else
 	echo -e "	- ogr2ogr"
 	echo -e "----------------------------------"
 	echo -e ""
-	echo -e " syntax: osk_ALOS_ASF_inventory <output_folder> <area_of_interest> <start_date> <end_date> <mode> <processing_level> <Script_Mode>"
+	echo -e " syntax: osk_ALOS_ASF_inventory <output_folder> <area_of_interest> <start_date> <end_date> <mode> <processing_level> <script_Mode>"
 	echo -e ""
 	echo -e " description of input parameters:"
 	echo -e " output_folder		(output) folder where the downloaded data will be saved"
@@ -107,7 +126,7 @@ else
 	echo -e "			  RTC_HI_RES (12.5m High-resolution Terrain Corrected)"
 	echo -e "			  RTC_LOW_RES (30m Low-resolution Terrain Corrected)"
 	echo -e ""
-	echo -e " Script_Mode"			
+	echo -e " script_Mode"			
 	echo -e "			Available choices"
 	echo -e "			  0 (only do the data inventory)"
 	echo -e "			  1 (data inventory + direct data download)"

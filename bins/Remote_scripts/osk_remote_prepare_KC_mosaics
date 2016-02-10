@@ -54,4 +54,4 @@ read -r -p "Please type your K&C mosaic username:" UNAME
 read -s -p "Please type your K&C mosaic password:" PW
 echo ""
 #execute 
-ssh -n -f ${USERNAME}@${ADRESS} "bash -c \"mkdir -p ~/${PROJECT};source /etc/profile.d/OpenSARKit.sh; nohup bash ${OPENSARKIT}/bins/KC/osk_ALOS_KC_download ~/${PROJECT}/ $1 $2 $UNAME $PW; nohup bash ${OPENSARKIT}/bins/KC/osk_ALOS_KC_process ~/${PROJECT}/ $1 $2 $3 $4 > log 2>&1 &\""
+ssh -n -f ${USERNAME}@${ADRESS} "bash -c \"mkdir -p ~/${PROJECT};source /etc/profile.d/OpenSARKit.sh; nohup bash ${OPENSARKIT}/bins/KC/osk_ALOS_KC_download ~/${PROJECT}/ $1 $2 $UNAME $PW > ~/${PROJECT}/log_download ; nohup bash ${OPENSARKIT}/bins/KC/osk_ALOS_KC_process ~/${PROJECT}/ $1 $2 $3 $4 > ~/${PROJECT}/log_proc 2>&1 &\""

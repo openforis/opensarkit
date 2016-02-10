@@ -162,7 +162,7 @@ elif [[ "${MODE}" == "PLR" ]];then
 
 	#-------------------------------------------------------------------------------------------
 	# Launch SNAP for VH channel speckle filtering
-	echo "Apply Lee Speckle Filter to ${SCENE_ID}"
+	echo "Apply Lee Speckle Filter to the VH channel of ${SCENE_ID}"
 	bash ${SNAP_EXE} Speckle-Filter -Ssource=${GAMMA_VH} -Pfilter='Refined Lee' -t ${OUTPUT_SPK_VH} -f 'GeoTIFF' 2>&1 | tee  ${TMP_DIR}/tmplog
 	#-------------------------------------------------------------------------------------------
 
@@ -178,7 +178,7 @@ elif [[ "${MODE}" == "PLR" ]];then
 
 	#-------------------------------------------------------------------------------------------
 	# Launch SNAP for VV channel speckle filtering
-	echo "Apply Lee Speckle Filter to ${SCENE_ID}"
+	echo "Apply Lee Speckle Filter to the VV channel of ${SCENE_ID}"
 	bash ${SNAP_EXE} Speckle-Filter -Ssource=${GAMMA_VV} -Pfilter='Refined Lee' -t ${OUTPUT_SPK_VV} -f 'GeoTIFF' 2>&1 | tee  ${TMP_DIR}/tmplog
 	#-------------------------------------------------------------------------------------------
 
