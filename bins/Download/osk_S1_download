@@ -48,6 +48,7 @@ else
 	mkdir -p ${TMP_DIR}
 fi
 
+source ${OPENSARKIT}/lib/bash_helpers
 
 
 #	Credentials
@@ -66,24 +67,35 @@ while read line; do
 
 	# get the data via the UUID
 	UUID=$line		
-	DL_ADDRESS='https://scihub.esa.int/dhus/odata/v1/Products('"'${UUID}'"')/$value'
-#	DL_ADDRESS='https://scihub.esa.int/apihub/odata/v1/Products('"'${UUID}'"')/$value'
+	DL_ADDRESS='https://scihub.esa.int/dhus/odata/v1/Products('"'${UUID}'"')/$value' # scihub
+#	DL_ADDRESS='https://scihub.esa.int/apihub/odata/v1/Products('"'${UUID}'"')/$value' # apihub
+	
 	echo "Downloading Product ${COUNT} of ${NR} (UUID=${UUID})"
+	echo "Getting MD5 checksum for download validation"
 
-	# prepare a loop to avoid uncomplete data downloads		
+	# get MD5sum of product
+	MD5_ADDRESS='https://scihub.esa.int/dhus/odata/v1/Products('"'${UUID}'"')/Checksum/Value/$value'	
+	aria2c --dir=${TMP_DIR} --check-certificate=false --continue=true --http-user="${USERNAME}" --http-passwd="${PW}" "${MD5_ADDRESS}" > ${TMP_DIR}/tmp_error2
+	MD5_UP=`cat $TMP_DIR/'$value'`
+	rm -f $TMP_DIR/'$value'
+
+	# prepare a loop to avoid uncomplete data downloads and check for md5 checksum
 	i=1
 	echo "bla" > ${TMP_DIR}/tmp_error
 	# do the loop 
 	for(( i=1; i<=2; i++ ));do
 
 		i=1
-		aria2c --dir=${TMP_DIR} --check-certificate=false --continue=true --http-user="${USERNAME}" --http-passwd="${PW}" "${DL_ADDRESS}" > ${TMP_DIR}/tmp_error
-		
+		echo "Downloading... (this will take a while)"
+		aria2c --dir=${TMP_DIR} --check-certificate=false --continue=true --http-user="${USERNAME}" --http-passwd="${PW}" "${DL_ADDRESS}" > ${TMP_DIR}/tmp_error &
+		spinner $!
 		if grep -q "download completed" ${TMP_DIR}/tmp_error;then
 
 			echo "Download of ${UUID} completed"
 			i=3
-
+			SCENE=`ls ${TMP_DIR}/*zip`
+			MD5_DOWN=`md5sum ${SCENE} | awk '{print $1}' | tr '[:lower:]' '[:upper:]'`
+			
 		elif grep -q "Authorization failed" ${TMP_DIR}/tmp_error;then
 
 			echo " Authorization failed"
@@ -93,9 +105,19 @@ while read line; do
 			echo " Connection problems, will try to continue download in 5 minutes"
 			sleep 5m				
 		fi		
+
+		# check on md5
+		if [[ ${MD5_UP} == ${MD5_DOWN} ]];then
+
+			echo "passed MD5 checksum test"
+		else
+			echo "MD5 checksums are not equal, will have to redownload the scene"
+			rm -f ${SCENE}
+			i=1
+		fi
 	done
 
-	rm -f ${TMP_DIR}/tmp_error
+	rm -f ${TMP_DIR}/tmp_error*
 	SCENE=`ls ${TMP_DIR}`
 	SCENE_ID=`echo ${SCENE} | rev | cut -c 5- | rev`
 	DATE=${SCENE_ID:17:8}
