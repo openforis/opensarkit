@@ -121,26 +121,31 @@ mkdir -p ${OUT_DIR}/${YEAR}/MOS
 
 echo ""
 echo "Merging the FNF tiles"
-#if [ ${YEAR} -gt 2010 ];then 
-#	gdal_merge.py -o ${TMP_DIR}/FNF_map.tif ${TMP_DIR}/*_C_F02DAR
-#else#
-	#gdal_merge.py -o ${TMP_DIR}/FNF_map.tif ${TMP_DIR}/*_C
-#fi
+if [ ${YEAR} -gt 2010 ];then 
+	gdal_merge.py -o ${TMP_DIR}/FNF_map.tif ${TMP_DIR}/*_C_F02DAR
+else
+	gdal_merge.py -o ${TMP_DIR}/FNF_map.tif ${TMP_DIR}/*_C
+fi
 
 echo "Cropping the FNF Map to the extent of the AOI"
-#gdalwarp -overwrite -cutline ${AOI_BUF} -crop_to_cutline ${TMP_DIR}/FNF_map.tif ${OUT_DIR}/${YEAR}/FNF/${YEAR}"_KC_FNF_map.tif"
+gdalwarp -overwrite -cutline ${AOI_BUF} -crop_to_cutline ${TMP_DIR}/FNF_map.tif ${OUT_DIR}/${YEAR}/FNF/${YEAR}"_KC_FNF_map.tif"
 #------------------------------------------------------------------------
 
 #------------------------------------------------------------------------
 # create mosaic tiles
 mkdir -p ${OUT_DIR}/${YEAR}/TILES
 
+cd ${TMP_DIR}/
+echo "extract auxilary information (i.e. local incidence angle and acqusition date)" 
+mkdir -p ${OUT_DIR}/${YEAR}/AUX
+gdal_merge.py -o ${OUT_DIR}/${YEAR}/AUX/LINCI.tif $(ls *_linci_* | grep -v hdr) 
+gdal_merge.py -o ${OUT_DIR}/${YEAR}/AUX/DATE.tif $(ls *_date_* | grep -v hdr) 
+
+#-----------------------------------------------------------------------------------------------------
 # 2 Mosaic the relevant data, apply the layover/shadow mask and filter, in case it is set to yes
 if [ $4 -eq 1 ];then #filter case
 
-cd ${TMP_DIR}/
-
-	for DATA in `ls -1 {*sl_HH,*sl_HH*DAR}`;do #filter HH1x1 tiles that fall in the AOI
+	for DATA in `ls -1 *sl_HH* | grep -v hdr`;do #filter HH1x1 tiles that fall in the AOI
 		
 		#-------------------------------------------------------------------------------------
 		# check if 1x1 tile intersects with AOI
@@ -248,7 +253,7 @@ cd ${TMP_DIR}/
 	done
 		
 		
-	for DATA in `ls -1 {*sl_HV,*sl_HV*DAR}`;do #filter HV 1x1 tiles that fall in the AOI
+	for DATA in `ls -1 *sl_HV* | grep -v hdr`;do #filter HV 1x1 tiles that fall in the AOI
 		
 		#-------------------------------------------------------------------------------------
 		# check if 1x1 tile intersects with AOI
@@ -369,8 +374,7 @@ cd ${TMP_DIR}/
 
 else # no filter case
 
-	cd ${TMP_DIR}/	
-	for DATA in `ls -1 {*sl_HH,*sl_HH*DAR}`;do
+	for DATA in `ls -1 *sl_HH* | grep -v hdr`;do
 
 		#-------------------------------------------------------------------------------------
 		# check if 1x1 tile intersects with AOI
@@ -424,7 +428,7 @@ else # no filter case
 		rm -f ${TMP_DIR}/grids.csv
 	done
 	
-	for DATA in `ls -1 {*sl_HV,*sl_HV*DAR}`;do
+	for DATA in `ls -1 *sl_HV* | grep -v hdr`;do
 		
 
 		#-------------------------------------------------------------------------------------
@@ -503,8 +507,8 @@ else
 	echo "creating RGB mosaic (R: HH, G: HV, B:HH/HV)"
 	AOI=$AOI_BUF
 fi
-	gdal_translate -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/TILES/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/MOS/01_Gamma0_HH_${YEAR}.tif
-	gdal_translate -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/TILES/mosaic_hv.vrt ${OUT_DIR}/${YEAR}/MOS/02_Gamma0_HV_${YEAR}.tif
+	gdal_translate -ot Int16 -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/TILES/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/MOS/01_Gamma0_HH_${YEAR}.tif
+	gdal_translate -ot Int16 -projwin $(ogr_extent ${AOI}) ${OUT_DIR}/${YEAR}/TILES/mosaic_hv.vrt ${OUT_DIR}/${YEAR}/MOS/02_Gamma0_HV_${YEAR}.tif
 	
 	MIN=`gdal_min ${OUT_DIR}/${YEAR}/TILES/mosaic_hhhv.vrt`
 	MAX=`gdal_max ${OUT_DIR}/${YEAR}/TILES/mosaic_hhhv.vrt`
