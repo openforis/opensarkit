@@ -145,7 +145,7 @@ gdal_merge.py -o ${OUT_DIR}/${YEAR}/AUX/DATE.tif $(ls *_date_* | grep -v hdr)
 # 2 Mosaic the relevant data, apply the layover/shadow mask and filter, in case it is set to yes
 if [ $4 -eq 1 ];then #filter case
 
-	for DATA in `ls -1 *sl_HH* | grep -v hdr`;do #filter HH1x1 tiles that fall in the AOI
+	for DATA in `ls -1 *${YEAR_SHORT}"_sl_HH"* | grep -v hdr`;do #filter HH1x1 tiles that fall in the AOI
 		
 		#-------------------------------------------------------------------------------------
 		# check if 1x1 tile intersects with AOI
@@ -253,7 +253,7 @@ if [ $4 -eq 1 ];then #filter case
 	done
 		
 		
-	for DATA in `ls -1 *sl_HV* | grep -v hdr`;do #filter HV 1x1 tiles that fall in the AOI
+	for DATA in `ls -1 *${YEAR_SHORT}"_sl_HV"* | grep -v hdr`;do #filter HV 1x1 tiles that fall in the AOI
 		
 		#-------------------------------------------------------------------------------------
 		# check if 1x1 tile intersects with AOI
@@ -374,7 +374,7 @@ if [ $4 -eq 1 ];then #filter case
 
 else # no filter case
 
-	for DATA in `ls -1 *sl_HH* | grep -v hdr`;do
+	for DATA in `ls -1 *${YEAR_SHORT}"_sl_HH"* | grep -v hdr`;do
 
 		#-------------------------------------------------------------------------------------
 		# check if 1x1 tile intersects with AOI
@@ -428,7 +428,7 @@ else # no filter case
 		rm -f ${TMP_DIR}/grids.csv
 	done
 	
-	for DATA in `ls -1 *sl_HV* | grep -v hdr`;do
+	for DATA in `ls -1 *${YEAR_SHORT}"_sl_HV"* | grep -v hdr`;do
 		
 
 		#-------------------------------------------------------------------------------------

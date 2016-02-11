@@ -2,7 +2,7 @@
 
 #-------------------------------------------------------------------------------------------	
 # 	0.1 Check for right usage & set up basic Script Variables
-if [ "$#" != "3" ]; then
+if [ "$#" != "2" ]; then
 	
 	echo -e ""
 	echo -e "----------------------------------"
@@ -20,15 +20,18 @@ if [ "$#" != "3" ]; then
 	echo -e "	- saga"
 	echo -e "----------------------------------"
 	echo -e ""
-	echo -e " Usage: osk_S1_GRD_bulk_preprocess <input_folder> <elevation> <output_folder>"
+	echo -e " Usage: osk_S1_GRD_bulk_preprocess <input_folder> <mode>"
 	echo -e ""
 	echo -e " input parameters:"
 	echo -e " filename		(input) filename of the downloaded zip file"
-	echo -e " elevation		(input) filename to the digital elevation model"
+	echo -e " mode			processing mode"
+	echo -e "			  Available choices:"
+	echo -e "			  HI_RES (10m output) "
+	echo -e "			  MED_RES (30m output)"
+#	echo -e " elevation		(input) filename to the digital elevation model"
+#	echo -e ""
+#	echo -e " NOTE: The DEM file should be provided in Geotiff-format as a 16Bit Integer data type with 0 as the no data value."
 	echo -e ""
-	echo -e " NOTE: The DEM file should be provided in Geotiff-format as a 16Bit Integer data type with 0 as the no data value."
-	echo -e ""
-	echo -e " output_folder		(output) pathname of the output folder"
 	exit 1
 else
 	echo -e ""
@@ -63,7 +66,7 @@ for LINE in `ls -1 ${PROC_DIR}`;do
 
 		SCENE=`ls` 
 		echo " Processing File ${SCENE} "
-		osk_S1_GRD_single_preprocess ${SCENE} ${DEM_FILE} .
+		osk_S1_GRD_single_preprocess ${SCENE} . $2
 
 	else # in case of more then one slice
 
@@ -81,23 +84,29 @@ for LINE in `ls -1 ${PROC_DIR}`;do
 		done
 
 		
+		
+			echo " Assembling the products of the same swath"
+			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_slice_assembly.xml -Pfilelist=$(ls -d -1 ${TMP_DIR}/*.dim | tr '\n' ',' | rev | cut -c 2- | rev) -Poutput=${TMP_DIR}/${LINE}.dim
 
-		echo " Assembling the products of the same swath"
-		bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_slice_assembly.xml -Pfilelist=$(ls -d -1 ${TMP_DIR}/*.dim | tr '\n' ',' | rev | cut -c 2- | rev) -Poutput=${TMP_DIR}/${LINE}.dim
-
-		echo " Applying the Terrain Flattening and multilook the data with a factor of 3"
-		bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TF_ML.xml -x -Pinput=${TMP_DIR}/${LINE}.dim -Poutput=${TMP_DIR}/TF.dim
-
-		OUT_DIR=${PROC_DIR}/${LINE}
-
-		echo " Applying the Refined Lee Speckle Filter and doing the Geometric Terrain Correction (i.e. Geocoding)"
-		bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_SPK_TC.xml -x -Pinput=${TMP_DIR}/TF.dim -Poutput=${TMP_DIR}/TF_TC.dim
-
+		if [ $2 == "MED_RES" ];then
+			echo " Applying the Terrain Flattening and multilook the data with a factor of 3"
+			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TF_ML.xml -x -Pinput=${TMP_DIR}/${LINE}.dim -Poutput=${TMP_DIR}/TF.dim
+			OUT_DIR=${PROC_DIR}/${LINE}
+			echo " Applying the Refined Lee Speckle Filter and doing the Geometric Terrain Correction (i.e. Geocoding)"
+			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_SPK_TC.xml -x -Pinput=${TMP_DIR}/TF.dim -Poutput=${TMP_DIR}/TF_TC.dim
+		elif [ $2 == "HI_RES" ];then
+			echo " Applying the Terrain Flattening and multilook the data with a factor of 3"
+			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_10_TF_ML.xml -x -Pinput=${TMP_DIR}/${LINE}.dim -Poutput=${TMP_DIR}/TF.dim
+			OUT_DIR=${PROC_DIR}/${LINE}
+			echo " Applying the Refined Lee Speckle Filter and doing the Geometric Terrain Correction (i.e. Geocoding)"
+			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_10_SPK_TC.xml -x -Pinput=${TMP_DIR}/TF.dim -Poutput=${TMP_DIR}/TF_TC.dim
+		fi	
+		
 		echo " Cut layers to valid range (i.e. -30 to 3 dB)"
 		osk_valid_range ${TMP_DIR}/TF_TC.data/Gamma0_VV.img ${TMP_DIR}/TF_TC.data/Gamma0_VV.rerange.sdat SAGA 0.001 1 -99999 ${TMP_DIR}
 		osk_valid_range ${TMP_DIR}/TF_TC.data/Gamma0_VH.img ${TMP_DIR}/TF_TC.data/Gamma0_VH.rerange.sdat SAGA 0.001 1 -99999 ${TMP_DIR}
 		
-		echo " Apply the Multi-Directional Lee Filter"
+		echo " Applying the Multi-Directional Lee Filter"
 		osk_md_filter ${TMP_DIR}/TF_TC.data/Gamma0_VV.rerange.sdat ${OUT_DIR}/Gamma0_VV.md-filtered.sdat SAGA 5000 3000 1 ${TMP_DIR}
 		osk_md_filter ${TMP_DIR}/TF_TC.data/Gamma0_VH.rerange.sdat ${OUT_DIR}/Gamma0_VH.md-filtered.sdat SAGA 5000 3000 1 ${TMP_DIR}
 

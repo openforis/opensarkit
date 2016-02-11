@@ -73,7 +73,7 @@ function osk_valid_range() {
 	
 	if [ -z "$6" ]; then 
 	echo "Missing arguments. Syntax:"
-	echo "osk_reclass_values <input_file> <output_file> <GDAL-Format Output> <Min> <Max> <Output NoData> <TMP_DIR>"
+	echo "osk_valid_range <input_file> <output_file> <GDAL-Format Output> <Min> <Max> <Output NoData> <TMP_DIR>"
 	return
 	fi
 

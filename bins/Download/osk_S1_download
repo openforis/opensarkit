@@ -95,7 +95,17 @@ while read line; do
 			i=3
 			SCENE=`ls ${TMP_DIR}/*zip`
 			MD5_DOWN=`md5sum ${SCENE} | awk '{print $1}' | tr '[:lower:]' '[:upper:]'`
-			
+
+			# check on md5
+			if [[ ${MD5_UP} == ${MD5_DOWN} ]];then
+	
+				echo "passed MD5 checksum test"
+			else
+				echo "MD5 checksums are not equal, will have to redownload the scene"
+				rm -f ${SCENE}
+				i=1
+			fi
+
 		elif grep -q "Authorization failed" ${TMP_DIR}/tmp_error;then
 
 			echo " Authorization failed"
@@ -106,15 +116,7 @@ while read line; do
 			sleep 5m				
 		fi		
 
-		# check on md5
-		if [[ ${MD5_UP} == ${MD5_DOWN} ]];then
-
-			echo "passed MD5 checksum test"
-		else
-			echo "MD5 checksums are not equal, will have to redownload the scene"
-			rm -f ${SCENE}
-			i=1
-		fi
+		
 	done
 
 	rm -f ${TMP_DIR}/tmp_error*
