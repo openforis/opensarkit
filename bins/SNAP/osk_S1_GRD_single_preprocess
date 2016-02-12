@@ -2,7 +2,7 @@
 
 #-------------------------------------------------------------------------------------------	
 # 	0.1 Check for right usage & set up basic Script Variables
-if [ "$#" != "3" ]; then
+if [ "$#" != "4" ]; then
 	
 	echo -e ""
 	echo -e "----------------------------------------------------------------------------------"
@@ -20,7 +20,7 @@ if [ "$#" != "3" ]; then
 	echo -e "	- saga"
 	echo -e "----------------------------------------------------------------------------------"
 	echo -e ""
-	echo -e " Usage: osk_S1_GRD_single_preprocess <filename> <output_folder> <mode>" # <elevation> "
+	echo -e " Usage: osk_S1_GRD_single_preprocess <filename> <output_folder> <mode> <filtering>" # <elevation> "
 	echo -e ""
 	echo -e " input parameters:"
 	echo -e "  filename		(input) filename of the downloaded zip file"
@@ -29,6 +29,10 @@ if [ "$#" != "3" ]; then
 	echo -e "			  Available choices:"
 	echo -e "			  HI_RES (10m output) "
 	echo -e "			  MED_RES (30m output)"
+	echo -e "  filtering		do additional Multi-Directional Filtering (recommended for single time "
+	echo -e "			  Available choices:"
+	echo -e "			   0: No additional filter applied"
+	echo -e "			   1: additional filter applied"
 #	echo -e "  elevation		(optional) filename to the digital elevation model"
 #	echo -e ""
 #	echo -e "  NOTE: The DEM file should be provided in Geotiff-format as a 16Bit Integer data type with 0 as the no data value."
@@ -148,27 +152,37 @@ if [ `echo ${FILE} | rev | cut -c 1-3 | rev` == "dim" ];then
 	osk_valid_range ${TMP_DIR}/TF_TC.data/Gamma0_VV.img ${TMP_DIR}/TF_TC.data/Gamma0_VV.rerange.sdat SAGA 0.001 1 -99999 ${TMP_DIR}
 	osk_valid_range ${TMP_DIR}/TF_TC.data/Gamma0_VH.img ${TMP_DIR}/TF_TC.data/Gamma0_VH.rerange.sdat SAGA 0.001 1 -99999 ${TMP_DIR}
 
-	echo " Applying the Multi-Directional Lee Filter"
-	osk_md_filter ${TMP_DIR}/TF_TC.data/Gamma0_VV.rerange.sdat ${OUT_DIR}/Gamma0_VV.md-filtered.sdat SAGA 5000 3000 1 ${TMP_DIR}
-	osk_md_filter ${TMP_DIR}/TF_TC.data/Gamma0_VH.rerange.sdat ${OUT_DIR}/Gamma0_VH.md-filtered.sdat SAGA 5000 3000 1 ${TMP_DIR}
+	if [ $4 -eq 1 ];then
+		echo " Applying the Multi-Directional Lee Filter"
+		osk_md_filter ${TMP_DIR}/TF_TC.data/Gamma0_VV.rerange.sdat ${TMP_DIR}/Gamma0_VV.md-filtered.sdat SAGA 5000 3000 1 ${TMP_DIR}
+		osk_md_filter ${TMP_DIR}/TF_TC.data/Gamma0_VH.rerange.sdat ${TMP_DIR}/Gamma0_VH.md-filtered.sdat SAGA 5000 3000 1 ${TMP_DIR}
+	else	
+		mv ${TMP_DIR}/TF_TC.data/Gamma0_VV.rerange.sdat ${TMP_DIR}/Gamma0_VV.md-filtered.sdat
+		mv ${TMP_DIR}/TF_TC.data/Gamma0_VV.rerange.sgrd ${TMP_DIR}/Gamma0_VV.md-filtered.sgrd
+		mv ${TMP_DIR}/TF_TC.data/Gamma0_VV.rerange.prj ${TMP_DIR}/Gamma0_VV.md-filtered.prj
+
+		mv ${TMP_DIR}/TF_TC.data/Gamma0_VH.rerange.sdat ${TMP_DIR}/Gamma0_VH.md-filtered.sdat
+		mv ${TMP_DIR}/TF_TC.data/Gamma0_VH.rerange.sgrd ${TMP_DIR}/Gamma0_VH.md-filtered.sgrd
+		mv ${TMP_DIR}/TF_TC.data/Gamma0_VH.rerange.prj ${TMP_DIR}/Gamma0_VH.md-filtered.prj
+	fi
 
 	echo " Calculating the VV/VH ratio"
-	saga_cmd -f=s -c=${CPU} grid_calculus 1 -GRIDS:${OUT_DIR}/Gamma0_VV.md-filtered.sgrd -XGRIDS:${OUT_DIR}/Gamma0_VH.md-filtered.sgrd -RESULT:${TMP_DIR}/VVVH_ratio.sgrd -FORMULA:"a / b"
-	osk_valid_range ${TMP_DIR}/VVVH_ratio.sdat ${OUT_DIR}/VVVH_ratio.md-filtered.sdat SAGA 0 10 -99999 ${TMP_DIR} 
+	saga_cmd -f=s -c=${CPU} grid_calculus 1 -GRIDS:${TMP_DIR}/Gamma0_VV.md-filtered.sgrd -XGRIDS:${TMP_DIR}/Gamma0_VH.md-filtered.sgrd -RESULT:${TMP_DIR}/VVVH_ratio.sgrd -FORMULA:"a / b"
+	osk_valid_range ${TMP_DIR}/VVVH_ratio.sdat ${OUT_DIR}/03_VVVH_ratio.sdat SAGA 0 10 -99999 ${TMP_DIR} 
 
 	echo " Transforming to the dB scale"
-	saga_cmd -f=s -c=${CPU} grid_calculus 1 -GRIDS:${OUT_DIR}/Gamma0_VV.md-filtered.sgrd -RESULT:${OUT_DIR}/Gamma0_VV.db.sgrd -FORMULA:"10 *log(a)"
-	saga_cmd -f=s -c=${CPU} grid_calculus 1 -GRIDS:${OUT_DIR}/Gamma0_VH.md-filtered.sgrd -RESULT:${OUT_DIR}/Gamma0_VH.db.sgrd -FORMULA:"10 *log(a)"
+	saga_cmd -f=s -c=${CPU} grid_calculus 1 -GRIDS:${TMP_DIR}/Gamma0_VV.md-filtered.sgrd -RESULT:${OUT_DIR}/01_Gamma0_VV.db.sgrd -FORMULA:"10 *log(a)"
+	saga_cmd -f=s -c=${CPU} grid_calculus 1 -GRIDS:${TMP_DIR}/Gamma0_VH.md-filtered.sgrd -RESULT:${OUT_DIR}/02_Gamma0_VH.db.sgrd -FORMULA:"10 *log(a)"
 
 	echo " Creating 8bit channels"
-	gdal_contrast_stretch -ndv '-99999' -outndv 0 -percentile-range 0.02 0.98 ${OUT_DIR}/VVVH_ratio.md-filtered.sdat ${OUT_DIR}/VVVH_ratio.md-filtered.8bit.tif
-	gdal_contrast_stretch -ndv '-99999' -outndv 0 -percentile-range 0.02 0.98 ${OUT_DIR}/Gamma0_VV.db.sdat ${OUT_DIR}/Gamma0_VV.db.8bit.tif
-	gdal_contrast_stretch -ndv '-99999' -outndv 0 -percentile-range 0.02 0.98 ${OUT_DIR}/Gamma0_VH.db.sdat ${OUT_DIR}/Gamma0_VH.db.8bit.tif
+	gdal_contrast_stretch -ndv '-99999' -outndv 0 -percentile-range 0.02 0.98 ${OUT_DIR}/03_VVVH_ratio.sdat ${OUT_DIR}/03_VVVH_ratio.8bit.tif
+	gdal_contrast_stretch -ndv '-99999' -outndv 0 -percentile-range 0.02 0.98 ${OUT_DIR}/01_Gamma0_VV.db.sdat ${OUT_DIR}/01_Gamma0_VV.db.8bit.tif
+	gdal_contrast_stretch -ndv '-99999' -outndv 0 -percentile-range 0.02 0.98 ${OUT_DIR}/02_Gamma0_VH.db.sdat ${OUT_DIR}/02_Gamma0_VH.db.8bit.tif
 
 	echo " Creating an RGB file"
-	gdalbuildvrt -separate -vrtnodata 0 ${TMP_DIR}/RGB_${DATE}.8bit.vrt ${OUT_DIR}/Gamma0_VV.db.8bit.tif ${OUT_DIR}/Gamma0_VH.db.8bit.tif ${OUT_DIR}/VVVH_ratio.md-filtered.8bit.tif
-	gdalbuildvrt -separate -vrtnodata 0 ${TMP_DIR}/RGB_${DATE}.32bit.vrt ${OUT_DIR}/Gamma0_VV.db.tif ${OUT_DIR}/Gamma0_VH.db.tif ${OUT_DIR}/VVVH_ratio.md-filtered.tif
-	gdal_translate -a_nodata 0 ${TMP_DIR}/RGB_${LINE}.8bit.vrt ${OUT_DIR}/RGB_${DATE}.8bit.tif
+	gdalbuildvrt -separate -vrtnodata 0 ${OUT_DIR}/RGB_${DATE}.8bit.vrt ${OUT_DIR}/01_Gamma0_VV.db.8bit.tif ${OUT_DIR}/02_Gamma0_VH.db.8bit.tif ${OUT_DIR}/03_VVVH_ratio.8bit.tif
+	gdalbuildvrt -separate -vrtnodata 0 ${OUT_DIR}/RGB_${DATE}.32bit.vrt ${OUT_DIR}/01_Gamma0_VV.db.sdat ${OUT_DIR}/02_Gamma0_VH.db.sdat ${OUT_DIR}/03_VVVH_ratio.sdat
+	gdal_translate -a_nodata 0 ${OUT_DIR}/RGB_${DATE}.8bit.vrt ${OUT_DIR}/RGB_${DATE}.8bit.tif
 	
 
 else
@@ -184,26 +198,37 @@ else
 	osk_valid_range ${TMP_DIR}/TF_TC.data/Gamma0_VV.img ${TMP_DIR}/TF_TC.data/Gamma0_VV.rerange.sdat SAGA 0.001 1 -99999 ${TMP_DIR}
 	osk_valid_range ${TMP_DIR}/TF_TC.data/Gamma0_VH.img ${TMP_DIR}/TF_TC.data/Gamma0_VH.rerange.sdat SAGA 0.001 1 -99999 ${TMP_DIR}
 
-	echo " Applying the Multi-Directional Lee Filter"
-	osk_md_filter ${TMP_DIR}/TF_TC.data/Gamma0_VV.rerange.sdat ${FINAL_DIR}/Gamma0_VV.md-filtered.sdat SAGA 5000 3000 1 ${TMP_DIR}
-	osk_md_filter ${TMP_DIR}/TF_TC.data/Gamma0_VH.rerange.sdat ${FINAL_DIR}/Gamma0_VH.md-filtered.sdat SAGA 5000 3000 1 ${TMP_DIR}
+	if [ $4 -eq 1 ];then
+		echo " Applying the Multi-Directional Lee Filter"
+		osk_md_filter ${TMP_DIR}/TF_TC.data/Gamma0_VV.rerange.sdat ${TMP_DIR}/Gamma0_VV.md-filtered.sdat SAGA 5000 3000 1 ${TMP_DIR}
+		osk_md_filter ${TMP_DIR}/TF_TC.data/Gamma0_VH.rerange.sdat ${TMP_DIR}/Gamma0_VH.md-filtered.sdat SAGA 5000 3000 1 ${TMP_DIR}
+	else	
+		mv ${TMP_DIR}/TF_TC.data/Gamma0_VV.rerange.sdat ${TMP_DIR}/Gamma0_VV.md-filtered.sdat
+		mv ${TMP_DIR}/TF_TC.data/Gamma0_VV.rerange.sgrd ${TMP_DIR}/Gamma0_VV.md-filtered.sgrd
+		mv ${TMP_DIR}/TF_TC.data/Gamma0_VV.rerange.prj ${TMP_DIR}/Gamma0_VV.md-filtered.prj
+
+		mv ${TMP_DIR}/TF_TC.data/Gamma0_VH.rerange.sdat ${TMP_DIR}/Gamma0_VH.md-filtered.sdat
+		mv ${TMP_DIR}/TF_TC.data/Gamma0_VH.rerange.sgrd ${TMP_DIR}/Gamma0_VH.md-filtered.sgrd
+		mv ${TMP_DIR}/TF_TC.data/Gamma0_VH.rerange.prj ${TMP_DIR}/Gamma0_VH.md-filtered.prj
+	fi
 
 	echo " Calculate the VV/VH ratio"
-	saga_cmd -f=s -c=${CPU} grid_calculus 1 -GRIDS:${FINAL_DIR}/Gamma0_VV.md-filtered.sgrd -XGRIDS:${FINAL_DIR}/Gamma0_VH.md-filtered.sgrd -RESULT:${TMP_DIR}/VVVH_ratio.sgrd -FORMULA:"a / b"
-	osk_valid_range ${TMP_DIR}/VVVH_ratio.sdat ${FINAL_DIR}/VVVH_ratio.md-filtered.sdat SAGA 0 10 -99999 ${TMP_DIR}
+	saga_cmd -f=s -c=${CPU} grid_calculus 1 -GRIDS:${TMP_DIR}/Gamma0_VV.md-filtered.sgrd -XGRIDS:${TMP_DIR}/Gamma0_VH.md-filtered.sgrd -RESULT:${TMP_DIR}/VVVH_ratio.sgrd -FORMULA:"a / b"
+	osk_valid_range ${TMP_DIR}/VVVH_ratio.sdat ${FINAL_DIR}/03_VVVH_ratio.sdat SAGA 0 10 -99999 ${TMP_DIR}
 
 	echo " Transform to the dB scaling"
-	saga_cmd -f=s -c=${CPU} grid_calculus 1 -GRIDS:${FINAL_DIR}/Gamma0_VV.md-filtered.sgrd -RESULT:${FINAL_DIR}/Gamma0_VV.db.sgrd -FORMULA:"10 *log(a)"
-	saga_cmd -f=s -c=${CPU} grid_calculus 1 -GRIDS:${FINAL_DIR}/Gamma0_VH.md-filtered.sgrd -RESULT:${FINAL_DIR}/Gamma0_VH.db.sgrd -FORMULA:"10 *log(a)"
+	saga_cmd -f=s -c=${CPU} grid_calculus 1 -GRIDS:${TMP_DIR}/Gamma0_VV.md-filtered.sgrd -RESULT:${FINAL_DIR}/01_Gamma0_VV.db.sgrd -FORMULA:"10 *log(a)"
+	saga_cmd -f=s -c=${CPU} grid_calculus 1 -GRIDS:${TMP_DIR}/Gamma0_VH.md-filtered.sgrd -RESULT:${FINAL_DIR}/02_Gamma0_VH.db.sgrd -FORMULA:"10 *log(a)"
 
 	echo " Creating 8bit channels"
-	gdal_contrast_stretch -ndv '-99999' -outndv 0 -percentile-range 0.02 0.98 ${FINAL_DIR}/VVVH_ratio.md-filtered.sdat ${FINAL_DIR}/VVVH_ratio.md-filtered.8bit.tif
-	gdal_contrast_stretch -ndv '-99999' -outndv 0 -percentile-range 0.02 0.98 ${FINAL_DIR}/Gamma0_VV.db.sdat ${FINAL_DIR}/Gamma0_VV.db.8bit.tif
-	gdal_contrast_stretch -ndv '-99999' -outndv 0 -percentile-range 0.02 0.98 ${FINAL_DIR}/Gamma0_VH.db.sdat ${FINAL_DIR}/Gamma0_VH.db.8bit.tif
+	gdal_contrast_stretch -ndv '-99999' -outndv 0 -percentile-range 0.02 0.98 ${FINAL_DIR}/03_VVVH_ratio.sdat ${FINAL_DIR}/03_VVVH_ratio.8bit.tif
+	gdal_contrast_stretch -ndv '-99999' -outndv 0 -percentile-range 0.02 0.98 ${FINAL_DIR}/01_Gamma0_VV.db.sdat ${FINAL_DIR}/01_Gamma0_VV.db.8bit.tif
+	gdal_contrast_stretch -ndv '-99999' -outndv 0 -percentile-range 0.02 0.98 ${FINAL_DIR}/02_Gamma0_VH.db.sdat ${FINAL_DIR}/02_Gamma0_VH.db.8bit.tif
 
 	echo " Creating an RGB file"
-	gdalbuildvrt -separate -vrtnodata 0 ${TMP_DIR}/RGB_${DATE}.8bit.vrt ${FINAL_DIR}/Gamma0_VV.db.8bit.tif ${FINAL_DIR}/Gamma0_VH.db.8bit.tif ${FINAL_DIR}/VVVH_ratio.md-filtered.8bit.tif
-	gdal_translate -a_nodata 0 ${TMP_DIR}/RGB_${LINE}.8bit.vrt ${FINAL_DIR}/RGB_${DATE}.8bit.tif
+	gdalbuildvrt -separate -vrtnodata 0 ${OUT_DIR}/RGB_${DATE}.8bit.vrt ${FINAL_DIR}/01_Gamma0_VV.db.8bit.tif ${FINAL_DIR}/02_Gamma0_VH.db.8bit.tif ${FINAL_DIR}/03_VVVH_ratio.8bit.tif
+	gdalbuildvrt -separate -vrtnodata 0 ${OUT_DIR}/RGB_${DATE}.vrt ${FINAL_DIR}/01_Gamma0_VV.db.sdat ${FINAL_DIR}/02_Gamma0_VH.db.sdat ${FINAL_DIR}/03_VVVH_ratio.sdat
+	gdal_translate -a_nodata 0 ${OUT_DIR}/RGB_${DATE}.8bit.vrt ${FINAL_DIR}/RGB_${DATE}.8bit.tif
 
 fi
 
