@@ -93,8 +93,8 @@ for FILE in `ls -1 *HV*sdat`;do
 done	
 
 i=1	
-sed -i 's|.sdat|.sgrd|g' ${TMP_DIR}/list_sort
-MAX_LINE=`cat ${TMP_DIR}/list_sort | wc -l`
+#sed -i 's|.sdat|.sgrd|g' ${TMP_DIR}/list_sort
+#MAX_LINE=`cat ${TMP_DIR}/list_sort | wc -l`
 
 
 while read LINE; do
