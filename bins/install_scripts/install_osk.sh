@@ -255,7 +255,7 @@ mv ${OSK_HOME}/OpenSARKit_source.bash /etc/profile.d/OpenSARKit.sh
 chmod -R 755 ${OSK_HOME}
 source /etc/profile.d/OpenSARKit.sh
 #-------------------------------------
-
+ 
 
 #------------------------------------------------------------------
 # 3 Download the additional Database

@@ -182,7 +182,7 @@ if [ `echo ${FILE} | rev | cut -c 1-3 | rev` == "dim" ];then
 	echo " Creating an RGB file"
 	gdalbuildvrt -separate -vrtnodata 0 ${OUT_DIR}/RGB_${DATE}.8bit.vrt ${OUT_DIR}/01_Gamma0_VV.db.8bit.tif ${OUT_DIR}/02_Gamma0_VH.db.8bit.tif ${OUT_DIR}/03_VVVH_ratio.8bit.tif
 	gdalbuildvrt -separate -vrtnodata 0 ${OUT_DIR}/RGB_${DATE}.32bit.vrt ${OUT_DIR}/01_Gamma0_VV.db.sdat ${OUT_DIR}/02_Gamma0_VH.db.sdat ${OUT_DIR}/03_VVVH_ratio.sdat
-	gdal_translate -a_nodata 0 ${OUT_DIR}/RGB_${DATE}.8bit.vrt ${OUT_DIR}/RGB_${DATE}.8bit.tif
+	gdal_translate -a_nodata 0 ${OUT_DIR}/RGB_${DATE }.8bit.vrt ${OUT_DIR}/RGB_${DATE}.8bit.tif
 	
 
 else
