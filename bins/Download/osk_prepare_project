@@ -48,17 +48,20 @@ else
 	echo -e ""
 	
 	# set up input data
-	
-	if [ -d $1 ];then
-	
-		cd $1
-	else
+	if [ `echo $2 | grep shp` ]; then
+		AOI=`readlink -f $2`
+	fi
 
+	if [ -d $1 ];then
+		cd $1
+		PROC_DIR=`pwd`
+	else
 		mkdir -p $1
 		cd $1
+		PROC_DIR=`pwd`
 	fi
 	
-	PROC_DIR=`pwd`
+	
 	TMP_DIR=${PROC_DIR}/TMP
 	mkdir -p ${TMP_DIR}
 	echo "Setting up SAR Project in: ${PROC_DIR}"
@@ -79,12 +82,14 @@ mkdir -p ${PROC_DIR}/DEM
 
 # check if AOI comes from country code or is already a shape
 if [ `echo $2 | grep shp` ]; then # AOI case
-
-		AOI=$2
+	
+		echo ""
 		echo "Preparing your mapping project for the area defined by the shapefile: ${AOI}"
+		echo ""
+
 		# get the base AOI name
 		BASE_AOI=`echo ${AOI} | rev | cut -c 5- | rev`
-
+		
 		# copy the AOI file into the AOI project folder
 		cp ${BASE_AOI}.shp ${PROC_DIR}/AOI/AOI.shp
 		cp ${BASE_AOI}.shx ${PROC_DIR}/AOI/AOI.shx
@@ -92,10 +97,12 @@ if [ `echo $2 | grep shp` ]; then # AOI case
 		cp ${BASE_AOI}.prj ${PROC_DIR}/AOI/AOI.prj
 
 		# create convex hull for data search
+		echo ""
 		echo "Creating a convex hull shapefile of your area of interest"
 		osk_convex_hull.py --input ${PROC_DIR}/AOI/AOI.shp --output ${PROC_DIR}/AOI/convex_hull_aoi.shp
 
 		# download SRTM
+		echo ""
 		echo "Downloading and preparing SRTM4 90m Digital Elevation Model"
 		osk_SRTM3_download ${AOI} ${PROC_DIR}/DEM/DEM_final_90m.tif
 

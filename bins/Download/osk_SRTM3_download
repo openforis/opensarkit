@@ -45,9 +45,16 @@ else
 	echo -e ""
 	AOI=$1   
 	PROC_DIR=`dirname $2`
-   TMP_DIR=${PROC_DIR}/TMP
-   mkdir -p ${TMP_DIR}
-   echo "Producing DEM ${PROC_DIR}"
+	if [ -d ${PROC_DIR} ];then
+		echo ""
+	else
+		mkdir -p ${PROC_DIR}
+	fi
+
+
+	TMP_DIR=${PROC_DIR}/TMP
+	mkdir -p ${TMP_DIR}
+	echo "Producing DEM in ${PROC_DIR}"
 fi
 
 # get layer name

@@ -132,7 +132,7 @@ saga_cmd grid_calculus 1 -GRIDS:"${TMP_DIR}/GAMMA0_HV_mosaic.sgrd" -RESULT:"${TM
 gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -t_srs EPSG:4326 -srcnodata -99999 -dstnodata 0 ${TMP_DIR}/GAMMA0_HV_mosaic_db.sdat ${FINAL_DIR}/Gamma0_HV_db.tif
 
 echo "Calculate Ratio"
-#saga_cmd -f=r -c=${CPU} grid_calculus 1 -GRIDS:${FINAL_DIR}/GAMMA0_HH_mosaic.sgrd -XGRIDS:${FINAL_DIR}/GAMMA0_HV_mosaic.sgrd -RESULT:${FINAL_DIR}/HH_HV_mosaic.sgrd -FORMULA:"a / b"
+#saga_cmd -f=r -c=${CPU} grid_calculus 1 -GRIDS:${FINAL_DIR}/GAMMA0_HH_mosaic.sgrd -XGRIDS:${FINAL_DIR}/GAMMA0_HV_mosaic.sgrd -RESULT:${FINAL_DIR}/HH_HV_mosaic.sgrd -FORMULA:"a / b"	
 #saga_cmd -f=r -c=${CPU} grid_calculus 1 -GRIDS:${FINAL_DIR}/GAMMA0_HH_db_mosaic.sgrd -XGRIDS:${FINAL_DIR}/GAMMA0_HV_db_mosaic.sgrd -RESULT:${FINAL_DIR}/HH_HV_dB_mosaic.sgrd -FORMULA:"a / b"
 #gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -t_srs EPSG:4326 -srcnodata -99999 -dstnodata 0 ${TMP_DIR}/HH_HV_mosaic.sdat ${FINAL_DIR}/Gamma0_HV_db.tif
 #gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -t_srs EPSG:4326 -srcnodata -99999 -dstnodata 0 ${TMP_DIR}/GAMMA0_HV_db_mosaic.sdat ${FINAL_DIR}/Gamma0_HV_db.tif
