@@ -231,18 +231,21 @@ else
 	#sh s1tbx_1.1.1_Linux64_installer.sh -q -overwrite
 	#rm -f s1tbx_1.1.1_Linux64_installer.sh
 
-	wget http://step.esa.int/downloads/2.0/esa-snap_all_unix_2_0_2.sh
-	sh esa-snap_all_unix_2_0_2.sh -q -overwrite
-	rm -f esa-snap_all_unix_2_0_2.sh
+#	wget http://step.esa.int/downloads/2.0/esa-snap_all_unix_2_0_2.sh
+	wget http://step.esa.int/downloads/2.0/esa-snap_sentinel_unix_2_0_2.sh
+	sh esa-snap_sentinel_unix_2_0_2.sh -q -overwrite
+	rm -f esa-snap_sentinel_unix_2_0_2.sh
 	echo 'export SNAP=/usr/local/snap' >> ${OSK_HOME}/OpenSARKit_source.bash
 	#echo 'export SNAP=${HOME}/snap' >> ${OSK_HOME}/OpenSARKit_source.bash
 	echo 'export SNAP_EXE=${SNAP}/bin/gpt'  >> ${OSK_HOME}/OpenSARKit_source.bash
 fi
 
-# update SNAP - not necessary at the moment (1.2.2016)
-#snap --nosplash --modules --refresh --install org.csa.rstb.rstb.op.polarimetric.tools org.esa.s2tbx.s2tbx.s2msi.reader org.esa.s3tbx.s3tbx.landsat.reader org.esa.s3tbx.s3tbx.sentinel3.reader org.esa.s1tbx.s1tbx.kit org.esa.s3tbx.s3tbx.spot.vgt.reader org.esa.s3tbx.s3tbx.sentinel3.reader.ui org.esa.s1tbx.s1tbx.commons org.esa.s3tbx.s3tbx.aatsr.sst.ui org.esa.s1tbx.s1tbx.op.analysis.ui org.esa.snap.seadas.seadas.reader.ui org.esa.s3tbx.s3tbx.proba.v.reader org.esa.s2tbx.sen2cor org.esa.s1tbx.s1tbx.op.feature.extraction org.esa.s3tbx.s3tbx.merisl3.reader org.jlinda.jlinda.nest org.esa.s2tbx.s2tbx.spot.reader org.esa.s3tbx.s3tbx.meris.smac org.esa.smostbx.smos.tools org.esa.s1tbx.s1tbx.op.sar.processing org.esa.s2tbx.s2tbx.rapideye.reader org.esa.smostbx.smos.gui org.esa.s1tbx.s1tbx.rcp org.csa.rstb.rstb.op.classification.ui org.esa.s3tbx.s3tbx.atsr.reader org.esa.s1tbx.s1tbx.op.insar org.esa.s1tbx.s1tbx.op.calibration.ui org.esa.s2tbx.s2tbx.jp2.reader org.csa.rstb.rstb.kit org.esa.smostbx.smos.reader org.esa.s1tbx.s1tbx.op.utilities.ui org.esa.snap.seadas.seadas.reader org.esa.s1tbx.s1tbx.op.ocean.ui org.esa.smostbx.smos.kit org.esa.s3tbx.s3tbx.alos.reader org.esa.s1tbx.s1tbx.op.utilities org.jlinda.jlinda.core org.esa.s1tbx.s1tbx.op.feature.extraction.ui org.esa.s3tbx.s3tbx.avhrr.reader org.jlinda.jlinda.nest.ui org.esa.s3tbx.s3tbx.modis.reader org.csa.rstb.rstb.op.classification org.csa.rstb.rstb.op.polarimetric.tools.ui org.esa.s2tbx.lib.openjpeg org.esa.s3tbx.s3tbx.slstr.pdu.stitching.ui org.esa.s3tbx.s3tbx.flhmci org.esa.s2tbx.s2tbx.commons org.esa.s3tbx.s3tbx.aatsr.sst org.esa.smostbx.smos.ee2netcdf.ui org.esa.s3tbx.s3tbx.meris.ops org.esa.s3tbx.s3tbx.meris.radiometry org.esa.smostbx.smos.dgg org.esa.s3tbx.s3tbx.kit org.esa.s3tbx.s3tbx.meris.radiometry.ui org.esa.smostbx.smos.lsmask org.esa.s1tbx.s1tbx.op.sar.processing.ui org.esa.s3tbx.s3tbx.chris.reader org.esa.s2tbx.s2tbx.deimos.reader org.esa.s1tbx.s1tbx.op.sentinel1.ui org.esa.s1tbx.s1tbx.op.sentinel1 org.esa.s1tbx.s1tbx.op.insar.ui org.esa.smostbx.smos.ee2netcdf org.esa.s3tbx.s3tbx.slstr.pdu.stitching org.esa.s2tbx.s2tbx.sta.adapters.help org.esa.s2tbx.s2tbx.kit org.esa.s1tbx.s1tbx.io org.esa.s3tbx.s3tbx.meris.cloud org.esa.s1tbx.s1tbx.op.calibration org.esa.s3tbx.s3tbx.flhmci.ui
+# update SNAP
+source ${OSK_HOME}/OpenSARKit_source.bash
+echo "updating SNAP toolbox"
+snap --nosplash --nogui --modules --list --refresh
+snap --nosplash --nogui --modules --update-all
 
-#snap --nosplash --modules --refresh --enable org.esa.s1tbx.s1tbx.kit org.openide.util.enumerations org.openide.compat org.netbeans.core.multiview org.netbeans.api.visual jcl.over.slf4j org.openide.options org.netbeans.core.osgi org.netbeans.modules.netbinox org.netbeans.api.search org.netbeans.modules.uihandler org.netbeans.modules.spi.actions org.netbeans.libs.javafx org.esa.s3tbx.s3tbx.kit org.jdesktop.layout org.netbeans.lib.uihandler org.netbeans.libs.jsr223 
 #-------------------------------------
 
 #-------------------------------------
