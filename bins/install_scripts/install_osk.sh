@@ -243,8 +243,8 @@ fi
 # update SNAP
 source ${OSK_HOME}/OpenSARKit_source.bash
 echo "updating SNAP toolbox"
-snap --nosplash --nogui --modules --list --refresh
-snap --nosplash --nogui --modules --update-all
+#snap --nosplash --nogui --modules --list --refresh
+#snap --nosplash --nogui --modules --update-all
 
 #-------------------------------------
 
