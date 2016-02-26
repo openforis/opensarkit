@@ -65,12 +65,21 @@ for LINE in `ls -1 ${PROC_DIR}`;do
 	export TMP_DIR=${PROC_DIR}/TMP
 	mkdir -p ${TMP_DIR}
 
-	if [ `ls -1 | wc -l` -eq 1 ];then
+	if [[ `ls *.zip -1 | wc -l` -eq 1 || `ls *.dim -1 | wc -l` -eq 1 ]];then
 
+		if [ -e *.dim ];then
 
-		SCENE=`ls` 
-		echo " Processing File ${SCENE} "
-		osk_S1_GRD_single_preprocess ${SCENE} . $2 $3
+			SCENE=`ls *dim` 		
+			echo " Processing File ${SCENE} "
+			osk_S1_GRD_single_preprocess ${SCENE} . $2 $3
+
+		elif [ -e *.zip];then	
+	
+			SCENE=`ls *.zip` 
+			echo " Processing File ${SCENE} "
+			osk_S1_GRD_single_preprocess ${SCENE} . $2 $3
+
+		fi
 
 	else # in case of more then one slice
 
@@ -82,28 +91,42 @@ for LINE in `ls -1 ${PROC_DIR}`;do
 			echo " Preprocessing File: ${FILE}"
 			echo "----------------------------------------------------------------------------------"
 			echo ""			
-			echo " Importing S1 GRD data file and apply the precise orbit file, remove border noise and calibrate the data to beta0"
+			echo " Importing S1 GRD data file and apply the precise orbit file and calibrate the data to beta0"
 			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_Orb_Noise_Brd_Cal.xml -x -Pinput=${FILE} -Poutput=${TMP_DIR}/${BASE}-CAL.dim
 	
 		done
 
 		
-		
 		echo " Assembling the products of the same swath"
 		bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_slice_assembly.xml -Pfilelist=$(ls -d -1 ${TMP_DIR}/*.dim | tr '\n' ',' | rev | cut -c 2- | rev) -Poutput=${TMP_DIR}/${LINE}.dim
+		
+		rm -rf ${TMP_DIR}/*-CAL.d*
+
+		echo " Remove border noise by deleting the outer 200 rows"
+		COLUMNS=`gdalinfo ${TMP_DIR}/CAL.data/Beta0_VV.img | grep "Size is" | awk '{print $3}' | sed s/,//g`
+		LINES=`gdalinfo ${TMP_DIR}/CAL.data/Beta0_VV.img | grep "Size is" | awk '{print $4}'`
+		NEW_WIDTH=`expr $COLUMNS - 400`
+		NEW_HEIGHT=`expr $LINES - 400`
+		bash ${SNAP_EXE} Subset -Pregion=200,200,$NEW_WIDTH,$NEW_HEIGHT -PcopyMetadata="true" -Ssource=${TMP_DIR}/${LINE}.dim -t ${TMP_DIR}/${LINE}"_border.dim"
+
+		rm -rf ${TMP_DIR}/${LINE}.d*
 
 		if [ $2 == "MED_RES" ];then
 			echo " Applying the Terrain Flattening and multilook the data with a factor of 3"
-			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TF_ML.xml -x -Pinput=${TMP_DIR}/${LINE}.dim -Poutput=${TMP_DIR}/TF.dim
+			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TF_ML.xml -x -Pinput=${TMP_DIR}/${LINE}"_border.dim" -Poutput=${TMP_DIR}/TF.dim
 			OUT_DIR=${PROC_DIR}/${LINE}
+			rm -rf ${TMP_DIR}/${LINE}"_"border.d*
 			echo " Applying the Refined Lee Speckle Filter and doing the Geometric Terrain Correction (i.e. Geocoding)"
 			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_SPK_TC.xml -x -Pinput=${TMP_DIR}/TF.dim -Poutput=${TMP_DIR}/TF_TC.dim
+			rm -rf ${TMP_DIR}/TF.d*
 		elif [ $2 == "HI_RES" ];then
 			echo " Applying the Terrain Flattening on original resolution (i.e. 10m)"
-			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_10_TF_ML.xml -x -Pinput=${TMP_DIR}/${LINE}.dim -Poutput=${TMP_DIR}/TF.dim
+			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_10_TF_ML.xml -x -Pinput=${TMP_DIR}/${LINE}"_border.dim" -Poutput=${TMP_DIR}/TF.dim
 			OUT_DIR=${PROC_DIR}/${LINE}
+			rm -rf ${TMP_DIR}/${LINE}"_"border.d*
 			echo " Applying the Refined Lee Speckle Filter and doing the Geometric Terrain Correction (i.e. Geocoding)"
 			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_10_SPK_TC.xml -x -Pinput=${TMP_DIR}/TF.dim -Poutput=${TMP_DIR}/TF_TC.dim
+			rm -rf ${TMP_DIR}/TF.d*
 		fi	
 		
 		echo " Cut layers to valid range (i.e. -30 to 3 dB)"

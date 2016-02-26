@@ -42,6 +42,8 @@ else
 	echo -e "----------------------------------"
 	echo -e ""
 
+	AOI=`readlink -f $2`
+
   	cd $1
    	PROC_DIR=`pwd`
 	TMP_DIR=${PROC_DIR}/TMP
@@ -57,7 +59,7 @@ read -s -p "Please type your ESA Scihub Password:" PW
 echo ""
 
 echo "Preparing download"
-ogrinfo $2 -al | grep Product_ID | sed 's/  Product_ID (String) = //g' | tail -n +2 > tmp_download_list
+ogrinfo $AOI -al | grep Product_ID | sed 's/  Product_ID (String) = //g' | tail -n +2 > tmp_download_list
 
 # counter for info on number of download products
 NR=`cat tmp_download_list | wc -l`

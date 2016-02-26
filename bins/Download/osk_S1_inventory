@@ -64,10 +64,10 @@ else
 	# set up initial script variables
    	
 	if [ -d $1 ];then
-	
+		AOI=`readlink -f $2`
 		cd $1
 	else
-
+		AOI=`readlink -f $2`
 		mkdir -p $1
 		cd $1
 	fi
@@ -96,15 +96,15 @@ echo "Getting the inventory data"
 
 
 # get the corner coordinates from the AOI shapefile and build rectangle for data search  
-LAYER=`ogrinfo $2 | grep 1: | awk $'{print $2}'`
-X_MIN=`ogrinfo $2 $LAYER | grep Extent | awk -F '(' $'{print $2}' | awk -F ','  $'{print $1}'`
-X_MAX=`ogrinfo $2 $LAYER | grep Extent | awk -F '(' $'{print $3}' | awk -F ','  $'{print $1}'`
-Y_MIN=`ogrinfo $2 $LAYER | grep Extent | awk -F ',' $'{print $2}' | awk -F ')' $'{print $1}'`
-Y_MAX=`ogrinfo $2 $LAYER | grep Extent | awk -F ',' $'{print $3}' | awk -F ')' $'{print $1}'`
+LAYER=`ogrinfo $AOI | grep 1: | awk $'{print $2}'`
+X_MIN=`ogrinfo $AOI $LAYER | grep Extent | awk -F '(' $'{print $2}' | awk -F ','  $'{print $1}'`
+X_MAX=`ogrinfo $AOI $LAYER | grep Extent | awk -F '(' $'{print $3}' | awk -F ','  $'{print $1}'`
+Y_MIN=`ogrinfo $AOI $LAYER | grep Extent | awk -F ',' $'{print $2}' | awk -F ')' $'{print $1}'`
+Y_MAX=`ogrinfo $AOI $LAYER | grep Extent | awk -F ',' $'{print $3}' | awk -F ')' $'{print $1}'`
 AOI="POLYGON(($X_MIN$Y_MIN, $X_MIN$Y_MAX, $X_MAX$Y_MAX, $X_MAX$Y_MIN, $X_MIN$Y_MIN ))"
 
 ## Alternative Version with actual footprint (seems not to work because only rectangluar searches available)
-#ogr2ogr -f CSV ${TMP_DIR}/tmp_AOI_WKT.csv $2 -lco GEOMETRY=AS_WKT
+#ogr2ogr -f CSV ${TMP_DIR}/tmp_AOI_WKT.csv $AOI -lco GEOMETRY=AS_WKT
 #AOI=`grep POLYGON ${TMP_DIR}/tmp_AOI_WKT.csv | awk -F "))" $'{print $1}'`
 #echo $AOI
 

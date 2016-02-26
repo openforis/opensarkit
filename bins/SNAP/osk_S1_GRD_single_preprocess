@@ -128,19 +128,35 @@ fi
 
 #-------------------------------------------------------------------------------------------
 # actual preprocessing according to the graphs
-echo " Importing S1 GRD data file and apply the precise orbit file, remove border noise and calibrate the data to beta0"
+echo " Importing S1 GRD data file and apply the precise orbit file and calibrate the data to beta0"
 bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_Orb_Noise_Brd_Cal.xml -x -Pinput=${FILE} -Poutput=${TMP_DIR}/CAL.dim
+
+echo " Remove border noise by deleting the outer 200 rows"
+COLUMNS=`gdalinfo ${TMP_DIR}/CAL.data/Beta0_VV.img | grep "Size is" | awk '{print $3}' | sed s/,//g`
+LINES=`gdalinfo ${TMP_DIR}/CAL.data/Beta0_VV.img | grep "Size is" | awk '{print $4}'`
+NEW_WIDTH=`expr $COLUMNS - 400`
+NEW_HEIGHT=`expr $LINES - 400`
+echo $COLUMNS
+echo $LINES
+echo $NEW_WIDTH
+echo $NEW_HEIGHT
+bash ${SNAP_EXE} Subset -Pregion=200,200,$NEW_WIDTH,$NEW_HEIGHT -PcopyMetadata="true" -Ssource=${TMP_DIR}/CAL.dim -t ${TMP_DIR}/CAL_border.dim
+rm -rf ${TMP_DIR}/CAL.d*
 
 if [ $3 == "MED_RES" ];then
 	echo " Applying the Terrain Flattening and multilook the data with a factor of 3"
-	bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TF_ML.xml -x -Pinput=${TMP_DIR}/CAL.dim -Poutput=${TMP_DIR}/TF.dim
+	bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TF_ML.xml -x -Pinput=${TMP_DIR}/CAL_border.dim -Poutput=${TMP_DIR}/TF.dim
+	rm -rf ${TMP_DIR}/CAL_border.d*
 	echo " Applying the Refined Lee Speckle Filter and doing the Geometric Terrain Correction (i.e. Geocoding)"
 	bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_SPK_TC.xml -x -Pinput=${TMP_DIR}/TF.dim -Poutput=${TMP_DIR}/TF_TC.dim
+	rm -rf ${TMP_DIR}/TF.d*
 elif [ $3 == "HI_RES" ];then
 	echo " Applying the Terrain Flattening and keep original resolution of 10m"
-	bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_10_TF_ML.xml -x -Pinput=${TMP_DIR}/CAL.dim -Poutput=${TMP_DIR}/TF.dim
+	bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_10_TF_ML.xml -x -Pinput=${TMP_DIR}/CAL_border.dim -Poutput=${TMP_DIR}/TF.dim
+	rm -rf ${TMP_DIR}/CAL_border.d*
 	echo " Applying the Refined Lee Speckle Filter and doing the Geometric Terrain Correction (i.e. Geocoding)"
 	bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_10_SPK_TC.xml -x -Pinput=${TMP_DIR}/TF.dim -Poutput=${TMP_DIR}/TF_TC.dim
+	rm -rf ${TMP_DIR}/TF.d*
 fi
 
 rm -rf ${PROC_DIR}/target*
@@ -182,7 +198,7 @@ if [ `echo ${FILE} | rev | cut -c 1-3 | rev` == "dim" ];then
 	echo " Creating an RGB file"
 	gdalbuildvrt -separate -vrtnodata 0 ${OUT_DIR}/RGB_${DATE}.8bit.vrt ${OUT_DIR}/01_Gamma0_VV.db.8bit.tif ${OUT_DIR}/02_Gamma0_VH.db.8bit.tif ${OUT_DIR}/03_VVVH_ratio.8bit.tif
 	gdalbuildvrt -separate -vrtnodata 0 ${OUT_DIR}/RGB_${DATE}.32bit.vrt ${OUT_DIR}/01_Gamma0_VV.db.sdat ${OUT_DIR}/02_Gamma0_VH.db.sdat ${OUT_DIR}/03_VVVH_ratio.sdat
-	gdal_translate -a_nodata 0 ${OUT_DIR}/RGB_${DATE }.8bit.vrt ${OUT_DIR}/RGB_${DATE}.8bit.tif
+	gdal_translate -a_nodata 0 ${OUT_DIR}/RGB_${DATE}.8bit.vrt ${OUT_DIR}/RGB_${DATE}.8bit.tif
 	
 
 else
