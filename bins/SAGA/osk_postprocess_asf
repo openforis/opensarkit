@@ -102,24 +102,25 @@ if grep -q Error ${TMP_DIR}/tmplog; then
 	sh ${S1TBX_EXE} ${TMP_DIR}/TEXTURE_HV.xml
 fi
 
-gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -t_srs EPSG:4326 -srcnodata -99999 -dstnodata 0 -tr 0.000277778 0.000277778 ${TMP_DIR}/TEXTURE_HH.data/band_1.img ${TMP_DIR}/1_Gamma0_HH.tif
+RES=`gdalinfo ${TMP_DIR}/TEXTURE_HH.data/band_1.img | grep "Pixel Size" | awk -F '(' '{print $2}' | awk -F ',' '{print $1}'`
+gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -t_srs EPSG:4326 -srcnodata -99999 -dstnodata 0 -tr ${RES} ${RES} ${TMP_DIR}/TEXTURE_HH.data/band_1.img ${TMP_DIR}/1_Gamma0_HH.tif
 # get the common area of DEM and outputfiles
 XMIN=`osk_intersect_raster.py -a ${TMP_DIR}/1_Gamma0_HH.tif -b $DEM | awk -F ',' $'{print$1}' | cut -c 2-`
 XMAX=`osk_intersect_raster.py -a ${TMP_DIR}/1_Gamma0_HH.tif -b $DEM | awk -F ',' $'{print$3}'`
 YMAX=`osk_intersect_raster.py -a ${TMP_DIR}/1_Gamma0_HH.tif -b $DEM | awk -F ',' $'{print$2}'`
 YMIN=`osk_intersect_raster.py -a ${TMP_DIR}/1_Gamma0_HH.tif -b $DEM | awk -F ',' $'{print$4}' | rev | cut -c 2-| rev`
 
-gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -t_srs EPSG:4326 -srcnodata 0 -dstnodata -9999 -te $XMIN $YMIN $XMAX $YMAX -tr 0.000277778 0.000277778 ${INPUT_HH} ${FINAL}/01_Gamma0_HH_db.tif
-gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -t_srs EPSG:4326 -srcnodata 0 -dstnodata -9999 -te $XMIN $YMIN $XMAX $YMAX -tr 0.000277778 0.000277778 ${INPUT_HV} ${FINAL}/02_Gamma0_HV_db.tif
-gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -t_srs EPSG:4326 -srcnodata 0 -dstnodata -9999 -te $XMIN $YMIN $XMAX $YMAX -tr 0.000277778 0.000277778 ${PROC_DIR}/HH_HV_ratio.tif ${FINAL}/03_HH_HV_lin_ratio.tif
-gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -t_srs EPSG:4326 -srcnodata 0 -dstnodata -9999 -te $XMIN $YMIN $XMAX $YMAX -tr 0.000277778 0.000277778 ${PROC_DIR}/HH_HV_db_ratio.tif ${FINAL}/04_HH_HV_db_ratio.tif
-gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -t_srs EPSG:4326 -srcnodata 0 -dstnodata -9999 -te $XMIN $YMIN $XMAX $YMAX -tr 0.000277778 0.000277778 ${TMP_DIR}/TEXTURE_HH.data/Homogeneity.img ${FINAL}/05_Homogeneity_HH.tif
-gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -t_srs EPSG:4326 -srcnodata 0 -dstnodata -9999 -te $XMIN $YMIN $XMAX $YMAX -tr 0.000277778 0.000277778 ${TMP_DIR}/TEXTURE_HH.data/GLCMVariance.img ${FINAL}/06_Variance_HH.tif
-gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -t_srs EPSG:4326 -srcnodata 0 -dstnodata -9999 -te $XMIN $YMIN $XMAX $YMAX -tr 0.000277778 0.000277778 ${TMP_DIR}/TEXTURE_HH.data/Dissimilarity.img ${FINAL}/07_Dissimilarity_HH.tif
-gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -t_srs EPSG:4326 -srcnodata 0 -dstnodata -9999 -te $XMIN $YMIN $XMAX $YMAX -tr 0.000277778 0.000277778 ${TMP_DIR}/TEXTURE_HV.data/Homogeneity.img ${FINAL}/08_Homogeneity_HV.tif
-gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -t_srs EPSG:4326 -srcnodata 0 -dstnodata -9999 -te $XMIN $YMIN $XMAX $YMAX -tr 0.000277778 0.000277778 ${TMP_DIR}/TEXTURE_HV.data/GLCMVariance.img ${FINAL}/09_Variance_HV.tif
-gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -t_srs EPSG:4326 -srcnodata 0 -dstnodata -9999 -te $XMIN $YMIN $XMAX $YMAX -tr 0.000277778 0.000277778 ${TMP_DIR}/TEXTURE_HV.data/Dissimilarity.img ${FINAL}/10_Dissimilarity_HV.tif
-gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -ot Float32 -t_srs EPSG:4326 -srcnodata -99999 -dstnodata -9999 -te $XMIN $YMIN $XMAX $YMAX -tr 0.000277778 0.000277778 $DEM ${FINAL}/11_DEM_height.tif
+gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -t_srs EPSG:4326 -srcnodata 0 -dstnodata -9999 -te $XMIN $YMIN $XMAX $YMAX -tr ${RES} ${RES} ${INPUT_HH} ${FINAL}/01_Gamma0_HH_db.tif
+gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -t_srs EPSG:4326 -srcnodata 0 -dstnodata -9999 -te $XMIN $YMIN $XMAX $YMAX -tr ${RES} ${RES} ${INPUT_HV} ${FINAL}/02_Gamma0_HV_db.tif
+gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -t_srs EPSG:4326 -srcnodata 0 -dstnodata -9999 -te $XMIN $YMIN $XMAX $YMAX -tr ${RES} ${RES} ${PROC_DIR}/HH_HV_ratio.tif ${FINAL}/03_HH_HV_lin_ratio.tif
+gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -t_srs EPSG:4326 -srcnodata 0 -dstnodata -9999 -te $XMIN $YMIN $XMAX $YMAX -tr ${RES} ${RES} ${PROC_DIR}/HH_HV_db_ratio.tif ${FINAL}/04_HH_HV_db_ratio.tif
+gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -t_srs EPSG:4326 -srcnodata 0 -dstnodata -9999 -te $XMIN $YMIN $XMAX $YMAX -tr ${RES} ${RES} ${TMP_DIR}/TEXTURE_HH.data/Homogeneity.img ${FINAL}/05_Homogeneity_HH.tif
+gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -t_srs EPSG:4326 -srcnodata 0 -dstnodata -9999 -te $XMIN $YMIN $XMAX $YMAX -tr ${RES} ${RES} ${TMP_DIR}/TEXTURE_HH.data/GLCMVariance.img ${FINAL}/06_Variance_HH.tif
+gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -t_srs EPSG:4326 -srcnodata 0 -dstnodata -9999 -te $XMIN $YMIN $XMAX $YMAX -tr ${RES} ${RES} ${TMP_DIR}/TEXTURE_HH.data/Dissimilarity.img ${FINAL}/07_Dissimilarity_HH.tif
+gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -t_srs EPSG:4326 -srcnodata 0 -dstnodata -9999 -te $XMIN $YMIN $XMAX $YMAX -tr ${RES} ${RES} ${TMP_DIR}/TEXTURE_HV.data/Homogeneity.img ${FINAL}/08_Homogeneity_HV.tif
+gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -t_srs EPSG:4326 -srcnodata 0 -dstnodata -9999 -te $XMIN $YMIN $XMAX $YMAX -tr ${RES} ${RES} ${TMP_DIR}/TEXTURE_HV.data/GLCMVariance.img ${FINAL}/09_Variance_HV.tif
+gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -t_srs EPSG:4326 -srcnodata 0 -dstnodata -9999 -te $XMIN $YMIN $XMAX $YMAX -tr ${RES} ${RES} ${TMP_DIR}/TEXTURE_HV.data/Dissimilarity.img ${FINAL}/10_Dissimilarity_HV.tif
+gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -ot Float32 -t_srs EPSG:4326 -srcnodata -99999 -dstnodata -9999 -te $XMIN $YMIN $XMAX $YMAX -tr ${RES} ${RES} $DEM ${FINAL}/11_DEM_height.tif
 
 # write world file (we will need for segmentation)
 listgeo -tfw ${FINAL}/01_Gamma0_HH_db.tif
