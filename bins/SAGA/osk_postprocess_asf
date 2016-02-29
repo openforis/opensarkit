@@ -63,7 +63,7 @@ OUTPUT_TEXTURE_HH=${TMP_DIR}/TEXTURE_HH.dim
 OUTPUT_TEXTURE_HV=${TMP_DIR}/TEXTURE_HV.dim
 
 # Write new xml graph and substitute input and output files
-cp ${S1TBX_GRAPHS}/Generic_Texture.xml ${TMP_DIR}/TEXTURE_HH.xml
+cp ${SNAP_GRAPHS}/Generic_Texture.xml ${TMP_DIR}/TEXTURE_HH.xml
 	
 # insert Input file path into processing chain xml
 sed -i "s|INPUT_TR|${INPUT_HH}|g" ${TMP_DIR}/TEXTURE_HH.xml
@@ -71,13 +71,13 @@ sed -i "s|INPUT_TR|${INPUT_HH}|g" ${TMP_DIR}/TEXTURE_HH.xml
 sed -i "s|OUTPUT_TR|${OUTPUT_TEXTURE_HH}|g" ${TMP_DIR}/TEXTURE_HH.xml
 
 echo "Calculate GLCM Texture measurements for HH channel"
-sh ${S1TBX_EXE} ${TMP_DIR}/TEXTURE_HH.xml 2>&1 | tee ${TMP_DIR}/tmplog
+sh ${SNAP_EXE} ${TMP_DIR}/TEXTURE_HH.xml 2>&1 | tee ${TMP_DIR}/tmplog
 
 # in case it fails try a second time	
 if grep -q Error ${TMP_DIR}/tmplog; then 	
 	echo "2nd try"
 	rm -rf ${TMP_DIR}/TEXTURE_HH.dim ${TMP_DIR}/TEXTURE_HH.data
-	sh ${S1TBX_EXE} ${TMP_DIR}/TEXTURE_HH.xml
+	sh ${SNAP_EXE} ${TMP_DIR}/TEXTURE_HH.xml
 fi
 
 echo "--------------------------------------------------------------------------------------------------"
@@ -85,7 +85,7 @@ echo " Calculate second order statistic Texture measurements (GLCMMean, GLCMVari
 echo "--------------------------------------------------------------------------------------------------"
 
 # Write new xml graph and substitute input and output files
-cp ${S1TBX_GRAPHS}/Generic_Texture.xml ${TMP_DIR}/TEXTURE_HV.xml
+cp ${SNAP_GRAPHS}/Generic_Texture.xml ${TMP_DIR}/TEXTURE_HV.xml
 	
 # insert Input file path into processing chain xml
 sed -i "s|INPUT_TR|${INPUT_HV}|g" ${TMP_DIR}/TEXTURE_HV.xml
@@ -93,13 +93,13 @@ sed -i "s|INPUT_TR|${INPUT_HV}|g" ${TMP_DIR}/TEXTURE_HV.xml
 sed -i "s|OUTPUT_TR|${OUTPUT_TEXTURE_HV}|g" ${TMP_DIR}/TEXTURE_HV.xml
 
 echo "Calculate GLCM Texture measurements for HV channel"
-sh ${S1TBX_EXE} ${TMP_DIR}/TEXTURE_HV.xml 2>&1 | tee  ${TMP_DIR}/tmplog
+sh ${SNAP_EXE} ${TMP_DIR}/TEXTURE_HV.xml 2>&1 | tee  ${TMP_DIR}/tmplog
 
 # in case it fails try a second time	
 if grep -q Error ${TMP_DIR}/tmplog; then 	
 	echo "2nd try"
 	rm -rf ${TMP_DIR}/TEXTURE_HV.dim ${TMP_DIR}/TEXTURE_HV.data
-	sh ${S1TBX_EXE} ${TMP_DIR}/TEXTURE_HV.xml
+	sh ${SNAP_EXE} ${TMP_DIR}/TEXTURE_HV.xml
 fi
 
 RES=`gdalinfo ${TMP_DIR}/TEXTURE_HH.data/band_1.img | grep "Pixel Size" | awk -F '(' '{print $2}' | awk -F ',' '{print $1}'`
