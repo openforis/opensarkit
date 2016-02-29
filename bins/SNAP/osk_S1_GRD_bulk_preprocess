@@ -73,7 +73,7 @@ for LINE in `ls -1 ${PROC_DIR}`;do
 			echo " Processing File ${SCENE} "
 			osk_S1_GRD_single_preprocess ${SCENE} . $2 $3
 
-		elif [ -e *.zip];then	
+		elif [ -e *.zip ];then	
 	
 			SCENE=`ls *.zip` 
 			echo " Processing File ${SCENE} "
