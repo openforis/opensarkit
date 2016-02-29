@@ -103,8 +103,8 @@ for LINE in `ls -1 ${PROC_DIR}`;do
 		rm -rf ${TMP_DIR}/*-CAL.d*
 
 		echo " Remove border noise by deleting the outer 200 rows"
-		COLUMNS=`gdalinfo ${TMP_DIR}/CAL.data/Beta0_VV.img | grep "Size is" | awk '{print $3}' | sed s/,//g`
-		LINES=`gdalinfo ${TMP_DIR}/CAL.data/Beta0_VV.img | grep "Size is" | awk '{print $4}'`
+		COLUMNS=`gdalinfo ${TMP_DIR}/${LINE}.data/Beta0_VV.img | grep "Size is" | awk '{print $3}' | sed s/,//g`
+		LINES=`gdalinfo ${TMP_DIR}/${LINE}.data/Beta0_VV.img | grep "Size is" | awk '{print $4}'`
 		NEW_WIDTH=`expr $COLUMNS - 400`
 		NEW_HEIGHT=`expr $LINES - 400`
 		bash ${SNAP_EXE} Subset -Pregion=200,200,$NEW_WIDTH,$NEW_HEIGHT -PcopyMetadata="true" -Ssource=${TMP_DIR}/${LINE}.dim -t ${TMP_DIR}/${LINE}"_border.dim"
