@@ -52,7 +52,7 @@ mkdir ${FINAL}
 
 
 echo "--------------------------------------------------------------------------------------------------"
-echo " Calculate second order statistic Texture measurements (GLCMMean, GLCMVariance) for HH channel"
+echo " Calculate second order statistic Texture measurements (Dissimilarity, Homogeneity, GLCMVariance) for HH channel"
 echo "--------------------------------------------------------------------------------------------------"
 
 # define path/name of output
@@ -62,47 +62,18 @@ INPUT_HV=${PROC_DIR}/Gamma0_HV_db.tif
 OUTPUT_TEXTURE_HH=${TMP_DIR}/TEXTURE_HH.dim
 OUTPUT_TEXTURE_HV=${TMP_DIR}/TEXTURE_HV.dim
 
-# Write new xml graph and substitute input and output files
-cp ${SNAP_GRAPHS}/Generic_Texture.xml ${TMP_DIR}/TEXTURE_HH.xml
-	
-# insert Input file path into processing chain xml
-sed -i "s|INPUT_TR|${INPUT_HH}|g" ${TMP_DIR}/TEXTURE_HH.xml
-# insert Input file path into processing chain xml
-sed -i "s|OUTPUT_TR|${OUTPUT_TEXTURE_HH}|g" ${TMP_DIR}/TEXTURE_HH.xml
-
-echo "Calculate GLCM Texture measurements for HH channel"
-sh ${SNAP_EXE} ${TMP_DIR}/TEXTURE_HH.xml 2>&1 | tee ${TMP_DIR}/tmplog
-
-# in case it fails try a second time	
-if grep -q Error ${TMP_DIR}/tmplog; then 	
-	echo "2nd try"
-	rm -rf ${TMP_DIR}/TEXTURE_HH.dim ${TMP_DIR}/TEXTURE_HH.data
-	sh ${SNAP_EXE} ${TMP_DIR}/TEXTURE_HH.xml
-fi
+bash $SNAP_EXE GLCM -PoutputASM='false' -PoutputContrast='false' -PoutputCorrelation='false' -PoutputEnergy='false' -PoutputMAX='false' -PoutputMean='false' -Ssource=${INPUT_HH} -t ${OUTPUT_TEXTURE_HH}
 
 echo "--------------------------------------------------------------------------------------------------"
-echo " Calculate second order statistic Texture measurements (GLCMMean, GLCMVariance) for HV channel"
+echo " Calculate second order statistic Texture measurements (Dissimilarity, Homogeneity, GLCMVariance) for HV channel"
 echo "--------------------------------------------------------------------------------------------------"
 
-# Write new xml graph and substitute input and output files
-cp ${SNAP_GRAPHS}/Generic_Texture.xml ${TMP_DIR}/TEXTURE_HV.xml
-	
-# insert Input file path into processing chain xml
-sed -i "s|INPUT_TR|${INPUT_HV}|g" ${TMP_DIR}/TEXTURE_HV.xml
-# insert Input file path into processing chain xml
-sed -i "s|OUTPUT_TR|${OUTPUT_TEXTURE_HV}|g" ${TMP_DIR}/TEXTURE_HV.xml
+bash $SNAP_EXE GLCM -PoutputASM='false' -PoutputContrast='false' -PoutputCorrelation='false' -PoutputEnergy='false' -PoutputMAX='false' -PoutputMean='false' -Ssource=${INPUT_HV} -t ${OUTPUT_TEXTURE_HV}
 
-echo "Calculate GLCM Texture measurements for HV channel"
-sh ${SNAP_EXE} ${TMP_DIR}/TEXTURE_HV.xml 2>&1 | tee  ${TMP_DIR}/tmplog
-
-# in case it fails try a second time	
-if grep -q Error ${TMP_DIR}/tmplog; then 	
-	echo "2nd try"
-	rm -rf ${TMP_DIR}/TEXTURE_HV.dim ${TMP_DIR}/TEXTURE_HV.data
-	sh ${SNAP_EXE} ${TMP_DIR}/TEXTURE_HV.xml
-fi
-
+# get resolution of dataset
 RES=`gdalinfo ${TMP_DIR}/TEXTURE_HH.data/band_1.img | grep "Pixel Size" | awk -F '(' '{print $2}' | awk -F ',' '{print $1}'`
+
+# get aux data from channel
 gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -of GTiff -t_srs EPSG:4326 -srcnodata -99999 -dstnodata 0 -tr ${RES} ${RES} ${TMP_DIR}/TEXTURE_HH.data/band_1.img ${TMP_DIR}/1_Gamma0_HH.tif
 # get the common area of DEM and outputfiles
 XMIN=`osk_intersect_raster.py -a ${TMP_DIR}/1_Gamma0_HH.tif -b $DEM | awk -F ',' $'{print$1}' | cut -c 2-`
