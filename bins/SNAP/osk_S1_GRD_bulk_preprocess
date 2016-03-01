@@ -87,27 +87,40 @@ for LINE in `ls -1 ${PROC_DIR}`;do
 			
 			# get the basic filename
 			BASE=`basename ${FILE}`
+						
+			SCENE_ID=`echo ${BASE} | rev | cut -c 5- | rev`
+			DATE=${SCENE_ID:17:8}
+			ORBIT=${SCENE_ID:49:6}
+			TRACH=`S1_track $ORBIT`
+			MODE=${SCENE_ID:7:3}
+			POL_MODE=${SCENE_ID:13:3}
+			#TRACK=${SCENE_ID:26:3}
+			#FRAME_START=${SCENE_ID:29:3}
+			#FRAME_END=${SCENE_ID:45:3}
+			export SATELLITE="Sentinel-1"
+
 			echo "----------------------------------------------------------------------------------"	
 			echo " Preprocessing File: ${FILE}"
 			echo "----------------------------------------------------------------------------------"
 			echo ""			
-			echo " Importing S1 GRD data file and apply the precise orbit file and calibrate the data to beta0"
-			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_Orb_Noise_Brd_Cal.xml -x -Pinput=${FILE} -Poutput=${TMP_DIR}/${BASE}-CAL.dim
+			echo -ne " Importing S1 GRD data file and apply the precise orbit file and calibrate the data to beta0" &&
+			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_Orb_Noise_Brd_Cal.xml -x -Pinput=${FILE} -Poutput=${TMP_DIR}/${BASE}-CAL.dim & spinner $! && echo -e "done"
 	
 		done
 
 		
-		echo " Assembling the products of the same swath"
-		bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_slice_assembly.xml -Pfilelist=$(ls -d -1 ${TMP_DIR}/*.dim | tr '\n' ',' | rev | cut -c 2- | rev) -Poutput=${TMP_DIR}/${LINE}.dim
+		echo " Assembling the products of the same swath" &&
+		bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_slice_assembly.xml -Pfilelist=$(ls -d -1 ${TMP_DIR}/*.dim | tr '\n' ',' | rev | cut -c 2- | rev) -Poutput=${TMP_DIR}/${LINE}.dim & spinner $! && echo -e "done"
 		
 		rm -rf ${TMP_DIR}/*-CAL.d*
 
-		echo " Remove border noise by deleting the outer 200 rows"
+
 		COLUMNS=`gdalinfo ${TMP_DIR}/${LINE}.data/Beta0_VV.img | grep "Size is" | awk '{print $3}' | sed s/,//g`
 		LINES=`gdalinfo ${TMP_DIR}/${LINE}.data/Beta0_VV.img | grep "Size is" | awk '{print $4}'`
-		NEW_WIDTH=`expr $COLUMNS - 400`
-		NEW_HEIGHT=`expr $LINES - 400`
-		bash ${SNAP_EXE} Subset -Pregion=200,200,$NEW_WIDTH,$NEW_HEIGHT -PcopyMetadata="true" -Ssource=${TMP_DIR}/${LINE}.dim -t ${TMP_DIR}/${LINE}"_border.dim"
+		NEW_WIDTH=`expr $COLUMNS - 800`
+		NEW_HEIGHT=`expr $LINES - 800`
+		echo -ne " Remove border noise by deleting the outer 400 rows" &&
+		bash ${SNAP_EXE} Subset -Pregion=400,400,$NEW_WIDTH,$NEW_HEIGHT -PcopyMetadata="true" -Ssource=${TMP_DIR}/${LINE}.dim -t ${TMP_DIR}/${LINE}"_border.dim"  & spinner $! && echo -e "done"
 
 		rm -rf ${TMP_DIR}/${LINE}.d*
 

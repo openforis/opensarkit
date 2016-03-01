@@ -93,6 +93,20 @@ function s1_footprint() {
     echo "$FOOT"
 }
 
+# get orbit 
+function s1_orbit() {
+    if [ -z "$1" ]; then 
+    echo "Missing arguments. Syntax:"
+    echo "  s1_orbit <input_list>"
+    return
+    fi
+    ORBIT=$(xml_grep int $1 |\
+	    grep \"orbitnumber |\
+	    sed 's/  <int name="orbitnumber">//g' |\
+	    sed 's|</int>||g')
+    echo "$ORBIT"
+}
+
 # get track
 function s1_track() {
     if [ -z "$1" ]; then 
@@ -100,14 +114,23 @@ function s1_track() {
     echo "  s1_track <input_list>"
     return
     fi
-    TRACK=$(xml_grep title $1 --text_only |\
- 	tail -n +2 |\
-	cut -c 27-29)
-    echo "$TRACK"
+    ORBIT=$(xml_grep int $1 |\
+	    grep \"orbitnumber |\
+	    sed 's/  <int name="orbitnumber">//g' |\
+	    sed 's|</int>||g')
+    for line in $ORBIT;do
+    if [[ `expr $line % 175` -lt 72 ]];then
+       TRACK=`expr $line % 175 + 103`
+       echo $TRACK
+    else
+       TRACK=`expr $line % 175 - 72`
+       echo "$TRACK"
+    fi		
+    done
 }
 
 # get starting slice
-function s1_slice_start() {
+function s1_start_time() {
     if [ -z "$1" ]; then 
     echo "Missing arguments. Syntax:"
     echo "  s1_slice_start <input_list>"
@@ -115,12 +138,12 @@ function s1_slice_start() {
     fi
     TRACK=$(xml_grep title $1 --text_only |\
  	tail -n +2 |\
-	cut -c 30-32)
+	cut -c 27-32)
     echo "$TRACK"
 }
 
 # get ending slice
-function s1_slice_end() {
+function s1_stop_time() {
     if [ -z "$1" ]; then 
     echo "Missing arguments. Syntax:"
     echo "  s1_slice_start <input_list>"
@@ -128,6 +151,6 @@ function s1_slice_end() {
     fi
     TRACK=$(xml_grep title $1 --text_only |\
  	tail -n +2 |\
-	cut -c 46-48)
+	cut -c 43-48)
     echo "$TRACK"
 }

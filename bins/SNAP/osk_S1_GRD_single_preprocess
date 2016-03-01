@@ -131,16 +131,16 @@ fi
 echo " Importing S1 GRD data file and apply the precise orbit file and calibrate the data to beta0"
 bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_Orb_Noise_Brd_Cal.xml -x -Pinput=${FILE} -Poutput=${TMP_DIR}/CAL.dim
 
-echo " Remove border noise by deleting the outer 200 rows"
+echo -ne " Remove border noise by deleting the outer 200 rows"
 COLUMNS=`gdalinfo ${TMP_DIR}/CAL.data/Beta0_VV.img | grep "Size is" | awk '{print $3}' | sed s/,//g`
 LINES=`gdalinfo ${TMP_DIR}/CAL.data/Beta0_VV.img | grep "Size is" | awk '{print $4}'`
-NEW_WIDTH=`expr $COLUMNS - 400`
-NEW_HEIGHT=`expr $LINES - 400`
+NEW_WIDTH=`expr $COLUMNS - 800`
+NEW_HEIGHT=`expr $LINES - 800`
 echo $COLUMNS
 echo $LINES
 echo $NEW_WIDTH
 echo $NEW_HEIGHT
-bash ${SNAP_EXE} Subset -Pregion=200,200,$NEW_WIDTH,$NEW_HEIGHT -PcopyMetadata="true" -Ssource=${TMP_DIR}/CAL.dim -t ${TMP_DIR}/CAL_border.dim
+bash ${SNAP_EXE} Subset -Pregion=400,400,$NEW_WIDTH,$NEW_HEIGHT -PcopyMetadata="true" -Ssource=${TMP_DIR}/CAL.dim -t ${TMP_DIR}/CAL_border.dim
 rm -rf ${TMP_DIR}/CAL.d*
 
 if [ $3 == "MED_RES" ];then
