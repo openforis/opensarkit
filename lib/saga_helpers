@@ -54,17 +54,17 @@ function osk_md_filter() {
             FILE_SAGA=`echo $FILE_BASE.sgrd`
 	    saga_cmd -c=${CPU} -f=s grid_filter 3 -INPUT:$FILE_SAGA -RESULT:${TMP_DIR_saga}/tmp.saga.filtered.sgrd -NOISE_ABS:${ABS_NOISE} -NOISE_REL:${REL_NOISE} -METHOD:${METHOD}
     else
-	    gdalwarp -srcnodata ${IN_NODATA} -dstnodata -99999 -of SAGA $1 ${TMP_DIR_saga}/tmp.saga.sdat
+	    gdalwarp -srcnodata ${IN_NODATA} -dstnodata -99999 -of SAGA $1 ${TMP_DIR_saga}/tmp.saga.sdat >/dev/null 2>&1
 	    saga_cmd -c=${CPU} -f=s grid_filter 3 -INPUT:${TMP_DIR_saga}/tmp.saga.sgrd -RESULT:${TMP_DIR_saga}/tmp.saga.filtered.sgrd -NOISE_ABS:${ABS_NOISE} -NOISE_REL:${REL_NOISE} -METHOD:${METHOD}
     fi
 
     if [ ${GDAL_saga} == "SAGA" ];then
 
-	gdalwarp -multi -dstnodata -99999 -of ${GDAL_saga} ${TMP_DIR_saga}/tmp.saga.filtered.sdat $2
+	gdalwarp -multi -dstnodata -99999 -of ${GDAL_saga} ${TMP_DIR_saga}/tmp.saga.filtered.sdat $2 >/dev/null 2>&1
 
     else	
 	
-	gdalwarp -multi -srcnodata -99999 -dstnodata 0 -of ${GDAL_saga} ${TMP_DIR_saga}/tmp.saga.filtered.sdat $2
+	gdalwarp -multi -srcnodata -99999 -dstnodata 0 -of ${GDAL_saga} ${TMP_DIR_saga}/tmp.saga.filtered.sdat $2 >/dev/null 2>&1
     fi
     rm -rf ${TMP_DIR_saga}
 }
@@ -103,10 +103,10 @@ function osk_valid_range() {
 	else
 
 		if [ -z "${IN_NODATA}" ];then
-		    	gdalwarp -multi -srcnodata 0 -dstnodata "-99999" -of SAGA $1 ${TMP_DIR_saga}/tmp.saga.sdat
+		    	gdalwarp -multi -srcnodata 0 -dstnodata "-99999" -of SAGA $1 ${TMP_DIR_saga}/tmp.saga.sdat >/dev/null 2>&1
 			saga_cmd -c=${CPU} -f=s grid_tools 15 -INPUT:${TMP_DIR_saga}/tmp.saga.sgrd -RESULT:${TMP_DIR_saga}/tmp.saga.rerange1.sgrd -OLD:$4 -NEW:-99999 -NODATA:0 -SOPERATOR:1 -RESULT_NODATA_VALUE:-99999
 		else
-	    		gdalwarp -multi -srcnodata "${IN_NODATA}" -dstnodata "-99999" -of SAGA $1 ${TMP_DIR_saga}/tmp.saga.sdat
+	    		gdalwarp -multi -srcnodata "${IN_NODATA}" -dstnodata "-99999" -of SAGA $1 ${TMP_DIR_saga}/tmp.saga.sdat >/dev/null 2>&1
 		    	saga_cmd -c=${CPU} -f=s grid_tools 15 -INPUT:${TMP_DIR_saga}/tmp.saga.sgrd -RESULT:${TMP_DIR_saga}/tmp.saga.rerange1.sgrd -OLD:$4 -NEW:-99999 -NODATA:-99999 -SOPERATOR:1 -RESULT_NODATA_VALUE:-99999
 		fi
 		saga_cmd -c=${CPU} -f=s grid_tools 15 -INPUT:${TMP_DIR_saga}/tmp.saga.rerange1.sgrd -RESULT:${TMP_DIR_saga}/tmp.saga.rerange.sgrd -OLD:$5 -NEW:$5 -NODATA:-99999 -SOPERATOR:4 -RESULT_NODATA_VALUE:-99999
@@ -124,7 +124,7 @@ function osk_valid_range() {
 
     	else	
 
-		gdalwarp -multi -srcnodata -99999 -dstnodata 0 -of ${GDAL_saga} ${TMP_DIR_saga}/tmp.saga.rerange.sdat $2
+		gdalwarp -multi -srcnodata -99999 -dstnodata 0 -of ${GDAL_saga} ${TMP_DIR_saga}/tmp.saga.rerange.sdat $2 >/dev/null 2>&1
     	fi
 	rm -rf ${TMP_DIR_saga}
 }

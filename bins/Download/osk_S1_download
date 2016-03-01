@@ -59,16 +59,30 @@ read -s -p "Please type your ESA Scihub Password:" PW
 echo ""
 
 echo "Preparing download"
-ogrinfo $AOI -al | grep Product_ID | sed 's/  Product_ID (String) = //g' | tail -n +2 > tmp_download_list
-
+ogrinfo $AOI -al | grep Product_ID | sed 's/  Product_ID (String) = //g' | tail -n +2 > ${TMP_DIR}/tmp_download_list
+ogrinfo $AOI -al | grep Track | sed 's/  Track (Integer) = //g' | tail -n +2 > ${TMP_DIR}/tmp_track_list
+ogrinfo $AOI -al | grep Orbit | sed 's/  Orbit_Dir (String) = //g' | tail -n +2 | cut -c -1 > ${TMP_DIR}/tmp_orb_dir_list
 # counter for info on number of download products
-NR=`cat tmp_download_list | wc -l`
+NR=`cat ${TMP_DIR}/tmp_download_list | wc -l`
 COUNT=1
+paste -d ';' ${TMP_DIR}/tmp_download_list ${TMP_DIR}/tmp_track_list ${TMP_DIR}/tmp_orb_dir_list >> ${TMP_DIR}/tmp_list
 
 while read line; do 
 
+	
 	# get the data via the UUID
-	UUID=$line		
+	UUID=`echo $line | awk -F ";" '{print $1}'`		
+	TRACK=`echo $line | awk -F ";" '{print $2}'`
+	if [ `echo $TRACK | wc -c` -eq 2 ];then
+		TRACK=`echo "00${TRACK}"`
+	elif [ `echo $TRACK | wc -c` -eq 3 ];then
+		TRACK=`echo "0${TRACK}"`
+	fi
+
+	ORB_DIR=`echo $line | awk -F ";" '{print $3}'`
+	echo $UUID
+	echo $TRACK
+	echo $ORB_DIR
 	DL_ADDRESS='https://scihub.esa.int/dhus/odata/v1/Products('"'${UUID}'"')/$value' # scihub
 #	DL_ADDRESS='https://scihub.esa.int/apihub/odata/v1/Products('"'${UUID}'"')/$value' # apihub
 	
@@ -78,8 +92,21 @@ while read line; do
 	# get MD5sum of product
 	MD5_ADDRESS='https://scihub.esa.int/dhus/odata/v1/Products('"'${UUID}'"')/Checksum/Value/$value'	
 	aria2c --dir=${TMP_DIR} --check-certificate=false --continue=true --http-user="${USERNAME}" --http-passwd="${PW}" "${MD5_ADDRESS}" > ${TMP_DIR}/tmp_error2
-	MD5_UP=`cat $TMP_DIR/'$value'`
-	rm -f $TMP_DIR/'$value'
+	if grep -q "download completed" ${TMP_DIR}/tmp_error2;then
+
+		MD5_UP=`cat $TMP_DIR/'$value'`
+		rm -f $TMP_DIR/'$value'
+	
+	elif grep -q "Authorization failed" ${TMP_DIR}/tmp_error2;then
+
+		echo " Authorization failed"
+		exit 1
+	else
+			
+		echo " Connection problems, will try to continue download in 5 minutes"
+		sleep 5m
+
+	fi
 
 	# prepare a loop to avoid uncomplete data downloads and check for md5 checksum
 	i=1
@@ -88,9 +115,9 @@ while read line; do
 	for(( i=1; i<=2; i++ ));do
 
 		i=1
-		echo "Downloading... (this will take a while)"
+		echo -ne "Downloading..."
 		aria2c --dir=${TMP_DIR} --check-certificate=false --continue=true --http-user="${USERNAME}" --http-passwd="${PW}" "${DL_ADDRESS}" > ${TMP_DIR}/tmp_error &
-		spinner $!
+		spinner $! && echo -e "done"
 		if grep -q "download completed" ${TMP_DIR}/tmp_error;then
 
 			echo "Download of ${UUID} completed"
@@ -101,9 +128,9 @@ while read line; do
 			# check on md5
 			if [[ ${MD5_UP} == ${MD5_DOWN} ]];then
 	
-				echo "passed MD5 checksum test"
+				echo "Check MD5 sum: passed"
 			else
-				echo "MD5 checksums are not equal, will have to redownload the scene"
+				echo "Check MD5 sum: not passed, will have to redownload the scene"
 				rm -f ${SCENE}
 				i=1
 			fi
@@ -126,14 +153,14 @@ while read line; do
 	SCENE_ID=`echo ${SCENE} | rev | cut -c 5- | rev`
 	DATE=${SCENE_ID:17:8}
 
-	echo "Moving $SCENE to ${PROC_DIR}/DATA/${DATE}/"
+	echo "Moving $SCENE to ${PROC_DIR}/DATA/${DATE}-${TRACK}${ORB_DIR}/"
 	mkdir -p ${PROC_DIR}/DATA/
-	mkdir -p ${PROC_DIR}/DATA/${DATE}/
-	mv ${TMP_DIR}/${SCENE} ${PROC_DIR}/DATA/${DATE}/
+	mkdir -p ${PROC_DIR}/DATA/${DATE}-${TRACK}${ORB_DIR}/
+	mv ${TMP_DIR}/${SCENE} ${PROC_DIR}/DATA/${DATE}-${TRACK}${ORB_DIR}/
 
 	COUNT=`expr ${COUNT} + 1`
 
-done  < tmp_download_list
+done  < ${TMP_DIR}/tmp_list
 
 rm -rf ${TMP_DIR}
-rm -f tmp_download_list
+#rm -f tmp_download_list tmp_track_list tmp_list

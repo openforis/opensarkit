@@ -129,6 +129,21 @@ function s1_track() {
     done
 }
 
+function s1_track_orbit() {
+    if [ -z "$1" ]; then 
+    echo "Missing arguments. Syntax:"
+    echo "  s1_track <input_list>"
+    return
+    fi
+    if [[ `expr $1 % 175` -lt 72 ]];then
+       TRACK=`expr $1 % 175 + 103`
+       echo $TRACK
+    else
+       TRACK=`expr $1 % 175 - 72`
+       echo "$TRACK"
+    fi		
+}
+
 # get starting slice
 function s1_start_time() {
     if [ -z "$1" ]; then 
