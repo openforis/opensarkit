@@ -6,7 +6,7 @@ if [ "$#" != "2" ]; then
 
 	echo -e ""
 	echo -e "----------------------------------"
-	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
+	echo -e " Welcome to Open Foris SARKit, version ${OSK_VERSION}"
 	echo -e " Download Sentinel-1 data with an inventory shapefile"
 	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
 	echo -e " Author: ${AUTHOR_1}"
@@ -27,19 +27,10 @@ if [ "$#" != "2" ]; then
 	exit 1
 else
 	echo -e ""
-	echo -e "----------------------------------"
-	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
-	echo -e " Download Sentinel-1 data with an inventory shapefile"
-	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
-	echo -e " Author: ${AUTHOR_1}"
-	echo -e " Contact: ${CONTACT_1}"
-	echo -e "----------------------------------"
-	echo -e ""
-	echo -e "----------------------------------"
-	echo -e " Software dependencies:"
-	echo -e "	- aria2"
-	echo -e "	- ogrinfo"
-	echo -e "----------------------------------"
+	echo -e "---------------------------------------------------------------------------"
+	echo -e " Welcome to Open Foris SARKit, version ${OSK_VERSION}"
+	echo -e " Download Sentinel-1 data with with the use of a OSK inventory shapefile"
+	echo -e "---------------------------------------------------------------------------"
 	echo -e ""
 
 	AOI=`readlink -f $2`
@@ -54,14 +45,19 @@ source ${OPENSARKIT}/lib/bash_helpers
 
 
 #	Credentials
-read -r -p "Please type your ESA Scihub Username:" USERNAME
-read -s -p "Please type your ESA Scihub Password:" PW
+read -r -p " Please type your ESA Scihub Username:" USERNAME
+read -s -p " Please type your ESA Scihub Password:" PW
+echo ""
+echo ""
+echo -ne " Preparing download ..."
+SECONDS=0
+ogrinfo $AOI -al | grep Product_ID | sed 's/  Product_ID (String) = //g' | tail -n +2 > ${TMP_DIR}/tmp_download_list &&
+ogrinfo $AOI -al | grep Track | sed 's/  Track (Integer) = //g' | tail -n +2 > ${TMP_DIR}/tmp_track_list &&
+ogrinfo $AOI -al | grep Orbit | sed 's/  Orbit_Dir (String) = //g' | tail -n +2 | cut -c -1 > ${TMP_DIR}/tmp_orb_dir_list \
+& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 echo ""
 
-echo "Preparing download"
-ogrinfo $AOI -al | grep Product_ID | sed 's/  Product_ID (String) = //g' | tail -n +2 > ${TMP_DIR}/tmp_download_list
-ogrinfo $AOI -al | grep Track | sed 's/  Track (Integer) = //g' | tail -n +2 > ${TMP_DIR}/tmp_track_list
-ogrinfo $AOI -al | grep Orbit | sed 's/  Orbit_Dir (String) = //g' | tail -n +2 | cut -c -1 > ${TMP_DIR}/tmp_orb_dir_list
+
 # counter for info on number of download products
 NR=`cat ${TMP_DIR}/tmp_download_list | wc -l`
 COUNT=1
@@ -80,14 +76,13 @@ while read line; do
 	fi
 
 	ORB_DIR=`echo $line | awk -F ";" '{print $3}'`
-	echo $UUID
-	echo $TRACK
-	echo $ORB_DIR
 	DL_ADDRESS='https://scihub.esa.int/dhus/odata/v1/Products('"'${UUID}'"')/$value' # scihub
 #	DL_ADDRESS='https://scihub.esa.int/apihub/odata/v1/Products('"'${UUID}'"')/$value' # apihub
-	
-	echo "Downloading Product ${COUNT} of ${NR} (UUID=${UUID})"
-	echo "Getting MD5 checksum for download validation"
+	echo ""	
+	echo "----------------------------------------------------------"
+	echo " Downloading Product ${COUNT} of ${NR} (UUID=${UUID})"
+	echo "----------------------------------------------------------"
+	echo " Getting MD5 checksum for download validation"
 
 	# get MD5sum of product
 	MD5_ADDRESS='https://scihub.esa.int/dhus/odata/v1/Products('"'${UUID}'"')/Checksum/Value/$value'	
@@ -115,12 +110,14 @@ while read line; do
 	for(( i=1; i<=2; i++ ));do
 
 		i=1
-		echo -ne "Downloading..."
-		aria2c --dir=${TMP_DIR} --check-certificate=false --continue=true --http-user="${USERNAME}" --http-passwd="${PW}" "${DL_ADDRESS}" > ${TMP_DIR}/tmp_error &
-		spinner $! && echo -e "done"
+		SECONDS=0
+		echo -ne " Downloading product ..."
+		aria2c --dir=${TMP_DIR} --check-certificate=false --continue=true --http-user="${USERNAME}" --http-passwd="${PW}" "${DL_ADDRESS}" > ${TMP_DIR}/tmp_error \
+		& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
 		if grep -q "download completed" ${TMP_DIR}/tmp_error;then
 
-			echo "Download of ${UUID} completed"
+			#echo " Download of ${UUID} completed"
 			i=3
 			SCENE=`ls ${TMP_DIR}/*zip`
 			MD5_DOWN=`md5sum ${SCENE} | awk '{print $1}' | tr '[:lower:]' '[:upper:]'`
@@ -128,9 +125,9 @@ while read line; do
 			# check on md5
 			if [[ ${MD5_UP} == ${MD5_DOWN} ]];then
 	
-				echo "Check MD5 sum: passed"
+				echo " Check MD5 sum: passed"
 			else
-				echo "Check MD5 sum: not passed, will have to redownload the scene"
+				echo " Check MD5 sum: not passed, will have to redownload the scene"
 				rm -f ${SCENE}
 				i=1
 			fi
@@ -149,13 +146,14 @@ while read line; do
 	done
 
 	rm -f ${TMP_DIR}/tmp_error*
-	SCENE=`ls ${TMP_DIR}`
+	SCENE_PATH=`ls ${TMP_DIR}/*zip`
+	SCENE=`basename $SCENE_PATH`
 	SCENE_ID=`echo ${SCENE} | rev | cut -c 5- | rev`
 	DATE=${SCENE_ID:17:8}
 
-	echo "Moving $SCENE to ${PROC_DIR}/DATA/${DATE}-${TRACK}${ORB_DIR}/"
+	echo " Moving $SCENE to ${PROC_DIR}/DATA/${DATE}-${TRACK}${ORB_DIR}/"
 	mkdir -p ${PROC_DIR}/DATA/
-	mkdir -p ${PROC_DIR}/DATA/${DATE}-${TRACK}${ORB_DIR}/
+	mkdir -p ${PROC_DIR}/DATA/${DATE}"-"${TRACK}${ORB_DIR}/
 	mv ${TMP_DIR}/${SCENE} ${PROC_DIR}/DATA/${DATE}-${TRACK}${ORB_DIR}/
 
 	COUNT=`expr ${COUNT} + 1`

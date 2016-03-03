@@ -61,7 +61,8 @@ else
 	#OUT_DIR=`pwd`
 fi
 
-
+NR_OF_TRACKS=`ls -1 ${PROC_DIR} | wc -l`
+j=1
 for LINE in `ls -1 ${PROC_DIR}`;do
 	
 	cd ${LINE}
@@ -156,12 +157,12 @@ for LINE in `ls -1 ${PROC_DIR}`;do
 		rm -rf ${TMP_DIR}/*-CAL.d*
 		COLUMNS=`gdalinfo ${TMP_DIR}/${LINE}.data/Beta0_VV.img | grep "Size is" | awk '{print $3}' | sed s/,//g`
 		LINES=`gdalinfo ${TMP_DIR}/${LINE}.data/Beta0_VV.img | grep "Size is" | awk '{print $4}'`
-		NEW_WIDTH=`expr $COLUMNS - 800`
-		NEW_HEIGHT=`expr $LINES - 800`
+		NEW_WIDTH=`expr $COLUMNS - 1000`
+		NEW_HEIGHT=`expr $LINES - 1000`
 		
 		SECONDS=0
 		echo -ne " Remove GRD border noise by deleting the outer 400 rows ..." &&
-		bash ${SNAP_EXE} Subset -Pregion=400,400,$NEW_WIDTH,$NEW_HEIGHT -PcopyMetadata="true" -Ssource=${TMP_DIR}/${LINE}.dim -t ${TMP_DIR}/${LINE}"_border.dim" \
+		bash ${SNAP_EXE} Subset -Pregion=500,500,$NEW_WIDTH,$NEW_HEIGHT -PcopyMetadata="true" -Ssource=${TMP_DIR}/${LINE}.dim -t ${TMP_DIR}/${LINE}"_border.dim" \
 		& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 		[ $? -ne 0 ] && return ${ERR_BRD_NOISE} 
 		rm -rf ${TMP_DIR}/${LINE}.d*
@@ -249,9 +250,10 @@ for LINE in `ls -1 ${PROC_DIR}`;do
 	fi
 
 	echo "---------------------------------------------------------------------------------------------------------------------"	
-	echo " 3) Processing from $file succesfully finished "
+	echo " 3) Processing of track $LINE succesfully finished ($j/$NR_OF_TRACKS tracks) "
 	echo "---------------------------------------------------------------------------------------------------------------------"
 
+	j=`expr j + 1`
 	mkdir -p ZIP
 	mv *.zip ZIP
 	rm -rf target*
