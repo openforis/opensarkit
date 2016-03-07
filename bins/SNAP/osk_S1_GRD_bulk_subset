@@ -1,0 +1,65 @@
+#! /bin/bash
+
+# mosaic Sentinel
+
+#-------------------------------------------------------------------------------------------	
+# 	0.1 Check for right usage & set up basic Script Variables
+if [ "$#" != "3" ]; then
+	
+	echo -e ""
+	echo -e "----------------------------------------------------------------------------------"
+	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
+	echo -e " Subsetting Sentinel-1 GRD data to a goven Area of Interest"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+	echo -e " Author: ${AUTHOR_1}"
+	echo -e " Contact: ${CONTACT_1}"
+	echo -e "----------------------------------------------------------------------------------"
+	echo -e ""
+	echo -e "----------------------------------------------------------------------------------"
+	echo -e " Software dependencies:"
+	echo -e "	- ESA Sentinel Application Platform SNAP"
+	echo -e "	- gdal-bin"
+	echo -e "----------------------------------------------------------------------------------"
+	echo -e ""
+	echo -e " osk_S1_GRD_subset <project folder> <AOI> <delete zips>"
+	echo -e ""
+	exit 1
+
+else
+	echo -e ""
+	echo -e "----------------------------------------------------------------------------------"
+	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
+	echo -e " Subsetting Sentinel-1 GRD data to a goven Area of Interest"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+	echo -e " Author: ${AUTHOR_1}"
+	echo -e " Contact: ${CONTACT_1}"
+	echo -e "----------------------------------------------------------------------------------"
+	echo -e ""
+	echo -e "----------------------------------------------------------------------------------"
+	echo -e " Software dependencies:"
+	echo -e "	- ESA Sentinel Application Platform SNAP"
+	echo -e "	- gdal-bin"
+	echo -e "----------------------------------------------------------------------------------"
+	echo -e ""
+
+	# set up initial script variables	
+	AOI=`readlink -f $2`
+	
+	cd $1
+	PROC_DIR=`pwd`
+fi
+
+
+
+
+for LINE in `ls -1 ${PROC_DIR}`;do
+	
+	cd ${LINE}
+
+	FILE=`ls *zip`
+	osk_S1_GRD_subset ${FILE} ${AOI} $3
+
+	cd ../
+done
+
+
