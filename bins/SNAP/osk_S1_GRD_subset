@@ -99,6 +99,6 @@ if [ $3 == 1 ];then
 	rm -f ${FILE}
 else
 	mkdir -p ${PROC_DIR}/RAW
-	mv ${PROC_DIR}/*zip ${PROC_DIR}/RAW
+	mv ${FILE} ${PROC_DIR}/RAW
 fi
 
