@@ -153,8 +153,8 @@ while read line; do
 
 	echo " Moving $SCENE to ${PROC_DIR}/DATA/${DATE}-${TRACK}${ORB_DIR}/"
 	mkdir -p ${PROC_DIR}/DATA/
-	mkdir -p ${PROC_DIR}/DATA/${DATE}"-"${TRACK}${ORB_DIR}/
-	mv ${TMP_DIR}/${SCENE} ${PROC_DIR}/DATA/${DATE}-${TRACK}${ORB_DIR}/
+	mkdir -p ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/
+	mv ${TMP_DIR}/${SCENE} ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/
 
 	COUNT=`expr ${COUNT} + 1`
 
