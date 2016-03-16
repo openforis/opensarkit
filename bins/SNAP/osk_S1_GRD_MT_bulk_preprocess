@@ -1,0 +1,180 @@
+#! /bin/bash
+
+#-------------------------------------------------------------------------------------------	
+# 	0.1 Check for right usage & set up basic Script Variables
+if [ "$#" != "3" ]; then
+	
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
+	echo -e " Bulk preprocessing Sentinel-1 GRD data"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+	echo -e " Author: ${AUTHOR_1}"
+	echo -e " Contact: ${CONTACT_1}"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e "Software dependencies:"
+	echo -e "	- SNAP Toolbox"
+	echo -e "	- gdal-bin"
+	echo -e "	- saga"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e " Usage: osk_S1_GRD_bulk_preprocess <input directory> <output resolution> <MT-metrics>"
+	echo -e ""
+	echo -e " input parameters:"
+	echo -e " input directory	(input) higher-level directory of the downloaded zip file (i.e. DATA folder created by osk_S1_download)"
+	echo -e " mode			processing mode"
+	echo -e "			  Available choices:"
+	echo -e "			  HI_RES (10m output) "
+	echo -e "			  MED_RES (30m output)"
+#	echo -e " filtering		do additional Multi-Directional Filtering (recommended for single time "
+#	echo -e "			  Available choices:"
+#	echo -e "			   0: No additional filter applied"
+#	echo -e "			   1: additional filter applied"
+#	echo -e " elevation		(input) filename to the digital elevation model"
+#	echo -e ""
+#	echo -e " NOTE: The DEM file should be provided in Geotiff-format as a 16Bit Integer data type with 0 as the no data value."
+	echo -e ""
+	exit 1
+else
+	echo -e ""
+	echo -e "--------------------------------------------------------------------------------------------------------------"
+	echo -e " Open Foris SAR Toolkit - Bulk preprocessing script for Sentinel-1 GRD products"
+	echo -e " Preprocess Sentinel-1 GRD scenes to geocoded, radiometrically terrain corrected Gamma0 backscatter products"	
+	echo -e "--------------------------------------------------------------------------------------------------------------"
+	echo -e ""
+
+	# set up initial script variables
+	cd $1
+	PROC_DIR=`pwd`
+	TMP_DIR=${PROC_DIR}/TMP
+	rm -rf $TMP_DIR
+	
+	# MT_MODE Flag
+	MT_MODE=$3
+
+	# source libs
+	source ${OPENSARKIT}/lib/helpers_source
+
+	# get number of PCs	
+	CPU=`nproc`
+fi
+
+NR_OF_TRACKS=`ls -1 ${PROC_DIR} | wc -l`
+j=1
+# loop thorugh the tracks
+for TRACK in `ls -1 ${PROC_DIR}`;do
+
+
+	if [ ${NR_OF_TRACKS} -eq 1 ];then
+		echo " Info: Processing Track: ${TRACK}"
+	else
+		echo " Info: Processing Track: ${TRACK} ($j/${NR_OF_TRACKS} Tracks"
+	fi
+
+	echo " Info: Entering Track: ${TRACK}"
+	cd ${TRACK}
+
+	NR_OF_ACQ=`ls -1 | wc -l`
+	echo " Info: Found ${NR_OF_ACQ} acquired frames for this swath"
+
+	# loop through acquisition dates	
+	for ACQ in `ls -1`;do 
+	
+		echo " Info: Entering ${ACQ}"
+		cd ${ACQ}		
+
+		if ls ${PWD}/*imported_subset.dim 1> /dev/null 2>&1;then
+			MODE=SUBSET
+			NR_FRAMES=`ls -1 -d ${PWD}/*dim 2>/dev/null | wc -l`
+		elif ls ${PWD}/*.dim 1> /dev/null 2>&1;then
+			MODE=DIM
+			NR_FRAMES=`ls -1 -d ${PWD}/*dim 2>/dev/null | wc -l`
+		elif ls ${PWD}/*zip 1> /dev/null 2>&1;then
+			MODE=RAW
+			NR_FRAMES=`ls -1 -d ${PWD}/*zip 2>/dev/null | wc -l`
+		else
+			echo " ERROR: No valid files found in directory ${PWD}" #&& exit 1
+		fi
+	
+		
+		if [ ${NR_FRAMES} -eq 1 ];then
+
+			echo " Info: Found ${NR_FRAMES} scene to process"
+
+			FRAME=`ls -1 ${PWD}/*dim 2>/dev/null || ls -1 ${PWD}/*zip 2>/dev/null`
+			s1_info ${FRAME}
+
+			LOG_DIR=${PWD}/LOG
+			TMP_DIR_FRAME=${PWD}/TMP
+			mkdir -p ${LOG_DIR}
+			mkdir -p ${TMP_DIR_FRAME}
+
+			if [[ ${MODE} == SUBSET && ${MT_MODE} == 0 ]];then
+				echo "bla"
+				s1_rtc_processing ${FRAME} ${PWD}/${ACQ}"_RTC" $2 0 0 ${TMP_DIR_FRAME} ${LOG_DIR}
+			else
+				s1_frame_import ${FRAME} ${TMP_DIR_FRAME}/${ACQ}"_import" ${LOG_DIR}
+
+				if [ ${MT_MODE} == 0 ];then 
+					s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ}"_RTC" $2 0 0 ${TMP_DIR_FRAME} ${LOG_DIR}
+					rm -rf ${TMP_DIR_FRAME}/${ACQ}"_import".d*
+				fi
+			fi
+
+		else
+
+			echo " Info: Found ${NR_FRAMES} scenes to assemble and process"
+	
+			LOG_DIR=${PWD}/LOG
+			TMP_DIR_FRAME=${PWD}/TMP
+			mkdir -p ${LOG_DIR}
+			mkdir -p ${TMP_DIR_FRAME}
+
+			ls -1 -d ${PWD}/*dim 2>/dev/null || ls -1 -d ${PWD}/*zip 2>/dev/null > ${TMP_DIR_FRAME}/filelist
+			
+			if [ ${MODE} == SUBSET ];then
+				echo " Subset mode"						
+				#TO BE DONE s1_subset_rtc_processing ${TMP_DIR_FRAME}/filelist ${PWD}/${ACQ}"_RTC.dim" $2 ${TMP_DIR_FRAME} ${LOG_DIR}		
+			else
+				s1_swath_import ${TMP_DIR_FRAME}/filelist ${TMP_DIR_FRAME}/${ACQ}"_import" ${TMP_DIR_FRAME} ${LOG_DIR}
+			
+				if [ ${MT_MODE} == 0 ];then 
+					s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ}"_RTC" $2 0 0 ${TMP_DIR_FRAME} ${LOG_DIR}
+					rm -rf ${TMP_DIR_FRAME}/${ACQ}"_import".d*
+				fi
+			fi
+
+		fi
+
+		cd ../
+
+	done # finish acquisition date loop 
+
+
+	#if [ ${MT_MODE} == 1 ];then
+	#	FILELIST=`ls ${PWD}/*/TMP/*import.dim | tr '\n' ',' | rev | cut -c 2- | rev`
+#	fi
+
+	STACK=${PROC_DIR}/${TRACK}/MT_STACK
+	mkdir -p ${STACK}
+	LOG_DIR=${PWD}/LOG
+	TMP_DIR_TRACK=${PWD}/TMP
+
+	FILELIST=$(ls -1 ${PWD}/*/*_RTC.dim | tr '\n' ',' | rev | cut -c 2- | rev)
+	s1_sdv_mt_metrics ${FILELIST} ${STACK} ${TMP_DIR_TRACK} ${LOG_DIR}
+	
+#	bash ${SNAP_EXE} BandMerge ${STACK}/max.VV.dim ${STACK}/mean.VV.dim ${STACK}/min.VV.dim ${STACK}/stdev.VV.dim ${STACK}/coef_var.VV.dim \
+#				   ${STACK}/max.VH.dim ${STACK}/mean.VH.dim ${STACK}/min.VH.dim ${STACK}/stdev.VH.dim ${STACK}/coef_var.VH.dim \
+#				   -t ${STACK}/mt_stack.dim
+
+#	bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_BandMath.xml -x -Pinput=${STACK}/mt_stack.dim -PoutputBand=VVVHratio -Pformula="(pow(10,Gamma0_VV_2/10))/(pow(10,Gamma0_VH_2/10))" -Poutput=${STACK}/ratio_lin.dim
+#	bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_BandMath.xml -x -Pinput=${STACK}/mt_stack.dim -PoutputBand=VVVHratio -Pformula="Gamma0_VV_2/Gamma0_VH_2" -Poutput=${STACK}/ratio_db.dim
+#	bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_BandMath.xml -x -Pinput=${STACK}/mt_stack.dim -PoutputBand=VVVHratio -Pformula="Gamma0_VV/Gamma0_VV_3" -Poutput=${STACK}/vv_max_vv_min.dim
+#	bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_BandMath.xml -x -Pinput=${STACK}/mt_stack.dim -PoutputBand=VVVHratio -Pformula="Gamma0_VH/Gamma0_VH_3" -Poutput=${STACK}/vh_max_vh_min.dim
+
+
+	j=`expr $j + 1`
+	cd ${PROC_DIR}
+done # finish track loop

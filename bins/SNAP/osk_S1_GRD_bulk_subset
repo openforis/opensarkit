@@ -4,15 +4,12 @@
 
 #-------------------------------------------------------------------------------------------	
 # 	0.1 Check for right usage & set up basic Script Variables
-if [ "$#" != "3" ]; then
+if [ "$#" != "4" ]; then
 	
 	echo -e ""
 	echo -e "----------------------------------------------------------------------------------"
 	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
-	echo -e " Subsetting Sentinel-1 GRD data to a goven Area of Interest"
-	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
-	echo -e " Author: ${AUTHOR_1}"
-	echo -e " Contact: ${CONTACT_1}"
+	echo -e " Subsetting Sentinel-1 GRD data to a given Area of Interest - Bulk Mode"
 	echo -e "----------------------------------------------------------------------------------"
 	echo -e ""
 	echo -e "----------------------------------------------------------------------------------"
@@ -21,7 +18,7 @@ if [ "$#" != "3" ]; then
 	echo -e "	- gdal-bin"
 	echo -e "----------------------------------------------------------------------------------"
 	echo -e ""
-	echo -e " osk_S1_GRD_bulk_subset <project folder> <AOI> <delete zips>"
+	echo -e " osk_S1_GRD_bulk_subset <project folder> <AOI> <clean import> <delete zips>"
 	echo -e ""
 	exit 1
 
@@ -29,16 +26,17 @@ else
 	echo -e ""
 	echo -e "----------------------------------------------------------------------------------"
 	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
-	echo -e " Subsetting Sentinel-1 GRD data to a goven Area of Interest"
+	echo -e " Subsetting Sentinel-1 GRD data to a given Area of Interest - Bulk Mode"
 	echo -e "----------------------------------------------------------------------------------"
 	echo -e ""
 
 
 	# set up initial script variables	
 	AOI=`readlink -f $2`
-	
 	cd $1
 	PROC_DIR=`pwd`
+
+	source ${OPENSARKIT}/lib/helpers_source
 fi
 
 
@@ -50,7 +48,9 @@ for LINE in `ls -1 ${PROC_DIR}`;do
 
 	for FILE in `ls -1 *zip`;do
 
-		osk_S1_GRD_subset ${FILE} ${AOI} $3
+		osk_S1_GRD_subset ${FILE} ${AOI} $3 $4
+
+		
 
 	done
 

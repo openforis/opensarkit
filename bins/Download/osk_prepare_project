@@ -91,11 +91,8 @@ if [ `echo $2 | grep shp` ]; then # AOI case
 		BASE_AOI=`echo ${AOI} | rev | cut -c 5- | rev`
 		
 		# copy the AOI file into the AOI project folder
-		cp ${BASE_AOI}.shp ${PROC_DIR}/AOI/AOI.shp
-		cp ${BASE_AOI}.shx ${PROC_DIR}/AOI/AOI.shx
-		cp ${BASE_AOI}.dbf ${PROC_DIR}/AOI/AOI.dbf
-		cp ${BASE_AOI}.prj ${PROC_DIR}/AOI/AOI.prj
-
+		ogr2ogr -f "Esri Shapefile" ${PROC_DIR}/AOI/AOI.shp -t_srs EPSG:4326 ${BASE_AOI}.shp 
+		
 		# create convex hull for data search
 		echo ""
 		echo "Creating a convex hull shapefile of your area of interest"
@@ -116,7 +113,7 @@ else # country case
 	   	ogr2ogr -f "Esri Shapefile" ${PROC_DIR}/AOI/AOI.shp ${DB_GLOBAL} -dsco SPATIALITE=yes -where "\"iso3\" = \"${2}\"" -nln AOI countries
 		AOI=${PROC_DIR}/AOI/AOI.shp
 		echo "Extracting shapefile from country database with a 0.1 buffer around the borders"	
-	   	ogr2ogr -f "Esri Shapefile" ${PROC_DIR}/AOI/AOI_buffer.shp ${DB_GLOBAL} -dsco SPATIALITE=yes -sql  "select ST_union(ST_buffer(geom,0.1)) from countries where \"iso3\" = \"${2}\""
+	   	ogr2ogr -f "Esri Shapefile" ${PROC_DIR}/AOI/AOI_buffer.shp ${DB_GLOBAL} -dsco SPATIALITE=yes -sql "select ST_union(ST_buffer(geom,0.1)) from countries where \"iso3\" = \"${2}\""
 		# create convex hull for data search
 		echo "Creating a convex hull for ${COUNTRY}"
 		osk_convex_hull.py --input ${PROC_DIR}/AOI/AOI.shp --output ${PROC_DIR}/AOI/convex_hull_aoi.shp

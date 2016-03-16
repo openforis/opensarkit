@@ -1,0 +1,57 @@
+#! /bin/bash 
+
+#-------------------------------------------------------------------------------------------	
+# 	0.1 Check for right usage & set up basic Script Variables
+if [ "$#" != "1" ]; then
+
+	echo -e ""
+	echo -e "---------------------------------------------------------------------------"
+	echo -e " Welcome to Open Foris SARKit, version ${OSK_VERSION}"
+	echo -e " Systemize folder structure for multi-temporal analysis"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+	echo -e "---------------------------------------------------------------------------"
+	echo -e ""
+	echo -e " syntax: osk_S1_GRD_MT_prepare <data folder> "
+	echo -e ""
+	echo -e " input parameters:"
+	echo -e " data_folder			(input/output) folder where data is sorted by date"
+	exit 1
+else
+	echo -e ""
+	echo -e "---------------------------------------------------------------------------"
+	echo -e " Welcome to Open Foris SARKit, version ${OSK_VERSION}"
+	echo -e " Systemize folder structure for multi-temporal analysis"
+	echo -e " (i.e. use of osk_S1_GRD_MT_ scripts)"
+	echo -e "---------------------------------------------------------------------------"
+	echo -e ""
+
+  	cd $1
+   	PROC_DIR=`pwd`
+	TMP_DIR=${PROC_DIR}/TMP
+	mkdir -p ${TMP_DIR}
+fi
+
+# get tracks
+
+cd ${PROC_DIR}
+
+SECONDS=0
+echo " Getting list of downloaded tracks ..."
+for line in `ls -1`; do echo ${line:9:4} >> ${TMP_DIR}/tmp_list ;done
+cat ${TMP_DIR}/tmp_list | sort |uniq > ${TMP_DIR}/tmp_list_sorted
+for line in `cat ${TMP_DIR}/tmp_list`;do mkdir -p ${TMP_DIR}/$line;done
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+SECONDS=0
+echo -ne " Systemising folder structure ... "
+for line in `ls -1 -d [0-9]*`; do 
+
+	track=${line:9:4}
+	mv $line ${TMP_DIR}/$track/${line}
+done
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+echo " Info: Folder ${PROC_DIR} now ready to use for osk_S1_GRD_MT_bulk_preprocess. "
+rm -f ${TMP_DIR}/tmp*
+mv ${TMP_DIR}/* .
+rm -rf ${TMP_DIR}

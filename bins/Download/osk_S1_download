@@ -5,13 +5,13 @@
 if [ "$#" != "2" ]; then
 
 	echo -e ""
-	echo -e "----------------------------------"
+	echo -e "---------------------------------------------------------------------------"
 	echo -e " Welcome to Open Foris SARKit, version ${OSK_VERSION}"
-	echo -e " Download Sentinel-1 data with an inventory shapefile"
+	echo -e " Download Sentinel-1 data with with the use of an OSK inventory shapefile"
 	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
 	echo -e " Author: ${AUTHOR_1}"
 	echo -e " Contact: ${CONTACT_1}"
-	echo -e "----------------------------------"
+	echo -e "---------------------------------------------------------------------------"
 	echo -e ""
 	echo -e "----------------------------------"
 	echo -e " Software dependencies:"
@@ -19,7 +19,7 @@ if [ "$#" != "2" ]; then
 	echo -e "	- ogrinfo"
 	echo -e "----------------------------------"
 	echo -e ""
-	echo -e " syntax: osk_S1_download <output_folder> <Inventory Shapefile>"
+	echo -e " syntax: osk_S1_download <output folder> <inventory shapefile>"
 	echo -e ""
 	echo -e " input parameters:"
 	echo -e " output_folder			(output) folder where the downloaded data will be saved"
@@ -29,7 +29,7 @@ else
 	echo -e ""
 	echo -e "---------------------------------------------------------------------------"
 	echo -e " Welcome to Open Foris SARKit, version ${OSK_VERSION}"
-	echo -e " Download Sentinel-1 data with with the use of a OSK inventory shapefile"
+	echo -e " Download Sentinel-1 data with with the use of an OSK inventory shapefile"
 	echo -e "---------------------------------------------------------------------------"
 	echo -e ""
 
@@ -53,7 +53,7 @@ echo -ne " Preparing download ..."
 SECONDS=0
 ogrinfo $AOI -al | grep Product_ID | sed 's/  Product_ID (String) = //g' | tail -n +2 > ${TMP_DIR}/tmp_download_list &&
 ogrinfo $AOI -al | grep Track | sed 's/  Track (Integer) = //g' | tail -n +2 > ${TMP_DIR}/tmp_track_list &&
-ogrinfo $AOI -al | grep Orbit | sed 's/  Orbit_Dir (String) = //g' | tail -n +2 | cut -c -1 > ${TMP_DIR}/tmp_orb_dir_list \
+ogrinfo $AOI -al | grep Orbit_Dir | sed 's/  Orbit_Dir (String) = //g' | tail -n +2 | cut -c -1 > ${TMP_DIR}/tmp_orb_dir_list \
 & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 echo ""
 

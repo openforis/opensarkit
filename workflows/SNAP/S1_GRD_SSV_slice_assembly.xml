@@ -6,7 +6,7 @@
       <sourceProduct.2 refid="ProductSet-Reader"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <selectedPolarisations/>
+      <selectedPolarisations>VV</selectedPolarisations>
     </parameters>
   </node>
   <node id="Write">
@@ -29,13 +29,13 @@
   <applicationData id="Presentation">
     <Description/>
     <node id="Write">
-      <displayPosition x="366.0" y="140.0"/>
+            <displayPosition x="455.0" y="135.0"/>
     </node>
     <node id="SliceAssembly">
-      <displayPosition x="204.0" y="101.0"/>
+      <displayPosition x="229.0" y="130.0"/>
     </node>
     <node id="ProductSet-Reader">
-      <displayPosition x="32.0" y="35.0"/>
+      <displayPosition x="67.0" y="91.0"/>
     </node>
   </applicationData>
 </graph>

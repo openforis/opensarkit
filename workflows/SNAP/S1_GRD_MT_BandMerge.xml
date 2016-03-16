@@ -1,18 +1,19 @@
 <graph id="Graph">
   <version>1.0</version>
-  <node id="SliceAssembly">
-    <operator>SliceAssembly</operator>
+  <node id="BandMerge">
+    <operator>BandMerge</operator>
     <sources>
-      <sourceProduct.2 refid="ProductSet-Reader"/>
+      <sourceProduct.3 refid="ProductSet-Reader"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <selectedPolarisations/>
+      <sourceBands/>
+      <geographicError>1.0E-5</geographicError>
     </parameters>
   </node>
   <node id="Write">
     <operator>Write</operator>
     <sources>
-      <sourceProduct refid="SliceAssembly"/>
+      <sourceProduct refid="BandMerge"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
       <file>${output}</file>
@@ -28,14 +29,14 @@
   </node>
   <applicationData id="Presentation">
     <Description/>
-    <node id="Write">
-      <displayPosition x="366.0" y="140.0"/>
+    <node id="BandMerge">
+      <displayPosition x="199.0" y="99.0"/>
     </node>
-    <node id="SliceAssembly">
-      <displayPosition x="204.0" y="101.0"/>
+    <node id="Write">
+            <displayPosition x="360.0" y="156.0"/>
     </node>
     <node id="ProductSet-Reader">
-      <displayPosition x="32.0" y="35.0"/>
+      <displayPosition x="25.0" y="41.0"/>
     </node>
   </applicationData>
 </graph>

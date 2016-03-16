@@ -4,15 +4,12 @@
 
 #-------------------------------------------------------------------------------------------	
 # 	0.1 Check for right usage & set up basic Script Variables
-if [ "$#" != "3" ]; then
+if [ "$#" != "4" ]; then
 	
 	echo -e ""
 	echo -e "----------------------------------------------------------------------------------"
 	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
-	echo -e " Subsetting Sentinel-1 GRD data from ESA Scihub"
-	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
-	echo -e " Author: ${AUTHOR_1}"
-	echo -e " Contact: ${CONTACT_1}"
+	echo -e " Subsetting Sentinel-1 GRD file to a given area of interest"
 	echo -e "----------------------------------------------------------------------------------"
 	echo -e ""
 	echo -e "----------------------------------------------------------------------------------"
@@ -21,7 +18,7 @@ if [ "$#" != "3" ]; then
 	echo -e "	- gdal-bin"
 	echo -e "----------------------------------------------------------------------------------"
 	echo -e ""
-	echo -e " osk_S1_GRD_subset <project folder> <AOI> <delete zips>"
+	echo -e " osk_S1_GRD_subset <project folder> <AOI> <clean import> <delete zips>"
 	echo -e ""
 	exit 1
 
@@ -29,16 +26,7 @@ else
 	echo -e ""
 	echo -e "----------------------------------------------------------------------------------"
 	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
-	echo -e " Mosaic tool for merging S1 GRD gamma0 data"
-	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
-	echo -e " Author: ${AUTHOR_1}"
-	echo -e " Contact: ${CONTACT_1}"
-	echo -e "----------------------------------------------------------------------------------"
-	echo -e ""
-	echo -e "----------------------------------------------------------------------------------"
-	echo -e " Software dependencies:"
-	echo -e "	- ESA Sentinel Application Platform SNAP"
-	echo -e "	- gdal-bin"
+	echo -e " Subsetting Sentinel-1 GRD file to a given area of interest "
 	echo -e "----------------------------------------------------------------------------------"
 	echo -e ""
 
@@ -52,6 +40,12 @@ else
 	rm -rf ${TMP1}	
 	mkdir -p ${TMP1}
 	export TMP_DIR=${PROC_DIR}/TMP/${BASE}
+	mkdir -p ${TMP_DIR}
+	LOG_DIR=${PROC_DIR}/LOG
+	mkdir -p ${LOG_DIR}
+
+	source ${OPENSARKIT}/lib/helpers_source
+
 fi
 
 
@@ -81,24 +75,44 @@ fi
 	echo "----------------------------------------------------------------"
 
 # extract corner coordinates of AOI shapefile
-LAYER=`ogrinfo $AOI | grep 1: | awk $'{print $2}'`
-X_MIN=`ogrinfo $AOI $LAYER | grep Extent | awk -F '(' $'{print $2}' | awk -F ','  $'{print $1}'`
-X_MAX=`ogrinfo $AOI $LAYER | grep Extent | awk -F '(' $'{print $3}' | awk -F ','  $'{print $1}'`
-Y_MIN=`ogrinfo $AOI $LAYER | grep Extent | awk -F ',' $'{print $2}' | awk -F ')' $'{print $1}'`
-Y_MAX=`ogrinfo $AOI $LAYER | grep Extent | awk -F ',' $'{print $3}' | awk -F ')' $'{print $1}'`
-AOI_AREA="POLYGON (($X_MIN$Y_MIN, $X_MIN$Y_MAX, $X_MAX$Y_MAX, $X_MAX$Y_MIN, $X_MIN$Y_MIN ))"
-echo $AOI_AREA
+ogr2ogr -f "Esri Shapefile" ${TMP_DIR}/AOI.shp -t_srs EPSG:4326 ${AOI}
+LAYER=`ogrinfo ${TMP_DIR}/AOI.shp | grep 1: | awk $'{print $2}'`
+X_MIN=`ogrinfo ${TMP_DIR}/AOI.shp $LAYER | grep Extent | awk -F '(' $'{print $2}' | awk -F ','  $'{print $1}'`
+X_MAX=`ogrinfo ${TMP_DIR}/AOI.shp $LAYER | grep Extent | awk -F '(' $'{print $3}' | awk -F ','  $'{print $1}'`
+Y_MIN=`ogrinfo ${TMP_DIR}/AOI.shp $LAYER | grep Extent | awk -F ',' $'{print $2}' | awk -F ')' $'{print $1}'`
+Y_MAX=`ogrinfo ${TMP_DIR}/AOI.shp $LAYER | grep Extent | awk -F ',' $'{print $3}' | awk -F ')' $'{print $1}'`
 
-echo " Subsetting file $FILE to the extents of $AOI"
-bash ${SNAP_EXE} Subset -x -Ssource=${FILE} -t ${PROC_DIR}/${SCENE_ID}"_subset.dim" -PcopyMetadata="true" -PgeoRegion="${AOI_AREA}"
+# create a buffer
+X_MIN=`echo $X_MIN - 0.01 | bc`
+X_MAX=`echo $X_MAX + 0.01 | bc`
+Y_MIN=`echo $Y_MIN - 0.01 | bc`
+Y_MAX=`echo $Y_MAX + 0.01 | bc`
+AOI_AREA="POLYGON (($X_MIN $Y_MIN, $X_MIN $Y_MAX, $X_MAX $Y_MAX, $X_MAX $Y_MIN, $X_MIN $Y_MIN))"
 
+SECONDS=0
+echo " Subsetting file: `basename ${FILE}`"
+echo " to the extents of: $AOI"
+
+SECONDS=0
+echo -ne " Processing ... "
+bash ${SNAP_EXE} Subset -x -Ssource=${FILE} -t ${PROC_DIR}/${SCENE_ID}"_subset.dim" -PcopyMetadata="true" -PgeoRegion="${AOI_AREA}" \
+& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+[ $? -ne 0 ] && return ${ERR_IMPORT}
+
+if [ $3 == 1 ];then 
+
+   s1_frame_import ${PROC_DIR}/${SCENE_ID}"_subset.dim" ${PROC_DIR}/${SCENE_ID}"_imported_subset.dim" ${LOG_DIR}
+   rm -rf ${PROC_DIR}/*_subset.d*
+
+fi
 
 rm -rf ${TMP1}
 
-if [ $3 == 1 ];then 
+if [ $4 == 1 ];then 
 	rm -f ${FILE}
 else
 	mkdir -p ${PROC_DIR}/RAW
 	mv ${FILE} ${PROC_DIR}/RAW
 fi
 
+rm -rf ${TMP_DIR}

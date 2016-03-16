@@ -1,0 +1,157 @@
+#! /bin/bash
+
+# mosaic Sentinel
+
+#-------------------------------------------------------------------------------------------	
+# 	0.1 Check for right usage & set up basic Script Variables
+if [ "$#" != "1" ]; then
+	
+	echo -e ""
+	echo -e "----------------------------------------------------------------------------------"
+	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
+	echo -e " Preprocess Sentinel-1 GRD data from ESA Scihub"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+	echo -e " Author: ${AUTHOR_1}"
+	echo -e " Contact: ${CONTACT_1}"
+	echo -e "----------------------------------------------------------------------------------"
+	echo -e ""
+	echo -e "----------------------------------------------------------------------------------"
+	echo -e " Software dependencies:"
+	echo -e "	- gdal-bin"
+	echo -e "	- saga"
+	echo -e "----------------------------------------------------------------------------------"
+	echo -e ""
+	echo -e " osk_S1_GRD_mosaic <project folder>  "
+
+else
+
+	echo -e ""
+	echo -e "----------------------------------------------------------------------------------"
+	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
+	echo -e " Mosaic tool for merging S1 GRD gamma0 data"
+	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
+	echo -e " Author: ${AUTHOR_1}"
+	echo -e " Contact: ${CONTACT_1}"
+	echo -e "----------------------------------------------------------------------------------"
+	echo -e ""
+	echo -e "----------------------------------------------------------------------------------"
+	echo -e " Software dependencies:"
+	echo -e "	- gdal-bin"
+	echo -e "	- saga"
+	echo -e "----------------------------------------------------------------------------------"
+	echo -e ""
+
+	cd $1
+	PROC_DIR=`pwd`
+	TMP_DIR=${PROC_DIR}/TMP
+	mkdir -p ${TMP_DIR}
+	OUT_DIR=${PROC_DIR}/MOSAIC
+	mkdir -p ${OUT_DIR}
+
+	source $OPENSARKIT/lib/helpers_source
+fi
+
+export PATH="$PATH:~/Programs/OTB/install/bin"
+export LD_LIBRARY_PATH="/home/avollrath/Programs/OTB/install/lib/"
+
+function S1_mosaic () {
+
+	if [ -z "$3" ]; then 
+	    	echo "Missing arguments. Syntax:"
+		echo "  mosaic <Image 1> <Image 2> <Out mosaic>"
+	    	return
+	fi
+
+	TMP=${TMP_DIR}/TMP_MOS
+	mkdir -p ${TMP}
+	# nodata layer
+	NODATA_1=`gdal_nodata $1`
+	NODATA_2=`gdal_nodata $2`
+
+	gdal_trace_outline $1 -ndv "$NODATA_1" -out-cs ll -ogr-out ${TMP}/IMG1_ndv.shp
+	gdal_trace_outline $2 -ndv "$NODATA_2" -out-cs ll -ogr-out ${TMP}/IMG2_ndv.shp
+	# stats layer
+	gdal_trace_outline $1 -ndv '-99999..-18' -out-cs ll -ogr-out ${TMP}/IMG1_stat.shp
+	gdal_trace_outline $2 -ndv '-99999..-18' -out-cs ll -ogr-out ${TMP}/IMG2_stat.shp
+
+	otbcli_Mosaic -ram 8192 -vdcut ${TMP}/IMG1_ndv.shp ${TMP}/IMG2_ndv.shp -vdstats ${TMP}/IMG1_stat.shp ${TMP}/IMG2_stat.shp -progress 1 -comp.feather large -harmo.method band -harmo.cost mu -il $1 $2 -out ${TMP}/tmp_mosaic.tif
+#	otbcli_Mosaic -ram 12800 -vdcut ${TMP}/IMG1_ndv.shp ${TMP}/IMG2_ndv.shp -progress 1 -comp.feather large -harmo.method band -harmo.cost mu -il $1 $2 -out ${TMP}/tmp_mosaic.tif
+	#gdal_translate -a_nodata 0 ${TMP}/tmp_mosaic.tif $3
+
+	rm -rf ${TMP}
+}
+
+
+#for FILE in `ls -1 */*VV.db.sdat`;do
+
+#
+#	NODATA=`gdal_nodata ${FILE}`
+#	DIR=`dirname ${FILE}`
+
+#	gdal_trace_outline $FILE -ndv "$NODATA" -out-cs ll -ogr-out ${DIR}/vv_ndv.shp
+#	gdal_trace_outline $FILE -ndv "$NODATA" -out-cs ll -ogr-out ${DIR}/vv_stat.shp
+
+#	echo $FILE >> tmp_vv_files.txt
+#	echo ${DIR}/vv_ndv.shp >> tmp_ndv_vv_shps.txt
+#	echo ${DIR}/vv_stat.shp >> tmp_stat_vv_shps.txt
+
+#done
+
+#otbcli_Mosaic -ram 8192 -progress 1 \
+#	      -vdcut $(cat tmp_ndv_vv_shps.txt | tr "\n" " ") \
+#	      -vdstats $(cat tmp_stat_vv_shps.txt | tr "\n" " ") \
+#	      -il $(cat tmp_vv_files.txt | tr "\n" " ") \
+#	      -comp.feather large -harmo.method band -harmo.cost mu \
+#	      -out MOSAIC/final_vv.tif
+
+
+#for FILE in `ls -1 */*VH.db.sdat`;do
+
+
+#	NODATA=`gdal_nodata ${FILE}`
+#	DIR=`dirname ${FILE}`
+#
+#	gdal_trace_outline $FILE -ndv "$NODATA" -out-cs ll -ogr-out ${DIR}/vh_ndv.shp
+#	gdal_trace_outline $FILE -ndv "$NODATA" -out-cs ll -ogr-out ${DIR}/vh_stat.shp
+#
+#	echo $FILE >> tmp_vh_files.txt
+#	echo ${DIR}/vh_ndv.shp >> tmp_ndv_vh_shps.txt
+#	echo ${DIR}/vh_stat.shp >> tmp_stat_vh_shps.txt
+#
+#done
+
+#otbcli_Mosaic -ram 8192 -progress 1 \
+#	      -vdcut $(cat tmp_ndv_vh_shps.txt | tr "\n" " ") \
+#	      -vdstats $(cat tmp_stat_vh_shps.txt | tr "\n" " ") \
+#	      -il $(cat tmp_vh_files.txt | tr "\n" " ") \
+#	      -comp.feather large -harmo.method band -harmo.cost mu \
+#	      -out MOSAIC/final_vh.tif
+
+
+for FILE in `ls -1 */*ratio.sdat`;do
+
+
+	NODATA=`gdal_nodata ${FILE}`
+	DIR=`dirname ${FILE}`
+
+	gdal_trace_outline $FILE -ndv "$NODATA" -out-cs ll -ogr-out ${DIR}/ratio_ndv.shp
+	gdal_trace_outline $FILE -ndv "$NODATA" -out-cs ll -ogr-out ${DIR}/ratio_stat.shp
+
+	echo $FILE >> tmp_ratio_files.txt
+	echo ${DIR}/ratio_ndv.shp >> tmp_ndv_ratio_shps.txt
+	echo ${DIR}/ratio_stat.shp >> tmp_stat_ratio_shps.txt
+
+done
+
+otbcli_Mosaic -ram 8192 -progress 1 \
+	      -vdcut $(cat tmp_ndv_ratio_shps.txt | tr "\n" " ") \
+	      -vdstats $(cat tmp_stat_ratio_shps.txt | tr "\n" " ") \
+	      -il $(cat tmp_ratio_files.txt | tr "\n" " ") \
+	      -comp.feather large -harmo.method band -harmo.cost mu \
+	      -out MOSAIC/final_ratio.tif
+
+
+
+
+
+

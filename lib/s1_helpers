@@ -169,3 +169,40 @@ function s1_stop_time() {
 	cut -c 43-48)
     echo "$TRACK"
 }
+
+# show S1 info
+function s1_info() {
+if [ -z "$1" ]; then 
+    echo "Missing arguments. Syntax:"
+    echo "  s1_info <input_file>"
+    return
+    fi 
+    BASENAME=`basename $1`
+    export SCENE_ID=`echo ${BASENAME} | rev | cut -c 5- | rev`
+    export DATE=${SCENE_ID:17:8}
+    export ORBIT=${SCENE_ID:49:6}
+    export START=`echo "${SCENE_ID:26:2}":"${SCENE_ID:28:2}":"${SCENE_ID:30:2}"`
+    export STOP=`echo "${SCENE_ID:42:2}":"${SCENE_ID:44:2}":"${SCENE_ID:46:2}"`
+  #  export TRACK=`s1_track_orbit $ORBIT`
+    export MODE=${SCENE_ID:7:3}
+    export POL_MODE=${SCENE_ID:13:3}
+    #TRACK=${SCENE_ID:26:3}
+    #FRAME_START=${SCENE_ID:29:3}
+    #FRAME_END=${SCENE_ID:45:3}
+    export SATELLITE="Sentinel-1"
+
+    echo " " 
+    echo "----------------------------------------------------------------"
+    echo " Scene Identifier: 		${SCENE_ID}"
+    echo " Satellite/Sensor: 		${SATELLITE}"
+    echo " Acquisiton Mode:		${MODE}"
+    echo " Polarization Mode:		${POL_MODE}"
+    echo " Acquisition Date:		${DATE:6:2}-${DATE:4:2}-${DATE:0:4}"
+    echo " Start time:			${START}"
+    echo " Stop time:			${STOP}"
+    echo " Relative Satellite Track: 	${TRACK}"
+    echo " Absolute Satellite Orbit: 	${ORBIT}"
+    echo "----------------------------------------------------------------"
+}
+
+

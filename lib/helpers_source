@@ -1,5 +1,6 @@
 source $OPENSARKIT/lib/gdal_helpers
 source $OPENSARKIT/lib/s1_helpers
+source $OPENSARKIT/lib/s1_processors
 source $OPENSARKIT/lib/s2_helpers
 source $OPENSARKIT/lib/saga_helpers
 source $OPENSARKIT/lib/bash_helpers

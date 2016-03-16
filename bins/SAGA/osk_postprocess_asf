@@ -51,9 +51,9 @@ FINAL=$3
 mkdir ${FINAL}
 
 
-echo "--------------------------------------------------------------------------------------------------"
+echo "-----------------------------------------------------------------------------------------------------------------"
 echo " Calculate second order statistic Texture measurements (Dissimilarity, Homogeneity, GLCMVariance) for HH channel"
-echo "--------------------------------------------------------------------------------------------------"
+echo "-----------------------------------------------------------------------------------------------------------------"
 
 # define path/name of output
 INPUT_HH=${PROC_DIR}/Gamma0_HH_db.tif
@@ -64,9 +64,9 @@ OUTPUT_TEXTURE_HV=${TMP_DIR}/TEXTURE_HV.dim
 
 bash $SNAP_EXE GLCM -PoutputASM='false' -PoutputContrast='false' -PoutputCorrelation='false' -PoutputEnergy='false' -PoutputEntropy='false' -PoutputMAX='false' -PoutputMean='false' -Ssource=${INPUT_HH} -t ${OUTPUT_TEXTURE_HH}
 
-echo "--------------------------------------------------------------------------------------------------"
+echo "-----------------------------------------------------------------------------------------------------------------"
 echo " Calculate second order statistic Texture measurements (Dissimilarity, Homogeneity, GLCMVariance) for HV channel"
-echo "--------------------------------------------------------------------------------------------------"
+echo "-----------------------------------------------------------------------------------------------------------------"
 
 bash $SNAP_EXE GLCM -PoutputASM='false' -PoutputContrast='false' -PoutputCorrelation='false' -PoutputEnergy='false' -PoutputEntropy='false' -PoutputMAX='false' -PoutputMean='false' -Ssource=${INPUT_HV} -t ${OUTPUT_TEXTURE_HV}
 

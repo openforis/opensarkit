@@ -46,20 +46,12 @@ if [ "$#" != "7" ]; then
 	exit 1
 else
 	echo -e ""
-	echo -e "----------------------------------"
-	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
-	echo -e " Search Sentinel-1 data on ESA Scihub"
-	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
-	echo -e " Author: ${AUTHOR_1}"
-	echo -e " Contact: ${CONTACT_1}"
-	echo -e "----------------------------------"
+	echo -e "---------------------------------------------------------------------------"
+	echo -e " Welcome to Open Foris SARKit, version ${OSK_VERSION}"
+	echo -e " Search for Sentinel-1 data and create an OSK inventory shapefile"
+	echo -e "---------------------------------------------------------------------------"
 	echo -e ""
-	echo -e "----------------------------------"
-	echo -e "Software dependencies:"
-	echo -e "	- xml-twig-tools"
-	echo -e "	- gdal-bin"
-	echo -e "----------------------------------"
-	echo -e ""
+
 
 	# set up initial script variables
    	
@@ -79,29 +71,33 @@ else
 	POLAR=$6
 
 	# source necessary OSK libs
-	source ${OPENSARKIT}/lib/s1_helpers
+	source ${OPENSARKIT}/lib/helpers_source
 fi
 
 #	Credentials
-echo -e "-------------------------------------------------"
-echo -e "If you have not done the registration yet, go to:"
-echo -e "https://scihub.esa.int/"
-echo -e "-------------------------------------------------"
+echo -e "-------------------------------------------------------"
+echo -e " If you do not have a Copernicus user account, go to :"
+echo -e " https://scihub.copernicus.eu/dhus/"
+echo -e "-------------------------------------------------------"
 echo -e ""
-read -r -p "Please type your ESA Scihub Username:" USERNAME
-read -s -p "Please type your ESA Scihub Password:" PW
+read -r -p " Please type your ESA Scihub Username:" USERNAME
+read -s -p " Please type your ESA Scihub Password:" PW
 echo ""
-echo "Getting the inventory data"
+
 
 
 
 # get the corner coordinates from the AOI shapefile and build rectangle for data search  
-LAYER=`ogrinfo $AOI | grep 1: | awk $'{print $2}'`
-X_MIN=`ogrinfo $AOI $LAYER | grep Extent | awk -F '(' $'{print $2}' | awk -F ','  $'{print $1}'`
-X_MAX=`ogrinfo $AOI $LAYER | grep Extent | awk -F '(' $'{print $3}' | awk -F ','  $'{print $1}'`
-Y_MIN=`ogrinfo $AOI $LAYER | grep Extent | awk -F ',' $'{print $2}' | awk -F ')' $'{print $1}'`
-Y_MAX=`ogrinfo $AOI $LAYER | grep Extent | awk -F ',' $'{print $3}' | awk -F ')' $'{print $1}'`
-AOI="POLYGON(($X_MIN$Y_MIN, $X_MIN$Y_MAX, $X_MAX$Y_MAX, $X_MAX$Y_MIN, $X_MIN$Y_MIN ))"
+SECONDS=0
+echo -ne " Create Query URL from search parameters ... " 
+LAYER=`ogrinfo $AOI | grep 1: | awk $'{print $2}'` 
+X_MIN=`ogrinfo $AOI $LAYER | grep Extent | awk -F '(' $'{print $2}' | awk -F ','  $'{print $1}'` 
+X_MAX=`ogrinfo $AOI $LAYER | grep Extent | awk -F '(' $'{print $3}' | awk -F ','  $'{print $1}'` 
+Y_MIN=`ogrinfo $AOI $LAYER | grep Extent | awk -F ',' $'{print $2}' | awk -F ')' $'{print $1}'` 
+Y_MAX=`ogrinfo $AOI $LAYER | grep Extent | awk -F ',' $'{print $3}' | awk -F ')' $'{print $1}'` 
+AOI="POLYGON(($X_MIN$Y_MIN, $X_MIN$Y_MAX, $X_MAX$Y_MAX, $X_MAX$Y_MIN, $X_MIN$Y_MIN ))" 
+QUERY_URL="https://scihub.esa.int/dhus//search?q=producttype:${PRODUCT_TYPE}+AND+polarisationMode:${POLAR}+AND+( footprint:\"Intersects($AOI)\")+AND+${PERIOD}&rows=10000&start=0" 
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" 
 
 ## Alternative Version with actual footprint (seems not to work because only rectangluar searches available)
 #ogr2ogr -f CSV ${TMP_DIR}/tmp_AOI_WKT.csv $AOI -lco GEOMETRY=AS_WKT
@@ -109,15 +105,28 @@ AOI="POLYGON(($X_MIN$Y_MIN, $X_MIN$Y_MAX, $X_MAX$Y_MAX, $X_MAX$Y_MIN, $X_MIN$Y_M
 #echo $AOI
 
 # get the OpenSearch result
-echo "data inventory from scihub server"
-wget --no-check-certificate --user=${USERNAME} --password=${PW} -O ${TMP_DIR}/datalist "https://scihub.esa.int/dhus//search?q=producttype:${PRODUCT_TYPE}+AND+polarisationMode:${POLAR}+AND+( footprint:\"Intersects($AOI)\")+AND+${PERIOD}&rows=10000&start=0" ##Username/Password Authentication Failed.
+echo -ne " Data inventory from scihub server ... " &&
+wget --no-check-certificate --user=${USERNAME} --password=${PW} -O ${TMP_DIR}/datalist "${QUERY_URL}" &>${TMP_DIR}/log_inventory \
+& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+if grep --quiet "Authentication Failed" ${TMP_DIR}/log_inventory; then 
+	
+        echo " Username/Password Authentication Failed." && exit 1
+	rm -rf ${TMP_DIR}
+fi
 
 # get nr. of products
 NR_OF_PRODUCTS=`s1_ident ${TMP_DIR}/datalist | wc -l `
+
+if [ `xml_grep --text_only "opensearch:totalResults" TMP/datalist` == 0 ];then
+	echo " Empty search result. Check your search criteria." && exit 1	
+	rm -rf ${TMP_DIR}
+fi
+
+
 echo "-------------------------------------------------"
-echo " There are ${NR_OF_PRODUCTS} Products in the Hub"
+echo " Info: There are ${NR_OF_PRODUCTS} Products in the Hub"
 echo "-------------------------------------------------"
-echo ""
 
 # get the important info out of the xml JSON file
 s1_ident ${TMP_DIR}/datalist > ${TMP_DIR}/scenes
@@ -138,7 +147,6 @@ echo '"String(68)","String(37)","Integer(8)","Integer(3)","String(5)","String(11
 
 # write data
 paste -d "," ${TMP_DIR}/scenes ${TMP_DIR}/uuid ${TMP_DIR}/dates ${TMP_DIR}/track ${TMP_DIR}/pol_mode ${TMP_DIR}/orbit_dir ${TMP_DIR}/orbit ${TMP_DIR}/swath ${TMP_DIR}/start_time ${TMP_DIR}/stop_time ${TMP_DIR}/polys >> ${TMP_DIR}/wkt.csv
-#cat ${TMP_DIR}/data >> ${TMP_DIR}/wkt.csv
 
 mkdir -p ${PROC_DIR}/
 mkdir -p ${PROC_DIR}/Inventory
@@ -155,7 +163,9 @@ echo "	</OGRVRTLayer>" >> ${TMP_DIR}/wkt.vrt
 echo "</OGRVRTDataSource>" >> ${TMP_DIR}/wkt.vrt
 
 # convert to final shapefile
-ogr2ogr -f "Esri Shapefile" "${INV}/S1_${POLAR}.shp" "${TMP_DIR}/wkt.vrt"
+echo -ne " Creating OSK inventory shapefile ... " &&
+ogr2ogr -f "Esri Shapefile" "${INV}/S1_${POLAR}.shp" "${TMP_DIR}/wkt.vrt" \
+& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 # download if needed
 if [[ $7 == 1 ]];then
@@ -163,4 +173,4 @@ if [[ $7 == 1 ]];then
 fi
 
 # remove TMP folder
-#rm -rf ${TMP_DIR}
+rm -rf ${TMP_DIR}

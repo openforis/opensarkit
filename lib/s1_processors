@@ -1,0 +1,423 @@
+function s1_frame_import() {
+    if [ -z "$3" ]; then 
+    echo " Missing arguments. Syntax:"
+    echo " s1_frame_import <input_file> <output_file> <log_dir>"
+    return
+    fi
+
+    # source other helpers
+    source ${OPENSARKIT}/lib/helpers_source
+
+    # error codes
+    ERR_IMPORT="Error during clean import of product"
+
+    BASE=`basename $1`
+    echo ""
+    SECONDS=0
+    echo -ne " Importing S1 GRD data file, applying the precise orbit file, removing thermal noise and applying the Refined Lee Speckle Filter ..." &&
+    bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_AO_TNR_SPK.xml -x -Pinput=$1 -Poutput=$2 > $3/log_import \
+    & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    [ $? -ne 0 ] && return ${ERR_IMPORT}
+
+}
+
+function s1_swath_import() {
+    if [ -z "$4" ]; then 
+    echo " Missing arguments. Syntax:"
+    echo " s1_swath_preprocess <filelist> <output_file> <tmp_dir> <log_dir>"
+    return
+    fi
+
+    # source other helpers
+    source ${OPENSARKIT}/lib/helpers_source
+
+    # error codes
+    ERR_IMPORT="Error during clean import of product"
+    ERR_BRD_NOISE="Error during border noise removal"
+    ERR_TF="Error during Terrain Flattening"
+    ERR_TF="Error during geometric terrain correction"
+
+    NR_OF_FRAMES=`cat $1 | wc -l`
+    j=1
+
+    for LINE in `cat $1`;do
+	  s1_info ${LINE}
+	  BASE=`basename ${LINE}`
+	  echo ""
+          SECONDS=0
+          echo -ne " Importing S1 GRD data file, applying the precise orbit file, removing thermal noise and apply speckle filtering (Refined Lee) ..." &&
+          bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_AO_TNR_SPK.xml -x -Pinput=${LINE} -Poutput=$3/${BASE}-import.dim > $4/log_import \
+          & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+          [ $? -ne 0 ] && return ${ERR_IMPORT}
+	  echo " Finished import of Frame: $j/${NR_OF_FRAMES}"
+	  j=`expr $j + 1`
+    done
+
+    if [ -e $4/${BASE}-import.data/Intensity_VH.img ];then
+
+	    SECONDS=0
+	    echo -ne " Assembling the products of the same swath ..." &&
+	    bash $SNAP_EXE SliceAssembly -PselectedPolarisations=VV,VH $(ls -1 $3/*-import.dim.dim | tr '\n' ' ' | rev | cut -c 2- | rev) -t $2 \
+	    & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	    [ $? -ne 0 ] && return ${ERR_ASSEMBLE}
+#	    rm -rf $4/*-import.dim.d*
+
+    else
+
+	    SECONDS=0
+	    echo -ne " Assembling the products of the same swath ..." &&
+            bash $SNAP_EXE SliceAssembly -PselectedPolarisations=VV $(ls -1 $3/*-import.dim.dim | tr '\n' ' ' | rev | cut -c 2- | rev) -t $2 \
+	    & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	    [ $? -ne 0 ] && return ${ERR_ASSEMBLE}
+#	    rm -rf $4/*-import.dim.d*
+#	    bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_slice_assembly.xml -x -Pfilelist=$(ls -1 $4/*-import.dim.dim | tr '\n' ' ' | rev | cut -c 2- | rev) -Poutput=$4/swath.dim 2>&1>/dev/null \
+    fi
+}
+
+function s1_rtc_processing() {
+    if [ -z "$7" ]; then 
+    echo " Missing arguments. Syntax:"
+    echo " s1_rtc_processing <input file> <output_file> <resolution> <ratio calculation> <db-scaling> <tmp_dir> <log_dir>"
+    return
+    fi
+
+    BASE=`echo $1 | rev | cut -c 5- | rev`
+
+    COLUMNS=`gdalinfo ${BASE}.data/Intensity_VV.img | grep "Size is" | awk '{print $3}' | sed s/,//g`
+    LINES=`gdalinfo ${BASE}.data/Intensity_VV.img | grep "Size is" | awk '{print $4}'`
+    NEW_WIDTH=`expr $COLUMNS - 1000`
+    NEW_HEIGHT=`expr $LINES - 1000`
+
+    if [ $3 == "MED_RES" ];then
+
+    	SECONDS=0
+	echo " Removing GRD border noise by deleting the outer 500 rows, calibrating to beta0, "
+	echo -ne " applying the terrain flattening and multi-look by a factor of 3  ..." &&
+	bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_RB_CAL_TF_ML3.xml -x -Pinput=$1 -Pwidth=${NEW_WIDTH} -Pheight=${NEW_HEIGHT} -Poutput=$4/TF.dim \
+    	& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	[ $? -ne 0 ] && return ${ERR_BRD_NOISE} 
+   
+        if [ -e $4/TF.data/Gamma0_VH.img ];then
+
+		if [[ $4 == 1 && $5 == 1 ]];then # db scale + ratio
+
+			SECONDS=0
+	                echo -ne " Applying the geometric terrain correction, calculate the VV/VH Band Ratio and transform backscatter to decibel scale  ..." &&
+			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TC_DB_Ratio.xml -x -Pinput=$4/TF.dim -Poutput=$4/TC_DB.dim -PoutputRatio=$4/Ratio.dim \
+    			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+			[ $? -ne 0 ] && return ${ERR_TC} 
+      			rm -rf $4/TF.d*
+
+			SECONDS=0
+			echo -ne " Merging backscatter bands with ratio"
+			bash ${SNAP_EXE} BandMerge -x $4/TC_DB.dim $4/Ratio.dim -t $2 \
+			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+			[ $? -ne 0 ] && return ${ERR_BM} 
+			rm -rf $4/TC_DB.d* $4/Ratio.d*
+
+		elif [[ $4 == 1 && $5 == 0 ]];then # ratio but no db scale
+
+			SECONDS=0
+	                echo -ne " Applying the geometric terrain correction, and calculate the VV/VH Band Ratio  ..." &&
+			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TC_Ratio.xml -x -Pinput=$4/TF.dim -Poutput=$4/TC.dim -PoutputRatio=$4/Ratio.dim \
+    			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+			[ $? -ne 0 ] && return ${ERR_TC} 
+      			rm -rf $4/TF.d*
+
+			SECONDS=0
+			echo -ne " Merging backscatter bands with ratio"
+			bash ${SNAP_EXE} BandMerge -x $4/TC.dim $4/Ratio.dim -t $2 \
+			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+			rm -rf $4/TC.d* $4/Ratio.d*
+		
+		elif [[ $4 == 0 && $5 == 0 ]];then # neither db nor ratio calculation
+	
+			SECONDS=0
+	                echo -ne " Applying the geometric terrain correction ..." &&
+			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TC.xml -x -Pinput=$4/TF.dim -Poutput=$2 \
+    			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+			[ $? -ne 0 ] && return ${ERR_TC} 
+      			rm -rf $4/TF.d*
+
+		elif [[ $4 == 0 && $5 == 1 ]];then # db scaling but no ratio calculation
+
+			SECONDS=0
+	                echo -ne " Applying the geometric terrain correction and transform backscatter to decibel scale ..." &&
+			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TC_DB.xml -x -Pinput=$4/TF.dim -Poutput=$2 \
+    			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+			[ $? -ne 0 ] && return ${ERR_TC} 
+      			rm -rf $4/TF.d*
+
+		fi
+		
+	else # SSV 30m
+
+		if [[ $5 == 1 ]];then # db scaling
+
+			SECONDS=0
+        	        echo -ne " Applying the geometric terrain correction and transform backscatter to decibel scale  ..." &&
+			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SSV_30_TC_DB.xml -x -Pinput=$4/TF.dim -Poutput=$2 \
+    			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+			[ $? -ne 0 ] && return ${ERR_TC} 
+      			rm -rf $4/TF.d*
+
+		else
+
+			SECONDS=0 # no db-scaling
+        	        echo -ne " Applying the geometric terrain correction ..." &&
+			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SSV_30_TC.xml -x -Pinput=$4/TF.dim -Poutput=$2 \
+    			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+			[ $? -ne 0 ] && return ${ERR_TC} 
+      			rm -rf $4/TF.d*
+
+		fi
+
+	fi
+
+    elif [ $3 == "HI_RES" ];then
+
+    	SECONDS=0
+	echo " Removing GRD border noise by deleting the outer 500 rows, calibrating to beta0, "
+	echo -ne " applying the terrain flattening and multi-look by a factor of 3  ..." &&
+	bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_RB_CAL_TF_noML.xml -x -Pinput=$1 -Pwidth=${NEW_WIDTH} -Pheight=${NEW_HEIGHT} -Poutput=$4/TF.dim \
+    	& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	[ $? -ne 0 ] && return ${ERR_BRD_NOISE} 
+        rm -rf $4/${BASE}-import.dim
+	
+        if [ -e $4/TF.data/Gamma0_VH.img ];then
+
+
+		if [[ $4 == 1 && $5 == 1 ]];then # db scale + ratio
+
+			SECONDS=0
+	                echo -ne " applying the geometric terrain correction, calculate the VV/VH Band Ratio and transform backscatter to decibel scale  ..." &&
+			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_10_TC_DB_Ratio.xml -x -Pinput=$4/TF.dim -Poutput=$4/TC_DB.dim -PoutputRatio=$4/Ratio.dim \
+    			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+			[ $? -ne 0 ] && return ${ERR_TC} 
+      			rm -rf $4/TF.d*
+
+			SECONDS=0
+			echo -ne " Merging backscatter bands with ratio"
+			bash ${SNAP_EXE} BandMerge -x $4/TC_DB.dim $4/Ratio.dim -t $2 \
+			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+			rm -rf $4/TC_DB.d* $4/Ratio.d*
+
+		elif [[ $4 == 1 && $5 == 0 ]];then # ratio but no db scale
+			
+			SECONDS=0
+	                echo -ne " Applying the geometric terrain correction, and calculate the VV/VH Band Ratio  ..." &&
+			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_10_TC_Ratio.xml -x -Pinput=$4/TF.dim -Poutput=$4/TC.dim -PoutputRatio=$4/Ratio.dim \
+    			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+			[ $? -ne 0 ] && return ${ERR_TC} 
+      			rm -rf $4/TF.d*
+
+			SECONDS=0
+			echo -ne " Merging backscatter bands with ratio ..."
+			bash ${SNAP_EXE} BandMerge -x $4/TC.dim $4/Ratio.dim -t $2 \
+			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+			rm -rf $4/TC.d* $4/Ratio.d*
+
+		elif [[ $4 == 0 && $5 == 0 ]];then #neither db nor ratio calculation
+	
+			SECONDS=0
+	                echo -ne " Applying the geometric terrain correction ..." &&
+			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_10_TC.xml -x -Pinput=$4/TF.dim -Poutput=$2 \
+    			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+			[ $? -ne 0 ] && return ${ERR_TC} 
+      			rm -rf $4/TF.d*
+
+		elif [[ $4 == 0 && $5 == 1 ]];then #do db scaling but no ratio calculation
+
+			SECONDS=0
+	                echo -ne " Applying the geometric terrain correction and transform backscatter to decibel scale ..." &&
+			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_10_TC_DB.xml -x -Pinput=$4/TF.dim -Poutput=$2 \
+    			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+			[ $? -ne 0 ] && return ${ERR_TC} 
+      			rm -rf $4/TF.d*
+
+		fi
+
+	else # SSV 10m case
+
+		if [[ $5 == 1 ]];then
+
+			SECONDS=0
+            	    echo -ne " Applying the geometric terrain correction and transform backscatter to decibel scale ..." &&
+			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SSV_10_TC_DB.xml -x -Pinput=$4/TF.dim -Poutput=$2 \
+    			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+			[ $? -ne 0 ] && return ${ERR_TC} 
+      			rm -rf $4/TF.d*
+
+		else
+			
+			SECONDS=0
+        	        echo -ne " Applying the geometric terrain correction ..." &&
+			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SSV_10_TC.xml -x -Pinput=$4/TF.dim -Poutput=$2 \
+    			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+			[ $? -ne 0 ] && return ${ERR_TC} 
+      			rm -rf $4/TF.d*
+
+		fi
+
+	fi
+fi
+
+echo "------------------------------------------------------------------------------------------------------"
+echo " Info: Succesfully processed file: `basename $1` to a radiometrically terrain corrected product. "
+echo "------------------------------------------------------------------------------------------------------"
+echo ""
+echo ""
+
+}
+
+function s1_sdv_mt_metrics() {
+    if [ -z "$4" ]; then 
+    echo " Missing arguments. Syntax:"
+    echo " s1_sdv_mt_metrics <file_list> <output_dir> <pol-mode> <tmpdir> <logfile>"
+    return
+    fi
+   
+    # source other helpers
+    source ${OPENSARKIT}/lib/helpers_source
+
+    # error codes
+    ERR_STACKING=" Error during stacking of multi-temporal images"
+    ERR_SPECKLE=" Error during stacking of multi-temporal images"
+
+    SECONDS=0
+    echo -ne " Creating the multitemporal stack ..." &&
+    bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_Stacking.xml -x -Pfilelist=$1 -Poutput=$4/mt_stack.coreg.dim \
+    & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    [ $? -ne 0 ] && return ${ERR_STACKING}
+   
+    SECONDS=0
+    echo -ne " Exeuting multi-temporal Speckle-filtering to the VV polarized channels of the multi-temporal stack ... " &&
+    bash $SNAP_EXE ${SNAP_GRAPHS}/S1_GRD_MT-Speckle.xml -x -Pinput=$4/mt_stack.coreg.dim -Ppol=VV -Pthreshold=5 -Poutput=$4/mt_stack.vv.speckle.dim \
+    & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    [ $? -ne 0 ] && return ${ERR_SPECKLE}
+    
+    for MTs in `ls -1 $4/mt_stack.vv.speckle.data/*img`;do 
+	basename ${MTs} | rev | cut -c 5- | rev >> $4/tmp_list
+    done
+    BANDLIST=$(cat $4/tmp_list | tr '\n' ',' | rev | cut -c 2- | rev)
+    rm -f $4/tmp_list
+
+    SECONDS=0
+    echo -ne " Converting linear to db-scale ... " &&
+    bash $SNAP_EXE ${SNAP_GRAPHS}/S1_GRD_lin_to_db.xml -x -Pinput=$4/mt_stack.vv.speckle.dim -Pbandlist=${BANDLIST} -Poutput=$4/mt_stack.vv.db.speckle.dim \
+    & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    [ $? -ne 0 ] && return ${ERR_SPECKLE}
+    rm -rf $4/mt_stack.vv.speckle.d*
+
+    SECONDS=0
+    echo -ne " Calculating the mean average of the VV polarized channels of the multi-temporal stack ... " &&
+    bash ${SNAP_EXE} Stack-Averaging -x -SsourceProduct=$4/mt_stack.vv.db.speckle.dim -Pstatistic='Mean Average' -t $4/mean.VV.dim \
+    & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    [ $? -ne 0 ] && return ${ERR_SPECKLE}
+
+    SECONDS=0
+    echo -ne " Calculating the maximum values of the VV polarized channels of the multi-temporal stack ... " &&
+    bash ${SNAP_EXE} Stack-Averaging -x -SsourceProduct=$4/mt_stack.vv.db.speckle.dim -Pstatistic='Maximum' -t $4/max.VV.dim \
+    & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    [ $? -ne 0 ] && return ${ERR_SPECKLE}
+
+    SECONDS=0
+    echo -ne " Calculating the minimum values of the VV polarized channels of the multi-temporal stack ... " &&
+    bash ${SNAP_EXE} Stack-Averaging -x -SsourceProduct=$4/mt_stack.vv.db.speckle.dim -Pstatistic='Minimum' -t $4/min.VV.dim \
+    & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    [ $? -ne 0 ] && return ${ERR_SPECKLE}
+	
+    for MTs in `ls -1 $4/mt_stack.vv.db.speckle.data/*img`;do 
+		
+	basename ${MTs} | rev | cut -c 5- | rev >> $4/tmp_list
+    done
+    BANDLIST=$(cat $4/tmp_list | tr '\n' ',' | rev | cut -c 2- | rev)
+    rm $4/tmp_list
+  
+    SECONDS=0
+    echo -ne " Calculating the standard deviation of the VV polarized channels of the multi-temporal stack ... " &&
+    bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_MT-stddev.xml -Pinput=$4/mt_stack.vv.db.speckle.dim -Pbandlist="stddev(${BANDLIST})" -Poutput=$4/stdev.VV.dim \
+    & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    [ $? -ne 0 ] && return ${ERR_SPECKLE}
+	
+    #SECONDS=0
+    #echo " Calculating the coeffcient of variation of the VV polarized channels of the multi-temporal stack ... " &&
+    #bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_MT-stddev.xml -Pinput=$4/mt_stack.vv.db.speckle.dim -Pbandlist="coef_var(${BANDLIST})" -Poutput=$4/coef_var.VV.dim \
+    #& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    #[ $? -ne 0 ] && return ${ERR_SPECKLE}
+    
+    # VH channels
+
+    SECONDS=0
+    echo -ne " Applying the multi-temporal speckle filter to the VH polarized channels of the multi-temporal stack ... " &&
+    bash $SNAP_EXE ${SNAP_GRAPHS}/S1_GRD_MT-Speckle.xml -x -Pinput=$4/mt_stack.coreg.dim -Ppol=VH -Pthreshold=5 -Poutput=$4/mt_stack.vh.speckle.dim \
+    & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    [ $? -ne 0 ] && return ${ERR_SPECKLE}
+#    rm -rf $4/mt_stack.coreg.d*
+
+    for MTs in `ls -1 $4/mt_stack.vh.speckle.data/*img`;do 
+	basename ${MTs} | rev | cut -c 5- | rev >> $4/tmp_list
+    done
+    BANDLIST=$(cat $4/tmp_list | tr '\n' ',' | rev | cut -c 2- | rev)
+    rm -f $4/tmp_list
+
+    SECONDS=0
+    echo -ne " Converting linear ot dB scale ... " &&
+    bash $SNAP_EXE ${SNAP_GRAPHS}/S1_GRD_lin_to_db.xml -x -Pinput=$4/mt_stack.vh.speckle.dim -Pbandlist=${BANDLIST} -Poutput=$4/mt_stack.vh.db.speckle.dim \
+    & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    [ $? -ne 0 ] && return ${ERR_SPECKLE}
+    rm -rf $4/mt_stack.vh.speckle.dim
+
+    SECONDS=0
+    echo -ne " Calculating the mean average of the VH polarized channels of the multi-temporal stack ... " &&
+    bash ${SNAP_EXE} Stack-Averaging -x -SsourceProduct=$4/mt_stack.vh.db.speckle.dim -Pstatistic='Mean Average' -t $4/mean.VH.dim \
+    & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    [ $? -ne 0 ] && return ${ERR_SPECKLE}
+
+    SECONDS=0
+    echo -ne " Calculating the maximum values of the VH polarized channels of the multi-temporal stack ... " &&
+    bash ${SNAP_EXE} Stack-Averaging -x -SsourceProduct=$4/mt_stack.vh.db.speckle.dim -Pstatistic='Maximum' -t $4/max.VH.dim \
+    & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    [ $? -ne 0 ] && return ${ERR_SPECKLE}
+
+    SECONDS=0
+    echo -ne " Calculating the minimum values of the VH polarized channels of the multi-temporal stack ... " &&
+    bash ${SNAP_EXE} Stack-Averaging -x -SsourceProduct=$4/mt_stack.vh.db.speckle.dim -Pstatistic='Minimum' -t $4/min.VH.dim \
+    & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    [ $? -ne 0 ] && return ${ERR_SPECKLE}
+	
+    for MTs in `ls -1 $4/mt_stack.vh.db.speckle.data/*img`;do 
+    	basename ${MTs} | rev | cut -c 5- | rev >> $4/tmp_list
+    done
+    BANDLIST=$(cat $4/tmp_list | tr '\n' ',' | rev | cut -c 2- | rev)
+    rm $4/tmp_list
+    	
+    SECONDS=0
+    echo -ne " Calculating the standard deviation of the VH polarized channels of the multi-temporal stack ... " &&
+    bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_MT-stddev.xml -Pinput=$4/mt_stack.vh.db.speckle.dim -Pbandlist="stddev(${BANDLIST})" -Poutput=$4/stdev.VH.dim \
+    & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    [ $? -ne 0 ] && return ${ERR_SPECKLE}
+	
+    #SECONDS=0
+    #echo -ne " Calculating the coefficient of variation of the VH polarized channels of the multi-temporal stack ... " &&
+    #bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_MT-stddev.xml -Pinput=$4/mt_stack.vh.db.speckle.dim -Pbandlist="coef_var(${BANDLIST})" -Poutput=$4/coef_var.VH.dim \
+    #& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    #[ $? -ne 0 ] && return ${ERR_SPECKLE}
+   
+    # Band_merge
+    # with coeff.of var. 
+    #bash ${SNAP_EXE} BandMerge -x $4/mean.VV.dim $4/max.VV.dim $4/min.VV.dim $4/stdev.VV.dim $4/coef_var.VV.dim $4/mean.VH.dim $4/max.VH.dim $4/min.VH.dim $4/stdev.VH.dim $4/coef_var.VH.dim -t $4/mt_stack.metrics.dim 
+
+    SECONDS=0
+    echo -ne " Creating the final stack ..." &&
+    bash ${SNAP_EXE} BandMerge -x $4/mean.VV.dim $4/max.VV.dim $4/min.VV.dim $4/stdev.VV.dim $4/mean.VH.dim $4/max.VH.dim $4/min.VH.dim $4/stdev.VH.dim -t $4/mt_stack.metrics.dim  \
+    & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    [ $? -ne 0 ] && return ${ERR_STACKING}
+    
+    # ratios
+    #max/min VV
+    #max/min/VH
+    #mean VV/VH
+
+}
+    

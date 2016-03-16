@@ -1,0 +1,23 @@
+
+
+Error Handling
+function snap_import_error() {
+
+
+if grep "No product reader found for file" $1 ; then
+
+	check if file is there
+	if -e $file;then
+
+		File exists, but maybe is corrupted, try to download again.
+
+	else
+	
+		Could not find file
+
+	fi
+
+elif grep DataBuffer
+
+
+fi
