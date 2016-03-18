@@ -84,24 +84,37 @@ while read line; do
 	echo "----------------------------------------------------------"
 	echo " Getting MD5 checksum for download validation"
 
-	# get MD5sum of product
-	MD5_ADDRESS='https://scihub.esa.int/dhus/odata/v1/Products('"'${UUID}'"')/Checksum/Value/$value'	
-	aria2c --dir=${TMP_DIR} --check-certificate=false --continue=true --http-user="${USERNAME}" --http-passwd="${PW}" "${MD5_ADDRESS}" > ${TMP_DIR}/tmp_error2
-	if grep -q "download completed" ${TMP_DIR}/tmp_error2;then
 
-		MD5_UP=`cat $TMP_DIR/'$value'`
-		rm -f $TMP_DIR/'$value'
+	# prepare a loop to avoid uncomplete data downloads and check for md5 checksum
+	i=1
+	echo "bla" > ${TMP_DIR}/tmp_error2
+	# do the loop 
+
+	for(( i=1; i<=2; i++ ));do
+		
+		i=1	
+		# get MD5sum of product
+		MD5_ADDRESS='https://scihub.esa.int/dhus/odata/v1/Products('"'${UUID}'"')/Checksum/Value/$value'	
+		aria2c --dir=${TMP_DIR} --check-certificate=false --continue=true --http-user="${USERNAME}" --http-passwd="${PW}" "${MD5_ADDRESS}" > ${TMP_DIR}/tmp_error2
+		if grep -q "download completed" ${TMP_DIR}/tmp_error2;then
+
+			i=3
+			MD5_UP=`cat $TMP_DIR/'$value'`
+			rm -f $TMP_DIR/'$value'
 	
-	elif grep -q "Authorization failed" ${TMP_DIR}/tmp_error2;then
+		elif grep -q "Authorization failed" ${TMP_DIR}/tmp_error2;then
 
-		echo " Authorization failed"
-		exit 1
-	else
-			
-		echo " Connection problems, will try to continue download in 5 minutes"
-		sleep 5m
+			echo " Authorization failed"
+			exit 1
+		else
+				
+			echo " Connection problems, will try to continue download in 5 minutes"
+			sleep 5m
 
-	fi
+		fi
+	done
+
+
 
 	# prepare a loop to avoid uncomplete data downloads and check for md5 checksum
 	i=1

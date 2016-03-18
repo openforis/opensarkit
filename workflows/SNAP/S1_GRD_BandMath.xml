@@ -15,9 +15,9 @@
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
       <targetBands>
         <targetBand>
-          <name>${outputBand}</name>
+          <name>${outBand}</name>
           <type>float32</type>
-          <expression>${formula}</expression>
+          <expression>${expression}</expression>
           <description/>
           <unit/>
           <noDataValue>0.0</noDataValue>
@@ -42,7 +42,7 @@
             <displayPosition x="455.0" y="135.0"/>
     </node>
     <node id="BandMaths">
-      <displayPosition x="192.0" y="164.0"/>
+      <displayPosition x="225.0" y="134.0"/>
     </node>
     <node id="Read">
             <displayPosition x="37.0" y="134.0"/>

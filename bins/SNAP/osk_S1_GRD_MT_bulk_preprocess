@@ -152,29 +152,21 @@ for TRACK in `ls -1 ${PROC_DIR}`;do
 
 	done # finish acquisition date loop 
 
-
-	#if [ ${MT_MODE} == 1 ];then
-	#	FILELIST=`ls ${PWD}/*/TMP/*import.dim | tr '\n' ',' | rev | cut -c 2- | rev`
-#	fi
-
 	STACK=${PROC_DIR}/${TRACK}/MT_STACK
 	mkdir -p ${STACK}
 	LOG_DIR=${PWD}/LOG
 	TMP_DIR_TRACK=${PWD}/TMP
+	mkdir -p ${LOG_DIR}
+	mkdir -p ${TMP_DIR_TRACK}
+
 
 	FILELIST=$(ls -1 ${PWD}/*/*_RTC.dim | tr '\n' ',' | rev | cut -c 2- | rev)
-	s1_sdv_mt_metrics ${FILELIST} ${STACK} ${TMP_DIR_TRACK} ${LOG_DIR}
+	if [[ `ls -1 ${PWD}/*/*_RTC.data/*VH* 2>/dev/null | wc -l` -gt 0 ]];then
+		s1_mt_metrics ${FILELIST} ${STACK}/mt_stack VH ${TMP_DIR_TRACK} ${LOG_DIR}
+	else
+		s1_mt_metrics ${FILELIST} ${STACK}/mt_stack VV ${TMP_DIR_TRACK} ${LOG_DIR}
+	fi
 	
-#	bash ${SNAP_EXE} BandMerge ${STACK}/max.VV.dim ${STACK}/mean.VV.dim ${STACK}/min.VV.dim ${STACK}/stdev.VV.dim ${STACK}/coef_var.VV.dim \
-#				   ${STACK}/max.VH.dim ${STACK}/mean.VH.dim ${STACK}/min.VH.dim ${STACK}/stdev.VH.dim ${STACK}/coef_var.VH.dim \
-#				   -t ${STACK}/mt_stack.dim
-
-#	bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_BandMath.xml -x -Pinput=${STACK}/mt_stack.dim -PoutputBand=VVVHratio -Pformula="(pow(10,Gamma0_VV_2/10))/(pow(10,Gamma0_VH_2/10))" -Poutput=${STACK}/ratio_lin.dim
-#	bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_BandMath.xml -x -Pinput=${STACK}/mt_stack.dim -PoutputBand=VVVHratio -Pformula="Gamma0_VV_2/Gamma0_VH_2" -Poutput=${STACK}/ratio_db.dim
-#	bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_BandMath.xml -x -Pinput=${STACK}/mt_stack.dim -PoutputBand=VVVHratio -Pformula="Gamma0_VV/Gamma0_VV_3" -Poutput=${STACK}/vv_max_vv_min.dim
-#	bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_BandMath.xml -x -Pinput=${STACK}/mt_stack.dim -PoutputBand=VVVHratio -Pformula="Gamma0_VH/Gamma0_VH_3" -Poutput=${STACK}/vh_max_vh_min.dim
-
-
 	j=`expr $j + 1`
 	cd ${PROC_DIR}
 done # finish track loop

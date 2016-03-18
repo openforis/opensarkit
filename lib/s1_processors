@@ -270,10 +270,10 @@ echo ""
 
 }
 
-function s1_sdv_mt_metrics() {
+function s1_mt_metrics() {
     if [ -z "$4" ]; then 
     echo " Missing arguments. Syntax:"
-    echo " s1_sdv_mt_metrics <file_list> <output_dir> <pol-mode> <tmpdir> <logfile>"
+    echo " s1_sdv_mt_metrics <file_list> <output file> <pol mode> <tmpdir> <logfile>"
     return
     fi
    
@@ -308,6 +308,9 @@ function s1_sdv_mt_metrics() {
     & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
     [ $? -ne 0 ] && return ${ERR_SPECKLE}
     rm -rf $4/mt_stack.vv.speckle.d*
+
+    # change nodata value use (i.e. applies the nanmean etc. calculation in the next steps)
+    sed -i 's|<NO_DATA_VALUE_USED>true</NO_DATA_VALUE_USED>|<NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>|g' $4/mt_stack.vv.db.speckle.dim
 
     SECONDS=0
     echo -ne " Calculating the mean average of the VV polarized channels of the multi-temporal stack ... " &&
@@ -348,76 +351,135 @@ function s1_sdv_mt_metrics() {
     
     # VH channels
 
-    SECONDS=0
-    echo -ne " Applying the multi-temporal speckle filter to the VH polarized channels of the multi-temporal stack ... " &&
-    bash $SNAP_EXE ${SNAP_GRAPHS}/S1_GRD_MT-Speckle.xml -x -Pinput=$4/mt_stack.coreg.dim -Ppol=VH -Pthreshold=5 -Poutput=$4/mt_stack.vh.speckle.dim \
-    & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-    [ $? -ne 0 ] && return ${ERR_SPECKLE}
+    if [ $3 == VV ];then
+
+	SECONDS=0
+	echo -ne " Creating a preliminary stack ..." &&
+	bash ${SNAP_EXE} BandMerge -x $4/mean.VV.dim $4/max.VV.dim $4/min.VV.dim $4/stdev.VV.dim -t $4/mt_stack.metrics.dim  \
+        & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+        [ $? -ne 0 ] && return ${ERR_STACKING}
+
+	echo -ne " Calculating the VVmax-VVmin ratio ..." &&
+        bash $SNAP_EXE ${SNAP_GRAPHS}/S1_GRD_BandMath.xml -x -Pinput=$4/mt_stack.metrics.dim -Pexpression='pow(10,Gamma0_VV_2/10)/pow(10,Gamma0_VV_3/10)' -PoutBand=VVmax-VVmin-ratio -Poutput=$4/VVmax-VVmin-ratio \
+        & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+        [ $? -ne 0 ] && return ${ERR_STACKING}
+
+        SECONDS=0
+        echo -ne " Creating the final stack ..." &&
+        bash ${SNAP_EXE} BandMerge -x $4/mean.VV.dim $4/max.VV.dim $4/min.VV.dim $4/stdev.VV.dim $4/VVmax-VVmin-ratio.dim -t $2  \
+        & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+        [ $? -ne 0 ] && return ${ERR_STACKING}
+
+    elif [ $3 == VH ];then
+   
+	SECONDS=0
+        echo -ne " Applying the multi-temporal speckle filter to the VH polarized channels of the multi-temporal stack ... " &&
+        bash $SNAP_EXE ${SNAP_GRAPHS}/S1_GRD_MT-Speckle.xml -x -Pinput=$4/mt_stack.coreg.dim -Ppol=VH -Pthreshold=5 -Poutput=$4/mt_stack.vh.speckle.dim \
+        & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+        [ $? -ne 0 ] && return ${ERR_SPECKLE}
 #    rm -rf $4/mt_stack.coreg.d*
 
-    for MTs in `ls -1 $4/mt_stack.vh.speckle.data/*img`;do 
-	basename ${MTs} | rev | cut -c 5- | rev >> $4/tmp_list
-    done
-    BANDLIST=$(cat $4/tmp_list | tr '\n' ',' | rev | cut -c 2- | rev)
-    rm -f $4/tmp_list
+       for MTs in `ls -1 $4/mt_stack.vh.speckle.data/*img`;do 
+	   basename ${MTs} | rev | cut -c 5- | rev >> $4/tmp_list
+       done
+       BANDLIST=$(cat $4/tmp_list | tr '\n' ',' | rev | cut -c 2- | rev)
+       rm -f $4/tmp_list
 
-    SECONDS=0
-    echo -ne " Converting linear ot dB scale ... " &&
-    bash $SNAP_EXE ${SNAP_GRAPHS}/S1_GRD_lin_to_db.xml -x -Pinput=$4/mt_stack.vh.speckle.dim -Pbandlist=${BANDLIST} -Poutput=$4/mt_stack.vh.db.speckle.dim \
-    & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-    [ $? -ne 0 ] && return ${ERR_SPECKLE}
-    rm -rf $4/mt_stack.vh.speckle.dim
+       SECONDS=0
+       echo -ne " Converting linear ot dB scale ... " &&
+       bash $SNAP_EXE ${SNAP_GRAPHS}/S1_GRD_lin_to_db.xml -x -Pinput=$4/mt_stack.vh.speckle.dim -Pbandlist=${BANDLIST} -Poutput=$4/mt_stack.vh.db.speckle.dim \
+       & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+       [ $? -ne 0 ] && return ${ERR_SPECKLE}
+       rm -rf $4/mt_stack.vh.speckle.dim
 
-    SECONDS=0
-    echo -ne " Calculating the mean average of the VH polarized channels of the multi-temporal stack ... " &&
-    bash ${SNAP_EXE} Stack-Averaging -x -SsourceProduct=$4/mt_stack.vh.db.speckle.dim -Pstatistic='Mean Average' -t $4/mean.VH.dim \
-    & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-    [ $? -ne 0 ] && return ${ERR_SPECKLE}
+       # change nodata value use (i.e. applies the nanmean etc. calculation in the next steps)
+       sed -i 's|<NO_DATA_VALUE_USED>true</NO_DATA_VALUE_USED>|<NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>|g' $4/mt_stack.vh.db.speckle.dim
 
-    SECONDS=0
-    echo -ne " Calculating the maximum values of the VH polarized channels of the multi-temporal stack ... " &&
-    bash ${SNAP_EXE} Stack-Averaging -x -SsourceProduct=$4/mt_stack.vh.db.speckle.dim -Pstatistic='Maximum' -t $4/max.VH.dim \
-    & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-    [ $? -ne 0 ] && return ${ERR_SPECKLE}
+       SECONDS=0
+       echo -ne " Calculating the mean average of the VH polarized channels of the multi-temporal stack ... " &&
+       bash ${SNAP_EXE} Stack-Averaging -x -SsourceProduct=$4/mt_stack.vh.db.speckle.dim -Pstatistic='Mean Average' -t $4/mean.VH.dim \
+       & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+       [ $? -ne 0 ] && return ${ERR_SPECKLE}
 
-    SECONDS=0
-    echo -ne " Calculating the minimum values of the VH polarized channels of the multi-temporal stack ... " &&
-    bash ${SNAP_EXE} Stack-Averaging -x -SsourceProduct=$4/mt_stack.vh.db.speckle.dim -Pstatistic='Minimum' -t $4/min.VH.dim \
-    & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-    [ $? -ne 0 ] && return ${ERR_SPECKLE}
+       SECONDS=0
+       echo -ne " Calculating the maximum values of the VH polarized channels of the multi-temporal stack ... " &&
+       bash ${SNAP_EXE} Stack-Averaging -x -SsourceProduct=$4/mt_stack.vh.db.speckle.dim -Pstatistic='Maximum' -t $4/max.VH.dim \
+       & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+       [ $? -ne 0 ] && return ${ERR_SPECKLE}
+
+       SECONDS=0
+       echo -ne " Calculating the minimum values of the VH polarized channels of the multi-temporal stack ... " &&
+       bash ${SNAP_EXE} Stack-Averaging -x -SsourceProduct=$4/mt_stack.vh.db.speckle.dim -Pstatistic='Minimum' -t $4/min.VH.dim \
+       & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+       [ $? -ne 0 ] && return ${ERR_SPECKLE}
 	
-    for MTs in `ls -1 $4/mt_stack.vh.db.speckle.data/*img`;do 
-    	basename ${MTs} | rev | cut -c 5- | rev >> $4/tmp_list
-    done
-    BANDLIST=$(cat $4/tmp_list | tr '\n' ',' | rev | cut -c 2- | rev)
-    rm $4/tmp_list
+       for MTs in `ls -1 $4/mt_stack.vh.db.speckle.data/*img`;do 
+          basename ${MTs} | rev | cut -c 5- | rev >> $4/tmp_list
+       done
+      
+       BANDLIST=$(cat $4/tmp_list | tr '\n' ',' | rev | cut -c 2- | rev)
+       rm $4/tmp_list
     	
-    SECONDS=0
-    echo -ne " Calculating the standard deviation of the VH polarized channels of the multi-temporal stack ... " &&
-    bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_MT-stddev.xml -Pinput=$4/mt_stack.vh.db.speckle.dim -Pbandlist="stddev(${BANDLIST})" -Poutput=$4/stdev.VH.dim \
-    & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-    [ $? -ne 0 ] && return ${ERR_SPECKLE}
+       SECONDS=0
+       echo -ne " Calculating the standard deviation of the VH polarized channels of the multi-temporal stack ... " &&
+       bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_MT-stddev.xml -Pinput=$4/mt_stack.vh.db.speckle.dim -Pbandlist="stddev(${BANDLIST})" -Poutput=$4/stdev.VH.dim \
+       & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+       [ $? -ne 0 ] && return ${ERR_SPECKLE}
 	
-    #SECONDS=0
-    #echo -ne " Calculating the coefficient of variation of the VH polarized channels of the multi-temporal stack ... " &&
-    #bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_MT-stddev.xml -Pinput=$4/mt_stack.vh.db.speckle.dim -Pbandlist="coef_var(${BANDLIST})" -Poutput=$4/coef_var.VH.dim \
-    #& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-    #[ $? -ne 0 ] && return ${ERR_SPECKLE}
+       #SECONDS=0
+       #echo -ne " Calculating the coefficient of variation of the VH polarized channels of the multi-temporal stack ... " &&
+       #bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_MT-stddev.xml -Pinput=$4/mt_stack.vh.db.speckle.dim -Pbandlist="coef_var(${BANDLIST})" -Poutput=$4/coef_var.VH.dim \
+       #& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+       #[ $? -ne 0 ] && return ${ERR_SPECKLE}
    
-    # Band_merge
-    # with coeff.of var. 
-    #bash ${SNAP_EXE} BandMerge -x $4/mean.VV.dim $4/max.VV.dim $4/min.VV.dim $4/stdev.VV.dim $4/coef_var.VV.dim $4/mean.VH.dim $4/max.VH.dim $4/min.VH.dim $4/stdev.VH.dim $4/coef_var.VH.dim -t $4/mt_stack.metrics.dim 
+       # Band_merge
+       # with coeff.of var. 
+       #bash ${SNAP_EXE} BandMerge -x $4/mean.VV.dim $4/max.VV.dim $4/min.VV.dim $4/stdev.VV.dim $4/coef_var.VV.dim $4/mean.VH.dim $4/max.VH.dim $4/min.VH.dim $4/stdev.VH.dim $4/coef_var.VH.dim -t $4/mt_stack.metrics.dim 
 
-    SECONDS=0
-    echo -ne " Creating the final stack ..." &&
-    bash ${SNAP_EXE} BandMerge -x $4/mean.VV.dim $4/max.VV.dim $4/min.VV.dim $4/stdev.VV.dim $4/mean.VH.dim $4/max.VH.dim $4/min.VH.dim $4/stdev.VH.dim -t $4/mt_stack.metrics.dim  \
-    & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-    [ $? -ne 0 ] && return ${ERR_STACKING}
+       SECONDS=0
+       echo -ne " Creating a preliminary stack ..." &&
+       bash ${SNAP_EXE} BandMerge -x $4/mean.VV.dim $4/max.VV.dim $4/min.VV.dim $4/stdev.VV.dim $4/mean.VH.dim $4/max.VH.dim $4/min.VH.dim $4/stdev.VH.dim -t $4/mt_stack.metrics.dim  \
+       & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+       [ $? -ne 0 ] && return ${ERR_STACKING}
     
-    # ratios
-    #max/min VV
-    #max/min/VH
-    #mean VV/VH
+       # ratios
 
+       SECONDS=0
+       echo -ne " Calculating the VV-VH ratio ..." &&
+       bash $SNAP_EXE ${SNAP_GRAPHS}/S1_GRD_BandMath.xml -x -Pinput=$4/mt_stack.metrics.dim -Pexpression='pow(10,Gamma0_VV/10)/pow(10,Gamma0_VH/10)' -PoutBand=VV-VH-ratio -Poutput=$4/VVVHratio \
+       & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+       [ $? -ne 0 ] && return ${ERR_STACKING}
+    
+       echo -ne " Calculating the VVmax-VVmin ratio ..." &&
+       bash $SNAP_EXE ${SNAP_GRAPHS}/S1_GRD_BandMath.xml -x -Pinput=$4/mt_stack.metrics.dim -Pexpression='pow(10,Gamma0_VV_2/10)/pow(10,Gamma0_VV_3/10)' -PoutBand=VVmax-VVmin-ratio -Poutput=$4/VVmax-VVmin-ratio \
+       & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+       [ $? -ne 0 ] && return ${ERR_STACKING}
+
+       echo -ne " Calculating the VHmax-VHmin ratio ..." &&
+       bash $SNAP_EXE ${SNAP_GRAPHS}/S1_GRD_BandMath.xml -x -Pinput=$4/mt_stack.metrics.dim -Pexpression='pow(10,Gamma0_VV/10)/pow(10,Gamma0_VH/10)' -PoutBand=VH-max-VHmin-ratio -Poutput=$4/VHmax-VHmin-ratio \
+       & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+       [ $? -ne 0 ] && return ${ERR_STACKING}
+	
+       echo -ne " Calculating the Stdev VV / Stddev VH ..." &&
+       bash $SNAP_EXE ${SNAP_GRAPHS}/S1_GRD_BandMath.xml -x -Pinput=$4/mt_stack.metrics.dim -Pexpression='stddev/stddev_2' -PoutBand=VH-max-VHmin-ratio -Poutput=$4/STDEV-ratio \
+       & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+       [ $? -ne 0 ] && return ${ERR_STACKING}
+
+       SECONDS=0
+       echo -ne " Creating the final stack ..." &&
+       bash ${SNAP_EXE} BandMerge -x $4/mean.VV.dim $4/max.VV.dim $4/min.VV.dim $4/stdev.VV.dim $4/VVmax-VVmin-ratio.dim \
+                                  $4/mean.VH.dim $4/max.VH.dim $4/min.VH.dim $4/stdev.VH.dim $4/VHmax-VHmin-ratio.dim \
+				  $4/VVVHratio.dim $4/STDEV-ratio.dim -t $2  \
+       & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+       [ $? -ne 0 ] && return ${ERR_STACKING}
+
+   fi
+
+echo "------------------------------------------------------------------------------------------------------"
+echo " Info: Succesfully created a stack of multi-temporal metrics. "
+echo "------------------------------------------------------------------------------------------------------"
+echo ""
+echo ""
+    
 }
     
