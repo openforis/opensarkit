@@ -1,6 +1,16 @@
+
+# get GNU commands in case running on Mac OS
+if [[ `uname` == "Darwin" ]];then 
+
+	export PATH=/opt/local/libexec/gnubin:${PATH}
+	
+fi
+
+# source the helper functions
 source $OPENSARKIT/lib/gdal_helpers
 source $OPENSARKIT/lib/s1_helpers
 source $OPENSARKIT/lib/s1_processors
 source $OPENSARKIT/lib/s2_helpers
 source $OPENSARKIT/lib/saga_helpers
 source $OPENSARKIT/lib/bash_helpers
+
