@@ -93,7 +93,7 @@ function s1_rtc_processing() {
     	SECONDS=0
 	echo " Removing GRD border noise by deleting the outer 500 rows, calibrating to beta0, "
 	echo -ne " applying the terrain flattening and multi-look by a factor of 3  ..." &&
-	bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_RB_CAL_TF_ML3.xml -x -Pinput=$1 -Pwidth=${NEW_WIDTH} -Pheight=${NEW_HEIGHT} -Poutput=$6/TF.dim \
+	bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_RB_CAL_TF_ML3.xml -x -Pinput=$1 -Pwidth=${NEW_WIDTH} -Pheight=${NEW_HEIGHT} -Poutput=$6/TF \
     	& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 	[ $? -ne 0 ] && return ${ERR_BRD_NOISE} 
    
@@ -103,7 +103,7 @@ function s1_rtc_processing() {
 
 			SECONDS=0
 	                echo -ne " Applying the geometric terrain correction, calculate the VV/VH Band Ratio and transform backscatter to decibel scale  ..." &&
-			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TC_DB_Ratio.xml -x -Pinput=$6/TF.dim -Poutput=$6/TC_DB.dim -PoutputRatio=$6/Ratio.dim \
+			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TC_DB_Ratio.xml -x -Pinput=$6/TF.dim -Poutput=$6/TC_DB -PoutputRatio=$6/Ratio \
     			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 			[ $? -ne 0 ] && return ${ERR_TC} 
       			rm -rf $6/TF.d*
@@ -119,7 +119,7 @@ function s1_rtc_processing() {
 
 			SECONDS=0
 	                echo -ne " Applying the geometric terrain correction, and calculate the VV/VH Band Ratio  ..." &&
-			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TC_Ratio.xml -x -Pinput=$6/TF.dim -Poutput=$6/TC.dim -PoutputRatio=$6/Ratio.dim \
+			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TC_Ratio.xml -x -Pinput=$6/TF.dim -Poutput=$6/TC -PoutputRatio=$6/Ratio \
     			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 			[ $? -ne 0 ] && return ${ERR_TC} 
       			rm -rf $6/TF.d*
@@ -179,7 +179,7 @@ function s1_rtc_processing() {
     	SECONDS=0
 	echo " Removing GRD border noise by deleting the outer 500 rows, calibrating to beta0, "
 	echo -ne " applying the terrain flattening and multi-look by a factor of 3  ..." &&
-	bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_RB_CAL_TF_noML.xml -x -Pinput=$1 -Pwidth=${NEW_WIDTH} -Pheight=${NEW_HEIGHT} -Poutput=$6/TF.dim \
+	bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_RB_CAL_TF_noML.xml -x -Pinput=$1 -Pwidth=${NEW_WIDTH} -Pheight=${NEW_HEIGHT} -Poutput=$6/TF \
     	& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 	[ $? -ne 0 ] && return ${ERR_BRD_NOISE} 
         rm -rf $6/${BASE}-import.dim
@@ -191,7 +191,7 @@ function s1_rtc_processing() {
 
 			SECONDS=0
 	                echo -ne " applying the geometric terrain correction, calculate the VV/VH Band Ratio and transform backscatter to decibel scale  ..." &&
-			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_10_TC_DB_Ratio.xml -x -Pinput=$6/TF.dim -Poutput=$6/TC_DB.dim -PoutputRatio=$6/Ratio.dim \
+			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_10_TC_DB_Ratio.xml -x -Pinput=$6/TF.dim -Poutput=$6/TC_DB -PoutputRatio=$6/Ratio \
     			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 			[ $? -ne 0 ] && return ${ERR_TC} 
       			rm -rf $6/TF.d*
@@ -206,7 +206,7 @@ function s1_rtc_processing() {
 			
 			SECONDS=0
 	                echo -ne " Applying the geometric terrain correction, and calculate the VV/VH Band Ratio  ..." &&
-			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_10_TC_Ratio.xml -x -Pinput=$6/TF.dim -Poutput=$6/TC.dim -PoutputRatio=$6/Ratio.dim \
+			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_10_TC_Ratio.xml -x -Pinput=$6/TF.dim -Poutput=$6/TC -PoutputRatio=$6/Ratio \
     			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 			[ $? -ne 0 ] && return ${ERR_TC} 
       			rm -rf $6/TF.d*
