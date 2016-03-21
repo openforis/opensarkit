@@ -31,7 +31,7 @@
       <coarseRegistrationWindowHeight>128</coarseRegistrationWindowHeight>
       <rowInterpFactor>4</rowInterpFactor>
       <columnInterpFactor>4</columnInterpFactor>
-      <maxIteration>20</maxIteration>
+      <maxIteration>10</maxIteration>
       <gcpTolerance>0.5</gcpTolerance>
       <applyFineRegistration>true</applyFineRegistration>
       <fineRegistrationWindowWidth>64</fineRegistrationWindowWidth>

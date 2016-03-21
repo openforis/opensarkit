@@ -364,11 +364,24 @@ function s1_mt_metrics() {
         & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_STACKING}
 
-        SECONDS=0
-        echo -ne " Creating the final stack ..." &&
-        bash ${SNAP_EXE} BandMerge -x $4/mean.VV.dim $4/max.VV.dim $4/min.VV.dim $4/stdev.VV.dim $4/VVmax-VVmin-ratio.dim -t $2/mt-metrics.ssv  \
-        & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-        [ $? -ne 0 ] && return ${ERR_STACKING}
+       # SECONDS=0
+       # echo -ne " Creating the final stack ..." &&
+       # bash ${SNAP_EXE} BandMerge -x $4/mean.VV.dim $4/max.VV.dim $4/min.VV.dim $4/stdev.VV.dim $4/VVmax-VVmin-ratio.dim -t $2/mt-metrics-ssv  \
+       # & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+       # [ $? -ne 0 ] && return ${ERR_STACKING}
+     
+       SECONDS=0
+       echo -ne " Creating the final output data ..." &&
+       mkdir -p $2/MT_METRICS/	&&
+       gdal_translate -a_nodata 0 $4/mean.VV.data/Gamma0_VV.img $2/MT_METRICS/01-Gammma0.VV.mean.tif &&
+       gdal_translate -a_nodata 0 $4/max.VV.data/Gamma0_VV.img $2/MT_METRICS/02-Gammma0.VV.max.tif &&
+       gdal_translate -a_nodata 0 $4/min.VV.data/Gamma0_VV.img $2/MT_METRICS/03-Gammma0.VV.min.tif &&
+       gdal_translate -a_nodata 0 $4/stdev.VV.data/stddev.img $2/MT_METRICS/04-Stddev.VV.min.tif &&
+       gdal_translate -a_nodata 0 $4/VVmax-VVmin-ratio.data/VVmax-VVmin-ratio.img $2/MT_METRICS/05-MAX_MIN_RATIO.VV.min.tif &&
+
+       gdalbuildvrt -separate -srcnodata 0 mt_metrics.stack.vrt \
+       $2/MT_METRICS/01-Gammma0.VV.mean.tif $2/MT_METRICS/02-Gammma0.VV.max.tif $2/MT_METRICS/03-Gammma0.VV.min.tif $2/MT_METRICS/04-Stddev.VV.min.tif $2/MT_METRICS/05-MAX_MIN_RATIO.VV.min.tif \
+       & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
     elif [ $3 == VH ];then
    
@@ -461,17 +474,40 @@ function s1_mt_metrics() {
        [ $? -ne 0 ] && return ${ERR_STACKING}
 	
        echo -ne " Calculating the Stdev VV / Stddev VH ..." &&
-       bash $SNAP_EXE ${SNAP_GRAPHS}/S1_GRD_BandMath.xml -x -Pinput=$4/mt_stack.metrics.dim -Pexpression='stddev/stddev_2' -PoutBand=VH-max-VHmin-ratio -Poutput=$4/STDEV-ratio \
+       bash $SNAP_EXE ${SNAP_GRAPHS}/S1_GRD_BandMath.xml -x -Pinput=$4/mt_stack.metrics.dim -Pexpression='stddev/stddev_2' -PoutBand=STDEV-ratio -Poutput=$4/STDEV-ratio \
        & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
        [ $? -ne 0 ] && return ${ERR_STACKING}
 
+    #   SECONDS=0
+    #  echo -ne " Creating the final stack ..." &&
+    #   bash ${SNAP_EXE} BandMerge -x $4/mean.VV.dim $4/max.VV.dim $4/min.VV.dim $4/stdev.VV.dim $4/VVmax-VVmin-ratio.dim \
+    #                              $4/mean.VH.dim $4/max.VH.dim $4/min.VH.dim $4/stdev.VH.dim $4/VHmax-VHmin-ratio.dim \
+#				  $4/VVVHratio.dim $4/STDEV-ratio.dim -t $2/mt_metrics.sdv  \
+ #      & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+  #     [ $? -ne 0 ] && return ${ERR_STACKING}
+
        SECONDS=0
-       echo -ne " Creating the final stack ..." &&
-       bash ${SNAP_EXE} BandMerge -x $4/mean.VV.dim $4/max.VV.dim $4/min.VV.dim $4/stdev.VV.dim $4/VVmax-VVmin-ratio.dim \
-                                  $4/mean.VH.dim $4/max.VH.dim $4/min.VH.dim $4/stdev.VH.dim $4/VHmax-VHmin-ratio.dim \
-				  $4/VVVHratio.dim $4/STDEV-ratio.dim -t $2/mt_metrics.sdv  \
+       echo -ne " Creating the final output data ..." &&
+       mkdir -p $2/MT_METRICS/ &&
+       gdal_translate -a_nodata 0 $4/mean.VV.data/Gamma0_VV.img $2/MT_METRICS/01-Gammma0.VV.mean.tif &&
+       gdal_translate -a_nodata 0 $4/max.VV.data/Gamma0_VV.img $2/MT_METRICS/02-Gammma0.VV.max.tif &&
+       gdal_translate -a_nodata 0 $4/min.VV.data/Gamma0_VV.img $2/MT_METRICS/03-Gammma0.VV.min.tif &&
+       gdal_translate -a_nodata 0 $4/stdev.VV.data/stddev.img $2/MT_METRICS/04-Stddev.VV.min.tif &&
+       gdal_translate -a_nodata 0 $4/VVmax-VVmin-ratio.data/VVmax-VVmin-ratio.img $2/MT_METRICS/05-MAX_MIN_RATIO.VV.min.tif &&
+
+       gdal_translate -a_nodata 0 $4/mean.VH.data/Gamma0_VH.img $2/MT_METRICS/06-Gammma0.VH.mean.tif &&
+       gdal_translate -a_nodata 0 $4/max.VH.data/Gamma0_VH.img $2/MT_METRICS/07-Gammma0.VH.max.tif &&
+       gdal_translate -a_nodata 0 $4/min.VH.data/Gamma0_VH.img $2/MT_METRICS/08-Gammma0.VH.min.tif &&
+       gdal_translate -a_nodata 0 $4/stdev.VH.data/stddev.img $2/MT_METRICS/09-Stddev.VH.min.tif &&
+       gdal_translate -a_nodata 0 $4/VHmax-VHmin-ratio.data/VHmax-VHmin-ratio.img $2/MT_METRICS/10-MAX_MIN_RATIO.VH.min.tif &&
+
+       gdal_translate -a_nodata 0 $4/VVVHratio.data/VV-VH-ratio.img $2/MT_METRICS/11-VV_VH_ratio.mean.tif &&
+       gdal_translate -a_nodata 0 $4/STDEV-ratio.data/STDEV-ratio.img $2/MT_METRICS/12-STDDEV_Ratio.tif &&
+       gdalbuildvrt -separate -srcnodata 0 mt_metrics.stack.vrt \
+       $2/MT_METRICS/01-Gammma0.VV.mean.tif $2/MT_METRICS/02-Gammma0.VV.max.tif $2/MT_METRICS/03-Gammma0.VV.min.tif $2/MT_METRICS/04-Stddev.VV.min.tif $2/MT_METRICS/05-MAX_MIN_RATIO.VV.min.tif \
+       $2/MT_METRICS/06-Gammma0.VH.mean.tif $2/MT_METRICS/07-Gammma0.VH.max.tif $2/MT_METRICS/08-Gammma0.VH.min.tif $2/MT_METRICS/09-Stddev.VH.min.tif $2/MT_METRICS/10-MAX_MIN_RATIO.VH.min.tif \
+       $2/MT_METRICS/11-VV_VH_ratio.mean.tif $2/MT_METRICS/12-STDDEV_Ratio.tif \
        & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-       [ $? -ne 0 ] && return ${ERR_STACKING}
 
    fi
 
