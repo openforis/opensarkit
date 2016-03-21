@@ -162,7 +162,7 @@ for TRACK in `ls -1 ${PROC_DIR}`;do
 
 	FILELIST=$(ls -1 ${PWD}/*/*_RTC.dim | tr '\n' ',' | rev | cut -c 2- | rev)
 	if [[ `ls -1 ${PWD}/*/*_RTC.data/*VH* 2>/dev/null | wc -l` -gt 0 ]];then
-		s1_mt_metrics ${FILELIST} ${STACK} VH ${TMP_DIR_TRACK} ${LOG_DIR}
+		s1_mt_metrics ${FILELIST} ${STACK}	 VH ${TMP_DIR_TRACK} ${LOG_DIR}
 	else
 		s1_mt_metrics ${FILELIST} ${STACK} VV ${TMP_DIR_TRACK} ${LOG_DIR}
 	fi
