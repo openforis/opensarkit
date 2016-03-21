@@ -61,16 +61,16 @@ else
 	CPU=`nproc`
 fi
 
-NR_OF_TRACKS=`ls -1 ${PROC_DIR} | wc -l`
+NR_OF_TRACKS=`ls -1 -d ${PROC_DIR}/[0-9]* | wc -l`
 j=1
 # loop thorugh the tracks
-for TRACK in `ls -1 ${PROC_DIR}`;do
+for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 
 
 	if [ ${NR_OF_TRACKS} -eq 1 ];then
 		echo " Info: Processing Track: ${TRACK}"
 	else
-		echo " Info: Processing Track: ${TRACK} ($j/${NR_OF_TRACKS} Tracks"
+		echo " Info: Processing Track: ${TRACK} ($j/${NR_OF_TRACKS}) Tracks"
 	fi
 
 	echo " Info: Entering Track: ${TRACK}"
@@ -118,8 +118,7 @@ for TRACK in `ls -1 ${PROC_DIR}`;do
 				s1_frame_import ${FRAME} ${TMP_DIR_FRAME}/${ACQ}"_import" ${LOG_DIR}
 
 				if [ ${MT_MODE} == 0 ];then 
-					s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ}"_RTC" $2 0 0 ${TMP_DIR_FRAME} ${LOG_DIRcd T	
-}
+					s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ}"_RTC" $2 0 0 ${TMP_DIR_FRAME} ${LOG_DIR}
 					rm -rf ${TMP_DIR_FRAME}/${ACQ}"_import".d*
 				fi
 			fi
