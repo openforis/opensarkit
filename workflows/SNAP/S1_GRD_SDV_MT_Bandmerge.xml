@@ -1,0 +1,42 @@
+<graph id="Graph">
+  <version>1.0</version>
+  <node id="BandMerge">
+    <operator>BandMerge</operator>
+    <sources>
+      <sourceProduct.12 refid="ProductSet-Reader"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <sourceBands/>
+      <geographicError>1.0E-5</geographicError>
+    </parameters>
+  </node>
+  <node id="Write">
+    <operator>Write</operator>
+    <sources>
+      <sourceProduct refid="BandMerge"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <file>${output}</file>
+      <formatName>BEAM-DIMAP</formatName>
+    </parameters>
+  </node>
+  <node id="ProductSet-Reader">
+    <operator>ProductSet-Reader</operator>
+    <sources/>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <fileList>${filelist}</fileList>
+    </parameters>
+  </node>
+  <applicationData id="Presentation">
+    <Description/>
+    <node id="Write">
+      <displayPosition x="317.0" y="143.0"/>
+    </node>
+    <node id="BandMerge">
+      <displayPosition x="162.0" y="78.0"/>
+    </node>
+    <node id="ProductSet-Reader">
+      <displayPosition x="11.0" y="20.0"/>
+    </node>
+  </applicationData>
+</graph>
