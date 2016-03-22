@@ -364,6 +364,7 @@ function s1_mt_metrics() {
         [ $? -ne 0 ] && return ${ERR_STACKING}
 
         SECONDS=0
+
         echo -ne " Creating the final stack ..." &&
         bash ${SNAP_EXE} BandMerge -x $4/mean.VV.dim $4/max.VV.dim $4/min.VV.dim $4/stdev.VV.dim $4/VVmax-VVmin-ratio.dim -t $2/mt-metrics.ssv  \
         & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
@@ -468,7 +469,7 @@ function s1_mt_metrics() {
        echo -ne " Creating the final stack ..." &&
        bash ${SNAP_EXE} BandMerge -x $4/mean.VV.dim $4/max.VV.dim $4/min.VV.dim $4/stdev.VV.dim $4/VVmax-VVmin-ratio.dim \
                                   $4/mean.VH.dim $4/max.VH.dim $4/min.VH.dim $4/stdev.VH.dim $4/VHmax-VHmin-ratio.dim \
-				  $4/VVVHratio.dim $4/STDEV-ratio.dim -t $2/mt_metrics.sdv  \
+				  $4/VVVHratio.dim $4/STDEV-ratio.dim -t $2/mt_metrics_sdv  \
        & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
        [ $? -ne 0 ] && return ${ERR_STACKING}
 
@@ -481,4 +482,34 @@ echo ""
 echo ""
     
 }
-    
+  
+function s1_mt_rtc_processing() {
+    if [ -z "$7" ]; then 
+    echo " Missing arguments. Syntax:"
+    echo " s1_rtc_processing <filelist> <output_file> <resolution> <ratio calculation> <db-scaling> <tmp_dir> <log_dir>"
+    return
+    fi
+
+function s1_import() {
+    if [ -z "$3" ]; then 
+    echo " Missing arguments. Syntax:"
+    echo " s1_frame_import <input_file> <output_file> <log_dir>"
+    return
+    fi
+
+    # source other helpers
+    source ${OPENSARKIT}/lib/helpers_source
+
+    # error codes
+    ERR_IMPORT="Error during clean import of product"
+
+    BASE=`basename $1`
+    echo ""
+    SECONDS=0
+    echo -ne " Importing S1 GRD data file, applying the precise orbit file, removing thermal noise and applying the Refined Lee Speckle Filter ..." &&
+    bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_AO_TNR_SPK_CAL.xml -x -Pinput=$1 -Poutput=$2 > $3/log_import \
+    & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    [ $? -ne 0 ] && return ${ERR_IMPORT}
+
+}
+

@@ -183,7 +183,7 @@ if [ -z "$1" ]; then
     export ORBIT=${SCENE_ID:49:6}
     export START=`echo "${SCENE_ID:26:2}":"${SCENE_ID:28:2}":"${SCENE_ID:30:2}"`
     export STOP=`echo "${SCENE_ID:42:2}":"${SCENE_ID:44:2}":"${SCENE_ID:46:2}"`
-  #  export TRACK=`s1_track_orbit $ORBIT`
+    export TRACK_INFO=`s1_track_orbit $ORBIT`
     export MODE=${SCENE_ID:7:3}
     export POL_MODE=${SCENE_ID:13:3}
     #TRACK=${SCENE_ID:26:3}
@@ -200,7 +200,7 @@ if [ -z "$1" ]; then
     echo " Acquisition Date:		${DATE:6:2}-${DATE:4:2}-${DATE:0:4}"
     echo " Start time:			${START}"
     echo " Stop time:			${STOP}"
-    echo " Relative Satellite Track: 	${TRACK}"
+    echo " Relative Satellite Track: 	${TRACK_INFO}"
     echo " Absolute Satellite Orbit: 	${ORBIT}"
     echo "----------------------------------------------------------------"
 }
