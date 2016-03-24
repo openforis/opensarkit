@@ -53,14 +53,14 @@ function s1_swath_import() {
 	  j=`expr $j + 1`
     done
 
-    if [ -e $4/${BASE}-import.data/Intensity_VH.img ];then
+    if [ -e $3/${BASE}-import.data/Intensity_VH.img ];then
 
 	    SECONDS=0
 	    echo -ne " Assembling the products of the same swath ..." &&
 	    bash $SNAP_EXE SliceAssembly -PselectedPolarisations=VV,VH $(ls -1 $3/*-import.dim | tr '\n' ' ' | rev | cut -c 2- | rev) -t $2 \
 	    & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 	    [ $? -ne 0 ] && return ${ERR_ASSEMBLE}
-#	    rm -rf $4/*-import.dim.d*
+#	    rm -rf $3/*-import.dim.d*
 
     else
 
@@ -69,7 +69,7 @@ function s1_swath_import() {
             bash $SNAP_EXE SliceAssembly -PselectedPolarisations=VV $(ls -1 $3/*-import.dim | tr '\n' ' ' | rev | cut -c 2- | rev) -t $2 \
 	    & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 	    [ $? -ne 0 ] && return ${ERR_ASSEMBLE}
-#	    rm -rf $4/*-import.dim.d*
+#	    rm -rf $3/*-import.dim.d*
     fi
 }
 
