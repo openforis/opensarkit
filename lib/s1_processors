@@ -15,7 +15,7 @@ function s1_frame_import() {
     echo ""
     SECONDS=0
     echo -ne " Importing S1 GRD data file, applying the precise orbit file, removing thermal noise and applying the Refined Lee Speckle Filter ..." &&
-    bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_AO_TNR_SPK.xml -x -Pinput=$1 -Poutput=$2 > $3/log_import \
+    bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_AO_TNR_BRD_SPK.xml -x -Pinput=$1 -Poutput=$2 > $3/log_import \
     & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
     [ $? -ne 0 ] && return ${ERR_IMPORT}
 
@@ -354,19 +354,19 @@ function s1_mt_metrics() {
 
 	SECONDS=0
 	echo -ne " Creating a preliminary stack ..." &&
-	bash ${SNAP_EXE} BandMerge -x $4/mean.VV.dim $4/max.VV.dim $4/min.VV.dim $4/stdev.VV.dim -t $4/mt_stack.metrics.dim  \
+	bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_MT_BandMerge.xml -x -Pfilelist=$4/max.VV.dim,$4/min.VV.dim -Poutput=$4/mt_stack.metrics.dim  \
         & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_STACKING}
 
 	echo -ne " Calculating the VVmax-VVmin ratio ..." &&
-        bash $SNAP_EXE ${SNAP_GRAPHS}/S1_GRD_BandMath.xml -x -Pinput=$4/mt_stack.metrics.dim -Pexpression='pow(10,Gamma0_VV_2/10)/pow(10,Gamma0_VV_3/10)' -PoutBand=VVmax-VVmin-ratio -Poutput=$4/VVmax-VVmin-ratio \
+        bash $SNAP_EXE ${SNAP_GRAPHS}/S1_GRD_BandMath.xml -x -Pinput=$4/mt_stack.metrics.dim -Pexpression='pow(10,Gamma0_VV/10)/pow(10,Gamma0_VV_2/10)' -PoutBand=VVmax-VVmin-ratio -Poutput=$4/VVmax-VVmin-ratio \
         & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_STACKING}
 
         SECONDS=0
 
         echo -ne " Creating the final stack ..." &&
-        bash ${SNAP_EXE} BandMerge -x $4/mean.VV.dim $4/max.VV.dim $4/min.VV.dim $4/stdev.VV.dim $4/VVmax-VVmin-ratio.dim -t $2/mt-metrics.ssv  \
+        bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_MT_BandMerge.xml -x -Pfilelist=$4/mean.VV.dim,$4/max.VV.dim,$4/min.VV.dim,$4/stdev.VV.dim,$4/VVmax-VVmin-ratio -Poutput=$2/mt-metrics_ssv  \
         & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_STACKING}
 
@@ -377,7 +377,7 @@ function s1_mt_metrics() {
         bash $SNAP_EXE ${SNAP_GRAPHS}/S1_GRD_MT-Speckle.xml -x -Pinput=$4/mt_stack.coreg.dim -Ppol=VH -Pthreshold=5 -Poutput=$4/mt_stack.vh.speckle.dim \
         & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_SPECKLE}
-#    rm -rf $4/mt_stack.coreg.d*
+	#    rm -rf $4/mt_stack.coreg.d*
 
        for MTs in `ls -1 $4/mt_stack.vh.speckle.data/*img`;do 
 	   basename ${MTs} | rev | cut -c 5- | rev >> $4/tmp_list
@@ -438,7 +438,7 @@ function s1_mt_metrics() {
 
        SECONDS=0
        echo -ne " Creating a preliminary stack ..." &&
-       bash ${SNAP_EXE} BandMerge -x $4/mean.VV.dim $4/max.VV.dim $4/min.VV.dim $4/stdev.VV.dim $4/mean.VH.dim $4/max.VH.dim $4/min.VH.dim $4/stdev.VH.dim -t $4/mt_stack.metrics.dim  \
+       bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_MT_BandMerge.xml -x -Pfilelist=$4/max.VV.dim,$4/min.VV.dim,$4/stdev.VV.dim,$4/max.VH.dim,$4/min.VH.dim,$4/stdev.VH.dim -Poutput=$4/mt_stack.metrics.dim  \
        & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
        [ $? -ne 0 ] && return ${ERR_STACKING}
     
@@ -451,27 +451,32 @@ function s1_mt_metrics() {
        [ $? -ne 0 ] && return ${ERR_STACKING}
     
        echo -ne " Calculating the VVmax-VVmin ratio ..." &&
-       bash $SNAP_EXE ${SNAP_GRAPHS}/S1_GRD_BandMath.xml -x -Pinput=$4/mt_stack.metrics.dim -Pexpression='pow(10,Gamma0_VV_2/10)/pow(10,Gamma0_VV_3/10)' -PoutBand=VVmax-VVmin-ratio -Poutput=$4/VVmax-VVmin-ratio \
+       bash $SNAP_EXE ${SNAP_GRAPHS}/S1_GRD_BandMath.xml -x -Pinput=$4/mt_stack.metrics.dim -Pexpression='pow(10,Gamma0_VV/10)/pow(10,Gamma0_VV_2/10)' -PoutBand=VVmax-VVmin-ratio -Poutput=$4/VVmax-VVmin-ratio \
        & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
        [ $? -ne 0 ] && return ${ERR_STACKING}
 
        echo -ne " Calculating the VHmax-VHmin ratio ..." &&
-       bash $SNAP_EXE ${SNAP_GRAPHS}/S1_GRD_BandMath.xml -x -Pinput=$4/mt_stack.metrics.dim -Pexpression='pow(10,Gamma0_VV/10)/pow(10,Gamma0_VH/10)' -PoutBand=VH-max-VHmin-ratio -Poutput=$4/VHmax-VHmin-ratio \
+       bash $SNAP_EXE ${SNAP_GRAPHS}/S1_GRD_BandMath.xml -x -Pinput=$4/mt_stack.metrics.dim -Pexpression='pow(10,Gamma0_VH/10)/pow(10,Gamma0_VH_2/10)' -PoutBand=VH-max-VHmin-ratio -Poutput=$4/VHmax-VHmin-ratio \
        & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
        [ $? -ne 0 ] && return ${ERR_STACKING}
 	
        echo -ne " Calculating the Stdev VV / Stddev VH ..." &&
-       bash $SNAP_EXE ${SNAP_GRAPHS}/S1_GRD_BandMath.xml -x -Pinput=$4/mt_stack.metrics.dim -Pexpression='stddev/stddev_2' -PoutBand=VH-max-VHmin-ratio -Poutput=$4/STDEV-ratio \
+       bash $SNAP_EXE ${SNAP_GRAPHS}/S1_GRD_BandMath.xml -x -Pinput=$4/mt_stack.metrics.dim -Pexpression='stddev/stddev_2' -PoutBand=stdev_ratio -Poutput=$4/STDEV-ratio \
        & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
        [ $? -ne 0 ] && return ${ERR_STACKING}
 
        SECONDS=0
-       echo -ne " Creating the final stack ..." &&
-       bash ${SNAP_EXE} BandMerge -x $4/mean.VV.dim $4/max.VV.dim $4/min.VV.dim $4/stdev.VV.dim $4/VVmax-VVmin-ratio.dim \
-                                  $4/mean.VH.dim $4/max.VH.dim $4/min.VH.dim $4/stdev.VH.dim $4/VHmax-VHmin-ratio.dim \
-				  $4/VVVHratio.dim $4/STDEV-ratio.dim -t $2/mt_metrics_sdv  \
-       & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-       [ $? -ne 0 ] && return ${ERR_STACKING}
+   #    echo -ne " Creating the final stack ..." &&
+  #     bash ${SNAP_EXE} BandMerge -x $4/mean.VV.dim $4/max.VV.dim $4/min.VV.dim $4/stdev.VV.dim $4/VVmax-VVmin-ratio.dim \
+ #                                 $4/mean.VH.dim $4/max.VH.dim $4/min.VH.dim $4/stdev.VH.dim $4/VHmax-VHmin-ratio.dim \
+#				  $4/VVVHratio.dim $4/STDEV-ratio.dim -t $2/mt_metrics_sdv  \
+ #      & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+#       [ $? -ne 0 ] && return ${ERR_STACKING}
+
+        echo -ne " Creating the final stack ..." &&
+        bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_MT_BandMerge.xml -x -Pfilelist=$4/mean.VV.dim,$4/max.VV.dim,$4/min.VV.dim,$4/stdev.VV.dim,$4/VVmax-VVmin-ratio.dim,$4/mean.VH.dim,$4/max.VH.dim,$4/min.VH.dim,$4/stdev.VH.dim,$4/VHmax-VHmin-ratio.dim,$4/VVVHratio.dim,$4/STDEV-ratio.dim -Poutput=$2/mt-metrics_sdv  \
+        & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+        [ $? -ne 0 ] && return ${ERR_STACKING}
 
    fi
 
