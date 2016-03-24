@@ -116,11 +116,11 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 				s1_rtc_processing ${FRAME} ${PWD}/${ACQ}"_RTC" $2 0 0 ${TMP_DIR_FRAME} ${LOG_DIR}
 			else
 				s1_import ${FRAME} ${TMP_DIR_FRAME}/${ACQ}"_import" ${LOG_DIR}
-				#s1_frame_import ${FRAME} ${TMP_DIR_FRAME}/${ACQ}"_import" ${LOG_DIR}
+				s1_frame_import ${FRAME} ${TMP_DIR_FRAME}/${ACQ}"_import" ${LOG_DIR}
 
 				if [ ${MT_MODE} == 0 ];then 
 					s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ}"_RTC" $2 0 0 ${TMP_DIR_FRAME} ${LOG_DIR}
-					rm -rf ${TMP_DIR_FRAME}/${ACQ}"_import".d*
+			#		rm -rf ${TMP_DIR_FRAME}/${ACQ}"_import".d*
 				fi
 			fi
 
@@ -139,11 +139,12 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 				echo " Subset mode"						
 				#TO BE DONE s1_subset_rtc_processing ${TMP_DIR_FRAME}/filelist ${PWD}/${ACQ}"_RTC.dim" $2 ${TMP_DIR_FRAME} ${LOG_DIR}		
 			else
+				
 				s1_swath_import ${TMP_DIR_FRAME}/filelist ${TMP_DIR_FRAME}/${ACQ}"_import" ${TMP_DIR_FRAME} ${LOG_DIR}
 			
 				if [ ${MT_MODE} == 0 ];then 
 					s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ}"_RTC" $2 0 0 ${TMP_DIR_FRAME} ${LOG_DIR}
-					rm -rf ${TMP_DIR_FRAME}/${ACQ}"_import".d*
+				#	rm -rf ${TMP_DIR_FRAME}/${ACQ}"_import".d*
 				fi
 			fi
 
@@ -154,9 +155,8 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 	done # finish acquisition date loop 
 
 	STACK=${PROC_DIR}/${TRACK}/MT_STACK
-	mkdir -p MT_STACK
-	LOG_DIR=${PWD}/LOG
-	TMP_DIR_TRACK=${PWD}/TMP
+	LOG_DIR=${PWD}/MT_STACK/LOG
+	TMP_DIR_TRACK=${PWD}/MT_STACK/TMP
 	mkdir -p ${LOG_DIR}
 	mkdir -p ${TMP_DIR_TRACK}
 
