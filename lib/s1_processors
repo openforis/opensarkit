@@ -358,6 +358,9 @@ function s1_mt_metrics() {
         & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_STACKING}
 
+        # change nodata value use (i.e. applies the nanmean etc. calculation in the next steps)
+        sed -i 's|<NO_DATA_VALUE_USED>true</NO_DATA_VALUE_USED>|<NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>|g' $4/mt_stack.metrics.dim
+
 	echo -ne " Calculating the VVmax-VVmin ratio ..." &&
         bash $SNAP_EXE ${SNAP_GRAPHS}/S1_GRD_BandMath.xml -x -Pinput=$4/mt_stack.metrics.dim -Pexpression='pow(10,Gamma0_VV/10)/pow(10,Gamma0_VV_2/10)' -PoutBand=VVmax-VVmin-ratio -Poutput=$4/VVmax-VVmin-ratio \
         & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
@@ -366,7 +369,7 @@ function s1_mt_metrics() {
         SECONDS=0
 
         echo -ne " Creating the final stack ..." &&
-        bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_MT_BandMerge.xml -x -Pfilelist=$4/mean.VV.dim,$4/max.VV.dim,$4/min.VV.dim,$4/stdev.VV.dim,$4/VVmax-VVmin-ratio -Poutput=$2/mt-metrics_ssv  \
+        bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_MT_BandMerge.xml -x -Pfilelist=$4/mean.VV.dim,$4/max.VV.dim,$4/min.VV.dim,$4/stdev.VV.dim,$4/VVmax-VVmin-ratio.dim -Poutput=$2/mt-metrics_ssv  \
         & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_STACKING}
 
@@ -442,7 +445,8 @@ function s1_mt_metrics() {
        & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
        [ $? -ne 0 ] && return ${ERR_STACKING}
     
-       # ratios
+       # change nodata value use (i.e. applies the nanmean etc. calculation in the next steps)
+       sed -i 's|<NO_DATA_VALUE_USED>true</NO_DATA_VALUE_USED>|<NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>|g' $4/mt_stack.metrics.dim
 
        SECONDS=0
        echo -ne " Calculating the VV-VH ratio ..." &&
