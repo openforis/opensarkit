@@ -46,15 +46,20 @@ for LINE in `ls -1 ${PROC_DIR}`;do
 	
 	cd ${LINE}
 
-	for FILE in `ls -1 *zip`;do
+	for TRACK in `ls -1 ${PROC_DIR}/${LINE}`;do
 
-		osk_S1_GRD_subset ${FILE} ${AOI} $3 $4
+		cd $TRACK
 
-		
+		for FILE in `ls -1 *zip`;do
 
+			osk_S1_GRD_subset ${FILE} ${AOI} $3 $4
+
+		done
+
+		cd ../
 	done
 
-	cd ../
+	cd ${PROC_DIR}
 done
 
 

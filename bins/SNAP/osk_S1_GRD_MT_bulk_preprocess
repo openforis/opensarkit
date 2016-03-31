@@ -28,6 +28,10 @@ if [ "$#" != "3" ]; then
 	echo -e "			  Available choices:"
 	echo -e "			  HI_RES (10m output) "
 	echo -e "			  MED_RES (30m output)"
+	echo -e " MT-metrics		calculate muti-temporal metrics"
+	echo -e "			  Available choices:"
+	echo -e "			  0: does not calculate the MT-metrics "
+	echo -e "			  1: calculates the MT-metrics"
 #	echo -e " filtering		do additional Multi-Directional Filtering (recommended for single time "
 #	echo -e "			  Available choices:"
 #	echo -e "			   0: No additional filter applied"
@@ -153,20 +157,21 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 
 	done # finish acquisition date loop 
 
-	STACK=${PWD}/MT_STACK
-	LOG_DIR=${PWD}/MT_STACK/LOG
-	TMP_DIR_TRACK=${PWD}/MT_STACK/TMP
-	mkdir -p ${LOG_DIR}
-	mkdir -p ${TMP_DIR_TRACK}
+	if [ $3 == 1 ];then
+		STACK=${PWD}/MT_STACK
+		LOG_DIR=${PWD}/MT_STACK/LOG
+		TMP_DIR_TRACK=${PWD}/MT_STACK/TMP
+		mkdir -p ${LOG_DIR}
+		mkdir -p ${TMP_DIR_TRACK}
 
 
-	FILELIST=$(ls -1 ${PWD}/*/*_RTC.dim | tr '\n' ',' | rev | cut -c 2- | rev)
-	if [[ `ls -1 ${PWD}/*/*_RTC.data/*VH* 2>/dev/null | wc -l` -gt 0 ]];then
-		s1_mt_metrics ${FILELIST} ${STACK} VH ${TMP_DIR_TRACK} ${LOG_DIR}
-	else
-		s1_mt_metrics ${FILELIST} ${STACK} VV ${TMP_DIR_TRACK} ${LOG_DIR}
-	fi
+		FILELIST=$(ls -1 ${PWD}/*/*_RTC.dim | tr '\n' ',' | rev | cut -c 2- | rev)
+		if [[ `ls -1 ${PWD}/*/*_RTC.data/*VH* 2>/dev/null | wc -l` -gt 0 ]];then
+			s1_mt_metrics ${FILELIST} ${STACK} VH ${TMP_DIR_TRACK} ${LOG_DIR}
+		else
+			s1_mt_metrics ${FILELIST} ${STACK} VV ${TMP_DIR_TRACK} ${LOG_DIR}
+		fi
 	
-	j=`expr $j + 1`
-	cd ${PROC_DIR}
-done # finish track loop
+		j=`expr $j + 1`
+		cd ${PROC_DIR}
+	done # finish track loop

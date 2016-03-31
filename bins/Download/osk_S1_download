@@ -7,10 +7,7 @@ if [ "$#" != "2" ]; then
 	echo -e ""
 	echo -e "---------------------------------------------------------------------------"
 	echo -e " Welcome to Open Foris SARKit, version ${OSK_VERSION}"
-	echo -e " Download Sentinel-1 data with with the use of an OSK inventory shapefile"
-	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
-	echo -e " Author: ${AUTHOR_1}"
-	echo -e " Contact: ${CONTACT_1}"
+	echo -e " Download Sentinel-1 data with with the use of an OFST inventory shapefile"
 	echo -e "---------------------------------------------------------------------------"
 	echo -e ""
 	echo -e "----------------------------------"
@@ -23,13 +20,13 @@ if [ "$#" != "2" ]; then
 	echo -e ""
 	echo -e " input parameters:"
 	echo -e " output_folder			(output) folder where the downloaded data will be saved"
-	echo -e " Inventory shapefile		(input) shapefile created and maybe edited from osk_S1_inventory script"
+	echo -e " inventory shapefile		(input) shapefile created and maybe edited from osk_S1_inventory script"
 	exit 1
 else
 	echo -e ""
 	echo -e "---------------------------------------------------------------------------"
 	echo -e " Welcome to Open Foris SARKit, version ${OSK_VERSION}"
-	echo -e " Download Sentinel-1 data with with the use of an OSK inventory shapefile"
+	echo -e " Download Sentinel-1 data with with the use of an OFST inventory shapefile"
 	echo -e "---------------------------------------------------------------------------"
 	echo -e ""
 
