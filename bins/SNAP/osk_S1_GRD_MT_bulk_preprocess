@@ -171,7 +171,8 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 		else
 			s1_mt_metrics ${FILELIST} ${STACK} VV ${TMP_DIR_TRACK} ${LOG_DIR}
 		fi
-	
+	fi
+
 		j=`expr $j + 1`
 		cd ${PROC_DIR}
 	done # finish track loop
