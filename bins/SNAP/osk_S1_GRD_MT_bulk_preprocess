@@ -120,11 +120,11 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 				s1_rtc_processing ${FRAME} ${PWD}/${ACQ}"_RTC" $2 0 0 ${TMP_DIR_FRAME} ${LOG_DIR}
 			else
 				s1_frame_import ${FRAME} ${TMP_DIR_FRAME}/${ACQ}"_import" ${LOG_DIR}
-
-				if [ ${MT_MODE} == 0 ];then 
+				s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ}"_RTC" $2 0 0 ${TMP_DIR_FRAME} ${LOG_DIR}
+		#		if [ ${MT_MODE} == 0 ];then 
 					s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ}"_RTC" $2 0 0 ${TMP_DIR_FRAME} ${LOG_DIR}
 			#		rm -rf ${TMP_DIR_FRAME}/${ACQ}"_import".d*
-				fi
+		#		fi
 			fi
 
 		else
