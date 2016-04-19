@@ -50,7 +50,6 @@ fi
 ## I GIS packages from ubuntugis (unstable)
 add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
 
-
 ## II InSAR Packages Antonio Valentinos eotools 
 #add-apt-repository -y ppa:a.valentino/eotools
 
@@ -143,7 +142,6 @@ echo 'source ${OPENSARKIT}/lib/saga_helpers' >> ${OSK_HOME}/OpenSARKit_source.ba
 echo 'source ${OPENSARKIT}/lib/s1_helpers' >> ${OSK_HOME}/OpenSARKit_source.bash
 
 echo '# source workflows/graphs' >> ${OSK_HOME}/OpenSARKit_source.bash
-echo 'export NEST_GRAPHS=${OPENSARKIT}/workflows/NEST' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export SNAP_GRAPHS=${OPENSARKIT}/workflows/SNAP' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export ASF_CONF=${OPENSARKIT}/workflows/ASF' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export POLSAR_CONF=${OPENSARKIT}/workflows/POLSAR' >> ${OSK_HOME}/OpenSARKit_source.bash
@@ -218,7 +216,7 @@ fi
 #-------------------------------------
 
 #-------------------------------------
-# Insatll SNAP
+# Install SNAP
 # check if installed
 if [ `which snap | wc -c` -gt 0 ];then 
 
@@ -232,9 +230,10 @@ else
 	#rm -f s1tbx_1.1.1_Linux64_installer.sh
 
 #	wget http://step.esa.int/downloads/2.0/esa-snap_all_unix_2_0_2.sh
-	wget http://step.esa.int/downloads/2.0/esa-snap_sentinel_unix_2_0_2.sh
-	sh esa-snap_sentinel_unix_2_0_2.sh -q -overwrite
-	rm -f esa-snap_sentinel_unix_2_0_2.sh
+	# http://step.esa.int/downloads/2.0/esa-snap_sentinel_unix_2_0_2.sh
+	wget http://step.esa.int/downloads/3.0/installers/esa-snap_sentinel_unix_3_0.sh
+	sh esa-snap_sentinel_unix_3_0.sh -q -overwrite
+	rm -f esa-snap_sentinel_unix_3_0.sh
 	echo 'export SNAP=/usr/local/snap' >> ${OSK_HOME}/OpenSARKit_source.bash
 	#echo 'export SNAP=${HOME}/snap' >> ${OSK_HOME}/OpenSARKit_source.bash
 	echo 'export SNAP_EXE=${SNAP}/bin/gpt'  >> ${OSK_HOME}/OpenSARKit_source.bash

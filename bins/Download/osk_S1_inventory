@@ -160,7 +160,7 @@ echo "	</OGRVRTLayer>" >> ${TMP_DIR}/wkt.vrt
 echo "</OGRVRTDataSource>" >> ${TMP_DIR}/wkt.vrt
 
 # convert to final shapefile
-echo -ne " Creating OSK inventory shapefile ... " &&
+echo -ne " Creating an OFST inventory shapefile ... " &&
 ogr2ogr -f "Esri Shapefile" "${INV}/S1_${POLAR}.shp" "${TMP_DIR}/wkt.vrt" \
 & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 

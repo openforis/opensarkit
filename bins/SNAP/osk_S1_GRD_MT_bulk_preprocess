@@ -121,10 +121,10 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 			else
 				s1_frame_import ${FRAME} ${TMP_DIR_FRAME}/${ACQ}"_import" ${LOG_DIR}
 				s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ}"_RTC" $2 0 0 ${TMP_DIR_FRAME} ${LOG_DIR}
-		#		if [ ${MT_MODE} == 0 ];then 
+				if [ ${MT_MODE} == 0 ];then 
 					s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ}"_RTC" $2 0 0 ${TMP_DIR_FRAME} ${LOG_DIR}
-			#		rm -rf ${TMP_DIR_FRAME}/${ACQ}"_import".d*
-		#		fi
+					rm -rf ${TMP_DIR_FRAME}/${ACQ}"_import".d*
+				fi
 			fi
 
 		else
@@ -144,7 +144,8 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 			else
 				
 				s1_swath_import ${TMP_DIR_FRAME}/filelist ${TMP_DIR_FRAME}/${ACQ}"_import" ${TMP_DIR_FRAME} ${LOG_DIR}
-			
+				s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ}"_RTC" $2 0 0 ${TMP_DIR_FRAME} ${LOG_DIR}
+
 				if [ ${MT_MODE} == 0 ];then 
 					s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ}"_RTC" $2 0 0 ${TMP_DIR_FRAME} ${LOG_DIR}
 				#	rm -rf ${TMP_DIR_FRAME}/${ACQ}"_import".d*
@@ -168,8 +169,10 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 		FILELIST=$(ls -1 ${PWD}/*/*_RTC.dim | tr '\n' ',' | rev | cut -c 2- | rev)
 		if [[ `ls -1 ${PWD}/*/*_RTC.data/*VH* 2>/dev/null | wc -l` -gt 0 ]];then
 			s1_mt_metrics ${FILELIST} ${STACK} VH ${TMP_DIR_TRACK} ${LOG_DIR}
+			#rm -rf ${TMP_DIR_TRACK}
 		else
 			s1_mt_metrics ${FILELIST} ${STACK} VV ${TMP_DIR_TRACK} ${LOG_DIR}
+			#rm -rf ${TMP_DIR_TRACK}
 		fi
 	fi
 

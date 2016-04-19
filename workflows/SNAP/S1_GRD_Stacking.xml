@@ -20,46 +20,10 @@
       <initialOffsetMethod>Product Geolocation</initialOffsetMethod>
     </parameters>
   </node>
-  <node id="GCP-Selection">
-    <operator>GCP-Selection</operator>
-    <sources>
-      <sourceProduct refid="CreateStack"/>
-    </sources>
-    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <numGCPtoGenerate>500</numGCPtoGenerate>
-      <coarseRegistrationWindowWidth>256</coarseRegistrationWindowWidth>
-      <coarseRegistrationWindowHeight>256</coarseRegistrationWindowHeight>
-      <rowInterpFactor>4</rowInterpFactor>
-      <columnInterpFactor>4</columnInterpFactor>
-      <maxIteration>10</maxIteration>
-      <gcpTolerance>0.25</gcpTolerance>
-      <applyFineRegistration>true</applyFineRegistration>
-      <fineRegistrationWindowWidth>64</fineRegistrationWindowWidth>
-      <fineRegistrationWindowHeight>64</fineRegistrationWindowHeight>
-      <coherenceWindowSize>3</coherenceWindowSize>
-      <coherenceThreshold>0.6</coherenceThreshold>
-      <useSlidingWindow>false</useSlidingWindow>
-      <computeOffset>true</computeOffset>
-      <onlyGCPsOnLand>true</onlyGCPsOnLand>
-    </parameters>
-  </node>
-  <node id="Warp">
-    <operator>Warp</operator>
-    <sources>
-      <sourceProduct refid="GCP-Selection"/>
-    </sources>
-    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <rmsThreshold>0.5</rmsThreshold>
-      <warpPolynomialOrder>1</warpPolynomialOrder>
-      <interpolationMethod>Bilinear interpolation</interpolationMethod>
-      <excludeMaster>false</excludeMaster>
-      <openResidualsFile>false</openResidualsFile>
-    </parameters>
-  </node>
   <node id="Write">
     <operator>Write</operator>
     <sources>
-      <sourceProduct refid="Warp"/>
+      <sourceProduct refid="CreateStack"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
       <file>${output}</file>
@@ -68,20 +32,14 @@
   </node>
   <applicationData id="Presentation">
     <Description/>
-    <node id="ProductSet-Reader">
-      <displayPosition x="25.0" y="25.0"/>
+    <node id="Write">
+      <displayPosition x="347.0" y="135.0"/>
     </node>
     <node id="CreateStack">
-      <displayPosition x="96.0" y="75.0"/>
+      <displayPosition x="164.0" y="83.0"/>
     </node>
-    <node id="GCP-Selection">
-      <displayPosition x="198.0" y="117.0"/>
-    </node>
-    <node id="Warp">
-      <displayPosition x="340.0" y="132.0"/>
-    </node>
-    <node id="Write">
-            <displayPosition x="455.0" y="135.0"/>
+    <node id="ProductSet-Reader">
+      <displayPosition x="31.0" y="30.0"/>
     </node>
   </applicationData>
 </graph>

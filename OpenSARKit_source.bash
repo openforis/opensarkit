@@ -25,7 +25,7 @@ source ${OPENSARKIT}/lib/saga_helpers
 source ${OPENSARKIT}/lib/s1_helpers
 
 # PATHS
-export SNAP="/home/avollrath/snap"
+export SNAP="/home/avollrath/snap3"
 export SNAP_EXE="${SNAP}/bin/gpt"
 export POLSAR="${PROGRAMS}/PolSARPro504/Soft"
 export POLSAR_BIN=${POLSAR}/data_import:${POLSAR}/data_convert:${POLSAR}/speckle_filter:${POLSAR}/bmp_process:${POLSAR}/tools

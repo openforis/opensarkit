@@ -7,8 +7,8 @@
       <file>${input}</file>
     </parameters>
   </node>
-  <node id="LinearTodB">
-    <operator>LinearTodB</operator>
+  <node id="LinearToFromdB">
+    <operator>LinearToFromdB</operator>
     <sources>
       <sourceProduct refid="Read"/>
     </sources>
@@ -19,7 +19,7 @@
   <node id="Write">
     <operator>Write</operator>
     <sources>
-      <sourceProduct refid="LinearTodB"/>
+      <sourceProduct refid="LinearToFromdB"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
       <file>${output}</file>
@@ -28,14 +28,14 @@
   </node>
   <applicationData id="Presentation">
     <Description/>
-    <node id="Read">
-            <displayPosition x="37.0" y="134.0"/>
-    </node>
-    <node id="LinearTodB">
-      <displayPosition x="223.0" y="139.0"/>
-    </node>
     <node id="Write">
             <displayPosition x="455.0" y="135.0"/>
+    </node>
+    <node id="LinearToFromdB">
+      <displayPosition x="211.0" y="133.0"/>
+    </node>
+    <node id="Read">
+            <displayPosition x="37.0" y="134.0"/>
     </node>
   </applicationData>
 </graph>
