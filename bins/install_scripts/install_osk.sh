@@ -225,25 +225,12 @@ if [ `which snap | wc -c` -gt 0 ];then
 	echo 'export SNAP_EXE=${SNAP}/bin/gpt'  >> ${OSK_HOME}/OpenSARKit_source.bash
 else
 	cd ${OSK_HOME}/Programs/
-	#wget http://sentinel1.s3.amazonaws.com/1.0/s1tbx_1.1.1_Linux64_installer.sh
-	#sh s1tbx_1.1.1_Linux64_installer.sh -q -overwrite
-	#rm -f s1tbx_1.1.1_Linux64_installer.sh
-
-#	wget http://step.esa.int/downloads/2.0/esa-snap_all_unix_2_0_2.sh
-	# http://step.esa.int/downloads/2.0/esa-snap_sentinel_unix_2_0_2.sh
 	wget http://step.esa.int/downloads/3.0/installers/esa-snap_sentinel_unix_3_0.sh
 	sh esa-snap_sentinel_unix_3_0.sh -q -overwrite
 	rm -f esa-snap_sentinel_unix_3_0.sh
 	echo 'export SNAP=/usr/local/snap' >> ${OSK_HOME}/OpenSARKit_source.bash
-	#echo 'export SNAP=${HOME}/snap' >> ${OSK_HOME}/OpenSARKit_source.bash
 	echo 'export SNAP_EXE=${SNAP}/bin/gpt'  >> ${OSK_HOME}/OpenSARKit_source.bash
 fi
-
-# update SNAP
-source ${OSK_HOME}/OpenSARKit_source.bash
-echo "updating SNAP toolbox"
-#snap --nosplash --nogui --modules --list --refresh
-#snap --nosplash --nogui --modules --update-all
 
 #-------------------------------------
 
@@ -257,7 +244,11 @@ mv ${OSK_HOME}/OpenSARKit_source.bash /etc/profile.d/OpenSARKit.sh
 chmod -R 755 ${OSK_HOME}
 source /etc/profile.d/OpenSARKit.sh
 #-------------------------------------
- 
+
+# update SNAP
+echo "Checking for updates of SNAP toolbox"
+#snap --nosplash --nogui --modules --list --refresh
+snap --nosplash --nogui --modules --update-all 
 
 #------------------------------------------------------------------
 # 3 Download the additional Database
@@ -271,5 +262,5 @@ mv global_info.sqlite?dl=0 global_info.sqlite
 echo "--------------------------------"
 echo " Installation of OFST succesfully completed"
 echo " In order to be able to launch the scripts immediately on the command line, type: source /etc/profile.d/OpenSARKit.sh "
-echo " Otherwise close and re-open the terminal window."
+echo " Otherwise restart your computer"
 echo "--------------------------------"
