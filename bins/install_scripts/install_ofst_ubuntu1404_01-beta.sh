@@ -8,8 +8,6 @@ if [ "$#" == "0" ];then
 	echo -e "----------------------------------"
 	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
 	echo -e " Install script"
-	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
-#	echo -e " Author: Andreas Vollrath"
 	echo -e "----------------------------------"
 	echo -e ""
 	export OSK_HOME=/usr/local/lib/osk
@@ -20,8 +18,6 @@ elif [ "$#" == "1" ];then
 	echo -e "----------------------------------"
 	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
 	echo -e " Install script"
-	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
-#	echo -e " Author: Andreas Vollrath"
 	echo -e "----------------------------------"
 	echo -e ""
 	export OSK_HOME=$1
@@ -32,11 +28,8 @@ else
 	echo -e "----------------------------------"
 	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
 	echo -e " Install script"
-	echo -e " Developed by: Food and Agriculture Organization of the United Nations, Rome"
-#	echo -e " Author: Andreas Vollrath"
 	echo -e "----------------------------------"
 	echo -e ""
-
 	echo -e " syntax: install_osk <installation_folder>"
 	echo -e ""
 	echo -e " description of input parameters:"
@@ -44,68 +37,92 @@ else
 	exit 1
 fi
 
+
+spinner()
+{
+    local pid=$1
+    local delay=0.75
+    local spinstr='|\-/'
+    while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
+        local temp=${spinstr#?}
+        printf " [%c]  " "$spinstr"
+        local spinstr=$temp${spinstr%"$temp"}
+        sleep $delay
+        printf "\b\b\b\b\b\b"
+    done
+    printf "    \b\b\b\b"
+}
+
+
+mkdir -p ${OSK_HOME}
+mkdir -p ${OSK_HOME}/LOG
+
 #----------------------------------
 # 1 Adding extra repositories
 #----------------------------------
-## I GIS packages from ubuntugis (unstable)
-add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
 
-## II InSAR Packages Antonio Valentinos eotools 
-#add-apt-repository -y ppa:a.valentino/eotools
+SECONDS=0
+echo -ne " Adding the Ubuntu GIS unstable repository ..." &&
+add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable > ${OSK_HOME}/LOG/log_install 2>&1 \
+& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
-## III Java Official Packages
-add-apt-repository -y ppa:webupd8team/java
+SECONDS=0
+echo -ne " Adding the official Java repository ..." &&
+add-apt-repository -y ppa:webupd8team/java >> ${OSK_HOME}/LOG/log_install 2>&1 \
+& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
-## Enable multiverse for unrar
-add-apt-repository -y "deb http://archive.ubuntu.com/ubuntu/ $(lsb_release -sc) main multiverse"
+SECONDS=0
+echo -ne " Adding the multiverse repository ..." &&
+add-apt-repository -y "deb http://archive.ubuntu.com/ubuntu/ $(lsb_release -sc) main multiverse"  >> ${OSK_HOME}/LOG/log_install 2>&1 \
+& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 #QGIS for 14.04
 # add lines to sources
-#if grep -q "qgis.org/ubuntugis" /etc/apt/sources.list;then 
-#	echo "Yeah, you are QGIS user, nice!"
-#else
-#	echo "deb http://qgis.org/ubuntugis $(lsb_release -sc) main" >> /etc/apt/sources.list
-#	echo "deb-src http://qgis.org/ubuntugis $(lsb_release -sc) main" >> /etc/apt/sources.list
+echo -ne " "&&
+echo -ne " Adding the QGIS repository" &&
+echo -ne " Note: QGIS will not be installed, in order to do so type: ..." &&
+echo -ne " sudo apt-get install --yes qgis libqgis-dev"
+echo -ne " "
+
+if grep -q "qgis.org/ubuntugis" /etc/apt/sources.list;then 
+	echo "Yeah, you are QGIS user, nice!"
+else
+	echo "deb http://qgis.org/ubuntugis $(lsb_release -sc) main" >> /etc/apt/sources.list
+	echo "deb-src http://qgis.org/ubuntugis $(lsb_release -sc) main" >> /etc/apt/sources.list
 	# add key
-#	apt-key adv --keyserver keyserver.ubuntu.com --recv-key 3FF5FFCAD71472C4
-#fi
+	apt-key adv --keyserver keyserver.ubuntu.com --recv-key 3FF5FFCAD71472C4 >> ${OSK_HOME}/LOG/log_install 2>&1
+fi
 
 #------------------------------------------------------------------
 # 2 run update to load new packages and upgrade all installed ones
 #------------------------------------------------------------------
-apt-get update -y
-apt-get upgrade -y 
 
+SECONDS=0
+echo -ne " Updating the system ..." &&
+apt-get update -y && apt-get upgrade -y  >> ${OSK_HOME}/LOG/log_install 2>&1 \
+& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 #------------------------------------------------------------------
 # 3 install packages
 #------------------------------------------------------------------
-# Gis Packages
-#apt-get install --yes qgis gdal-bin libgdal-dev python-gdal saga libsaga-dev python-saga otb-bin libotb-dev libotb-ice libotb-ice-dev monteverdi2 python-otb geotiff-bin libgeotiff-dev gmt libgmt-dev dans-gdal-scripts
-#libqgis-dev (problems with grass 7)
 
-apt-get install --yes gdal-bin libgdal-dev python-gdal saga libsaga-dev python-saga geotiff-bin libgeotiff-dev dans-gdal-scripts
-
-## Spatial-Database Spatialite
-apt-get install --yes spatialite-bin spatialite-gui #pgadmin3 postgresql postgis
-
-# Dependencies for ASF Mapready
-apt-get install --yes libcunit1-dev libfftw3-dev libshp-dev libgeotiff-dev libtiff4-dev libtiff5-dev libproj-dev gdal-bin flex bison libgsl0-dev gsl-bin git libglade2-dev libgtk2.0-dev libgdal-dev pkg-config
+SECONDS=0
+echo -ne " Installing dependencies from Ubuntu packakge list ..." &&
+apt-get install --yes gdal-bin libgdal-dev python-gdal saga libsaga-dev python-saga geotiff-bin libgeotiff-dev dans-gdal-scripts spatialite-bin spatialite-gui \
+libcunit1-dev libfftw3-dev libshp-dev libgeotiff-dev libtiff4-dev libtiff5-dev libproj-dev gdal-bin flex bison libgsl0-dev gsl-bin git libglade2-dev libgtk2.0-dev libgdal-dev pkg-config \
+python-scipy python-h5py aria2 unrar parallel xml-twig-tools >> ${OSK_HOME}/LOG/log_install 2>&1 \
+& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 ## Java official
 echo debconf shared/accepted-oracle-license-v1-1 select true | sudo debconf-set-selections \
-    && echo debconf shared/accepted-oracle-license-v1-1 seen true | sudo debconf-set-selections # Enable silent install of Java
-apt-get install --yes oracle-java8-installer oracle-java8-set-default
-
-## Python libraries
-apt-get install --yes python-scipy python-h5py 
-#python-pyresample  --> needs grass devel. repo
+&& echo debconf shared/accepted-oracle-license-v1-1 seen true | sudo debconf-set-selections # Enable silent install of Java
+SECONDS=0
+echo -ne " Installing official Java version ..." &&
+apt-get install --yes oracle-java8-installer oracle-java8-set-default  >> ${OSK_HOME}/LOG/log_install 2>&1 \
+& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 # Dependencies for PolSARPro
 #apt-get install --yes bwidget itcl3 itk3 iwidgets4 libtk-img 
-
-# Further tools (i.e. Aria for automated ASF download, unrar for unpacking, parallel for parallelization of processing)
-apt-get install --yes aria2 unrar parallel xml-twig-tools
 
 #------------------------------------------------------------------
 # 3 Download & Install non-repository Software and OSK
@@ -124,8 +141,6 @@ echo '#! /bin/bash' > ${OSK_HOME}/OpenSARKit_source.bash
 echo "" >> ${OSK_HOME}/OpenSARKit_source.bash
 
 echo "export OSK_VERSION=${OSK_VERSION}" >> ${OSK_HOME}/OpenSARKit_source.bash
-echo "export AUTHOR_1=\"Andreas Vollrath\"" >> ${OSK_HOME}/OpenSARKit_source.bash
-echo "export CONTACT_1=\"andreas.vollrath@fao.org\"" >> ${OSK_HOME}/OpenSARKit_source.bash
 
 echo '# Support script to source the original programs' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo "export OSK_HOME=${OSK_HOME}" >> ${OSK_HOME}/OpenSARKit_source.bash
@@ -159,7 +174,10 @@ echo 'export RSGISLIB_BIN=${OPENSARKIT}/bins/RSGISLIB' >> ${OSK_HOME}/OpenSARKit
 echo 'export PROGRAMS=${OSK_HOME}/Programs' >> ${OSK_HOME}/OpenSARKit_source.bash
 
 # get OpenSARKit from github
-git clone $OSK_GIT_URL
+SECONDS=0
+echo -ne " Getting the Open Foris SAR Toolkit ..." &&
+git clone $OSK_GIT_URL >> ${OSK_HOME}/LOG/log_install 2>&1 \
+& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 #-------------------------------------
 
 
@@ -179,13 +197,24 @@ if [ `which asf_mapready | wc -c` -gt 0 ];then
 else
 
 	#git clone https://github.com/asfadmin/ASF_MapReady
-	wget https://github.com/asfadmin/ASF_MapReady/archive/3.6.6-117.tar.gz
-	tar -xzvf ${OSK_HOME}/Programs/3.6.6-117.tar.gz
-	rm -f ${OSK_HOME}/Programs/3.6.6-117.tar.gz
-	cd ASF_MapReady-3.6.6-117
-	./configure --prefix=${OSK_HOME}/Programs/ASF_bin
-	make
-	make install
+	SECONDS=0
+	echo -ne " Downloading ASF MapReady from ASF server ..." &&
+	wget https://github.com/asfadmin/ASF_MapReady/archive/3.6.6-117.tar.gz  >> ${OSK_HOME}/LOG/log_install 2>&1 \
+	& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+	SECONDS=0
+	echo -ne " Extracting ASF MapReady archive ..." &&
+	tar -xzvf ${OSK_HOME}/Programs/3.6.6-117.tar.gz  >> ${OSK_HOME}/LOG/log_install 2>&1 \
+	& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+	rm -f ${OSK_HOME}/Programs/3.6.6-117.tar.gz 
+	cd ASF_MapReady-3.6.6-117 
+
+	SECONDS=0
+	echo -ne " Installing ASF MapReady ..." &&
+	./configure --prefix=${OSK_HOME}/Programs/ASF_bin && make && make install >> ${OSK_HOME}/LOG/log_install 2>&1 \
+	& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
 	echo 'export ASF_EXE=${PROGRAMS}/ASF_bin/bin' >> ${OSK_HOME}/OpenSARKit_source.bash
 fi 
 #-------------------------------------
@@ -225,8 +254,17 @@ if [ `which snap | wc -c` -gt 0 ];then
 	echo 'export SNAP_EXE=${SNAP}/bin/gpt'  >> ${OSK_HOME}/OpenSARKit_source.bash
 else
 	cd ${OSK_HOME}/Programs/
-	wget http://step.esa.int/downloads/3.0/installers/esa-snap_sentinel_unix_3_0.sh
-	sh esa-snap_sentinel_unix_3_0.sh -q -overwrite
+	
+	SECONDS=0
+	echo -ne " Downloading the SNAP software ..." &&
+	wget http://step.esa.int/downloads/3.0/installers/esa-snap_sentinel_unix_3_0.sh  >> ${OSK_HOME}/LOG/log_install 2>&1 \
+	& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+	SECONDS=0
+	echo -ne " Installing the SNAP software ..." &&
+	sh esa-snap_sentinel_unix_3_0.sh -q -overwrite  >> ${OSK_HOME}/LOG/log_install 2>&1 \
+	& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
 	rm -f esa-snap_sentinel_unix_3_0.sh
 	echo 'export SNAP=/usr/local/snap' >> ${OSK_HOME}/OpenSARKit_source.bash
 	echo 'export SNAP_EXE=${SNAP}/bin/gpt'  >> ${OSK_HOME}/OpenSARKit_source.bash
@@ -246,9 +284,10 @@ source /etc/profile.d/OpenSARKit.sh
 #-------------------------------------
 
 # update SNAP
-echo "Checking for updates of SNAP toolbox"
-#snap --nosplash --nogui --modules --list --refresh
-snap --nosplash --nogui --modules --update-all 
+SECONDS=0
+echo -ne " Updating SNAP to the latest version ..." &&
+snap --nosplash --nogui --modules --update-all  >> ${OSK_HOME}/LOG/log_install 2>&1 \
+& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 #------------------------------------------------------------------
 # 3 Download the additional Database
@@ -256,11 +295,16 @@ snap --nosplash --nogui --modules --update-all
 
 mkdir -p ${OSK_HOME}/Database
 cd ${OSK_HOME}/Database
-wget https://www.dropbox.com/s/58cnjj8xymzkbac/global_info.sqlite?dl=0
+
+SECONDS=0
+echo -ne " Downloading the OFST database ..." &&
+wget https://www.dropbox.com/s/58cnjj8xymzkbac/global_info.sqlite?dl=0  >> ${OSK_HOME}/LOG/log_install 2>&1 \
+& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
 mv global_info.sqlite?dl=0 global_info.sqlite
 
-echo "--------------------------------"
+echo "---------------------------------------------------------------------------------------------------------------------------"
 echo " Installation of OFST succesfully completed"
 echo " In order to be able to launch the scripts immediately on the command line, type: source /etc/profile.d/OpenSARKit.sh "
 echo " Otherwise restart your computer"
-echo "--------------------------------"
+echo "---------------------------------------------------------------------------------------------------------------------------"
