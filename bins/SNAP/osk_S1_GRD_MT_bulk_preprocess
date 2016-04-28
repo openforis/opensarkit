@@ -81,10 +81,10 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 	cd ${TRACK}
 
 	NR_OF_ACQ=`ls -1 | wc -l`
-	echo " Info: Found ${NR_OF_ACQ} acquired frames for this swath"
+	echo " Info: Found ${NR_OF_ACQ} acquisitions for this swath"
 
 	# loop through acquisition dates	
-	for ACQ in `ls -1`;do 
+	for ACQ in `ls -1`;do 	
 	
 		echo " Info: Entering ${ACQ}"
 		cd ${ACQ}		
