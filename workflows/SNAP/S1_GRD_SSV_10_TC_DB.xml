@@ -7,15 +7,6 @@
       <file>${input}</file>
     </parameters>
   </node>
-  <node id="LinearTodB">
-    <operator>LinearTodB</operator>
-    <sources>
-      <sourceProduct refid="Terrain-Correction"/>
-    </sources>
-    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <sourceBands>Gamma0_VV</sourceBands>
-    </parameters>
-  </node>
   <node id="Terrain-Correction">
     <operator>Terrain-Correction</operator>
     <sources>
@@ -37,7 +28,7 @@
   UNIT[&quot;degree&quot;, 0.017453292519943295], 
   AXIS[&quot;Geodetic longitude&quot;, EAST], 
   AXIS[&quot;Geodetic latitude&quot;, NORTH]]</mapProjection>
-      <nodataValueAtSea>true</nodataValueAtSea>
+      <nodataValueAtSea>false</nodataValueAtSea>
       <saveDEM>false</saveDEM>
       <saveLatLon>false</saveLatLon>
       <saveIncidenceAngleFromEllipsoid>false</saveIncidenceAngleFromEllipsoid>
@@ -55,10 +46,19 @@
       <externalAuxFile/>
     </parameters>
   </node>
+  <node id="LinearToFromdB">
+    <operator>LinearToFromdB</operator>
+    <sources>
+      <sourceProduct refid="Terrain-Correction"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <sourceBands>Gamma0_VV</sourceBands>
+    </parameters>
+  </node>
   <node id="Write">
     <operator>Write</operator>
     <sources>
-      <sourceProduct refid="LinearTodB"/>
+      <sourceProduct refid="LinearToFromdB"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
       <file>${output}</file>
@@ -70,11 +70,11 @@
     <node id="Read">
             <displayPosition x="44.0" y="45.0"/>
     </node>
-    <node id="LinearTodB">
-      <displayPosition x="306.0" y="148.0"/>
-    </node>
     <node id="Terrain-Correction">
       <displayPosition x="122.0" y="105.0"/>
+    </node>
+	<node id="LinearToFromdB">
+      <displayPosition x="306.0" y="148.0"/>
     </node>
     <node id="Write">
             <displayPosition x="455.0" y="135.0"/>

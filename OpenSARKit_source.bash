@@ -20,9 +20,7 @@ PROGRAMS="${OPENSARKIT}/Programs"
 export DB_GLOBAL=${OPENSARKIT}/Database/global_info.sqlite	 
 
 # source lib-functions
-source ${OPENSARKIT}/lib/gdal_helpers
-source ${OPENSARKIT}/lib/saga_helpers
-source ${OPENSARKIT}/lib/s1_helpers
+source ${OPENSARKIT}/lib/helpers_source
 
 # PATHS
 export SNAP="/home/avollrath/snap3"
@@ -44,8 +42,8 @@ export ASF_BIN="${OPENSARKIT}/bins/ASF"
 export KC_BIN="${OPENSARKIT}/bins/KC"
 export REMOTE_BIN="${OPENSARKIT}/bins/Remote_scripts"
 export DOWNLOAD_BIN="${OPENSARKIT}/bins/Download"
-export PYTHON_BIN="${OPENSARKIT}/python"
-export GDAL_BIN="${OPENSARKIT}/bins/GDAL"
+export PYTHON_BIN="${OPENSARKIT}/lib/python"
+export GDAL_BIN="${OPENSARKIT}/GDAL"
 export SAGA_BIN="${OPENSARKIT}/bins/SAGA"
 export RSGISLIB_BIN="${OPENSARKIT}/bins/RSGISLIB"
 

@@ -1,0 +1,127 @@
+#! /bin/bash 
+
+# The MIT License (MIT)
+# Copyright (c) 2016 Andreas Vollrath
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal 
+# in the Software without restriction, including without limitation the rights 
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
+# copies of the Software, and to permit persons to whom the Software is furnished
+# to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE 
+# OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+#-------------------------------------------------------------------------------------------	
+# 	0.1 Check for right usage & set up basic Script Variables
+if [ "$#" != "2" ]; then
+
+	echo -e "----------------------------------"
+	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
+	echo -e " Download ALOS data from an ASF server using an OFST inventory shapefile"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Software dependencies:"
+	echo -e "	- aria2"
+	echo -e "	- ogrinfo"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e " syntax: osk_ALOS_ASF_download <output_folder> <Inventory Shapefile>"
+	echo -e ""
+	echo -e " input parameters:"
+	echo -e " output_folder			(output) folder where the downloaded data will be saved"
+	echo -e " Inventory shapefile		(input) shapefile created and maybe edited from osk_ALOS_ASF_inventory script"
+	exit 1
+else
+	echo -e "----------------------------------"
+	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
+	echo -e " Download ALOS data from ASF server using an OFST inventory shapefile"
+	echo -e "----------------------------------"
+
+
+  	cd $1
+   PROC_DIR=`pwd`
+	TMP_DIR=${PROC_DIR}/.TMP
+	rm -rf ${TMP_DIR} > /dev/null
+	mkdir -p ${TMP_DIR}
+
+	# source libs
+	source ${OPENSARKIT}/lib/helpers_source
+fi
+
+
+
+#	Credentials
+read -r -p " Please type your NASA Earthdata Username:" USERNAME
+read -s -p " Please type your NASA Earthdata Password:" PW
+echo ""
+
+echo ""
+echo -ne " Logging in ..." &&
+wget --keep-session-cookies --save-cookies ${TMP_DIR}/cookies.txt -P ${TMP_DIR}/ --post-data='userid='${USERNAME}'&password='${PW} --no-check-certificate "https://vertex.daac.asf.alaska.edu/services/authentication" -o ${TMP_DIR}/cookieslog.txt 
+echo -e " done"
+if cat ${TMP_DIR}/cookies.txt | grep -q .alaska.edu; then
+	unset PW
+else
+	echo -e " Authorization failed"
+	exit
+fi
+
+echo -ne " Preparing download ..."
+ogrinfo $2 -al | grep DL_Path | sed 's/  DL_Path (String) = //g' | tail -n +2 > ${TMP_DIR}/download_list
+ogrinfo $2 -al | grep Date | sed 's/  Date (Integer) = //g' | tail -n +2 > ${TMP_DIR}/acq_date
+ogrinfo $2 -al | grep Mode | sed 's/  Mode (String) = //g' | tail -n +2 > ${TMP_DIR}/mode
+ogrinfo $2 -al | grep Track | sed 's/  Track (Integer) = //g' | tail -n +2 > ${TMP_DIR}/track
+ogrinfo $2 -al | grep Scene_ID | sed 's/  Scene_ID (String) = //g' | tail -n +2 > ${TMP_DIR}/scene
+
+# counter for info on number of download products
+NR=`cat ${TMP_DIR}/download_list | wc -l`
+COUNT=1
+echo -e " done"
+
+while read line; do 
+
+	MODE=`cat ${TMP_DIR}/mode | awk "NR==${COUNT}"`
+	ACQ_DATE=`cat ${TMP_DIR}/acq_date | awk "NR==${COUNT}"`
+	TRACK=`cat ${TMP_DIR}/track | awk "NR==${COUNT}"`
+	SCENE=`cat ${TMP_DIR}/scene | awk "NR==${COUNT}"`
+
+	mkdir -p ${PROC_DIR}/${MODE}/${ACQ_DATE}-${TRACK}
+
+	# prepare a loop to avoid uncomplete data downloads		
+#	i=1
+#	echo "bla" > ${TMP_DIR}/tmp_error
+	# do the loop 
+	#for(( i=1; i<=2; i++ ));do
+
+		#if grep -q "download completed" ${TMP_DIR}/tmp_error;then
+		#	i=3
+		#else
+		#	i=1
+			echo -ne " Downloading Product ${COUNT} of ${NR} (Granule: ${SCENE}) " &&
+			wget --load-cookies ${TMP_DIR}/cookies.txt -c -P ${PROC_DIR}/${MODE}/${ACQ_DATE}-${TRACK} "${line}" >> $TMP_DIR/log_download 2>&1 & spinner $! \
+			&& duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+#			aria2c --load-cookies="${TMP_DIR}/cookies.txt" --dir=${PROC_DIR}/${MODE}/${ACQ_DATE}-${TRACK} --continue=true "${line}" > ${TMP_DIR}/tmp_error \
+		
+		#fi
+	#done
+	
+	COUNT=`expr ${COUNT} + 1`
+
+done < ${TMP_DIR}/download_list
+
+echo "---------------------------------------------"
+echo " Download of all products succesfully completed"
+echo "---------------------------------------------"
+
+rm -rf ${TMP_DIR}
+

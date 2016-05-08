@@ -1,3 +1,23 @@
+# The MIT License (MIT)
+# Copyright (c) 2016 Andreas Vollrath
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal 
+# in the Software without restriction, including without limitation the rights 
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
+# copies of the Software, and to permit persons to whom the Software is furnished
+# to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE 
+# OR THE USE OR OTHER DEALINGS IN THE SOFTWARE
+
 function s1_frame_import() {
     if [ -z "$3" ]; then 
     echo " Missing arguments. Syntax:"
@@ -66,7 +86,7 @@ function s1_swath_import() {
 
 	    SECONDS=0
 	    echo -ne " Assembling the products of the same swath ..." &&
-            bash $SNAP_EXE SliceAssembly -PselectedPolarisations=VV $(ls -1 $3/*-import.dim | tr '\n' ' ' | rev | cut -c 2- | rev) -t $2 > $4/log_swath_assembly 2>&1 \
+       bash $SNAP_EXE SliceAssembly -PselectedPolarisations=VV $(ls -1 $3/*-import.dim | tr '\n' ' ' | rev | cut -c 2- | rev) -t $2 > $4/log_swath_assembly 2>&1 \
 	    & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 	    [ $? -ne 0 ] && return ${ERR_ASSEMBLE}
 #	    rm -rf $3/*-import.dim.d*
@@ -84,181 +104,181 @@ function s1_rtc_processing() {
 
     COLUMNS=`gdalinfo ${BASE}.data/Intensity_VV.img | grep "Size is" | awk '{print $3}' | sed s/,//g`
     LINES=`gdalinfo ${BASE}.data/Intensity_VV.img | grep "Size is" | awk '{print $4}'`
-    NEW_WIDTH=`expr $COLUMNS - 1000`
-    NEW_HEIGHT=`expr $LINES - 1000`
+    NEW_WIDTH=`expr $COLUMNS - 1200`
+    NEW_HEIGHT=`expr $LINES - 1200`
 
     if [ $3 == "MED_RES" ];then
 
     	SECONDS=0
-	echo " Removing GRD border noise by deleting the outer 500 rows, calibrating to beta0, "
+	echo " Removing GRD border noise by deleting the outer 600 rows, calibrating to beta0, "
 	echo -ne " applying the terrain flattening and multi-look by a factor of 3  ..." &&
 	bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_RB_CAL_TF_ML3.xml -x -Pinput=$1 -Pwidth=${NEW_WIDTH} -Pheight=${NEW_HEIGHT} -Poutput=$6/TF  > $7/log_cal_tf_ml 2>&1 \
-    	& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+   & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 	[ $? -ne 0 ] && return ${ERR_BRD_NOISE} 
    
         if [ -e $6/TF.data/Gamma0_VH.img ];then
 
-		if [[ $4 == 1 && $5 == 1 ]];then # db scale + ratio
+			if [[ $4 == 1 && $5 == 1 ]];then # db scale + ratio
 
-			SECONDS=0
-	                echo -ne " Applying the geometric terrain correction, calculate the VV/VH Band Ratio and transform backscatter to decibel scale  ..." &&
-			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TC_DB_Ratio.xml -x -Pinput=$6/TF.dim -Poutput=$6/TC_DB -PoutputRatio=$6/Ratio > $7/log_tc_ratio 2>&1 \
+				SECONDS=0
+	   	   echo -ne " Applying the geometric terrain correction, calculate the VV/VH Band Ratio and transform backscatter to decibel scale  ..." &&
+				bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TC_DB_Ratio.xml -x -Pinput=$6/TF.dim -Poutput=$6/TC_DB -PoutputRatio=$6/Ratio > $7/log_tc_ratio 2>&1 \
     			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-			[ $? -ne 0 ] && return ${ERR_TC} 
-      			rm -rf $6/TF.d*
+				[ $? -ne 0 ] && return ${ERR_TC} 
+      		rm -rf $6/TF.d*
 
-			SECONDS=0
-			echo -ne " Merging backscatter bands with ratio"
-			bash ${SNAP_EXE} BandMerge -x $6/TC_DB.dim $4/Ratio.dim -t $2 > $7/log_output 2>&1 \
-			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-			[ $? -ne 0 ] && return ${ERR_BM} 
-			rm -rf $6/TC_DB.d* $6/Ratio.d*
+				SECONDS=0
+				echo -ne " Merging backscatter bands with ratio"
+				bash ${SNAP_EXE} BandMerge -x $6/TC_DB.dim $6/Ratio.dim -t $2 > $7/log_output 2>&1 \
+				& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+				[ $? -ne 0 ] && return ${ERR_BM} 
+				rm -rf $6/TC_DB.d* $6/Ratio.d*
 
-		elif [[ $4 == 1 && $5 == 0 ]];then # ratio but no db scale
+			elif [[ $4 == 1 && $5 == 0 ]];then # ratio but no db scale
 
-			SECONDS=0
-	                echo -ne " Applying the geometric terrain correction, and calculate the VV/VH Band Ratio  ..." &&
-			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TC_Ratio.xml -x -Pinput=$6/TF.dim -Poutput=$6/TC -PoutputRatio=$6/Ratio > $7/log_ratio 2>&1 \
+				SECONDS=0
+	      	echo -ne " Applying the geometric terrain correction, and calculate the VV/VH Band Ratio  ..." &&
+				bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TC_Ratio.xml -x -Pinput=$6/TF.dim -Poutput=$6/TC -PoutputRatio=$6/Ratio > $7/log_ratio 2>&1 \
     			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-			[ $? -ne 0 ] && return ${ERR_TC} 
-      			rm -rf $6/TF.d*
+				[ $? -ne 0 ] && return ${ERR_TC} 
+      		rm -rf $6/TF.d*
 
-			SECONDS=0
-			echo -ne " Merging backscatter bands with ratio"
-			bash ${SNAP_EXE} BandMerge -x $6/TC.dim $6/Ratio.dim -t $2 > $7/log_output 2>&1 \
-			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-			rm -rf $6/TC.d* $6/Ratio.d*
+				SECONDS=0
+				echo -ne " Merging backscatter bands with ratio"
+				bash ${SNAP_EXE} BandMerge -x $6/TC.dim $6/Ratio.dim -t $2 > $7/log_output 2>&1 \
+				& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+				rm -rf $6/TC.d* $6/Ratio.d*
 		
-		elif [[ $4 == 0 && $5 == 0 ]];then # neither db nor ratio calculation
+			elif [[ $4 == 0 && $5 == 0 ]];then # neither db nor ratio calculation
 	
-			SECONDS=0
-	                echo -ne " Applying the geometric terrain correction ..." &&
-			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TC.xml -x -Pinput=$6/TF.dim -Poutput=$2 > $7/log_tc 2>&1 \
+				SECONDS=0
+	   	   echo -ne " Applying the geometric terrain correction ..." &&
+				bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TC.xml -x -Pinput=$6/TF.dim -Poutput=$2 > $7/log_tc 2>&1 \
     			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-			[ $? -ne 0 ] && return ${ERR_TC} 
-      			rm -rf $6/TF.d*
+				[ $? -ne 0 ] && return ${ERR_TC} 
+      		rm -rf $6/TF.d*
 
-		elif [[ $4 == 0 && $5 == 1 ]];then # db scaling but no ratio calculation
+			elif [[ $4 == 0 && $5 == 1 ]];then # db scaling but no ratio calculation
 
-			SECONDS=0
-	                echo -ne " Applying the geometric terrain correction and transform backscatter to decibel scale ..." &&
-			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TC_DB.xml -x -Pinput=$6/TF.dim -Poutput=$2 > $7/log_tc_db 2>&1 \
+				SECONDS=0
+	         echo -ne " Applying the geometric terrain correction and transform backscatter to decibel scale ..." &&
+				bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TC_DB.xml -x -Pinput=$6/TF.dim -Poutput=$2 > $7/log_tc_db 2>&1 \
     			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-			[ $? -ne 0 ] && return ${ERR_TC} 
-      			rm -rf $6/TF.d*
+				[ $? -ne 0 ] && return ${ERR_TC} 
+      		rm -rf $6/TF.d*
 
-		fi
+			fi
 		
-	else # SSV 30m
+		else # SSV 30m
 
-		if [[ $5 == 1 ]];then # db scaling
+			if [[ $5 == 1 ]];then # db scaling
 
-			SECONDS=0
-        	echo -ne " Applying the geometric terrain correction and transform backscatter to decibel scale  ..." &&
-			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SSV_30_TC_DB.xml -x -Pinput=$6/TF.dim -Poutput=$2 > $7/log_tc_db 2>&1 \
+				SECONDS=0
+        		echo -ne " Applying the geometric terrain correction and transform backscatter to decibel scale  ..." &&
+				bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SSV_30_TC_DB.xml -x -Pinput=$6/TF.dim -Poutput=$2 > $7/log_tc_db 2>&1 \
     			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-			[ $? -ne 0 ] && return ${ERR_TC} 
-      			rm -rf $6/TF.d*
+				[ $? -ne 0 ] && return ${ERR_TC} 
+      		rm -rf $6/TF.d*
 
-		else
+			else
 
-			SECONDS=0 # no db-scaling
-        	echo -ne " Applying the geometric terrain correction ..." &&
-			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SSV_30_TC.xml -x -Pinput=$6/TF.dim -Poutput=$2 > $7/log_tc 2>&1 \
-    			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-			[ $? -ne 0 ] && return ${ERR_TC} 
-      			rm -rf $6/TF.d*
+				SECONDS=0 # no db-scaling
+   	     	echo -ne " Applying the geometric terrain correction ..." &&
+				bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SSV_30_TC.xml -x -Pinput=$6/TF.dim -Poutput=$2 > $7/log_tc 2>&1 \
+   	 		& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+				[ $? -ne 0 ] && return ${ERR_TC} 
+     			rm -rf $6/TF.d*
+
+			fi
 
 		fi
-
-	fi
 
     elif [ $3 == "HI_RES" ];then
 
     	SECONDS=0
-	echo " Removing GRD border noise by deleting the outer 500 rows, calibrating to beta0, "
-	echo -ne " applying the terrain flattening ..." &&
-	bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_RB_CAL_TF_noML.xml -x -Pinput=$1 -Pwidth=${NEW_WIDTH} -Pheight=${NEW_HEIGHT} -Poutput=$6/TF > $7/log_cal_tf 2>&1 \
+		echo " Removing GRD border noise by deleting the outer 600 rows, calibrating to beta0, "
+		echo -ne " applying the terrain flattening ..." &&
+		bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_RB_CAL_TF_noML.xml -x -Pinput=$1 -Pwidth=${NEW_WIDTH} -Pheight=${NEW_HEIGHT} -Poutput=$6/TF > $7/log_cal_tf 2>&1 \
     	& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-	[ $? -ne 0 ] && return ${ERR_BRD_NOISE} 
-        rm -rf $6/${BASE}-import.dim
+		[ $? -ne 0 ] && return ${ERR_BRD_NOISE} 
+      rm -rf $6/${BASE}-import.dim
 	
-        if [ -e $6/TF.data/Gamma0_VH.img ];then
+      if [ -e $6/TF.data/Gamma0_VH.img ];then
 
 
-		if [[ $4 == 1 && $5 == 1 ]];then # db scale + ratio
+			if [[ $4 == 1 && $5 == 1 ]];then # db scale + ratio
 
-			SECONDS=0
-	                echo -ne " applying the geometric terrain correction, calculate the VV/VH Band Ratio and transform backscatter to decibel scale  ..." &&
-			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_10_TC_DB_Ratio.xml -x -Pinput=$6/TF.dim -Poutput=$6/TC_DB -PoutputRatio=$6/Ratio > $7/log_tc_db_ratio 2>&1 \
+				SECONDS=0
+            echo -ne " applying the geometric terrain correction, calculate the VV/VH Band Ratio and transform backscatter to decibel scale  ..." &&
+				bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_10_TC_DB_Ratio.xml -x -Pinput=$6/TF.dim -Poutput=$6/TC_DB -PoutputRatio=$6/Ratio > $7/log_tc_db_ratio 2>&1 \
     			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-			[ $? -ne 0 ] && return ${ERR_TC} 
-      			rm -rf $6/TF.d*
+				[ $? -ne 0 ] && return ${ERR_TC} 
+     			rm -rf $6/TF.d*
 
-			SECONDS=0
-			echo -ne " Merging backscatter bands with ratio"
-			bash ${SNAP_EXE} BandMerge -x $6/TC_DB.dim $6/Ratio.dim -t $2  > $7/log_output 2>&1 \
-			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-			rm -rf $4/TC_DB.d* $6/Ratio.d*
+				SECONDS=0
+				echo -ne " Merging backscatter bands with ratio"
+				bash ${SNAP_EXE} BandMerge -x $6/TC_DB.dim $6/Ratio.dim -t $2  > $7/log_output 2>&1 \
+				& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+				rm -rf $4/TC_DB.d* $6/Ratio.d*
 
-		elif [[ $4 == 1 && $5 == 0 ]];then # ratio but no db scale
+			elif [[ $4 == 1 && $5 == 0 ]];then # ratio but no db scale
 			
-			SECONDS=0
-	                echo -ne " Applying the geometric terrain correction, and calculate the VV/VH Band Ratio  ..." &&
-			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_10_TC_Ratio.xml -x -Pinput=$6/TF.dim -Poutput=$6/TC -PoutputRatio=$6/Ratio > $7/log_tc_ratio 2>&1 \
+				SECONDS=0
+            echo -ne " Applying the geometric terrain correction, and calculate the VV/VH Band Ratio  ..." &&
+				bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_10_TC_Ratio.xml -x -Pinput=$6/TF.dim -Poutput=$6/TC -PoutputRatio=$6/Ratio > $7/log_tc_ratio 2>&1 \
     			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-			[ $? -ne 0 ] && return ${ERR_TC} 
-      			rm -rf $6/TF.d*
+				[ $? -ne 0 ] && return ${ERR_TC} 
+     			rm -rf $6/TF.d*
 
-			SECONDS=0
-			echo -ne " Merging backscatter bands with ratio ..."
-			bash ${SNAP_EXE} BandMerge -x $6/TC.dim $6/Ratio.dim -t $2 > $7/log_output 2>&1\
-			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-			rm -rf $6/TC.d* $4/Ratio.d*
+				SECONDS=0
+				echo -ne " Merging backscatter bands with ratio ..."
+				bash ${SNAP_EXE} BandMerge -x $6/TC.dim $6/Ratio.dim -t $2 > $7/log_output 2>&1\
+				& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+				rm -rf $6/TC.d* $4/Ratio.d*
 
-		elif [[ $4 == 0 && $5 == 0 ]];then #neither db nor ratio calculation
+			elif [[ $4 == 0 && $5 == 0 ]];then #neither db nor ratio calculation
 	
-			SECONDS=0
-	                echo -ne " Applying the geometric terrain correction ..." &&
-			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_10_TC.xml -x -Pinput=$6/TF.dim -Poutput=$2 > $7/log_tc 2>&1 \
-    			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-			[ $? -ne 0 ] && return ${ERR_TC} 
-      			rm -rf $6/TF.d*
+				SECONDS=0
+	         echo -ne " Applying the geometric terrain correction ..." &&
+				bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_10_TC.xml -x -Pinput=$6/TF.dim -Poutput=$2 > $7/log_tc 2>&1 \
+   			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+				[ $? -ne 0 ] && return ${ERR_TC} 
+      		rm -rf $6/TF.d*
 
-		elif [[ $4 == 0 && $5 == 1 ]];then #do db scaling but no ratio calculation
+			elif [[ $4 == 0 && $5 == 1 ]];then #do db scaling but no ratio calculation
 
-			SECONDS=0
-	                echo -ne " Applying the geometric terrain correction and transform backscatter to decibel scale ..." &&
-			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_10_TC_DB.xml -x -Pinput=$6/TF.dim -Poutput=$2 > $7/log_tc_db 2>&1 \
+				SECONDS=0
+	   	   echo -ne " Applying the geometric terrain correction and transform backscatter to decibel scale ..." &&
+				bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_10_TC_DB.xml -x -Pinput=$6/TF.dim -Poutput=$2 > $7/log_tc_db 2>&1 \
     			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-			[ $? -ne 0 ] && return ${ERR_TC} 
-      			rm -rf $6/TF.d*
+				[ $? -ne 0 ] && return ${ERR_TC} 
+      		rm -rf $6/TF.d*
+
+			fi
+
+		else # SSV 10m case
+
+			if [[ $5 == 1 ]];then
+
+				SECONDS=0
+   	  	   echo -ne " Applying the geometric terrain correction and transform backscatter to decibel scale ..." &&
+				bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SSV_10_TC_DB.xml -x -Pinput=$6/TF.dim -Poutput=$2 > $7/log_tc_db 2>&1\
+    			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+				[ $? -ne 0 ] && return ${ERR_TC} 
+     			rm -rf $6/TF.d*
+
+			else
+			
+				SECONDS=0
+   	      echo -ne " Applying the geometric terrain correction ..." &&
+				bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SSV_10_TC.xml -x -Pinput=$6/TF.dim -Poutput=$2 > $7/log_tc 2>&1 \
+    			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+				[ $? -ne 0 ] && return ${ERR_TC} 
+      		rm -rf $6/TF.d*
+
+			fi
 
 		fi
-
-	else # SSV 10m case
-
-		if [[ $5 == 1 ]];then
-
-			SECONDS=0
-            	    echo -ne " Applying the geometric terrain correction and transform backscatter to decibel scale ..." &&
-			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SSV_10_TC_DB.xml -x -Pinput=$6/TF.dim -Poutput=$2 > $7/log_tc_db 2>&1\
-    			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-			[ $? -ne 0 ] && return ${ERR_TC} 
-      			rm -rf $6/TF.d*
-
-		else
-			
-			SECONDS=0
-        	        echo -ne " Applying the geometric terrain correction ..." &&
-			bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SSV_10_TC.xml -x -Pinput=$6/TF.dim -Poutput=$2 > $7/log_tc 2>&1 \
-    			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-			[ $? -ne 0 ] && return ${ERR_TC} 
-      			rm -rf $6/TF.d*
-
-		fi
-
-	fi
 fi
 
 echo "------------------------------------------------------------------------------------------------------"
@@ -414,7 +434,5 @@ function s1_mt_metrics() {
 echo "------------------------------------------------------------------------------------------------------"
 echo " Info: Succesfully created a stack of multi-temporal metrics. "
 echo "------------------------------------------------------------------------------------------------------"
-echo ""
-echo ""
-    
+
 }

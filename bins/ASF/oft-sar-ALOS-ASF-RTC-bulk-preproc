@@ -1,0 +1,92 @@
+#!/bin/bash
+
+# The MIT License (MIT)
+# Copyright (c) 2016 Andreas Vollrath
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal 
+# in the Software without restriction, including without limitation the rights 
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
+# copies of the Software, and to permit persons to whom the Software is furnished
+# to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE 
+# OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+#-------------------------------------------------------------------------------------------	
+# 	0.1 Check for right usage & set up basic Script Variables
+if [ "$#" != "2" ]; then
+
+	echo -e ""
+	echo -e "--------------------------------------------------------"
+	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
+	echo -e " Bulk preprocessing of ALOS RTC products from ASF server"
+	echo -e "--------------------------------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Software dependencies:"
+	echo -e "	- SNAP Toolbox"
+	echo -e "	- gdal-bin"
+	echo -e "	- dans-gdal-scripts"
+	echo -e "	- SAGA GIS"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e " syntax: osk_bulk_ALOS_L1.5_preprocess_asf <project_path> "
+	echo -e ""
+	echo -e " description of input parameters:"
+	echo -e " project_path		pathname, where the ASF downloaded zips are located"
+	echo -e " resolution		output resolution in degree ( - for original resolution)"
+	echo -e ""
+	echo -e " NOTE: This should lead to the directory where the osk_download_ALOS_ASF script has stored and sorted the data by date (e.g. /path/to/project/FBD)"
+	echo -e ""
+	echo -e ""
+  exit 1
+else
+	echo -e ""
+	echo -e "--------------------------------------------------------"
+	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
+	echo -e " Bulk preprocessing ALOS ALOS RTC products from ASF server"
+	echo -e "--------------------------------------------------------"
+
+# set up input data
+  	cd $1
+  	PROC_DIR=`pwd`
+  	echo " Bulk processing folder: ${PROC_DIR}"
+fi
+#-------------------------------------------------------------------------------------------	
+
+cd ${PROC_DIR}
+
+for DATE in `ls -1 -d [0-9]*`;do
+
+	echo "------------------------------------------------"
+	echo " Processing ALOS Scenes from ${DATE} (YYYYMMDD)"
+	echo "------------------------------------------------"
+
+	cd ${DATE}
+	export SAT_PATH=`echo ${DATE:9:12}`
+
+	# serial version
+	for FILE in `ls -1 *.zip`;do
+		oft-sar-ALOS-ASF-RTC-single-preproc ${FILE} ${PROC_DIR}/${DATE}  
+	done
+
+	cd ${PROC_DIR}
+	oft-sar-ALOS-ASF-merge-path . -
+
+	# parallel version
+#	ls -1 *zip | parallel -j+0 --eta "osk_single_ALOS_L1.5_preprocess_asf {} $2 ${PROC_DIR}/${DATE}"
+
+
+	# possible Path mosaicing --> use extra script, that could be used also later on
+	#list=`ls -d */Gamma0* | tr '\ ' ';'`
+	
+done
+

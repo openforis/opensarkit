@@ -1,0 +1,83 @@
+#! /bin/bash
+
+# The MIT License (MIT)
+# Copyright (c) 2016 Andreas Vollrath
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal 
+# in the Software without restriction, including without limitation the rights 
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
+# copies of the Software, and to permit persons to whom the Software is furnished
+# to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE 
+# OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+#-------------------------------------------------------------------------------------------	
+# 	0.1 Check for right usage & set up basic Script Variables
+if [ "$#" != "4" ]; then
+	
+	echo -e ""
+	echo -e "----------------------------------------------------------------------------------"
+	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
+	echo -e " Subsetting Sentinel-1 GRD data to a given Area of Interest - Bulk Mode"
+	echo -e "----------------------------------------------------------------------------------"
+	echo -e ""
+	echo -e "----------------------------------------------------------------------------------"
+	echo -e " Software dependencies:"
+	echo -e "	- ESA Sentinel Application Platform SNAP"
+	echo -e "	- gdal-bin"
+	echo -e "----------------------------------------------------------------------------------"
+	echo -e ""
+	echo -e " osk_S1_GRD_bulk_subset <project folder> <AOI> <clean import> <delete zips>"
+	echo -e ""
+	exit 1
+
+else
+	echo -e ""
+	echo -e "----------------------------------------------------------------------------------"
+	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
+	echo -e " Subsetting Sentinel-1 GRD data to a given Area of Interest - Bulk Mode"
+	echo -e "----------------------------------------------------------------------------------"
+	echo -e ""
+
+
+	# set up initial script variables	
+	AOI=`readlink -f $2`
+	cd $1
+	PROC_DIR=`pwd`
+
+	source ${OPENSARKIT}/lib/helpers_source
+fi
+
+
+
+
+for LINE in `ls -1 ${PROC_DIR}`;do
+	
+	cd ${LINE}
+
+	for TRACK in `ls -1 ${PROC_DIR}/${LINE}`;do
+
+		cd $TRACK
+
+		for FILE in `ls -1 *zip`;do
+
+			oft-sar-S1-GRD-subset ${FILE} ${AOI} $3 $4
+
+		done
+
+		cd ../
+	done
+
+	cd ${PROC_DIR}
+done
+
+

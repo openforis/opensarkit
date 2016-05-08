@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # The MIT License (MIT)
 # Copyright (c) 2016 Andreas Vollrath
 
@@ -18,23 +20,15 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE 
 # OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-# get GNU commands in case running on Mac OS
-if [[ `uname` == "Darwin" ]];then 
+cd ${OPENSARKIT}
+SECONDS=0
+echo -ne " Updating OFST to the latest version ..." &&
+git pull >> ${OSK_HOME}/LOG/log_update
+& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
-	export PATH=/opt/local/libexec/gnubin:${PATH}
-	
-fi
+SECONDS=0
+echo -ne " Updating SNAP to the latest version ..." &&
+snap --nosplash --nogui --modules --update-all  >> ${OSK_HOME}/LOG/log_install 2>&1 \
+& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
-# source the helper functions
-source $OPENSARKIT/lib/gdal_helpers
-source $OPENSARKIT/lib/s1_helpers
-source $OPENSARKIT/lib/s1_processors
-source $OPENSARKIT/lib/s2_helpers
-#source $OPENSARKIT/lib/saga_helpers
-source $OPENSARKIT/lib/bash_helpers
-source $OPENSARKIT/lib/lib_aoi
 
-export PYTHON_BIN=${OPENSARKIT}/lib/python
-export GDAL_BIN=${OPENSARKIT}/lib/GDAL
-
-export PATH=$PATH:$PYTHON_BIN:$GDAL_BIN

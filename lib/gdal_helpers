@@ -1,7 +1,30 @@
-#Size Functions
-#This size function echos the pixel dimensions of a given file in the format expected by gdalwarp.
+# If not stated otherwise (i.e. taken from https://github.com/dwtkns/gdal-cheat-sheet)
+# the MIT License applies
+
+# The MIT License (MIT)
+# Copyright (c) 2016 Andreas Vollrath
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal 
+# in the Software without restriction, including without limitation the rights 
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
+# copies of the Software, and to permit persons to whom the Software is furnished
+# to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE 
+# OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 function gdal_size() {
+# taken from https://github.com/dwtkns/gdal-cheat-sheet
+#Size Functions
+#This size function echos the pixel dimensions of a given file in the format expected by gdalwarp.
     if [ -z "$1" ]; then 
         echo "Missing arguments. Syntax:"
         echo "  gdal_size <input_raster>"
@@ -14,21 +37,10 @@ function gdal_size() {
     echo -n "$SIZE"
 }
 
-#This can be used to easily resample one raster to the dimensions of another:
-#gdalwarp -ts $(gdal_size bigraster.tif) -r cubicspline smallraster.tif resampled_smallraster.tif
 
-
-# Extent Functions
-# These extent functions echo the extent of the given file in the order/format expected by gdal_translate -projwin. (Originally from Linfiniti).
-# Extents can be passed directly into a gdal_translate command like so:
-
-# gdal_translate -projwin $(ogr_extent boundingbox.shp) input.tif clipped_output.tif
-# or
-# gdal_translate -projwin $(gdal_extent target_crop.tif) input.tif clipped_output.tif
-# This can be a useful way to quickly crop one raster to the same extent as another. 
-# Add these to your ~/.bash_profile file for easy terminal access.
 
 function gdal_extent() {
+# taken from https://github.com/dwtkns/gdal-cheat-sheet
     if [ -z "$1" ]; then 
         echo "Missing arguments. Syntax:"
         echo "  gdal_extent <input_raster>"
@@ -44,6 +56,21 @@ function gdal_extent() {
 }
 
 function ogr_extent() {
+# taken from https://github.com/dwtkns/gdal-cheat-sheet
+
+#This can be used to easily resample one raster to the dimensions of another:
+#gdalwarp -ts $(gdal_size bigraster.tif) -r cubicspline smallraster.tif resampled_smallraster.tif
+
+
+# Extent Functions
+# These extent functions echo the extent of the given file in the order/format expected by gdal_translate -projwin. (Originally from Linfiniti).
+# Extents can be passed directly into a gdal_translate command like so:
+
+# gdal_translate -projwin $(ogr_extent boundingbox.shp) input.tif clipped_output.tif
+# or
+# gdal_translate -projwin $(gdal_extent target_crop.tif) input.tif clipped_output.tif
+# This can be a useful way to quickly crop one raster to the same extent as another. 
+# Add these to your ~/.bash_profile file for easy terminal access.
     if [ -z "$1" ]; then 
         echo "Missing arguments. Syntax:"
         echo "  ogr_extent <input_vector>"
@@ -60,6 +87,7 @@ function ogr_extent() {
 }
 
 function ogr_layer_extent() {
+# taken from https://github.com/dwtkns/gdal-cheat-sheet
     if [ -z "$2" ]; then 
         echo "Missing arguments. Syntax:"
         echo "  ogr_extent <input_vector> <layer_name>"

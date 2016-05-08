@@ -28,7 +28,7 @@
   UNIT[&quot;degree&quot;, 0.017453292519943295], 
   AXIS[&quot;Geodetic longitude&quot;, EAST], 
   AXIS[&quot;Geodetic latitude&quot;, NORTH]]</mapProjection>
-      <nodataValueAtSea>true</nodataValueAtSea>
+      <nodataValueAtSea>false</nodataValueAtSea>
       <saveDEM>false</saveDEM>
       <saveLatLon>false</saveLatLon>
       <saveIncidenceAngleFromEllipsoid>false</saveIncidenceAngleFromEllipsoid>
@@ -46,8 +46,8 @@
       <externalAuxFile/>
     </parameters>
   </node>
-  <node id="LinearTodB">
-    <operator>LinearTodB</operator>
+  <node id="LinearToFromdB">
+    <operator>LinearToFromdB</operator>
     <sources>
       <sourceProduct refid="Terrain-Correction"/>
     </sources>
@@ -58,7 +58,7 @@
   <node id="Write">
     <operator>Write</operator>
     <sources>
-      <sourceProduct refid="LinearTodB"/>
+      <sourceProduct refid="LinearToFromdB"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
       <file>${output}</file>
@@ -70,7 +70,7 @@
     <node id="Write">
             <displayPosition x="455.0" y="135.0"/>
     </node>
-    <node id="LinearTodB">
+    <node id="LinearToFromdB">
       <displayPosition x="306.0" y="148.0"/>
     </node>
     <node id="Terrain-Correction">

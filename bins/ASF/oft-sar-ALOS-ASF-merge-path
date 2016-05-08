@@ -1,0 +1,236 @@
+#! /bin/bash
+
+# The MIT License (MIT)
+# Copyright (c) 2016 Andreas Vollrath
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal 
+# in the Software without restriction, including without limitation the rights 
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
+# copies of the Software, and to permit persons to whom the Software is furnished
+# to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE 
+# OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+#-------------------------------------------------------------------------------------------	
+# 	0.1 Check for right usage & set up basic Script Variables
+if [ "$#" != "2" ]; then
+
+	echo -e "-----------------------------------------------------------------"
+	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
+	echo -e " Assemble single ALOS scenes to the full swath covering the AOI  "
+	echo -e "-----------------------------------------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Software dependencies:"
+	echo -e "	- SAGA GIS"
+	echo -e "	- dans-gdal-scripts"
+	echo -e "	- gdal"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e " syntax: osk_merge_path_ALOS <path_to_tracks> <output_resolution>"
+	echo -e ""
+	echo -e " description of input parameters:"
+	echo -e " path_to_tracks		pathname, where the preprocessed scenes are sorted by acquisition date"
+	echo -e ""
+	echo -e " NOTE: This script should be followed by osk_bulk_preproc_ALOS_ASF_L1.5"
+	echo -e ""
+	echo -e " resolution		output resolution in degree ( - for original resolution)"
+	echo -e " "
+   	exit 1
+else
+	echo -e "-----------------------------------------------------------------"
+	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
+	echo -e " Assemble single ALOS scenes to the full swath covering the AOI  "
+	echo -e "-----------------------------------------------------------------"
+
+
+	# set up input data
+	cd $1
+	export PROC_DIR=`pwd`
+	
+	
+	# source libs
+	source ${OPENSARKIT}/lib/helpers_source
+fi
+
+#--------------------------------------------------------------
+# Set number of CPUs (for SAGA GIS)
+CPU=`lscpu | grep "CPU(s):" | awk $'{print $2}' | head -1`
+#--------------------------------------------------------------
+
+#--------------------------------------------------------------
+# Path structure
+cd ${PROC_DIR}
+TMP_DIR=${PROC_DIR}/.TMP
+rm -rf ${TMP_DIR}
+mkdir -p ${TMP_DIR}
+mkdir -p ${PROC_DIR}/Swaths
+#mkdir -p ${PROC_DIR}/Swaths/
+#mkdir -p ${PROC_DIR}/Swaths/KMZS
+#mkdir -p ${PROC_DIR}/Swaths/OUTLINES
+
+LOG_DIR=${PROC_DIR}/Swaths/LOG_PATH	
+mkdir -p ${LOG_DIR}
+#--------------------------------------------------------------
+
+#--------------------------------------------------------------
+# Loop for Acquisition Date
+for ACQ_DATE in `ls -1 -d [1,2]*`;do 
+
+	cd ${ACQ_DATE}
+
+   echo " Info: Entering Track ${ACQ_DATE}:"
+
+	NR_SCENES=`ls -1 -d [0-9]* | wc -l`
+	echo " Info: Found ${NR_SCENES} scenes to assemble"
+	i=1
+	#--------------------------------------------------------------
+	# Loop for Frames
+	for FRAME in `ls -1 -d [0-9]*`;do 
+		
+		cd $FRAME
+		ORBIT=${FRAME:5:10}
+
+
+		#--------------------------------------------------------------
+		# Translate to SAGA GIS
+		if [ $2 == "-" ];then
+
+			
+			SECONDS=0			
+			echo -ne " Preparing scene $i of ${NR_SCENES} for assembling ..."	&&
+			if [ -e Gamma0_HH.tif ];then
+			gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -t_srs EPSG:4326 -overwrite -of SAGA -srcnodata "0" -dstnodata "-99999" Gamma0_HH.tif ${TMP_DIR}/${FRAME}"_Gamma0_HH_saga.sdat" >> ${LOG_DIR}/log_path_assembly 2>&1 & spinner $! 
+			echo ${TMP_DIR}/${FRAME}"_Gamma0_HH_saga.sgrd" >> ${TMP_DIR}/Gamma0_HH_list
+			fi 
+
+			if [ -e Gamma0_HV.tif ];then
+			gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -t_srs EPSG:4326 -overwrite -of SAGA -srcnodata "0" -dstnodata "-99999" Gamma0_HV.tif ${TMP_DIR}/${FRAME}"_Gamma0_HV_saga.sdat">> ${LOG_DIR}/log_path_assembly 2>&1 & spinner $! 
+			echo ${TMP_DIR}/${FRAME}"_Gamma0_HV_saga.sgrd" >> ${TMP_DIR}/Gamma0_HV_list
+			fi
+
+			if [ -e Gamma0_VH.tif ];then
+			gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -t_srs EPSG:4326 -overwrite -of SAGA -srcnodata "0" -dstnodata "-99999" Gamma0_VH.tif ${TMP_DIR}/${FRAME}"_Gamma0_VH_saga.sdat" >> ${LOG_DIR}/log_path_assembly 2>&1 & spinner $! 
+			echo ${TMP_DIR}/${FRAME}"_Gamma0_HV_saga.sgrd" >> ${TMP_DIR}/Gamma0_VH_list
+			fi
+
+			if [ -e Gamma0_VV.tif ];then
+			gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -t_srs EPSG:4326 -overwrite -of SAGA -srcnodata "0" -dstnodata "-99999" Gamma0_VV.tif ${TMP_DIR}/${FRAME}"_Gamma0_VV_saga.sdat" >> ${LOG_DIR}/log_path_assembly 2>&1 & spinner $! 
+			echo ${TMP_DIR}/${FRAME}"_Gamma0_HV_saga.sgrd" >> ${TMP_DIR}/Gamma0_VV_list
+			fi
+			
+			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+			cd ../
+
+		#--------------------------------------------------------------
+		# Translate to SAGA and resample to desired resolution
+		else
+
+			SECONDS=0			
+			echo -ne " Preparing scene $i of ${NR_SCENES} for assembling ..."	&&	
+			RES=$2
+			if [ -e Gamma0_HH.tif ];then
+			gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -t_srs EPSG:4326 -tr ${RES} ${RES} -overwrite -of SAGA -srcnodata "0" -dstnodata "-99999" Gamma0_HH.tif ${TMP_DIR}/${FRAME}"_Gamma0_HH_saga.sdat" >> ${LOG_DIR}/log_path_assembly 2>&1 & spinner $! 
+			echo ${TMP_DIR}/${FRAME}"_Gamma0_HH_saga.sgrd" >> ${TMP_DIR}/Gamma0_HH_list
+			fi
+
+			if [ -e Gamma0_HV.tif ];then
+			gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -t_srs EPSG:4326 -tr ${RES} ${RES} -overwrite -of SAGA -srcnodata "0" -dstnodata "-99999" Gamma0_HV.tif ${TMP_DIR}/${FRAME}"_Gamma0_HV_saga.sdat" >> ${LOG_DIR}/log_path_assembly 2>&1 & spinner $! 
+			echo ${TMP_DIR}/${FRAME}"_Gamma0_HV_saga.sgrd" >> ${TMP_DIR}/Gamma0_HV_list
+			fi
+
+			if [ -e Gamma0_VH.tif ];then
+			gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -t_srs EPSG:4326 -tr ${RES} ${RES} -overwrite -of SAGA -srcnodata "0" -dstnodata "-99999" Gamma0_VH.tif ${TMP_DIR}/${FRAME}"_Gamma0_VH_saga.sdat" >> ${LOG_DIR}/log_path_assembly 2>&1 & spinner $! 
+			echo ${TMP_DIR}/${FRAME}"_Gamma0_HV_saga.sgrd" >> ${TMP_DIR}/Gamma0_VH_list
+			fi
+
+			if [ -e Gamma0_VV.tif ];then
+			gdalwarp -multi -wo NUM_THREADS=ALL_CPUS -t_srs EPSG:4326 -tr ${RES} ${RES} -overwrite -of SAGA -srcnodata "0" -dstnodata "-99999" Gamma0_VV.tif ${TMP_DIR}/${FRAME}"_Gamma0_VV_saga.sdat" >> ${LOG_DIR}/log_path_assembly 2>&1 & spinner $! 
+			echo ${TMP_DIR}/${FRAME}"_Gamma0_HV_saga.sgrd" >> ${TMP_DIR}/Gamma0_VV_list			
+			fi
+			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+			cd ../
+
+		fi
+		#--------------------------------------------------------------
+			i=`expr $i + 1`
+	done
+	#--------------------------------------------------------------
+
+
+	#--------------------------------------------------------------
+	# Create the Path mosaics
+	if [ -e ${TMP_DIR}/Gamma0_HH_list ];then
+	SECONDS=0
+	echo -ne " Assembling the HH polarized bands ..."
+	LIST_HH=`cat ${TMP_DIR}/Gamma0_HH_list | tr '\n' ';' | rev | cut -c 2- | rev`
+	saga_cmd -c=${CPU} grid_tools 3 -GRIDS:"${LIST_HH}" -TYPE:7 -OVERLAP:4 -BLEND_DIST:0 -TARGET_OUT_GRID:${TMP_DIR}/${ACQ_DATE}"_Gamma0_HH_"${ORBIT}.sgrd >> ${LOG_DIR}/log_path_assembly 2>&1 & spinner $!
+	gdalwarp -srcnodata -99999 -dstnodata 0 ${TMP_DIR}/${ACQ_DATE}"_Gamma0_HH_"${ORBIT}.sdat ${PROC_DIR}/Swaths/${ACQ_DATE}"_Gamma0_HH_"${ORBIT}.tif >> ${LOG_DIR}/log_path_assembly 2>&1 & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	fi
+	
+	if [ -e ${TMP_DIR}/Gamma0_HV_list ];then
+	SECONDS=0
+	echo -ne " Assembling the HV polarized bands ..."
+	LIST_HV=`cat ${TMP_DIR}/Gamma0_HV_list | tr '\n' ';' | rev | cut -c 2- | rev`
+	saga_cmd -c=${CPU} grid_tools 3 -GRIDS:"${LIST_HV}" -TYPE:7 -OVERLAP:4 -BLEND_DIST:0 -TARGET_OUT_GRID:${TMP_DIR}/${ACQ_DATE}"_Gamma0_HV_"${ORBIT}.sgrd >> ${LOG_DIR}/log_path_assembly 2>&1 & spinner $!
+	gdalwarp -srcnodata -99999 -dstnodata 0 ${TMP_DIR}/${ACQ_DATE}"_Gamma0_HV_"${ORBIT}.sdat ${PROC_DIR}/Swaths/${ACQ_DATE}"_Gamma0_HV_"${ORBIT}.tif >> ${LOG_DIR}/log_path_assembly 2>&1 & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	fi
+
+	if [ -e ${TMP_DIR}/Gamma0_VH_list ];then
+	SECONDS=0
+	echo -ne " Assembling the VH polarized bands ..."
+	LIST_VH=`cat ${TMP_DIR}/Gamma0_VH_list | tr '\n' ';' | rev | cut -c 2- | rev`
+	saga_cmd -c=${CPU} grid_tools 3 -GRIDS:"${LIST_VH}" -TYPE:7 -OVERLAP:4 -BLEND_DIST:0 -TARGET_OUT_GRID:${TMP_DIR}/${ACQ_DATE}"_Gamma0_VH_"${ORBIT}.sgrd >> ${LOG_DIR}/log_path_assembly 2>&1 & spinner $!
+	gdalwarp -srcnodata -99999 -dstnodata 0 ${TMP_DIR}/${ACQ_DATE}"_Gamma0_VH_"${ORBIT}.sdat ${PROC_DIR}/Swaths/${ACQ_DATE}"_Gamma0_VH_"${ORBIT}.tif >> ${LOG_DIR}/log_path_assembly 2>&1 & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	fi
+	
+	if [ -e ${TMP_DIR}/Gamma0_VV_list ];then
+	SECONDS=0
+	echo -ne " Assembling the VV polarized bands ..."
+	LIST_VV=`cat ${TMP_DIR}/Gamma0_VV_list | tr '\n' ';' | rev | cut -c 2- | rev`
+	saga_cmd -c=${CPU} grid_tools 3 -GRIDS:"${LIST_VV}" -TYPE:7 -OVERLAP:4 -BLEND_DIST:0 -TARGET_OUT_GRID:${TMP_DIR}/${ACQ_DATE}"_Gamma0_VV_"${ORBIT}.sgrd >> ${LOG_DIR}/log_path_assembly 2>&1 & spinner $!
+	gdalwarp -srcnodata -99999 -dstnodata 0 ${TMP_DIR}/${ACQ_DATE}"_Gamma0_VV_"${ORBIT}.sdat ${PROC_DIR}/Swaths/${ACQ_DATE}"_Gamma0_VV_"${ORBIT}.tif >> ${LOG_DIR}/log_path_assembly 2>&1 & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	fi
+
+#	SECONDS=0
+#	echo -ne " Creating a valid pixel shapefile from the assembled swath ..."
+#	gdal_trace_outline ${TMP_DIR}/${ACQ_DATE}"_Gamma0_HH_"${ORBIT}.sdat -ndv -99999 -dp-toler 0 -out-cs en -ogr-out ${PROC_DIR}/Swaths/OUTLINES/${ACQ_DATE}"_Gamma0_HH_"${ORBIT}.shp  >> ${LOG_DIR}/log_path_assembly 2>&1 \
+#			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+#	SECONDS=0
+#	echo -ne " Creating a KMZ file of the HH swath ..."
+#	gdal_translate -of KMLSUPEROVERLAY -a_nodata 0 -outsize 25% 25% -scale 0.001 0.1 0 255 ${TMP_DIR}/${ACQ_DATE}"_Gamma0_HH_"${ORBIT}.sdat  ${PROC_DIR}/Swaths/KMZS/${ACQ_DATE}"_Gamma0_HH_"${ORBIT}.kmz -co FORMAT=PNG  >> ${LOG_DIR}/log_path_assembly 2>&1 \
+#			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+	rm -rf ${TMP_DIR}/*
+	cd ${PROC_DIR}
+	echo ""
+	#--------------------------------------------------------------	
+done
+#--------------------------------------------------------------
+
+#--------------------------------------------------------------
+# Compress the Shapefiles and KMZs for Download
+#SECONDS=0
+#echo -ne " Creating compressed archives of all KMZ and shapefiles ..."
+#cd ${PROC_DIR}/Swaths
+#tar -czvf Outlines.tar.gz OUTLINES >> ${LOG_DIR}/log_path_assembly 2>&1 & spinner $!
+#tar -czvf KMZS.tar.gz KMZS >> ${LOG_DIR}/log_path_assembly 2>&1 & spinner $!
+#duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+#--------------------------------------------------------------
+
+# remove temp folder
+rm -rf ${TMP_DIR}
+
+echo "------------------------------------------------"
+echo " Succesfully assembled all scenes for all swaths"
+echo "------------------------------------------------"

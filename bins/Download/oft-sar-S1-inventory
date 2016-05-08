@@ -1,0 +1,223 @@
+#! /bin/bash 
+
+# The MIT License (MIT)
+# Copyright (c) 2016 Andreas Vollrath
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal 
+# in the Software without restriction, including without limitation the rights 
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
+# copies of the Software, and to permit persons to whom the Software is furnished
+# to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE 
+# OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+#-------------------------------------------------------------------------------------------	
+# 	0.1 Check for right usage & set up basic Script Variables
+if [ "$#" != "7" ]; then
+
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
+	echo -e " Search for Sentinel-1 data and create an OSK inventory shapefile"
+	echo -e "---------------------------------------------------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Software dependencies:"
+	echo -e "	- xml-twig-tools"
+	echo -e "	- gdal-bin"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e " syntax: osk_S1_inventory <output_folder> <area_of_interest> <start_date> <end_date> <product_type> <polarization_mode> <script_Mode>"
+	echo -e ""
+	echo -e " input parameters:"
+	echo -e " output_folder		(output) folder where the downloaded data will be saved"
+ 	echo -e " ISO3/AOI		ISO3 country code or shapefile of your area of interest"
+	echo -e " start_date		Start date of search in format YYYY-MM-DD"
+	echo -e " end_date		End date of search in format YYYY-MM-DD"
+	echo -e " product_type		choose the product level"
+	echo -e "			 Available choices"
+	echo -e "			  SLC (Single-Look-Complex)"
+	echo -e "			  GRD (Detected Ground Range product)"
+	echo -e ""
+	echo -e " polarization_mode 	acquisition Mode of Sentinel-1 instrument"
+	echo -e "			 Available choices"
+	echo -e "			  VV (for IWS Mode VV & VV/VH)"
+	echo -e "			  VH (for IWS Mode VV/VH)"
+	echo -e "			  HH (for IWS Mode HH & HH/HV)"
+	echo -e "			  HV (for IWS Mode HH/HV)"
+	echo -e ""
+	echo -e " script_mode		choose between data inventory only or immediate download"
+	echo -e "			 Available choices"
+	echo -e "			  0 (only do the data inventory)"
+	echo -e "			  1 (data inventory + direct data download)"
+	echo -e ""
+	exit 1
+else
+	echo -e ""
+	echo -e "---------------------------------------------------------------------------"
+	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
+	echo -e " Search for Sentinel-1 data and create an OSK inventory shapefile"
+	echo -e "---------------------------------------------------------------------------"
+	echo -e ""
+
+
+	# set up initial script variables
+   	
+	if [ -d $1 ];then
+		AOI=`readlink -f $2`
+		cd $1
+	else
+		AOI=`readlink -f $2`
+		mkdir -p $1
+		cd $1
+	fi
+	PROC_DIR=`pwd`
+   TMP_DIR=${PROC_DIR}/.TMP
+   mkdir -p ${TMP_DIR}
+	PERIOD="( beginPosition:["$3"T00:00:00.000Z TO "$4"T23:59:59.999Z] AND endPosition:["$3"T00:00:00.000Z TO "$4"T23:59:59.999Z] )"
+	PRODUCT_TYPE=$5
+	POLAR=$6
+
+	# source necessary OSK libs
+	source ${OPENSARKIT}/lib/helpers_source
+fi
+
+#	Credentials
+echo -e "-------------------------------------------------------"
+echo -e " If you do not have a Copernicus user account, go to :"
+echo -e " https://scihub.copernicus.eu/dhus/"
+echo -e "-------------------------------------------------------"
+echo -e ""
+read -r -p " Please type your ESA Scihub Username:" USERNAME
+read -s -p " Please type your ESA Scihub Password:" PW
+echo ""
+
+
+if [ `echo $2 | grep shp` ]; then # AOI case
+
+	AOI=`readlink -f $2`
+	AOI_PATH=`dirname ${AOI}`
+
+	# check numberof layers/polygons
+	aoi_valid_poly ${AOI} ${TMP_DIR}/aoi_convex.shp ${TMP_DIR} 
+
+	#check EPSG
+	if [ -e ${TMP_DIR}/aoi_convex.shp ];then
+		aoi_valid_epsg ${TMP_DIR}/aoi_convex.shp ${TMP_DIR}/aoi_wgs84.shp ${TMP_DIR} 
+	else	
+		aoi_valid_epsg ${AOI} ${TMP_DIR}/aoi_wgs84.shp ${TMP_DIR} 
+	fi
+	if [ -e ${TMP_DIR}/aoi_wgs84.shp ];then
+		mv ${TMP_DIR}/aoi_wgs84* ${AOI_PATH}
+		AOI=${AOI_PATH}/aoi_wgs84.shp
+	elif [ -e ${TMP_DIR}/aoi_convex.shp ];then
+		mv ${TMP_DIR}/aoi_convex* ${AOI_PATH}
+		AOI=${AOI_PATH}/aoi_convex.shp
+	else 
+		AOI=${AOI}
+	fi
+else # country case
+	mkdir -p ${PROC_DIR}/AOI/
+	aoi_from_iso3 $2 ${PROC_DIR}/AOI
+	AOI=${PROC_DIR}/AOI/$2.shp
+fi
+
+
+# get the corner coordinates from the AOI shapefile and build rectangle for data search  
+SECONDS=0
+echo -ne " Create Query URL from search parameters ... " 
+LAYER=`ogrinfo $AOI | grep 1: | awk $'{print $2}'` 
+X_MIN=`ogrinfo $AOI $LAYER | grep Extent | awk -F '(' $'{print $2}' | awk -F ','  $'{print $1}'` 
+X_MAX=`ogrinfo $AOI $LAYER | grep Extent | awk -F '(' $'{print $3}' | awk -F ','  $'{print $1}'` 
+Y_MIN=`ogrinfo $AOI $LAYER | grep Extent | awk -F ',' $'{print $2}' | awk -F ')' $'{print $1}'` 
+Y_MAX=`ogrinfo $AOI $LAYER | grep Extent | awk -F ',' $'{print $3}' | awk -F ')' $'{print $1}'` 
+AOI="POLYGON(($X_MIN$Y_MIN, $X_MIN$Y_MAX, $X_MAX$Y_MAX, $X_MAX$Y_MIN, $X_MIN$Y_MIN ))" 
+QUERY_URL="https://scihub.esa.int/dhus//search?q=producttype:${PRODUCT_TYPE}+AND+polarisationMode:${POLAR}+AND+( footprint:\"Intersects($AOI)\")+AND+${PERIOD}&rows=10000&start=0" 
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" 
+
+## Alternative Version with actual footprint (seems not to work because only rectangluar searches available)
+#ogr2ogr -f CSV ${TMP_DIR}/tmp_AOI_WKT.csv $AOI -lco GEOMETRY=AS_WKT
+#AOI=`grep POLYGON ${TMP_DIR}/tmp_AOI_WKT.csv | awk -F "))" $'{print $1}'`
+#echo $AOI
+
+# get the OpenSearch result
+SECONDS=0
+echo -ne " Data inventory from scihub server ... " &&
+wget --no-check-certificate --user=${USERNAME} --password=${PW} -O ${TMP_DIR}/datalist "${QUERY_URL}" &> ${TMP_DIR}/log_inventory \
+& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+if grep --quiet "Authentication Failed" ${TMP_DIR}/log_inventory; then 
+	
+        echo " Username/Password Authentication Failed." && exit 1
+	rm -rf ${TMP_DIR}
+fi
+
+# get nr. of products
+NR_OF_PRODUCTS=`s1_ident ${TMP_DIR}/datalist | wc -l `
+
+if [ `xml_grep --text_only "opensearch:totalResults" ${TMP_DIR}/datalist` == 0 ];then
+	echo " Empty search result. Check your search criteria." && exit 1	
+	rm -rf ${TMP_DIR}
+fi
+
+
+echo "-------------------------------------------------"
+echo " Info: There are ${NR_OF_PRODUCTS} Products available"
+echo "-------------------------------------------------"
+
+# get the important info out of the xml JSON file
+s1_ident ${TMP_DIR}/datalist > ${TMP_DIR}/scenes
+s1_uuid ${TMP_DIR}/datalist > ${TMP_DIR}/uuid
+s1_date ${TMP_DIR}/datalist > ${TMP_DIR}/dates
+s1_start_time ${TMP_DIR}/datalist > ${TMP_DIR}/start_time
+s1_stop_time ${TMP_DIR}/datalist > ${TMP_DIR}/stop_time
+s1_track ${TMP_DIR}/datalist > ${TMP_DIR}/track
+s1_orbit ${TMP_DIR}/datalist > ${TMP_DIR}/orbit
+s1_orbit_dir ${TMP_DIR}/datalist > ${TMP_DIR}/orbit_dir
+s1_swath ${TMP_DIR}/datalist > ${TMP_DIR}/swath
+s1_pol_mode ${TMP_DIR}/datalist > ${TMP_DIR}/pol_mode
+s1_footprint ${TMP_DIR}/datalist > ${TMP_DIR}/polys
+
+# write header
+echo "Scene_ID,Product_ID,Date,Track,Pol_Mode,Orbit_Dir,Orbit_Nr,Swath,Start_Time,Stop_Time,WKTGeom" > ${TMP_DIR}/wkt.csv
+echo '"String(68)","String(37)","Integer(8)","Integer(3)","String(5)","String(11)","Integer(6)","String(5)","Integer(6)","Integer(6)",String' > ${TMP_DIR}/wkt.csvt
+
+# write data
+paste -d "," ${TMP_DIR}/scenes ${TMP_DIR}/uuid ${TMP_DIR}/dates ${TMP_DIR}/track ${TMP_DIR}/pol_mode ${TMP_DIR}/orbit_dir ${TMP_DIR}/orbit ${TMP_DIR}/swath ${TMP_DIR}/start_time ${TMP_DIR}/stop_time ${TMP_DIR}/polys >> ${TMP_DIR}/wkt.csv
+
+mkdir -p ${PROC_DIR}/
+mkdir -p ${PROC_DIR}/Inventory
+INV=${PROC_DIR}/Inventory
+
+# write a shapefile of coverage
+echo "<OGRVRTDataSource>" > ${TMP_DIR}/wkt.vrt
+echo "	<OGRVRTLayer name=\"wkt\">" >> ${TMP_DIR}/wkt.vrt
+echo "   	<SrcDataSource>${TMP_DIR}/wkt.csv</SrcDataSource>" >> ${TMP_DIR}/wkt.vrt
+echo "   	<GeometryType>wkbPolygon</GeometryType>" >> ${TMP_DIR}/wkt.vrt
+echo "		<LayerSRS>WGS84</LayerSRS>"  >> ${TMP_DIR}/wkt.vrt
+echo "		<GeometryField encoding=\"WKT\" field=\"WKTGeom\"> </GeometryField >" >> ${TMP_DIR}/wkt.vrt
+echo "	</OGRVRTLayer>" >> ${TMP_DIR}/wkt.vrt
+echo "</OGRVRTDataSource>" >> ${TMP_DIR}/wkt.vrt
+
+rm -rf "${INV}/S1_${POLAR}.shp" 2>&1 > /dev/null
+# convert to final shapefile
+echo -ne " Creating an OFST inventory shapefile ... " &&
+ogr2ogr -f "Esri Shapefile" "${INV}/S1_${POLAR}.shp" "${TMP_DIR}/wkt.vrt" >> ${TMP_DIR}/log_inventory \
+& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+# download if needed
+if [[ $7 == 1 ]];then
+	oft-sar-S1-download ${PROC_DIR} ${INV}/S1_${POL_MODE}.shp
+fi
+
+# remove TMP folder
+rm -rf ${TMP_DIR}

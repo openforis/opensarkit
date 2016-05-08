@@ -1,0 +1,248 @@
+#! /bin/bash
+
+# The MIT License (MIT)
+# Copyright (c) 2016 Andreas Vollrath
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal 
+# in the Software without restriction, including without limitation the rights 
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
+# copies of the Software, and to permit persons to whom the Software is furnished
+# to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE 
+# OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+#----------------------------------------------------------------------
+#	0 Set up Script variables
+#----------------------------------------------------------------------
+
+#-------------------------------------------------------------------------------------------	
+# 	0.1 Check for right usage & set up basic Script Variables
+if [ "$#" == "7" ]; then
+
+	echo -e "-------------------------------------"
+	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
+	echo -e " Search ALOS data on ASF server"
+	echo -e "-------------------------------------"
+	
+	if [ -d $1 ];then
+	
+		cd $1
+	else
+
+		mkdir -p $1
+		cd $1
+	fi
+	
+   	PROC_DIR=`pwd`
+   	TMP_DIR=${PROC_DIR}/.TMP
+		rm -rf ${TMP_DIR} > /dev/null
+   	mkdir -p ${TMP_DIR}
+	AOI=$2
+	START=$3
+	END=$4
+	MODE=$5
+	PROCESSING="processingLevel=$6"
+
+	# source libs
+	source ${OPENSARKIT}/lib/helpers_source
+
+else
+
+	echo -e "-------------------------------------"
+	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
+	echo -e " Search ALOS data on ASF server"
+	echo -e "-------------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Software dependencies:"
+	echo -e "	- aria2"
+	echo -e "	- curl"
+	echo -e "	- ogr2ogr"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e " syntax: osk_ALOS_ASF_inventory <output_folder> <area_of_interest> <start_date> <end_date> <mode> <processing_level> <script_Mode>"
+	echo -e ""
+	echo -e " description of input parameters:"
+	echo -e " output_folder		(output) folder where the downloaded data will be saved"
+ 	echo -e " ISO3/AOI		ISO3 country code or shapefile of your area of interest"
+	echo -e ""
+	echo -e " NOTE: Use the convex_hull_aoi.shp prepared by osk_prepare_project script." 
+	echo -e "      Otherwise the URL will be too long and the download won't start."
+	echo -e ""
+	echo -e " start_date		start date of search in format YYYY-MM-DD"
+	echo -e " end_date		end date of search in format YYYY-MM-DD"
+	echo -e " mode			acquisition Mode of PALSAR instrument"
+	echo -e "			 Available choices:"
+	echo -e "			  FBS (Fine-Beam Single Polarization)"
+	echo -e "			  FBD (Fine-Beam Double Polarization)"
+	echo -e "			  PLR (Polarimetric Mode)"
+	echo -e "			  WB1 (Wide-swath)"
+	echo -e " processing_level	choose the product level"			
+	echo -e "			 Available choices:"
+	echo -e "			  L1.0 (RAW - Level 1.0)"
+	echo -e "			  L1.1 (SLC - Level 1.1)"
+	echo -e "			  L1.5 (GRD - Level 1.5)"
+	echo -e "			  RTC_HI_RES (12.5m High-resolution Terrain Corrected)"
+	echo -e "			  RTC_LOW_RES (30m Low-resolution Terrain Corrected)"
+	echo -e ""
+	echo -e " script_Mode		choose between data inventory only or immediate download "	
+	echo -e "			 Available choices"
+	echo -e "			  0 (only do the data inventory)"
+	echo -e "			  1 (data inventory + direct data download)"
+	echo -e ""
+	exit 1
+fi
+
+
+echo -ne " Generating search query ..."
+
+if [ `echo $2 | grep shp` ]; then # AOI case
+	# check EPSG
+	AOI=`readlink -f $2`
+	aoi_valid_epsg ${AOI} ${TMP_DIR}/aoi_wgs84.shp ${TMP_DIR} 
+
+	if [ -e ${TMP_DIR}/aoi_wgs84.shp ];then
+		oft_convex_hull.py -i ${TMP_DIR}/aoi_wgs84.shp -o ${TMP_DIR}/aoi_convex.shp
+		cp ${TMP_DIR}/aoi_wgs84.prj ${TMP_DIR}/aoi_convex.prj
+	else
+		oft_convex_hull.py -i ${AOI} -o ${TMP_DIR}/aoi_convex.shp
+		AOI_PROJ_FILE=`echo ${AOI} | rev | cut -c 5- | rev`
+		cp ${AOI_PROJ_FILE}.prj ${TMP_DIR}/aoi_convex.prj
+	fi
+else # country case
+	mkdir -p ${PROC_DIR}/AOI/
+	aoi_from_iso3 $2 ${PROC_DIR}/AOI
+	oft_convex_hull.py -i ${PROC_DIR}/AOI/$2.shp -o ${TMP_DIR}/aoi_convex.shp
+fi
+
+ogr2ogr -f CSV ${TMP_DIR}/AOI_WKT.csv ${TMP_DIR}/aoi_convex.shp -lco GEOMETRY=AS_WKT
+AOI=`grep POLYGON ${TMP_DIR}/AOI_WKT.csv | sed 's|\"POLYGON ((||g' | awk -F "))" $'{print $1}' | sed 's/\ /,/g'`
+
+# Search Parameters
+PERIOD="start="${START}"T11:59:59UTC&end="${END}"T00:00:00UTC"
+PLATFORM="platform=A3"
+BEAM="beamMode=${MODE}"  
+echo -e " done"
+#----------------------------------------------------------------------------------
+# download the csv inventory file
+# search part of the URL
+
+OUTPUT_FORMAT="output=csv"
+OUTPUT="${MODE}-data_inventory"
+OUT_FILE=${TMP_DIR}/$OUTPUT.csv
+ASK="\&polygon=${AOI}&${PLATFORM}&${BEAM}&${PERIOD}&${PROCESSING}&${OUTPUT_FORMAT}"
+echo -ne " Data inventory from ASF server ..." &&
+curl -s https://api.daac.asf.alaska.edu/services/search/param?keyword=value$ASK | tail -n +2  > ${OUT_FILE} \
+& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+echo "" >>  ${OUT_FILE}
+NR_OF_PRODUCTS=`wc -l ${OUT_FILE} | awk '{print $1}'`
+
+echo "-------------------------------------------------"
+echo " Info: There are ${NR_OF_PRODUCTS} Products available"
+echo "-------------------------------------------------"
+#----------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------
+echo -ne " Creating an OFST inventory shapefile ... " 
+# sort the data
+cat ${OUT_FILE} | awk -F ',' $'{print $1}' | sed 's/"//g' > ${TMP_DIR}/granule
+cat ${OUT_FILE} | awk -F ',' $'{print $4}' | sed 's/"//g' > ${TMP_DIR}/mode
+cat ${OUT_FILE} | awk -F ',' $'{print $6}' | sed 's/"//g' > ${TMP_DIR}/orbit
+cat ${OUT_FILE} | awk -F ',' $'{print $7}' | sed 's/"//g' > ${TMP_DIR}/track
+cat ${OUT_FILE} | awk -F ',' $'{print $8}'| sed 's/"//g' > ${TMP_DIR}/frame
+cat ${OUT_FILE} | awk -F ',' $'{print $25}'| sed 's/"//g' > ${TMP_DIR}/orbit_dir
+cat ${OUT_FILE} | awk -F ',' $'{print $26}'| sed 's/"//g' > ${TMP_DIR}/download
+cat ${OUT_FILE} | awk -F ',' $'{print $28}'| sed 's/"//g' > ${TMP_DIR}/inc_angle
+cat ${OUT_FILE} | awk -F ',' $'{print $11}' | sed 's/"//g' > ${TMP_DIR}/product_type
+
+#acqdata
+for LINE in $(cat ${OUT_FILE} | awk -F ',' $'{print $9}'| sed 's/"//g' | tr "\ " "\n" | awk NR%2==1);do
+	YEAR=`echo ${LINE} | awk -F "-" '{print $1}'`
+	MONTH=`echo ${LINE} | awk -F "-" '{print $2}'`
+	DAY=`echo ${LINE} | awk -F "-" '{print $3}'`
+	ACQ_DATE=${YEAR}${MONTH}${DAY}
+	echo ${ACQ_DATE} >> ${TMP_DIR}/acq_date
+done
+
+# wkt polygon
+for LINE in `cat $OUT_FILE | awk -F "," $'{print $16 "," $17 "," $18 "," $19 "," $20 "," $21 "," $22 "," $23}' | sed 's/"//g'`; do 
+
+	N_START=`echo $LINE | awk -F "," '{print $2; print $1}'`
+	F_START=`echo $LINE | awk -F "," '{print $4; print $3}'`
+	N_END=`echo $LINE | awk -F "," '{print $6; print $5}'`
+	F_END=`echo $LINE | awk -F "," '{print $8; print $7}'`
+
+	N_START_LAT=`echo $N_START | awk $'{print $2}'`
+	N_END_LAT=`echo $N_END | awk $'{print $2}'`
+
+
+	if [[ $(echo " ${N_START_LAT} < ${N_END_LAT}" | bc) -eq "1" ]];then
+
+		echo "\"POLYGON (("${N_START},${F_START},${F_END},${N_END},${N_START}"))\"" >> ${TMP_DIR}/polys
+
+	else
+
+		echo "\"POLYGON (("${N_START},${N_END},${F_END},${F_START},${N_START}"))\"" >> ${TMP_DIR}/polys
+	fi
+done
+#----------------------------------------------------------------------------------
+
+
+# write header
+echo "Scene_ID,DL_Path,Date,Mode,Track,Frame,Orbit,Orbit_Dir,Product,WKTGeom" > ${TMP_DIR}/wkt.csv
+echo '"String(15)","String(90)","Integer(8)","String(5)","Integer(3)","Integer(3)","String(5)","String(11)","String(11)","String"' > ${TMP_DIR}/wkt.csvt
+
+# write data
+paste -d "," ${TMP_DIR}/granule ${TMP_DIR}/download ${TMP_DIR}/acq_date ${TMP_DIR}/mode ${TMP_DIR}/track ${TMP_DIR}/frame ${TMP_DIR}/orbit ${TMP_DIR}/orbit_dir ${TMP_DIR}/product_type ${TMP_DIR}/polys >> ${TMP_DIR}/wkt.csv
+
+mkdir -p ${PROC_DIR}/
+mkdir -p ${PROC_DIR}/Inventory
+INV=${PROC_DIR}/Inventory
+
+# write a shapefile of coverage
+echo "<OGRVRTDataSource>" > ${TMP_DIR}/wkt.vrt
+echo "	<OGRVRTLayer name=\"wkt\">" >> ${TMP_DIR}/wkt.vrt
+echo "   	<SrcDataSource>${TMP_DIR}/wkt.csv</SrcDataSource>" >> ${TMP_DIR}/wkt.vrt
+echo "   	<GeometryType>wkbPolygon</GeometryType>" >> ${TMP_DIR}/wkt.vrt
+echo "		<LayerSRS>WGS84</LayerSRS>"  >> ${TMP_DIR}/wkt.vrt
+echo "		<GeometryField encoding=\"WKT\" field=\"WKTGeom\"> </GeometryField >" >> ${TMP_DIR}/wkt.vrt
+echo "	</OGRVRTLayer>" >> ${TMP_DIR}/wkt.vrt
+echo "</OGRVRTDataSource>" >> ${TMP_DIR}/wkt.vrt
+
+# convert to final shapefile
+
+rm -rf "${INV}/ALOS_ASF_${MODE}.shp" 
+ogr2ogr -f "Esri Shapefile" "${INV}/ALOS_ASF_${MODE}.shp" "${TMP_DIR}/wkt.vrt" & spinner $! && duration=$SECONDS \
+&& echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+rm -rf ${TMP_DIR}
+
+# download if needed
+if [[ $7 == 1 ]];then
+	oft-sar-ALOS-ASF-download ${PROC_DIR} ${INV}/ALOS_ASF_${MODE}.shp
+fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

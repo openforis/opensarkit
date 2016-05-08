@@ -1,0 +1,193 @@
+#!/bin/bash
+
+#-------------------------------------------------------------------------------------------
+#	0 Set up Script variables
+#-------------------------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------------------------	
+# 	0.1 Check for right usage & set up basic Script Variables
+if [ "$#" != "2" ]; then
+
+	echo -e ""
+	echo -e "------------------------------------------------"
+	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
+	echo -e " Preprocessing ALOS RTC products from ASF server"
+	echo -e "------------------------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Software dependencies:"
+	echo -e "	- SAGA GIS"
+	echo -e "	- gdal"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e " syntax: osk_ALOS_ASF_RTC_preprocess <filename> <output_folder>"
+	echo -e ""
+	echo -e " description of input parameters:"
+	echo -e " filename		(input) filename of the downloaded zip file"
+	echo -e " output_folder		(output) pathname of the output folder"
+	echo -e ""
+  exit 1
+else
+	echo -e "------------------------------------------------"
+	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
+	echo -e " Preprocessing ALOS RTC products from ASF server"
+	echo -e "------------------------------------------------"
+	echo -e ""
+
+# set up input data
+  FILE=`readlink -f $1`
+  BASE=`basename ${FILE}`
+  PROC_DIR=`dirname ${FILE}`
+  TMP1=${PROC_DIR}/TMP/
+  rm -rf ${TMP1}	
+  mkdir -p ${TMP1}
+  TMP_DIR=${PROC_DIR}/TMP/${BASE}
+  mkdir -p ${TMP_DIR}
+  mkdir -p $2
+  cd $2
+  OUT_DIR=`pwd`
+  LOG_DIR=${PROC_DIR}/LOG
+  mkdir -p ${LOG_DIR}
+  # source libs
+  source ${OPENSARKIT}/lib/helpers_source
+
+fi
+#-------------------------------------------------------------------------------------------
+
+
+#-------------------------------------------------------------------------------------------
+# 1 Unzip Archive
+#-------------------------------------------------------------------------------------------
+SCENE=`basename ${FILE}`
+echo -ne " Extracting ${SCENE}..." &&
+unzip -o -q ${FILE} -d ${TMP_DIR} \
+& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+#-------------------------------------------------------------------------------------------
+# 2 Get some scene infos and print them to Std.Out
+#-------------------------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------------------------
+# extract filenames
+SCENE_ID=`ls ${TMP_DIR}`
+cd ${TMP_DIR}/${SCENE_ID}
+GAMMA_HH=`readlink -f *HH*`
+GAMMA_HV=`readlink -f *HV*`
+GAMMA_VH=`readlink -f *VH*`
+GAMMA_VV=`readlink -f *VV*`
+LS_MAP=`ls *ls*`
+XML_FILE=`ls *iso.xml*`
+
+ORBIT=${SCENE_ID:3:5}
+FRAME=${SCENE_ID:14:4}
+
+FINAL_DIR=$OUT_DIR/${FRAME}-${ORBIT}
+mkdir -p ${FINAL_DIR}
+#-------------------------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------------------------
+# check for mode
+if grep -q PLR ${XML_FILE};then
+	MODE="PLR"
+elif grep -q FBD ${XML_FILE};then
+	MODE="FBD"
+else
+	MODE="FBS"
+fi
+#-------------------------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------------------------
+# extract Date and Footprint etc
+DATE=`cat ${XML_FILE} | grep "beginPosition" | awk -F ">" $'{print $2}' | awk -F "T" $'{print $1}'`
+#SAT_PATH=`curl -s https://api.daac.asf.alaska.edu/services/search/param?keyword=value\&granule_list=${SCENE_ID:0:15}\&output=csv | tail -n 1 | awk -F "," $'{print $7}' | sed 's/\"//g'` # !!!!!needs change for final version!!!!!	
+	
+echo "----------------------------------------------------------------"
+echo "Processing Scene: 		${SCENE_ID}"
+echo "Satellite/Sensor: 		ALOS/Palsar"
+echo "Acquisiton Mode:		${MODE}"
+echo "Acquisition Date (YYYYMMDD):	${DATE}"
+echo "Relative Satellite Track: 	${SAT_PATH}"
+echo "Image Frame: 			$FRAME"
+echo "----------------------------------------------------------------"
+
+OUTPUT_SPK_HH=${TMP_DIR}/Gamma0_HH.tif
+OUTPUT_SPK_HV=${TMP_DIR}/Gamma0_HV.tif
+OUTPUT_SPK_VH=${TMP_DIR}/Gamma0_VH.tif
+OUTPUT_SPK_VV=${TMP_DIR}/Gamma0_VV.tif
+#-------------------------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------------------------
+# Launch SNAP for HH channel speckle filtering
+SECONDS=0
+echo -ne " Apply Refined Speckle Filter to the HH band of ${SCENE_ID} ..." &&
+bash $SNAP_EXE Speckle-Filter -Ssource=${GAMMA_HH} -Pfilter='Refined Lee' -t ${OUTPUT_SPK_HH} -f 'GeoTIFF' >> ${LOG_DIR}/log_process_${SCENE_ID} 2>&1 \
+& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+#-------------------------------------------------------------------------------------------
+SECONDS=0
+echo -ne " Preparing the Layover/Shadow Mask ..." &&
+gdal_calc.py -A ${LS_MAP} --outfile=${TMP_DIR}/mask.tif --calc="1*(A==1)" --NoDataValue=0 >> ${LOG_DIR}/log_process_${SCENE_ID} 2>&1 \
+& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+#-------------------------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------------------------
+SECONDS=0
+echo -ne " Applying Layover/Shadow Mask to the HH band ..." &&
+bash $SNAP_EXE ${SNAP_GRAPHS}/ALOS_ASF_mask.xml -Pfilelist="${TMP_DIR}/mask.tif,${OUTPUT_SPK_HH}" -Poutput=${OUTPUT_SPK_HH}.mask.tif >> ${LOG_DIR}/log_process_${SCENE_ID} 2>&1 & spinner $!
+gdal_translate -a_nodata 0 ${OUTPUT_SPK_HH}.mask.tif ${FINAL_DIR}/Gamma0_HH.tif >> ${LOG_DIR}/log_process_${SCENE_ID} \
+& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+#-------------------------------------------------------------------------------------------
+
+if [[ "${MODE}" == "FBD" || "${MODE}" == "PLR" ]];then
+
+	#-------------------------------------------------------------------------------------------
+	# Launch SNAP for HV channel speckle filtering
+	SECONDS=0
+	echo " Apply Lee Speckle Filter to the HV channel of ${SCENE_ID} ..."
+	bash ${SNAP_EXE} Speckle-Filter -Ssource=${GAMMA_HV} -Pfilter='Refined Lee' -t ${OUTPUT_SPK_HV} -f 'GeoTIFF' >> ${LOG_DIR}/log_process_${SCENE_ID} 2>&1 \
+	& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	#-------------------------------------------------------------------------------------------
+	SECONDS=0	
+	echo -ne " Applying Layover/Shadow Mask to the HV band ..." &&
+	bash $SNAP_EXE ${SNAP_GRAPHS}/ALOS_ASF_mask.xml -Pfilelist="${TMP_DIR}/mask.tif,${OUTPUT_SPK_HV}" -Poutput=${OUTPUT_SPK_HV}.mask.tif >> ${LOG_DIR}/log_process_${SCENE_ID} 2>&1 & spinner $!
+	gdal_translate -a_nodata 0 ${OUTPUT_SPK_HV}.mask.tif ${FINAL_DIR}/Gamma0_HV.tif >> ${LOG_DIR}/log_process_${SCENE_ID} \
+	& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	#-------------------------------------------------------------------------------------------
+
+elif [[ "${MODE}" == "PLR" ]];then
+
+	#-------------------------------------------------------------------------------------------
+	# Launch SNAP for VH channel speckle filtering
+	SECONDS=0
+	echo " Apply Lee Speckle Filter to the VH channel of ${SCENE_ID} ..."
+	bash ${SNAP_EXE} Speckle-Filter -Ssource=${GAMMA_VH} -Pfilter='Refined Lee' -t ${OUTPUT_SPK_VH} -f 'GeoTIFF' >> ${LOG_DIR}/log_process_${SCENE_ID} 2>&1 \
+	& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	#-------------------------------------------------------------------------------------------
+	SECONDS=0	
+	echo -ne " Applying Layover/Shadow Mask to the VH band ..." &&
+	bash $SNAP_EXE ${SNAP_GRAPHS}/ALOS_ASF_mask.xml -Pfilelist="${TMP_DIR}/mask.tif,${OUTPUT_SPK_VH}" -Poutput=${OUTPUT_SPK_VH}.mask.tif >> ${LOG_DIR}/log_process_${SCENE_ID} 2>&1 & spinner $!
+	gdal_translate -a_nodata 0 ${OUTPUT_SPK_VH}.mask.tif ${FINAL_DIR}/Gamma0_VH.tif >> ${LOG_DIR}/log_process_${SCENE_ID} \
+	& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	#-------------------------------------------------------------------------------------------
+
+	#-------------------------------------------------------------------------------------------
+	# Launch SNAP for VV channel speckle filtering
+	SECONDS=0
+	echo "Apply Lee Speckle Filter to the VV channel of ${SCENE_ID} ..."
+	bash ${SNAP_EXE} Speckle-Filter -Ssource=${GAMMA_VV} -Pfilter='Refined Lee' -t ${OUTPUT_SPK_VV} -f 'GeoTIFF' >> ${LOG_DIR}/log_process_${SCENE_ID} 2>&1 \
+	& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	#-------------------------------------------------------------------------------------------
+	SECONDS=0	
+	echo -ne " Applying Layover/Shadow Mask to the VV band ..." &&
+	bash $SNAP_EXE ${SNAP_GRAPHS}/ALOS_ASF_mask.xml -Pfilelist="${TMP_DIR}/mask.tif,${OUTPUT_SPK_VV}" -Poutput=${OUTPUT_SPK_VV}.mask.tif >> ${LOG_DIR}/log_process_${SCENE_ID} 2>&1 & spinner $!
+	gdal_translate -a_nodata 0 ${OUTPUT_SPK_VV}.mask.tif ${FINAL_DIR}/Gamma0_VV.tif >> ${LOG_DIR}/log_process_${SCENE_ID} \
+	& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	#-------------------------------------------------------------------------------------------
+fi
+
+#-------------------------------------------------------------------------------------------
+# remove Temp Folder
+rm -rf ${TMP_DIR} ${TMP1}
+#-------------------------------------------------------------------------------------------
+echo "------------------------------------------------------------"
+echo "Successfully preprocessed ${SCENE_ID}"
+echo "------------------------------------------------------------"
