@@ -36,7 +36,7 @@ if [ "$#" != "2" ]; then
 	echo -e "	- gdal"
 	echo -e "----------------------------------"
 	echo -e ""
-	echo -e " syntax: osk_merge_path_ALOS <path_to_tracks> <output_resolution>"
+	echo -e " syntax: oft-sar-ALOS-ASF-merge-path <path_to_tracks> <output_resolution>"
 	echo -e ""
 	echo -e " description of input parameters:"
 	echo -e " path_to_tracks		pathname, where the preprocessed scenes are sorted by acquisition date"

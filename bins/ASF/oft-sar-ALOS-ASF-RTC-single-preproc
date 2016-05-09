@@ -20,7 +20,7 @@ if [ "$#" != "2" ]; then
 	echo -e "	- gdal"
 	echo -e "----------------------------------"
 	echo -e ""
-	echo -e " syntax: osk_ALOS_ASF_RTC_preprocess <filename> <output_folder>"
+	echo -e " syntax: oft-sar-ALOS-ASF-RTC-single-preproc <filename> <output_folder>"
 	echo -e ""
 	echo -e " description of input parameters:"
 	echo -e " filename		(input) filename of the downloaded zip file"

@@ -36,7 +36,7 @@ if [ "$#" != "6" ]; then
 	echo -e "	- gdal-bin"
 	echo -e "----------------------------------"
 	echo -e ""
-	echo -e " syntax: osk_download_Sentinel <output_folder> <Area_of_Interest> <start_date> <end_date> <max cloud-cover> <Script_Mode>"
+	echo -e " syntax: oft-S2-inventory <output_folder> <Area_of_Interest> <start_date> <end_date> <max cloud-cover> <Script_Mode>"
 	echo -e ""
 	echo -e " input parameters:"
 	echo -e " output_folder		(output) folder where the downloaded data will be saved"

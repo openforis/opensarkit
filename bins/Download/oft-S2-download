@@ -36,7 +36,7 @@ if [ "$#" != "2" ]; then
 	echo -e "	- xml-twig-tools"
 	echo -e "----------------------------------"
 	echo -e ""
-	echo -e " syntax: osk_S2_download <output_folder> <Inventory Shapefile>"
+	echo -e " syntax: oft-S2-download <output_folder> <Inventory Shapefile>"
 	echo -e ""
 	echo -e " input parameters:"
 	echo -e " output_folder			(output) folder where the downloaded data will be saved"

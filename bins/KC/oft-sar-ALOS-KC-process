@@ -17,7 +17,7 @@ if [ "$#" != "4" ]; then
 	echo -e "----------------------------------"
 	echo -e ""
 #	echo -e " syntax: osk_ALOS_KC_process <project_folder> <ISO3/AOI> <year> <filtering> <texture>"
-	echo -e " syntax: osk_ALOS_KC_process <project_folder> <ISO3/AOI> <year> <filtering>"
+	echo -e " syntax: oft-sar-ALOS-KC-process <project_folder> <ISO3/AOI> <year> <filtering>"
 	echo -e ""
 	echo -e " description of input parameters:"
 	echo -e " project_folder		(output) pathname of the project folder (i.e. the folder created by osk_ALOS_KC_download script)"

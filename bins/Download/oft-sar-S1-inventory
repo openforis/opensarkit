@@ -36,7 +36,7 @@ if [ "$#" != "7" ]; then
 	echo -e "	- gdal-bin"
 	echo -e "----------------------------------"
 	echo -e ""
-	echo -e " syntax: osk_S1_inventory <output_folder> <area_of_interest> <start_date> <end_date> <product_type> <polarization_mode> <script_Mode>"
+	echo -e " syntax: oft-sar-S1-inventory <output_folder> <area_of_interest> <start_date> <end_date> <product_type> <polarization_mode> <script_Mode>"
 	echo -e ""
 	echo -e " input parameters:"
 	echo -e " output_folder		(output) folder where the downloaded data will be saved"

@@ -204,7 +204,7 @@ apt-get install --yes oracle-java8-installer oracle-java8-set-default  >> ${OSK_
 
 #-------------------------------------
 # get OSK from github repository
-if [ -z "$OSK_GIT_URL" ]; then export OSK_GIT_URL=https://github.com/BuddyVolly/OpenSARKit; fi
+if [ -z "$OSK_GIT_URL" ]; then export OSK_GIT_URL=https://github.com/openforis/opensarkit; fi
 mkdir -p ${OSK_HOME}
 cd ${OSK_HOME}
 

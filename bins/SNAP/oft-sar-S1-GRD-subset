@@ -37,7 +37,7 @@ if [ "$#" != "4" ]; then
 	echo -e "	- gdal-bin"
 	echo -e "----------------------------------------------------------------------------------"
 	echo -e ""
-	echo -e " synatx: osk_S1_GRD_subset <scene> <AOI> <clean import> <delete zips>"
+	echo -e " synatx: oft-sar-S1-GRD-subset <scene> <AOI> <clean import> <delete zips>"
 	echo -e ""
 	echo -e " input parameters:"
 	echo -e " scene		(input/output) /path/to/scene where the subsetted data will be stored as well"

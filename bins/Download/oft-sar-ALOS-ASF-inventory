@@ -69,7 +69,7 @@ else
 	echo -e "	- ogr2ogr"
 	echo -e "----------------------------------"
 	echo -e ""
-	echo -e " syntax: osk_ALOS_ASF_inventory <output_folder> <area_of_interest> <start_date> <end_date> <mode> <processing_level> <script_Mode>"
+	echo -e " syntax: oft-sar-ALOS-ASF-inventory <output_folder> <area_of_interest> <start_date> <end_date> <mode> <processing_level> <script_Mode>"
 	echo -e ""
 	echo -e " description of input parameters:"
 	echo -e " output_folder		(output) folder where the downloaded data will be saved"

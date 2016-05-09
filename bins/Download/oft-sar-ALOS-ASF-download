@@ -35,11 +35,11 @@ if [ "$#" != "2" ]; then
 	echo -e "	- ogrinfo"
 	echo -e "----------------------------------"
 	echo -e ""
-	echo -e " syntax: osk_ALOS_ASF_download <output_folder> <Inventory Shapefile>"
+	echo -e " syntax: oft-sar-ALOS-ASF-download <output_folder> <Inventory Shapefile>"
 	echo -e ""
 	echo -e " input parameters:"
 	echo -e " output_folder			(output) folder where the downloaded data will be saved"
-	echo -e " Inventory shapefile		(input) shapefile created and maybe edited from osk_ALOS_ASF_inventory script"
+	echo -e " Inventory shapefile		(input) shapefile created and maybe edited from oft-sar-ALOS-ASF-inventory script"
 	exit 1
 else
 	echo -e "----------------------------------"

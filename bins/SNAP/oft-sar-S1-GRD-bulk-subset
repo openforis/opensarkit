@@ -36,7 +36,7 @@ if [ "$#" != "4" ]; then
 	echo -e "	- gdal-bin"
 	echo -e "----------------------------------------------------------------------------------"
 	echo -e ""
-	echo -e " osk_S1_GRD_bulk_subset <project folder> <AOI> <clean import> <delete zips>"
+	echo -e " oft-sar-S1-GRD-bulk-subset <project folder> <AOI> <clean import> <delete zips>"
 	echo -e ""
 	exit 1
 

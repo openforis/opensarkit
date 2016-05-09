@@ -36,7 +36,7 @@ if [ "$#" != "3" ]; then
 	echo -e "	- gdal-bin"
 	echo -e "----------------------------------------------------------------------------------"
 	echo -e ""
-	echo -e " Usage: osk_S1_GRD_single_preprocess <filename> <output_folder> <mode> <filtering>" # <elevation> "
+	echo -e " Usage: oft-sar-S1-GRD-single-preprocess <filename> <output_folder> <mode> <filtering>" # <elevation> "
 	echo -e ""
 	echo -e " input parameters:"
 	echo -e "  filename		(input) filename of the downloaded zip file"

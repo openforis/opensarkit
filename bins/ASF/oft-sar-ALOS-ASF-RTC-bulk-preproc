@@ -38,7 +38,7 @@ if [ "$#" != "2" ]; then
 	echo -e "	- SAGA GIS"
 	echo -e "----------------------------------"
 	echo -e ""
-	echo -e " syntax: osk_bulk_ALOS_L1.5_preprocess_asf <project_path> "
+	echo -e " syntax: oft-sar-ALOS-ASF-RTC-bulk-preproc <project_path> <resolution>"
 	echo -e ""
 	echo -e " description of input parameters:"
 	echo -e " project_path		pathname, where the ASF downloaded zips are located"
@@ -49,7 +49,6 @@ if [ "$#" != "2" ]; then
 	echo -e ""
   exit 1
 else
-	echo -e ""
 	echo -e "--------------------------------------------------------"
 	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
 	echo -e " Bulk preprocessing ALOS ALOS RTC products from ASF server"

@@ -35,11 +35,11 @@ if [ "$#" != "2" ]; then
 	echo -e "	- ogrinfo"
 	echo -e "----------------------------------"
 	echo -e ""
-	echo -e " syntax: osk_S1_download <output folder> <inventory shapefile>"
+	echo -e " syntax: oft-sar-S1-download <output folder> <inventory shapefile>"
 	echo -e ""
 	echo -e " input parameters:"
 	echo -e " output_folder			(output) folder where the downloaded data will be saved"
-	echo -e " inventory shapefile		(input) shapefile created and maybe edited from osk_S1_inventory script"
+	echo -e " inventory shapefile		(input) shapefile created and maybe edited from oft-sar-S1-inventory"
 	exit 1
 else
 	echo -e "---------------------------------------------------------------------------"
