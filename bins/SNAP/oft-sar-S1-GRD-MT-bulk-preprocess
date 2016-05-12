@@ -152,7 +152,7 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 
 			ls -1 -d ${PWD}/*dim 2>/dev/null || ls -1 -d ${PWD}/*zip 2>/dev/null > ${TMP_DIR_FRAME}/filelist
 			
-			if [ ${MODE} == SUBSET ];then
+			if [ ${SCRIPT_MODE} == SUBSET ];then
 				echo " Subset mode"						
 				#in case of subset area covering 2 scenesTO BE DONE s1_subset_rtc_processing ${TMP_DIR_FRAME}/filelist ${PWD}/${ACQ}"_RTC.dim" $2 ${TMP_DIR_FRAME} ${LOG_DIR}		
 			else
