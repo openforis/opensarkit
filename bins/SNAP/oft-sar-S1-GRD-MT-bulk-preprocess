@@ -104,18 +104,19 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 		echo " Info: Entering ${ACQ}"
 		cd ${ACQ}		
 
-		if ls ${PWD}/*imported_subset.dim 1> 2&>1;then
+		if ls ${PWD}/*imported_subset.dim > /dev/null 2>&1;then
 			SCRIPT_MODE=SUBSET
 			NR_FRAMES=`ls -1 -d ${PWD}/*dim 2>/dev/null | wc -l` 
-		elif ls ${PWD}/*.dim 1> 2&>1 ;then
+		elif ls ${PWD}/*.dim  > /dev/null 2>&1 ;then
 			SCRIPT_MODE=DIM
 			NR_FRAMES=`ls -1 -d ${PWD}/*dim 2>/dev/null | wc -l` 2&>1
-		elif ls ${PWD}/*zip 1> 2&>1 ;then
+		elif ls ${PWD}/*zip > /dev/null 2>&1 ;then
 			SCRIPT_MODE=RAW
 			NR_FRAMES=`ls -1 -d ${PWD}/*zip 2>/dev/null | wc -l` 2&>1
 		else
 			echo " ERROR: No valid files found in directory ${PWD}" #&& exit 1
 		fi
+
 		
 		if [ ${NR_FRAMES} -eq 1 ];then
 
