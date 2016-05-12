@@ -109,10 +109,10 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 			NR_FRAMES=`ls -1 -d ${PWD}/*dim 2>/dev/null | wc -l` 
 		elif ls ${PWD}/*.dim  > /dev/null 2>&1 ;then
 			SCRIPT_MODE=DIM
-			NR_FRAMES=`ls -1 -d ${PWD}/*dim 2>/dev/null | wc -l` 2&>1
+			NR_FRAMES=`ls -1 -d ${PWD}/*dim 2>/dev/null | wc -l` 
 		elif ls ${PWD}/*zip > /dev/null 2>&1 ;then
 			SCRIPT_MODE=RAW
-			NR_FRAMES=`ls -1 -d ${PWD}/*zip 2>/dev/null | wc -l` 2&>1
+			NR_FRAMES=`ls -1 -d ${PWD}/*zip 2>/dev/null | wc -l` 
 		else
 			echo " ERROR: No valid files found in directory ${PWD}" #&& exit 1
 		fi
