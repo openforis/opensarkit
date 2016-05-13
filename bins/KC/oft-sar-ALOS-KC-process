@@ -231,12 +231,12 @@ for DATA in `ls -1 *${YEAR_SHORT}"_sl_HH"* | grep -v hdr`;do #filter HH1x1 tiles
 		fi
 		
 		if [ $4 -eq 1 ];then #filter case
-			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask.xml -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HH}.filtered.tif" -Poutput=${TMP_DIR}/TILES/${DATA_HH}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $!
-			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask.xml -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HV}.filtered.tif" -Poutput=${TMP_DIR}/TILES/${DATA_HV}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! \
+			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask.xml -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HH}.filtered.tif" -Poutput=${TMP_DIR}/TILES/1_${DATA_HH}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $!
+			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask.xml -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HV}.filtered.tif" -Poutput=${TMP_DIR}/TILES/2_${DATA_HV}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! \
 			&& duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 		else
-			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask.xml -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HH}.tif" -Poutput=${TMP_DIR}/TILES/${DATA_HH}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $!
-			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask.xml -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HV}.tif" -Poutput=${TMP_DIR}/TILES/${DATA_HV}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! \
+			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask.xml -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HH}.tif" -Poutput=${TMP_DIR}/TILES/1_${DATA_HH}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $!
+			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask.xml -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HV}.tif" -Poutput=${TMP_DIR}/TILES/2_${DATA_HV}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! \
 			&& duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 		fi	
 
@@ -245,14 +245,14 @@ for DATA in `ls -1 *${YEAR_SHORT}"_sl_HH"* | grep -v hdr`;do #filter HH1x1 tiles
 
 		SECONDS=0
 		echo -ne " Creating the HH/HV ratio channel ..." &&
-		bash $SNAP_EXE ${SNAP_GRAPHS}/KC_ratio.xml -Pfilelist="${TMP_DIR}/TILES/${DATA_HH}.tif,${TMP_DIR}/TILES/${DATA_HV}.tif" -Poutput=${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.tif" >> ${LOG_DIR}/log_process 2>&1 & spinner $!
+		bash $SNAP_EXE ${SNAP_GRAPHS}/KC_ratio.xml -Pfilelist="${TMP_DIR}/TILES/1_${DATA_HH}.tif,${TMP_DIR}/TILES/2_${DATA_HV}.tif" -Poutput=${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.tif" >> ${LOG_DIR}/log_process 2>&1 & spinner $!
 		gdal_translate -a_nodata 0 ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.tif" ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif" >> ${LOG_DIR}/log_process 2>&1 & spinner $!
 		MIN=`gdal_min ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif"`
 		MAX=`gdal_max ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif"`
-   	gdal_translate -scale ${MIN} ${MAX} 0 65535 -a_nodata 0 -ot UInt16 ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif" ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.tif" >> ${LOG_DIR}/log_process 2>&1 & spinner $! \
+   	gdal_translate -scale ${MIN} ${MAX} 0 65535 -a_nodata 0 -ot UInt16 ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif" ${TMP_DIR}/TILES/3_${DATA_HH}"_HV_ratio.tif" >> ${LOG_DIR}/log_process 2>&1 & spinner $! \
 		&& duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
-		#rm -f ${TMP_DIR}/TILES/${DATA_HH}"HV_ratio.float.ndv.tif" ${TMP_DIR}/TILES/${DATA_HH}"HV_ratio.float.ndv.tif"
+		rm -f ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif" ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif"
 
 	else 
 
@@ -268,9 +268,9 @@ done
 
 SECONDS=0
 echo -ne " Merging the data tiles ..." &&
-gdalbuildvrt ${TMP_DIR}/TILES/mosaic_hh.vrt ${TMP_DIR}/TILES/*sl_HH.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $!
-gdalbuildvrt ${TMP_DIR}/TILES/mosaic_hv.vrt ${TMP_DIR}/TILES/*sl_HV.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $!
-gdalbuildvrt ${TMP_DIR}/TILES/mosaic_hhhv.vrt ${TMP_DIR}/TILES/*HH_HV_ratio.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! \
+gdalbuildvrt ${TMP_DIR}/TILES/mosaic_hh.vrt ${TMP_DIR}/TILES/1_*sl_HH*tif >> ${LOG_DIR}/log_process 2>&1 & spinner $!
+gdalbuildvrt ${TMP_DIR}/TILES/mosaic_hv.vrt ${TMP_DIR}/TILES/2_*sl_HV*tif >> ${LOG_DIR}/log_process 2>&1 & spinner $!
+gdalbuildvrt ${TMP_DIR}/TILES/mosaic_hhhv.vrt ${TMP_DIR}/TILES/3_*HH*HV_ratio.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! \
 && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 if [ `echo $2 | grep shp` ]; then # AOI case
