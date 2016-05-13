@@ -15,7 +15,7 @@
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
       <orbitType>Sentinel Precise (Auto Download)</orbitType>
       <polyDegree>3</polyDegree>
-      <continueOnFail>false</continueOnFail>
+      <continueOnFail>true</continueOnFail>
     </parameters>
   </node>
   <node id="ThermalNoiseRemoval">
