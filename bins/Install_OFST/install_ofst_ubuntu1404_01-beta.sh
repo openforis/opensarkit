@@ -163,9 +163,9 @@ apt-get upgrade -y  >> ${OSK_HOME}/LOG/log_install 2>&1 \
 SECONDS=0
 echo -ne " Installing dependencies from Ubuntu package list ..." &&
 apt-get install --yes gdal-bin libgdal-dev python-gdal saga libsaga-dev python-saga geotiff-bin libgeotiff-dev dans-gdal-scripts spatialite-bin spatialite-gui \
-python-scipy python-h5py aria2 unrar parallel xml-twig-tools >> ${OSK_HOME}/LOG/log_install 2>&1 \
+python-scipy python-h5py aria2 unrar parallel xml-twig-tools git >> ${OSK_HOME}/LOG/log_install 2>&1 \
 & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-#libcunit1-dev libfftw3-dev libshp-dev libgeotiff-dev libtiff4-dev libtiff5-dev libproj-dev flex bison libgsl0-dev gsl-bin git libglade2-dev libgtk2.0-dev libgdal-dev pkg-config \
+#libcunit1-dev libfftw3-dev libshp-dev libgeotiff-dev libtiff4-dev libtiff5-dev libproj-dev flex bison libgsl0-dev gsl-bin  libglade2-dev libgtk2.0-dev libgdal-dev pkg-config \
 
 # Dependencies for PolSARPro
 #apt-get install --yes bwidget itcl3 itk3 iwidgets4 libtk-img 
