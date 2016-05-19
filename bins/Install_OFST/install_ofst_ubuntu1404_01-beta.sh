@@ -183,9 +183,9 @@ apt-get upgrade -y  >> ${OSK_HOME}/LOG/log_install 2>&1 \
 SECONDS=0
 echo -ne " Installing dependencies from Ubuntu package list ..." &&
 apt-get install --yes gdal-bin libgdal-dev python-gdal saga libsaga-dev python-saga geotiff-bin libgeotiff-dev dans-gdal-scripts spatialite-bin spatialite-gui \
-libcunit1-dev libfftw3-dev libshp-dev libgeotiff-dev libtiff4-dev libtiff5-dev libproj-dev gdal-bin flex bison libgsl0-dev gsl-bin git libglade2-dev libgtk2.0-dev libgdal-dev pkg-config \
 python-scipy python-h5py aria2 unrar parallel xml-twig-tools >> ${OSK_HOME}/LOG/log_install 2>&1 \
 & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+#libcunit1-dev libfftw3-dev libshp-dev libgeotiff-dev libtiff4-dev libtiff5-dev libproj-dev flex bison libgsl0-dev gsl-bin git libglade2-dev libgtk2.0-dev libgdal-dev pkg-config \
 
 ## Java official
 echo debconf shared/accepted-oracle-license-v1-1 select true | sudo debconf-set-selections \
@@ -220,20 +220,20 @@ echo '# Support script to source the original programs' >> ${OSK_HOME}/OpenSARKi
 echo "export OSK_HOME=${OSK_HOME}" >> ${OSK_HOME}/OpenSARKit_source.bash
 
 echo '# Folder of OpenSARKit scripts and workflows' >> ${OSK_HOME}/OpenSARKit_source.bash
-echo 'export OPENSARKIT=${OSK_HOME}/OpenSARKit' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'export OPENSARKIT=${OSK_HOME}/opensarkit' >> ${OSK_HOME}/OpenSARKit_source.bash
 
 echo '# source auxiliary Spatialite database' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export DB_GLOBAL=${OSK_HOME}/Database/global_info.sqlite' >> ${OSK_HOME}/OpenSARKit_source.bash	 
 
-echo '# source lib-functions' >> ${OSK_HOME}/OpenSARKit_source.bash
-echo 'source ${OPENSARKIT}/lib/gdal_helpers' >> ${OSK_HOME}/OpenSARKit_source.bash
-echo 'source ${OPENSARKIT}/lib/saga_helpers' >> ${OSK_HOME}/OpenSARKit_source.bash
-echo 'source ${OPENSARKIT}/lib/s1_helpers' >> ${OSK_HOME}/OpenSARKit_source.bash
+#echo '# source lib-functions' >> ${OSK_HOME}/OpenSARKit_source.bash
+#echo 'source ${OPENSARKIT}/lib/gdal_helpers' >> ${OSK_HOME}/OpenSARKit_source.bash
+#echo 'source ${OPENSARKIT}/lib/saga_helpers' >> ${OSK_HOME}/OpenSARKit_source.bash
+#echo 'source ${OPENSARKIT}/lib/s1_helpers' >> ${OSK_HOME}/OpenSARKit_source.bash
 
 echo '# source workflows/graphs' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export SNAP_GRAPHS=${OPENSARKIT}/workflows/SNAP' >> ${OSK_HOME}/OpenSARKit_source.bash
-echo 'export ASF_CONF=${OPENSARKIT}/workflows/ASF' >> ${OSK_HOME}/OpenSARKit_source.bash
-echo 'export POLSAR_CONF=${OPENSARKIT}/workflows/POLSAR' >> ${OSK_HOME}/OpenSARKit_source.bash
+#echo 'export ASF_CONF=${OPENSARKIT}/workflows/ASF' >> ${OSK_HOME}/OpenSARKit_source.bash
+#echo 'export POLSAR_CONF=${OPENSARKIT}/workflows/POLSAR' >> ${OSK_HOME}/OpenSARKit_source.bash
 # 
 echo '# export bins' >> ${OSK_HOME}/OpenSARKit_source.bash
 echo 'export SNAP_BIN=${OPENSARKIT}/bins/SNAP' >> ${OSK_HOME}/OpenSARKit_source.bash
@@ -344,6 +344,8 @@ else
 	rm -f esa-snap_sentinel_unix_3_0.sh
 	echo 'export SNAP=/usr/local/snap' >> ${OSK_HOME}/OpenSARKit_source.bash
 	echo 'export SNAP_EXE=${SNAP}/bin/gpt'  >> ${OSK_HOME}/OpenSARKit_source.bash
+
+	chmod -R 777 ${HOME}/.snap
 fi
 
 #-------------------------------------
@@ -351,8 +353,8 @@ fi
 #-------------------------------------
 ## Adding executalble to path for CL availability
 echo '#export to Path' >> ${OSK_HOME}/OpenSARKit_source.bash
-echo 'export PATH=$PATH:${PYTHON_BIN}:${RSGISLIB_BIN}:${ASF_BIN}:${POLSAR_BIN}:${SAGA_BIN}:${SNAP_BIN}:${GDAL_BIN}:${DOWNLOAD_BIN}:${ASF_EXE}:${SNAP}:${KC_BIN}:${REMOTE_BIN}' >> ${OSK_HOME}/OpenSARKit_source.bash
-
+#echo 'export PATH=$PATH:${PYTHON_BIN}:${RSGISLIB_BIN}:${ASF_BIN}:${POLSAR_BIN}:${SAGA_BIN}:${SNAP_BIN}:${GDAL_BIN}:${DOWNLOAD_BIN}:${ASF_EXE}:${SNAP}:${KC_BIN}:${REMOTE_BIN}' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'export PATH=$PATH:${SNAP_BIN}:${DOWNLOAD_BIN}:${SNAP}:${KC_BIN}' >> ${OSK_HOME}/OpenSARKit_source.bash
 # Update global environment variables"
 mv ${OSK_HOME}/OpenSARKit_source.bash /etc/profile.d/OpenSARKit.sh
 chmod -R 755 ${OSK_HOME}
