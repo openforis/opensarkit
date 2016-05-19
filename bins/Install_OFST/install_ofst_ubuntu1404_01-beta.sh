@@ -99,22 +99,6 @@ echo ""
 echo ""
 
 if [[ $2 != yes ]];then
-echo " This script downloads and installs the Java Oracle Version 8."
-echo " Make sure you are familiar with the License which can be found here:"
-echo " http://www.oracle.com/technetwork/java/javase/terms/license/index.html"
-echo ""
-read -p " Do you accept the terms and conditions of the Java binary code license? (yes/no) "  
-if [[ $REPLY != yes ]]
-then
-    exit 1
-fi
-fi
-
-echo ""
-echo ""
-echo ""
-
-if [[ $2 != yes ]];then
 echo " This script downloads the external software SNAP, which is licensed under the GNU GPL version 3 and can be found here"
 echo " https://www.gnu.org/licenses/gpl.html"
 echo ""
@@ -138,10 +122,6 @@ echo -ne " Adding the Ubuntu GIS unstable repository ..." &&
 add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable > ${OSK_HOME}/LOG/log_install 2>&1 \
 & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
-SECONDS=0
-echo -ne " Adding the official Java repository ..." &&
-add-apt-repository -y ppa:webupd8team/java >> ${OSK_HOME}/LOG/log_install 2>&1 \
-& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 SECONDS=0
 echo -ne " Adding the multiverse repository ..." &&
@@ -186,14 +166,6 @@ apt-get install --yes gdal-bin libgdal-dev python-gdal saga libsaga-dev python-s
 python-scipy python-h5py aria2 unrar parallel xml-twig-tools >> ${OSK_HOME}/LOG/log_install 2>&1 \
 & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 #libcunit1-dev libfftw3-dev libshp-dev libgeotiff-dev libtiff4-dev libtiff5-dev libproj-dev flex bison libgsl0-dev gsl-bin git libglade2-dev libgtk2.0-dev libgdal-dev pkg-config \
-
-## Java official
-echo debconf shared/accepted-oracle-license-v1-1 select true | sudo debconf-set-selections \
-&& echo debconf shared/accepted-oracle-license-v1-1 seen true | sudo debconf-set-selections # Enable silent install of Java
-SECONDS=0
-echo -ne " Installing official Java version ..." &&
-apt-get install --yes oracle-java8-installer oracle-java8-set-default  >> ${OSK_HOME}/LOG/log_install 2>&1 \
-& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 # Dependencies for PolSARPro
 #apt-get install --yes bwidget itcl3 itk3 iwidgets4 libtk-img 
@@ -345,7 +317,7 @@ else
 	echo 'export SNAP=/usr/local/snap' >> ${OSK_HOME}/OpenSARKit_source.bash
 	echo 'export SNAP_EXE=${SNAP}/bin/gpt'  >> ${OSK_HOME}/OpenSARKit_source.bash
 
-	chmod -R 777 ${HOME}/.snap
+
 fi
 
 #-------------------------------------
@@ -366,6 +338,9 @@ SECONDS=0
 echo -ne " Updating SNAP to the latest version ..." &&
 snap --nosplash --nogui --modules --update-all  >> ${OSK_HOME}/LOG/log_install 2>&1 \
 & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+HOME_USER=`stat -c '%U' ${HOME}/.snap`
+chown -R ${HOME_USER}:${HOME_USER} ${HOME}/.snap
 
 #------------------------------------------------------------------
 # 3 Download the additional Database
