@@ -225,9 +225,9 @@ for DATA in `ls -1 *${YEAR_SHORT}"_sl_HH"* | grep -v hdr`;do #filter HH1x1 tiles
 		SECONDS=0
 		echo -ne " Masking out layover/shadow areas ..." &&
 		if [ ${YEAR} -gt 2010 ];then 
-			gdal_calc.py -A ${DATA:0:10}"_linci_F02DAR" --outfile=${DATA}"_mask.tif" --calc="1*(A>=1)" >> ${LOG_DIR}/log_process 2>&1 & spinner $!
+			gdal_calc.py -A ${DATA:0:10}"_mask_F02DAR" --outfile=${DATA}"_mask.tif" --calc="1*(A==255)" >> ${LOG_DIR}/log_process 2>&1 & spinner $!
 		else
-			gdal_calc.py -A ${DATA:0:10}"_linci" --outfile=${DATA}"_mask.tif" --calc="1*(A>=1)" >> ${LOG_DIR}/log_process 2>&1 & spinner $!
+			gdal_calc.py -A ${DATA:0:10}"_mask" --outfile=${DATA}"_mask.tif" --calc="1*(A==255)" >> ${LOG_DIR}/log_process 2>&1 & spinner $!
 		fi
 		
 		if [ $4 -eq 1 ];then #filter case
@@ -247,8 +247,8 @@ for DATA in `ls -1 *${YEAR_SHORT}"_sl_HH"* | grep -v hdr`;do #filter HH1x1 tiles
 		echo -ne " Creating the HH/HV ratio channel ..." &&
 		bash $SNAP_EXE ${SNAP_GRAPHS}/KC_ratio.xml -Pfilelist="${TMP_DIR}/TILES/1_${DATA_HH}.tif,${TMP_DIR}/TILES/2_${DATA_HV}.tif" -Poutput=${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.tif" >> ${LOG_DIR}/log_process 2>&1 & spinner $!
 		gdal_translate -a_nodata 0 ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.tif" ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif" >> ${LOG_DIR}/log_process 2>&1 & spinner $!
-		MIN=`gdal_min ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif"`
-		MAX=`gdal_max ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif"`
+		MIN=0  #	`gdal_min ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif"`
+		MAX=15 #`gdal_max ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif"`
    	gdal_translate -scale ${MIN} ${MAX} 0 65535 -a_nodata 0 -ot UInt16 ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif" ${TMP_DIR}/TILES/3_${DATA_HH}"_HV_ratio.tif" >> ${LOG_DIR}/log_process 2>&1 & spinner $! \
 		&& duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
