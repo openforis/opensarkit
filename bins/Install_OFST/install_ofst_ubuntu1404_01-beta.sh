@@ -326,7 +326,7 @@ fi
 ## Adding executalble to path for CL availability
 echo '#export to Path' >> ${OSK_HOME}/OpenSARKit_source.bash
 #echo 'export PATH=$PATH:${PYTHON_BIN}:${RSGISLIB_BIN}:${ASF_BIN}:${POLSAR_BIN}:${SAGA_BIN}:${SNAP_BIN}:${GDAL_BIN}:${DOWNLOAD_BIN}:${ASF_EXE}:${SNAP}:${KC_BIN}:${REMOTE_BIN}' >> ${OSK_HOME}/OpenSARKit_source.bash
-echo 'export PATH=$PATH:${SNAP_BIN}:${DOWNLOAD_BIN}:${SNAP}:${KC_BIN}' >> ${OSK_HOME}/OpenSARKit_source.bash
+echo 'export PATH=$PATH:${SNAP_BIN}:${DOWNLOAD_BIN}:${SNAP}:${KC_BIN}:${ASF_BIN}' >> ${OSK_HOME}/OpenSARKit_source.bash
 # Update global environment variables"
 mv ${OSK_HOME}/OpenSARKit_source.bash /etc/profile.d/OpenSARKit.sh
 chmod -R 755 ${OSK_HOME}
