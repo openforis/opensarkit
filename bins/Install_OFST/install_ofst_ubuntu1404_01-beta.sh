@@ -195,7 +195,7 @@ echo '# Folder of OpenSARKit scripts and workflows' >> ${OSK_HOME}/OpenSARKit_so
 echo 'export OPENSARKIT=${OSK_HOME}/opensarkit' >> ${OSK_HOME}/OpenSARKit_source.bash
 
 echo '# source auxiliary Spatialite database' >> ${OSK_HOME}/OpenSARKit_source.bash
-echo 'export DB_GLOBAL=${OSK_HOME}/Database/global_info.sqlite' >> ${OSK_HOME}/OpenSARKit_source.bash	 
+echo 'export DB_GLOBAL=${OSK_HOME}/Database/OFST_db.sqlite' >> ${OSK_HOME}/OpenSARKit_source.bash	 
 
 #echo '# source lib-functions' >> ${OSK_HOME}/OpenSARKit_source.bash
 #echo 'source ${OPENSARKIT}/lib/gdal_helpers' >> ${OSK_HOME}/OpenSARKit_source.bash
@@ -351,10 +351,9 @@ cd ${OSK_HOME}/Database
 
 SECONDS=0
 echo -ne " Downloading the OFST database ..." &&
-wget https://www.dropbox.com/s/58cnjj8xymzkbac/global_info.sqlite?dl=0  >> ${OSK_HOME}/LOG/log_install 2>&1 \
+wget https://www.dropbox.com/s/qvujm3l0ba0frch/OFST_db.sqlite?dl=0  >> ${OSK_HOME}/LOG/log_install 2>&1 \
 & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-
-mv global_info.sqlite?dl=0 global_info.sqlite
+mv OFST_db.sqlite?dl=0 OFST_db.sqlite
 
 echo "---------------------------------------------------------------------------------------------------------------------------"
 echo " Installation of OFST succesfully completed"
