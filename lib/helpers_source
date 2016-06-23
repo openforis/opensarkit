@@ -28,6 +28,7 @@ fi
 # source the helper functions
 source $OPENSARKIT/lib/gdal_helpers
 source $OPENSARKIT/lib/s1_helpers
+source $OPENSARKIT/lib/kc_libs
 source $OPENSARKIT/lib/s1_processors
 source $OPENSARKIT/lib/s2_helpers
 #source $OPENSARKIT/lib/saga_helpers

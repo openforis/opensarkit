@@ -1,7 +1,5 @@
 #! /bin/bash
 
-
-
 # 0.1 Check for right usage & set up basic Script Variables
 if [ "$#" != "4" ]; then
 
@@ -22,8 +20,8 @@ if [ "$#" != "4" ]; then
 	echo -e " description of input parameters:"
 	echo -e " project_folder		(output) pathname of the project folder (i.e. the folder created by osk_ALOS_KC_download script)"
  	echo -e " ISO3/AOI		ISO3 country code or shapefile of your area of interest"
-	echo -e " Year			Acquisition Year (2007, 2008, 2009, 2010 or 2015)"
-	echo -e " filtering		Apply Multi-directional Lee Filter (Lee et al. 1998)"
+	echo -e " year			Acquisition Year (2007, 2008, 2009, 2010 or 2015)"
+	echo -e " filtering		Apply Refined Lee Filter"
 	echo -e "			  Available choices:"
 	echo -e "			  0: no filtering applied"
 	echo -e "			  1: filter applied"
@@ -113,7 +111,7 @@ echo "----------------------------------------------"
 if [ ${YEAR} -gt 2010 ];then 
 	SECONDS=0
 	echo -ne " Merging the FNF tiles ..." &&
-	gdalbuildvrt -srcnodata 0 ${TMP_DIR}/FNF_map.vrt ${TMP_DIR}/*_C_F02DAR  >> ${LOG_DIR}/log_process 2>&1\
+	gdalbuildvrt -srcnodata 0 ${TMP_DIR}/FNF_map.vrt ${TMP_DIR}/*_C_F02DAR  >> ${LOG_DIR}/log_process 2>&1 \
 	& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 else
 	SECONDS=0
@@ -176,7 +174,7 @@ for DATA in `ls -1 *${YEAR_SHORT}"_sl_HH"* | grep -v hdr`;do #filter HH1x1 tiles
 	# create a shapefile
 	SECONDS=0
 	echo -ne " Check for overlap between the AOI and the 1x1 degree tile: ${DATA} " &&
-	gdal_trace_outline ${DATA} -out-cs ll -ogr-out ${DATA}.shp >> ${LOG_DIR}/log_process 2>&1 & spinner $!
+	gdal_trace_outline ${DATA} -out-cs ll -ogr-out ${DATA}.shp >> ${LOG_DIR}/log_process 2>&1 & spinner $! &&
 	LAYER_TILE=`ogrinfo ${DATA}.shp | tail -1 | awk $'{print $2}'`
 	DATA_PATH=`readlink -f ${DATA}`		
 	AOI_PATH=`readlink -f $AOI`
@@ -193,7 +191,7 @@ for DATA in `ls -1 *${YEAR_SHORT}"_sl_HH"* | grep -v hdr`;do #filter HH1x1 tiles
 
 
 	# create intersect table	
-	ogr2ogr -f "csv" ${TMP_DIR}/grids.csv ${TMP_DIR}/intersect_tile.vrt -dialect sqlite -sql "SELECT * FROM ${LAYER} a, ${LAYER_TILE} b WHERE ST_Intersects(a.geometry, b.geometry)" >> ${LOG_DIR}/log_process 2>&1 $ spinner $!
+	ogr2ogr -f "csv" ${TMP_DIR}/grids.csv ${TMP_DIR}/intersect_tile.vrt -dialect sqlite -sql "SELECT * FROM ${LAYER} a, ${LAYER_TILE} b WHERE ST_Intersects(a.geometry, b.geometry)" >> ${LOG_DIR}/log_process 2>&1 $ spinner $! &&
 	
 	if [ `cat ${TMP_DIR}/grids.csv | wc -l` -gt 1 ];then
 	
@@ -209,14 +207,20 @@ for DATA in `ls -1 *${YEAR_SHORT}"_sl_HH"* | grep -v hdr`;do #filter HH1x1 tiles
 		# Speckle Filtering
 		if [ $4 -eq 1 ];then #filter case
 			SECONDS=0
-			echo -ne " Applying the Refined Lee Filter on the HH band ..."
-			bash $SNAP_EXE Speckle-Filter -Pfilter='Refined Lee' -Ssource=${TMP_DIR}/${DATA_HH}.tif -f 'GeoTIFF' -t ${TMP_DIR}/${DATA_HH}.filtered.tif >> ${LOG_DIR}/log_process 2>&1 \
+			echo -ne " Applying the Refined Lee Filter on the HH band ..." &&
+			bash $SNAP_EXE Speckle-Filter -x -Pfilter='Refined Lee' -Ssource=${TMP_DIR}/${DATA_HH}.tif -f 'GeoTIFF' -t ${TMP_DIR}/${DATA_HH}.filtered.tif >> ${LOG_DIR}/log_process 2>&1 \
 			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 			SECONDS=0
-			echo -ne " Applying the Refined Lee Filter on the HV band ..."
-			bash $SNAP_EXE Speckle-Filter -Pfilter='Refined Lee' -Ssource=${TMP_DIR}/${DATA_HV}.tif -f 'GeoTIFF' -t ${TMP_DIR}/${DATA_HV}.filtered.tif >> ${LOG_DIR}/log_process 2>&1 \
+			echo -ne " Applying the Refined Lee Filter on the HV band ..." &&
+			bash $SNAP_EXE Speckle-Filter -x -Pfilter='Refined Lee' -Ssource=${TMP_DIR}/${DATA_HV}.tif -f 'GeoTIFF' -t ${TMP_DIR}/${DATA_HV}.filtered.tif >> ${LOG_DIR}/log_process 2>&1 \
 			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+		fi
+
+		if [ $4 -eq 1 ];then #filter case
+			kc_rfdi ${TMP_DIR}/${DATA_HH}.filtered.tif ${TMP_DIR}/${DATA_HV}.filtered.tif ${TMP_DIR}/${DATA_HH}.rfdi.tif ${LOG_DIR}
+		else
+			kc_rfdi ${TMP_DIR}/${DATA_HH}.tif ${TMP_DIR}/${DATA_HV}.tif ${TMP_DIR}/${DATA_HH}.rfdi.tif ${LOG_DIR}
 		fi
 
 		# Layover/Shadow masking
@@ -225,28 +229,38 @@ for DATA in `ls -1 *${YEAR_SHORT}"_sl_HH"* | grep -v hdr`;do #filter HH1x1 tiles
 		SECONDS=0
 		echo -ne " Masking out layover/shadow areas ..." &&
 		if [ ${YEAR} -gt 2010 ];then 
-			gdal_calc.py -A ${DATA:0:10}"_mask_F02DAR" --outfile=${DATA}"_mask.tif" --calc="1*(A==255)" >> ${LOG_DIR}/log_process 2>&1 & spinner $!
+			gdal_calc.py -A ${DATA:0:10}"_mask_F02DAR" --outfile=${DATA}"_mask.tif" --calc="1*(A==255)" >> ${LOG_DIR}/log_process 2>&1 & spinner $! 
 		else
-			gdal_calc.py -A ${DATA:0:10}"_mask" --outfile=${DATA}"_mask.tif" --calc="1*(A==255)" >> ${LOG_DIR}/log_process 2>&1 & spinner $!
+			gdal_calc.py -A ${DATA:0:10}"_mask" --outfile=${DATA}"_mask.tif" --calc="1*(A==255)" >> ${LOG_DIR}/log_process 2>&1 & spinner $! 
 		fi
 		
 		if [ $4 -eq 1 ];then #filter case
-			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask.xml -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HH}.filtered.tif" -Poutput=${TMP_DIR}/TILES/1_${DATA_HH}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $!
-			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask.xml -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HV}.filtered.tif" -Poutput=${TMP_DIR}/TILES/2_${DATA_HV}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! \
+			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask.xml -x -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HH}.filtered.tif" -Poutput=${TMP_DIR}/TILES/1_${DATA_HH}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! 
+			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask.xml -x -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HV}.filtered.tif" -Poutput=${TMP_DIR}/TILES/2_${DATA_HV}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $!
+			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask_rfdi.xml -x -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HH}.rfdi.tif" -Poutput=${TMP_DIR}/${DATA_HH}.rfdi.mask.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! \
 			&& duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 		else
-			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask.xml -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HH}.tif" -Poutput=${TMP_DIR}/TILES/1_${DATA_HH}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $!
-			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask.xml -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HV}.tif" -Poutput=${TMP_DIR}/TILES/2_${DATA_HV}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! \
+			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask.xml -x -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HH}.tif" -Poutput=${TMP_DIR}/TILES/1_${DATA_HH}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! 
+			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask.xml -x -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HV}.tif" -Poutput=${TMP_DIR}/TILES/2_${DATA_HV}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! 
+			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask_rfdi.xml -x -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HH}.rfdi.tif" -Poutput=${TMP_DIR}/${DATA_HH}.rfdi.mask.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! \
 			&& duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 		fi	
+
+
+		SECONDS=0
+		echo -ne " Rescaling the RFDI to unsigned 16 bit integer values ..." &&
+		MIN="0"
+		MAX="1"
+		gdal_translate -scale ${MIN} ${MAX} 0 65535 -a_nodata 0 -ot UInt16 ${TMP_DIR}/${DATA_HH}.rfdi.mask.tif ${TMP_DIR}/TILES/4_${DATA_HH}.rfdi.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! \
+		&& duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 		rm -f ${TMP_DIR}/${DATA_HH}*
 		rm -f ${TMP_DIR}/${DATA_HV}*
 
 		SECONDS=0
 		echo -ne " Creating the HH/HV ratio channel ..." &&
-		bash $SNAP_EXE ${SNAP_GRAPHS}/KC_ratio.xml -Pfilelist="${TMP_DIR}/TILES/1_${DATA_HH}.tif,${TMP_DIR}/TILES/2_${DATA_HV}.tif" -Poutput=${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.tif" >> ${LOG_DIR}/log_process 2>&1 & spinner $!
-		gdal_translate -a_nodata 0 ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.tif" ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif" >> ${LOG_DIR}/log_process 2>&1 & spinner $!
+		bash $SNAP_EXE ${SNAP_GRAPHS}/KC_ratio.xml -x -Pfilelist="${TMP_DIR}/TILES/1_${DATA_HH}.tif,${TMP_DIR}/TILES/2_${DATA_HV}.tif" -Poutput=${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.tif" >> ${LOG_DIR}/log_process 2>&1 & spinner $!
+		gdal_translate -a_nodata 0 ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.tif" ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif" >> ${LOG_DIR}/log_process 2>&1 & spinner $! 
 		MIN=0  #	`gdal_min ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif"`
 		MAX=15 #`gdal_max ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif"`
    	gdal_translate -scale ${MIN} ${MAX} 0 65535 -a_nodata 0 -ot UInt16 ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif" ${TMP_DIR}/TILES/3_${DATA_HH}"_HV_ratio.tif" >> ${LOG_DIR}/log_process 2>&1 & spinner $! \
@@ -268,25 +282,28 @@ done
 
 SECONDS=0
 echo -ne " Merging the data tiles ..." &&
-gdalbuildvrt ${TMP_DIR}/TILES/mosaic_hh.vrt ${TMP_DIR}/TILES/1_*sl_HH*tif >> ${LOG_DIR}/log_process 2>&1 & spinner $!
+gdalbuildvrt ${TMP_DIR}/TILES/mosaic_hh.vrt ${TMP_DIR}/TILES/1_*sl_HH*tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! 
 gdalbuildvrt ${TMP_DIR}/TILES/mosaic_hv.vrt ${TMP_DIR}/TILES/2_*sl_HV*tif >> ${LOG_DIR}/log_process 2>&1 & spinner $!
-gdalbuildvrt ${TMP_DIR}/TILES/mosaic_hhhv.vrt ${TMP_DIR}/TILES/3_*HH*HV_ratio.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! \
+gdalbuildvrt ${TMP_DIR}/TILES/mosaic_hhhv.vrt ${TMP_DIR}/TILES/3_*HH*HV_ratio.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! 
+gdalbuildvrt ${TMP_DIR}/TILES/mosaic_rfdi.vrt ${TMP_DIR}/TILES/4_*rfdi.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $!\
 && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 if [ `echo $2 | grep shp` ]; then # AOI case
 	SECONDS=0
 	echo -ne " Creating RGB mosaic (R:HH, G:HV, B:HH/HV) ..."
-	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/MOS/01_Gamma0_HH_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $!
-	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_hv.vrt ${OUT_DIR}/${YEAR}/MOS/02_Gamma0_HV_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $!
-	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_hhhv.vrt ${OUT_DIR}/${YEAR}/MOS/03_HHHV_ratio_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $!
+	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/MOS/01_Gamma0_HH_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! 
+	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_hv.vrt ${OUT_DIR}/${YEAR}/MOS/02_Gamma0_HV_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! 
+	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_hhhv.vrt ${OUT_DIR}/${YEAR}/MOS/03_HHHV_ratio_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! 
+	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_rfdi.vrt ${OUT_DIR}/${YEAR}/MOS/04_RFDI_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! 
 	gdalbuildvrt -separate -vrtnodata 0 ${OUT_DIR}/${YEAR}/MOS/RGB_${YEAR}.vrt ${OUT_DIR}/${YEAR}/MOS/01_Gamma0_HH_${YEAR}.tif ${OUT_DIR}/${YEAR}/MOS/02_Gamma0_HV_${YEAR}.tif ${OUT_DIR}/${YEAR}/MOS/03_HHHV_ratio_${YEAR}.tif \
 	>> ${LOG_DIR}/log_process 2>&1 & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 else # buffered country boundaries
 	SECONDS=0
 	echo -ne " Creating RGB mosaic (R:HH, G:HV, B:HH/HV) ..."
-	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/MOS/01_Gamma0_HH_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $!
-	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_hv.vrt ${OUT_DIR}/${YEAR}/MOS/02_Gamma0_HV_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $!
-	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_hhhv.vrt ${OUT_DIR}/${YEAR}/MOS/03_HHHV_ratio_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $!
+	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI_BUF} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/MOS/01_Gamma0_HH_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $!
+	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI_BUF} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_hv.vrt ${OUT_DIR}/${YEAR}/MOS/02_Gamma0_HV_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! 
+	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI_BUF} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_hhhv.vrt ${OUT_DIR}/${YEAR}/MOS/03_HHHV_ratio_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! 
+	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI_BUF} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_rfdi.vrt ${OUT_DIR}/${YEAR}/MOS/04_RFDI_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! 
 	gdalbuildvrt -separate -vrtnodata 0 ${OUT_DIR}/${YEAR}/MOS/RGB_${YEAR}.vrt ${OUT_DIR}/${YEAR}/MOS/01_Gamma0_HH_${YEAR}.tif ${OUT_DIR}/${YEAR}/MOS/02_Gamma0_HV_${YEAR}.tif ${OUT_DIR}/${YEAR}/MOS/03_HHHV_ratio_${YEAR}.tif \
 	>> ${LOG_DIR}/log_process 2>&1 & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 fi

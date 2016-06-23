@@ -8,15 +8,15 @@ export SNAP="change me"
 export SNAP_EXE="${SNAP}/bin/gpt"
 
 # Folder of OFST database
-# 1.) download the database here: https://www.dropbox.com/s/58cnjj8xymzkbac/global_info.sqlite?dl=0
+# 1.) download the database here: https://www.dropbox.com/s/qvujm3l0ba0frch/OFST_db.sqlite
 # 2.) place somewhere
 # e.g. if placed into ${OPENSARKIT}/Database folder it should look like this:
-# export DB_GLOBAL="${OPENSARKIT}/Database/global_info.sqlite"
+# export DB_GLOBAL="${OPENSARKIT}/Database/OFST_db.sqlite"
 export DB_GLOBAL="change me"
 
 #-------------------------------------------------------
-# this does not to be changed
-#versionin etc
+# this does not have to be changed
+# versionin etc
 export OSK_VERSION=0.1-beta
 
 # source worklows/graphs
