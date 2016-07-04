@@ -370,25 +370,27 @@ function s1_mt_metrics() {
 
  		 SECONDS=0
        echo -ne " Create the minimum extent mask  ..." &&
-		 bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_MT_mask.xml -x -Pfilelist=$4/max.VV.dim,$4/min.VV.dim -Poutput=$4/mask >> $5/log_mt_stacking 2>&1 \
-		 & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-       [ $? -ne 0 ] && return ${ERR_STACKING}
-		 
-		 gdal_trace_outline $4/mask.data/mask.img -ndv 0 -major-ring -out-cs ll -ogr-out $4/extent.shp  >> $5/log_mt_stacking 2>&1 
-		 ogr2ogr -f CSV $4/extent.csv $4/extent.shp -lco GEOMETRY=AS_WKT >> $5/log_mt_stacking 2>&1 
+		 bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_MT_create_mask.xml -x -Pfilelist=$4/max.VV.dim,$4/min.VV.dim -Poutput=$4/mask >> $5/log_mt_stacking 2>&1 & spinner $! \
+		 && gdal_trace_outline $4/mask.data/mask.img -ndv 0 -major-ring -out-cs ll -ogr-out $4/extent.shp >> $5/log_mt_stacking 2>&1
+		 ogr2ogr -f CSV $4/extent.csv $4/extent.shp -lco GEOMETRY=AS_WKT >> $5/log_mt_stacking 2>&1 \
+		 && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 		 echo '#defaultCSS=fill:#00ff00; fill-opacity:0.5; stroke:#ffffff; stroke-opacity:1.0; stroke-width:1.0; symbol:cross' > $4/mt-metrics_ssv.data/vector_data/extent_1.csv 
     	 echo -e 'extent\tthe_geom:MultiPolygon\tFID:Long' >> $4/mt-metrics_ssv.data/vector_data/extent_1.csv
        tail -n +2 $4/extent.csv | sed 's|"POLYGON ((|extent.1\tMULTIPOLYGON (((|g' | sed 's|))",0|)))\t0|g' | sed 's|,|, |g' >> $4/mt-metrics_ssv.data/vector_data/extent_1.csv
-		
+
+		 cp $4/mt-metrics_ssv.data/vector_data/extent_1.csv $4/mt_stack.vv.db.speckle.data/vector_data/extent_1.csv
+		 
+       SECONDS=0
 		 echo -ne " Apply the mask on the multi-temporal metrics stack ..." &&
 		 bash $SNAP_EXE Land-Sea-Mask -Ssource=$4/mt-metrics_ssv.dim -PuseSRTM=false -Pgeometry=extent_1 -t $2/mt-metrics_ssv.dim >> $5/log_mt_stacking 2>&1 \
-		 & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-       [ $? -ne 0 ] && return ${ERR_STACKING}
-	
+ 		 && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+		 sed -i 's|<NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>|<NO_DATA_VALUE_USED>true</NO_DATA_VALUE_USED>|g' $2/mt-metrics_ssv.dim
+
+       SECONDS=0		 
 		 echo -ne " Apply the mask on the multi-temporal VV stack ..." &&
 		 bash $SNAP_EXE Land-Sea-Mask -Ssource=$4/mt_stack.vv.db.speckle.dim -PuseSRTM=false -Pgeometry=extent_1 -t $2/mt_stack.vv.db.speckle.dim >> $5/log_mt_stacking 2>&1 \
-		 & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-       [ $? -ne 0 ] && return ${ERR_STACKING}
+		 && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+		 sed -i 's|<NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>|<NO_DATA_VALUE_USED>true</NO_DATA_VALUE_USED>|g' $2/mt_stack.vv.db.speckle.dim
 
 		 STACK_DIM=$2/mt-metrics_ssv.dim
 		 STACK_NAME=`echo "$2/mt-metrics_ssv.dim" | rev | cut -c 5- | rev`
