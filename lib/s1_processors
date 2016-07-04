@@ -391,7 +391,7 @@ function s1_mt_metrics() {
        [ $? -ne 0 ] && return ${ERR_STACKING}
 
 		 STACK_DIM=$2/mt-metrics_ssv.dim
-		 STACK_NAME=`echo "$2/mt-metrics_sdv.dim" | rev | cut -c 5- | rev`
+		 STACK_NAME=`echo "$2/mt-metrics_ssv.dim" | rev | cut -c 5- | rev`
 		 STACK_DATA=${STACK_NAME}.data
 
 	    sed -i 's|Gamma0_VV_2|Gamma0_VV_max|g' ${STACK_DIM}
