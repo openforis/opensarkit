@@ -90,18 +90,18 @@ function aoi_from_iso3() {
 # create out folder in case it soes not exist
 mkdir -p $2
 
-COUNTRY=`echo "SELECT name FROM countries WHERE \"iso3\" = '$1';" | spatialite $DB_GLOBAL | head -50` 
+COUNTRY=`echo "SELECT name FROM countries WHERE \"iso3\" = '$1';" | spatialite ${OST_DB} | head -50` 
 
 SECONDS=0
 echo -ne " Extracting country boundaries for ${COUNTRY} ..." &&
-ogr2ogr -f "Esri Shapefile" $2/$1.shp ${DB_GLOBAL} -dsco SPATIALITE=yes -where "\"iso3\" = \"${1}\"" -nln AOI countries > /dev/null 2>&1 \
+ogr2ogr -f "Esri Shapefile" $2/$1.shp ${OST_DB} -dsco SPATIALITE=yes -where "\"iso3\" = \"${1}\"" -nln AOI countries > /dev/null 2>&1 \
 & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 		
 AOI=${OUT_DIR}/AOI/$2.shp
 
 SECONDS=0
 echo -ne " Creating a 0.1 degree buffered shapefile ..."	&&
-ogr2ogr -f "Esri Shapefile" $2/$1_"buffer.shp" ${DB_GLOBAL} -dsco SPATIALITE=yes -sql "select ST_union(ST_buffer(geom,0.1)) from countries where \"iso3\" = \"${1}\"" > /dev/null 2>&1 \
+ogr2ogr -f "Esri Shapefile" $2/$1_"buffer.shp" ${OST_DB} -dsco SPATIALITE=yes -sql "select ST_union(ST_buffer(geom,0.1)) from countries where \"iso3\" = \"${1}\"" > /dev/null 2>&1 \
 & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 		
 AOI_BUF=${OUT_DIR}/AOI/$2"_buffer.shp"

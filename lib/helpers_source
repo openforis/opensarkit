@@ -31,7 +31,6 @@ source $OPENSARKIT/lib/s1_helpers
 source $OPENSARKIT/lib/kc_libs
 source $OPENSARKIT/lib/s1_processors
 source $OPENSARKIT/lib/s2_helpers
-#source $OPENSARKIT/lib/saga_helpers
 source $OPENSARKIT/lib/bash_helpers
 source $OPENSARKIT/lib/lib_aoi
 
@@ -39,3 +38,8 @@ export PYTHON_BIN=${OPENSARKIT}/lib/python
 export GDAL_BIN=${OPENSARKIT}/lib/GDAL
 
 export PATH=$PATH:$PYTHON_BIN:$GDAL_BIN
+
+export SNAP_GRAPHS=${OPENSARKIT}/workflows/SNAP
+export SNAP_EXE=/home/avollrath/snap4/bin/gpt
+
+#source $OPENSARKIT/lib/saga_helpers

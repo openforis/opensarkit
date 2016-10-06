@@ -91,8 +91,8 @@ while read line; do
 	fi
 
 	ORB_DIR=`echo $line | awk -F ";" '{print $3}'`
-	DL_ADDRESS='https://scihub.esa.int/dhus/odata/v1/Products('"'${UUID}'"')/$value' # scihub
-#	DL_ADDRESS='https://scihub.esa.int/apihub/odata/v1/Products('"'${UUID}'"')/$value' # apihub
+#	DL_ADDRESS='https://scihub.esa.int/dhus/odata/v1/Products('"'${UUID}'"')/$value' # scihub
+	DL_ADDRESS='https://scihub.copernicus.eu/apihub/odata/v1/Products('"'${UUID}'"')/$value' # apihub
 	echo ""	
 	echo "----------------------------------------------------------"
 	echo " Downloading Product ${COUNT} of ${NR} (UUID=${UUID})"
@@ -109,7 +109,7 @@ while read line; do
 		
 		i=1	
 		# get MD5sum of product
-		MD5_ADDRESS='https://scihub.esa.int/dhus/odata/v1/Products('"'${UUID}'"')/Checksum/Value/$value'	
+		MD5_ADDRESS='https://scihub.copernicus.eu/apihub/odata/v1/Products('"'${UUID}'"')/Checksum/Value/$value'	
 		aria2c --dir=${TMP_DIR} --check-certificate=false --continue=true --http-user="${USERNAME}" --http-passwd="${PW}" "${MD5_ADDRESS}" > ${TMP_DIR}/tmp_error2
 		if grep -q "download completed" ${TMP_DIR}/tmp_error2;then
 

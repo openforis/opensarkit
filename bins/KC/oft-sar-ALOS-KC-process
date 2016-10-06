@@ -79,16 +79,16 @@ if [ `echo $2 | grep shp` ]; then # AOI case
 		AOI=`readlink -f $2`
 		echo " Selected AOI file: ${AOI}"
 else # country case
-      COUNTRY=`echo "SELECT name FROM countries WHERE \"iso3\" = '$2';" | spatialite $DB_GLOBAL | head -50`
+      COUNTRY=`echo "SELECT name FROM countries WHERE \"iso3\" = '$2';" | spatialite ${OST_DB} | head -50`
 		SECONDS=0
 		echo -ne " Extracting country boundaries for ${COUNTRY} ..." &&
-	  	ogr2ogr -f "Esri Shapefile" ${TMP_DIR}/AOI.shp ${DB_GLOBAL} -dsco SPATIALITE=yes -where "\"iso3\" = \"${2}\"" -nln AOI countries > ${LOG_DIR}/log_process 2>&1 \
+	  	ogr2ogr -f "Esri Shapefile" ${TMP_DIR}/AOI.shp ${OST_DB} -dsco SPATIALITE=yes -where "\"iso3\" = \"${2}\"" -nln AOI countries > ${LOG_DIR}/log_process 2>&1 \
 		& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 		AOI=${TMP_DIR}/AOI.shp
 		
 		SECONDS=0
 		echo -ne " Creating a 0.1 degree buffer (used for final masking) ... " &&	
-	   ogr2ogr -f "Esri Shapefile" ${TMP_DIR}/AOI_buffer.shp ${DB_GLOBAL} -dsco SPATIALITE=yes -sql "select ST_union(ST_buffer(geom,0.1)) from countries where \"iso3\" = \"${2}\""  >> ${LOG_DIR}/log_process 2>&1 \
+	   ogr2ogr -f "Esri Shapefile" ${TMP_DIR}/AOI_buffer.shp ${OST_DB} -dsco SPATIALITE=yes -sql "select ST_union(ST_buffer(geom,0.1)) from countries where \"iso3\" = \"${2}\""  >> ${LOG_DIR}/log_process 2>&1 \
 		& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 		AOI_BUF=${TMP_DIR}/AOI_buffer.shp
 fi

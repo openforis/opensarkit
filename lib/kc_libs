@@ -133,7 +133,7 @@ function kc_process () {
     #-------------------------------------------------------------------------------------
 	# check if 1x1 tile intersects with AOI
 	
-   DATA=$1
+   	DATA=$1
 	AOI=$2
 	FILTER=$3
 	YEAR=$4
@@ -187,6 +187,14 @@ function kc_process () {
 			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 		fi
 
+		
+		#RFDI calculation
+		if [ $4 -eq 1 ];then #filter case
+			kc_rfdi ${TMP_DIR}/${DATA_HH}.filtered.tif ${TMP_DIR}/${DATA_HV}.filtered.tif ${TMP_DIR}/${DATA_HH}.rfdi.tif ${LOG_DIR}
+		else
+			kc_rfdi ${TMP_DIR}/${DATA_HH}.tif ${TMP_DIR}/${DATA_HV}.tif ${TMP_DIR}/${DATA_HH}.rfdi.tif ${LOG_DIR}
+		fi
+
 		# Layover/Shadow masking
 		mkdir -p ${TMP_DIR}/TILES
 		
@@ -199,25 +207,35 @@ function kc_process () {
 		fi
 		
 		if [ $FILTER -eq 1 ];then #filter case
-			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask.xml -x -q 1 -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HH}.filtered.tif" -Poutput=${TMP_DIR}/TILES/1_${DATA_HH}.tif >> ${LOG_DIR}/log_process_${DATA} 2>&1 & spinner $!
-			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask.xml -x -q 1 -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HV}.filtered.tif" -Poutput=${TMP_DIR}/TILES/2_${DATA_HV}.tif >> ${LOG_DIR}/log_process_${DATA} 2>&1 & spinner $! \
+			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask.xml -x -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HH}.filtered.tif" -Poutput=${TMP_DIR}/TILES/1_${DATA_HH}.tif >> ${LOG_DIR}/log_process_${DATA} 2>&1 & spinner $!
+			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask.xml -x -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HV}.filtered.tif" -Poutput=${TMP_DIR}/TILES/2_${DATA_HV}.tif >> ${LOG_DIR}/log_process_${DATA} 2>&1 & spinner $!
+			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask_rfdi.xml -x -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HH}.rfdi.tif" -Poutput=${TMP_DIR}/${DATA_HH}.rfdi.mask.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! \
 			&& duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 		else
-			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask.xml -x -q 1  -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HH}.tif" -Poutput=${TMP_DIR}/TILES/1_${DATA_HH}.tif >> ${LOG_DIR}/log_process_${DATA} 2>&1 & spinner $!
-			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask.xml -x -q 1  -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HV}.tif" -Poutput=${TMP_DIR}/TILES/2_${DATA_HV}.tif >> ${LOG_DIR}/log_process_${DATA} 2>&1 & spinner $! \
+			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask.xml -x -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HH}.tif" -Poutput=${TMP_DIR}/TILES/1_${DATA_HH}.tif >> ${LOG_DIR}/log_process_${DATA} 2>&1 & spinner $!
+			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask.xml -x -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HV}.tif" -Poutput=${TMP_DIR}/TILES/2_${DATA_HV}.tif >> ${LOG_DIR}/log_process_${DATA} 2>&1 & spinner $! 
+			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask_rfdi.xml -x -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HH}.rfdi.tif" -Poutput=${TMP_DIR}/${DATA_HH}.rfdi.mask.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! \
 			&& duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 		fi	
+
+		MIN="0"
+		MAX="1"
+		SECONDS=0
+		echo -ne " Rescaling the RFDI to unsigned 16 bit integer values ..." &&
+		gdal_translate -scale ${MIN} ${MAX} 0 65535 -a_nodata 0 -ot UInt16 ${TMP_DIR}/${DATA_HH}.rfdi.mask.tif ${TMP_DIR}/TILES/4_${DATA_HH}.rfdi.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! \
+		&& duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 		rm -f ${TMP_DIR}/${DATA_HH}*
 		rm -f ${TMP_DIR}/${DATA_HV}*
 
+			
+		MIN=0  # `gdal_min ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif"`
+		MAX=15 # `gdal_max ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif"`	
 		SECONDS=0
 		echo -ne " Creating the HH/HV ratio channel ..." &&
 		bash $SNAP_EXE ${SNAP_GRAPHS}/KC_ratio.xml  -x -q 1 -Pfilelist="${TMP_DIR}/TILES/1_${DATA_HH}.tif,${TMP_DIR}/TILES/2_${DATA_HV}.tif" -Poutput=${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.tif" >> ${LOG_DIR}/log_process_${DATA} 2>&1 & spinner $!
 		gdal_translate -a_nodata 0 ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.tif" ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif" >> ${LOG_DIR}/log_process_${DATA} 2>&1 & spinner $!
-		MIN=0  #	`gdal_min ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif"`
-		MAX=15 #`gdal_max ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif"`
-   	gdal_translate -scale ${MIN} ${MAX} 0 65535 -a_nodata 0 -ot UInt16 ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif" ${TMP_DIR}/TILES/3_${DATA_HH}"_HV_ratio.tif" >> ${LOG_DIR}/log_process_${DATA} 2>&1 & spinner $! \
+		gdal_translate -scale ${MIN} ${MAX} 0 65535 -a_nodata 0 -ot UInt16 ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif" ${TMP_DIR}/TILES/3_${DATA_HH}"_HV_ratio.tif" >> ${LOG_DIR}/log_process_${DATA} 2>&1 & spinner $! \
 		&& duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 		rm -f ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif" ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif"
@@ -237,12 +255,14 @@ function kc_rfdi () {
     echo " kc_rfdi <HH-pol> <HV-pol> <output> <log_dir>"
     return
     fi
-
-	 FILELIST="$1,$2"
-	 SECONDS=0
-	 echo -ne " Calculating the Radar Forest Degradation Index ..." &&
-	 bash $SNAP_EXE ${SNAP_GRAPHS}/KC_RFDI.xml -x -Pfilelist=${FILELIST} -Poutput=$3 >> $4/log_rfdi 2>&1 & spinner $! \
-	 && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	
+    source ${OPENSARKIT}/lib/helpers_source
+   
+    FILELIST="$1,$2"
+    SECONDS=0
+    echo -ne " Calculating the Radar Forest Degradation Index ..." &&
+    bash $SNAP_EXE ${SNAP_GRAPHS}/KC_RFDI.xml -x -Pfilelist=${FILELIST} -Poutput=$3 >> $4/log_rfdi 2>&1 & spinner $! \
+    && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 }	 
 
 

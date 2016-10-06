@@ -24,7 +24,7 @@
 # secure download, assuring for connection time outs and see if md5sum test is feasible
 
 # 	0.1 Check for right usage & set up basic Script Variables
-if [ "$#" == "5" ];then
+if [ "$#" == "4" ];then
 
 	echo -e ""
 	echo -e "-------------------------------------------------------------"
@@ -34,21 +34,30 @@ if [ "$#" == "5" ];then
 	echo -e "------------------------------------------------------------"
 	echo -e ""
 
-
 	# set up initial script variables
+
+	CRED_FILE=`readlink -f $4`
+	UNAME=`awk 'NR==1' ${CRED_FILE}`
+	PW=`awk 'NR==2' ${CRED_FILE}`
+	rm -f ${CRED_FILE}
+
 	mkdir -p $1
 	cd $1
 	OUT_DIR=`pwd` 
+
 	ZIP_DIR=${OUT_DIR}/ZIP
 	mkdir -p ${ZIP_DIR}
+
 	YEAR=$3
 	YEAR_SHORT=${YEAR:2:2}
-	export TMP_DIR=${OUT_DIR}/TMP${YEAR}/
+
+	export TMP_DIR=${OUT_DIR}/.TMP${YEAR}/
 	rm -rf ${TMP_DIR}
 	mkdir -p ${TMP_DIR}
-	UNAME=$4	
-	PW=$5 
 
+	LOG_DIR=$OUT_DIR/LOG
+	mkdir -p ${LOG_DIR}
+	
 	# source libs
 	source ${OPENSARKIT}/lib/helpers_source
 
@@ -83,19 +92,23 @@ else
 	echo -e "------------------------------------------------------------"
 	echo -e ""
 
-	# set up initial script variables
 	mkdir -p $1
 	cd $1
 	OUT_DIR=`pwd` 
+
 	ZIP_DIR=${OUT_DIR}/ZIP
 	mkdir -p ${ZIP_DIR}
+
 	YEAR=$3
 	YEAR_SHORT=${YEAR:2:2}
+
 	export TMP_DIR=${OUT_DIR}/.TMP${YEAR}/
 	rm -rf ${TMP_DIR}
 	mkdir -p ${TMP_DIR}
+
 	LOG_DIR=$OUT_DIR/LOG
 	mkdir -p ${LOG_DIR}
+	
 	# source libs
 	source ${OPENSARKIT}/lib/helpers_source
 fi
@@ -111,7 +124,7 @@ echo -e " http://www.eorc.jaxa.jp/ALOS/en/palsar_fnf/registration.htm"
 echo -e "------------------------------------------------------------"
 echo ""
 
-if [ "$#" == "5" ];then
+if [ "$#" == "4" ];then
 	
 	echo " Non-interactive mode"
 
@@ -168,14 +181,14 @@ echo "   <OGRVRTLayer name=\"${LAYER}\">" >> ${TMP_DIR}/intersect.vrt
 echo "      <SrcDataSource>${AOI}</SrcDataSource>" >> ${TMP_DIR}/intersect.vrt
 echo "   </OGRVRTLayer>" >> ${TMP_DIR}/intersect.vrt
 echo "   <OGRVRTLayer name=\"kc_grid\">" >> ${TMP_DIR}/intersect.vrt
-echo "      <SrcDataSource>${DB_GLOBAL}</SrcDataSource>" >> ${TMP_DIR}/intersect.vrt
+echo "      <SrcDataSource>${OST_DB}</SrcDataSource>" >> ${TMP_DIR}/intersect.vrt
 echo "   </OGRVRTLayer>" >> ${TMP_DIR}/intersect.vrt
 echo "</OGRVRTDataSource>" >> ${TMP_DIR}/intersect.vrt
 
 # intersect with ogr2ogr
 SECONDS=0
 echo -ne " Checking which 5x5 degree K&C tiles are intersecting with the area of interest ..."	&&
-ogr2ogr -f "csv" ${TMP_DIR}/tiles.csv ${TMP_DIR}/intersect.vrt -dialect sqlite -sql "SELECT b.x_min,b.y_max FROM ${LAYER} a, kc_grid b WHERE ST_Intersects(a.geometry, b.geometry)" \
+ogr2ogr -f "csv" ${TMP_DIR}/tiles.csv ${TMP_DIR}/intersect.vrt -dialect sqlite -sql "SELECT b.x_min,b.y_max FROM ${LAYER} a, kc_grid b WHERE ST_Intersects(a.geometry, b.geom)" \
 & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 # get tile list
@@ -191,7 +204,7 @@ cd ${OUT_DIR}
 
 while read LINE; do
 
-	echo "source /home/avollrath/OSK/test_scripts/kc_libs; kc_download $LINE $YEAR $ZIP_DIR $LOG_DIR" >> ${TMP_DIR}/down_list
+	echo "source ${OPENSARKIT}/lib/helpers_source; kc_download $LINE $YEAR $ZIP_DIR $LOG_DIR" >> ${TMP_DIR}/down_list
 
 done < ${TMP_DIR}/kc_list
 cat ${TMP_DIR}/down_list | parallel -j $NR_OF_TILES bash -c {}

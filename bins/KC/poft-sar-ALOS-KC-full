@@ -1,0 +1,112 @@
+#! /bin/bash
+
+# The MIT License (MIT)
+# Copyright (c) 2016 Andreas Vollrath
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal 
+# in the Software without restriction, including without limitation the rights 
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
+# copies of the Software, and to permit persons to whom the Software is furnished
+# to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE 
+# OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+# to dos
+# secure download, assuring for connection time outs and see if md5sum test is feasible
+
+# 	0.1 Check for right usage & set up basic Script Variables
+if [ "$#" == "5" ];then
+
+	echo -e ""
+	echo -e "-------------------------------------------------------------"
+	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
+	echo -e " This scripts download ALOS K&C mosaics based on the extent" 
+	echo -e "  of a given a given shapefile or a country boundary"
+	echo -e "------------------------------------------------------------"
+	echo -e ""
+
+
+	CRED_FILE=`readlink -f $5`
+	# set up initial script variables
+	mkdir -p $1
+	OUT_DIR=`readlink -f $1` 
+ 
+	if [ `echo $2 | grep shp` ]; then
+		AOI_FULL=`readlink -f $2`
+	else
+		AOI_FULL=$2
+	fi
+
+
+	ZIP_DIR=${OUT_DIR}/ZIP
+	mkdir -p ${ZIP_DIR}
+	YEAR=$3
+
+	# source libs
+	source ${OPENSARKIT}/lib/helpers_source
+
+elif [ "$#" != "4" ]; then
+
+	echo -e "-------------------------------------------------------------"
+	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
+	echo -e " This script downloads and processes ALOS K&C mosaics based on the" 
+	echo -e " extent of a given a given shapefile or a country boundary"
+	echo -e "------------------------------------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e " Software dependencies:"
+	echo -e "	- gdal-bin"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e " syntax: oft-sar-ALOS-KC-full <project_folder> <ISO3/AOI> <year>"
+	echo -e ""
+	echo -e " description of input parameters:"
+	echo -e " project_folder	(output) pathname of the folder where the data will be stored (will create a subfolder ZIP with the downloaded files)"
+ 	echo -e " ISO3/AOI		ISO3 country code or shapefile of your area of interest"
+	echo -e " Year			Acquisition Year (2007, 2008, 2009, 2010 or 2015)"
+	echo -e " filtering		Apply Refined Lee Filter"
+	echo -e "			  Available choices:"
+	echo -e "			  0: no filtering applied"
+	echo -e "			  1: filter applied"
+	echo -e ""		
+
+  	exit 1
+else
+
+	echo -e "-------------------------------------------------------------"
+	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
+	echo -e " This scripts download ALOS K&C mosaics based on the extent" 
+	echo -e "  of a given a given shapefile or a country boundary"
+	echo -e "------------------------------------------------------------"
+	echo -e ""
+
+	# set up initial script variables
+	mkdir -p $1
+	OUT_DIR=`readlink -f $1` 
+ 
+	if [ `echo $2 | grep shp` ]; then
+		AOI_FULL=`readlink -f $2`
+	else
+		AOI_FULL=$2
+	fi
+
+
+	ZIP_DIR=${OUT_DIR}/ZIP
+	mkdir -p ${ZIP_DIR}
+	YEAR=$3
+
+	# source libs
+	source ${OPENSARKIT}/lib/helpers_source
+fi
+
+poft-sar-ALOS-KC-download ${OUT_DIR} ${AOI_FULL} ${YEAR} ${CRED_FILE}
+poft-sar-ALOS-KC-process ${OUT_DIR} ${AOI_FULL} ${YEAR} $4
