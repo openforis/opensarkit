@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Name=Open Foris SAR Toolkit
+Comment=
+Exec=bash -c 'R CMD BATCH ${OPENSARKIT}/shiny/ost.R;$SHELL'
+Icon=${OPENSARKIT}/shiny/OST_icon_trans.png
+Terminal=true
+Type=Application
+Categories=Application;
+Path=
+StartupNotify=false
