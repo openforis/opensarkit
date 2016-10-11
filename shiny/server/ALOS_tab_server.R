@@ -7,7 +7,7 @@ print_alos = eventReactive(input$alos_kc_process, {
       js_string <- 'alert("SOMETHING");'
       js_string <- sub("SOMETHING",empty_dir_message,js_string)
       session$sendCustomMessage(type='jsCode', list(value = js_string))
-      } else if (input$ALOS_AOI == "AOI_shape_local"){
+   } else if (input$ALOS_AOI == "AOI_shape_local"){
          
          # if local shapefile is clicked, check if it actually chosen
          if(is.null(input$shapefile)){
@@ -15,13 +15,17 @@ print_alos = eventReactive(input$alos_kc_process, {
             js_string <- 'alert("SOMETHING");'
             js_string <- sub("SOMETHING",empty_shp_message,js_string)
             session$sendCustomMessage(type='jsCode', list(value = js_string))
-         }
-      } else {
+         } else {
+           dummy="dummy"
+    }
+   }
+   
+   if (dummy == "dummy"){
          
          # get project folder input
          volumes = c('User directory'=Sys.getenv("HOME"))
          DIR = parseDirPath(volumes, input$directory)
-
+        
          # get AOI (dependent on AOI type)      
          if (input$ALOS_AOI == "country"){
             
@@ -59,8 +63,9 @@ print_alos = eventReactive(input$alos_kc_process, {
    
          # print command
          ARG_DOWN= paste(DIR, AOI, YEAR, SPECKLE, FILE)
+         #print(paste("poft-sar-ALOS-KC-full", ARG_DOWN))
          system(paste("poft-sar-ALOS-KC-full", ARG_DOWN), intern=TRUE)
-         ARGS_FIN=paste("-c \"poft-sar-ALOS-KC-full\"", ARG_DOWN)
+         #ARGS_FIN=paste("-c \"poft-sar-ALOS-KC-full\"", ARG_DOWN)
          #system2("bash", ARGS_FIN, wait = TRUE)
          #system2("poft-sar-ALOS-KC-full", ARG_DOWN, stdout=TRUE)
       }

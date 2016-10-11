@@ -109,11 +109,11 @@ function s1_rtc_processing() {
 
     if [ $3 == "MED_RES" ];then
 
-   SECONDS=0
+	SECONDS=0
 	echo " Removing GRD border noise by deleting the outer 600 rows, calibrating to beta0, "
 	echo -ne " applying the terrain flattening and multi-look by a factor of 3  ..." &&
 	bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_RB_CAL_TF_ML3.xml -x -Pinput=$1 -Pwidth=${NEW_WIDTH} -Pheight=${NEW_HEIGHT} -Poutput=$6/TF  > $7/log_cal_tf_ml 2>&1 \
-   & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+   	& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 	[ $? -ne 0 ] && return ${ERR_BRD_NOISE} 
    
         if [ -e $6/TF.data/Gamma0_VH.img ];then

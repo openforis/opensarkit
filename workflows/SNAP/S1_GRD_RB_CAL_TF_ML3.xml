@@ -30,7 +30,7 @@
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
       <sourceBands/>
-      <auxFile>Product Auxiliary File</auxFile>
+      <auxFile>Latest Auxiliary File</auxFile>
       <externalAuxFile/>
       <outputImageInComplex>false</outputImageInComplex>
       <outputImageScaleInDb>false</outputImageScaleInDb>
@@ -40,7 +40,6 @@
       <outputSigmaBand>false</outputSigmaBand>
       <outputGammaBand>false</outputGammaBand>
       <outputBetaBand>true</outputBetaBand>
-      <outputDNBand>false</outputDNBand>
     </parameters>
   </node>
   <node id="Terrain-Flattening">

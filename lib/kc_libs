@@ -220,10 +220,10 @@ function kc_process () {
 
 		MIN="0"
 		MAX="1"
-		SECONDS=0
+		#SECONDS=0
 		echo -ne " Rescaling the RFDI to unsigned 16 bit integer values ..." &&
-		gdal_translate -scale ${MIN} ${MAX} 0 65535 -a_nodata 0 -ot UInt16 ${TMP_DIR}/${DATA_HH}.rfdi.mask.tif ${TMP_DIR}/TILES/4_${DATA_HH}.rfdi.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! \
-		&& duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+		gdal_translate -scale ${MIN} ${MAX} 0 65535 -a_nodata 0 -ot UInt16 ${TMP_DIR}/${DATA_HH}.rfdi.mask.tif ${TMP_DIR}/TILES/4_${DATA_HH}.rfdi.tif >> ${LOG_DIR}/log_process 2>&1 #& spinner $! \
+		#&& duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 		rm -f ${TMP_DIR}/${DATA_HH}*
 		rm -f ${TMP_DIR}/${DATA_HV}*
@@ -231,12 +231,12 @@ function kc_process () {
 			
 		MIN=0  # `gdal_min ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif"`
 		MAX=15 # `gdal_max ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif"`	
-		SECONDS=0
-		echo -ne " Creating the HH/HV ratio channel ..." &&
+		#SECONDS=0
+		echo -ne " Creating the HH/HV ratio channel ..." 
 		bash $SNAP_EXE ${SNAP_GRAPHS}/KC_ratio.xml  -x -q 1 -Pfilelist="${TMP_DIR}/TILES/1_${DATA_HH}.tif,${TMP_DIR}/TILES/2_${DATA_HV}.tif" -Poutput=${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.tif" >> ${LOG_DIR}/log_process_${DATA} 2>&1 & spinner $!
 		gdal_translate -a_nodata 0 ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.tif" ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif" >> ${LOG_DIR}/log_process_${DATA} 2>&1 & spinner $!
-		gdal_translate -scale ${MIN} ${MAX} 0 65535 -a_nodata 0 -ot UInt16 ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif" ${TMP_DIR}/TILES/3_${DATA_HH}"_HV_ratio.tif" >> ${LOG_DIR}/log_process_${DATA} 2>&1 & spinner $! \
-		&& duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+		gdal_translate -scale ${MIN} ${MAX} 0 65535 -a_nodata 0 -ot UInt16 ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif" ${TMP_DIR}/TILES/3_${DATA_HH}"_HV_ratio.tif" >> ${LOG_DIR}/log_process_${DATA} 2>&1 
+		#& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 		rm -f ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif" ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif"
 

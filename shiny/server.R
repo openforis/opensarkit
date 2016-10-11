@@ -41,6 +41,7 @@ server <- function(input, output, session) {
    
       df = parseFilePaths(volumes, input$shapefile)
       file_path = as.character(df[,"datapath"])
+      cat(filepath)
       })
    
    
