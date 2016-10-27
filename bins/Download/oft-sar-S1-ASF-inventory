@@ -285,7 +285,7 @@ rm -rf "${INV}/S1_ASF_${MODE}_${LEVEL_2}_${POL_2}.shp"
 ogr2ogr -f "Esri Shapefile" "${INV}/S1_ASF_${MODE}_${LEVEL_2}_${POL_2}.shp" "${TMP_DIR}/wkt.vrt" & spinner $! && duration=$SECONDS \
 && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
-#rm -rf ${TMP_DIR}
+rm -rf ${TMP_DIR}
 
 # download if needed
 if [[ $8 == 1 ]];then
