@@ -39,18 +39,13 @@ if [ "$#" == "5" ];then
 	# set up initial script variables
 	mkdir -p $1
 	OUT_DIR=`readlink -f $1` 
- 
-	if [ `echo $2 | grep shp` ]; then
-		AOI_FULL=`readlink -f $2`
-	else
-		AOI_FULL=$2
-	fi
-
 
 	ZIP_DIR=${OUT_DIR}/ZIP
 	mkdir -p ${ZIP_DIR}
 	YEAR=$3
 
+	TMP_DIR=${OUT_DIR}/.TMP$3
+	mkdir -p ${TMP_DIR}
 	# source libs
 	source ${OPENSARKIT}/lib/helpers_source
 
@@ -92,21 +87,50 @@ else
 	# set up initial script variables
 	mkdir -p $1
 	OUT_DIR=`readlink -f $1` 
- 
-	if [ `echo $2 | grep shp` ]; then
-		AOI_FULL=`readlink -f $2`
-	else
-		AOI_FULL=$2
-	fi
-
 
 	ZIP_DIR=${OUT_DIR}/ZIP
 	mkdir -p ${ZIP_DIR}
 	YEAR=$3
 
+	TMP_DIR=${OUT_DIR}/.TMP$3
+	mkdir -p ${TMP_DIR}
 	# source libs
 	source ${OPENSARKIT}/lib/helpers_source
 fi
 
-poft-sar-ALOS-KC-download ${OUT_DIR} ${AOI_FULL} ${YEAR} ${CRED_FILE}
-poft-sar-ALOS-KC-process ${OUT_DIR} ${AOI_FULL} ${YEAR} $4
+
+#----------------------------------------------------------------------
+# 2 check if AOI comes from country code or is already a shapefile
+
+
+if [ `echo $2 | grep shp` ]; then # AOI case
+
+	AOI=`readlink -f $2`
+	AOI_PATH=`dirname ${AOI}`
+
+	# check numberof layers/polygons
+	aoi_valid_poly ${AOI} ${TMP_DIR}/aoi_convex.shp ${TMP_DIR} 
+
+	#check EPSG
+	if [ -e ${TMP_DIR}/aoi_convex.shp ];then
+		aoi_valid_epsg ${TMP_DIR}/aoi_convex.shp ${TMP_DIR}/aoi_wgs84.shp ${TMP_DIR} 
+	else	
+		aoi_valid_epsg ${AOI} ${TMP_DIR}/aoi_wgs84.shp ${TMP_DIR} 
+	fi
+	if [ -e ${TMP_DIR}/aoi_wgs84.shp ];then
+		mv ${TMP_DIR}/aoi_wgs84* ${AOI_PATH}
+		AOI=${AOI_PATH}/aoi_wgs84.shp
+	elif [ -e ${TMP_DIR}/aoi_convex.shp ];then
+		mv ${TMP_DIR}/aoi_convex* ${AOI_PATH}
+		AOI=${AOI_PATH}/aoi_convex.shp
+	else 
+		AOI=${AOI}
+	fi
+else # country case
+	mkdir -p ${OUT_DIR}/AOI/
+	aoi_from_iso3 $2 ${OUT_DIR}/AOI
+	AOI=${OUT_DIR}/AOI/$2.shp
+fi
+echo $AOI > /home/avollrath/log_aoi
+poft-sar-ALOS-KC-download ${OUT_DIR} ${AOI} ${YEAR} ${CRED_FILE}
+poft-sar-ALOS-KC-process ${OUT_DIR} ${AOI} ${YEAR} $4

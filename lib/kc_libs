@@ -190,9 +190,20 @@ function kc_process () {
 		
 		#RFDI calculation
 		if [ $4 -eq 1 ];then #filter case
-			kc_rfdi ${TMP_DIR}/${DATA_HH}.filtered.tif ${TMP_DIR}/${DATA_HV}.filtered.tif ${TMP_DIR}/${DATA_HH}.rfdi.tif ${LOG_DIR}
+			SECONDS=0
+ 			echo -ne " Calculating the Radar Forest Degradation Index ..." &&
+			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_RFDI.xml -x -Pfilelist=${TMP_DIR}/${DATA_HH}.filtered.tif,${TMP_DIR}/${DATA_HV}.filtered.tif -Poutput=${TMP_DIR}/${DATA_HH}.rfdi.tif >> $4/log_rfdi 2>&1 & spinner $! \
+			&& duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+			#kc_rfdi ${TMP_DIR}/${DATA_HH}.filtered.tif ${TMP_DIR}/${DATA_HV}.filtered.tif ${TMP_DIR}/${DATA_HH}.rfdi.tif ${LOG_DIR}
 		else
-			kc_rfdi ${TMP_DIR}/${DATA_HH}.tif ${TMP_DIR}/${DATA_HV}.tif ${TMP_DIR}/${DATA_HH}.rfdi.tif ${LOG_DIR}
+
+			SECONDS=0
+ 			echo -ne " Calculating the Radar Forest Degradation Index ..." &&
+			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_RFDI.xml -x -Pfilelist=${TMP_DIR}/${DATA_HH}.tif,${TMP_DIR}/${DATA_HV}.tif -Poutput=${TMP_DIR}/${DATA_HH}.rfdi.tif >> $4/log_rfdi 2>&1 & spinner $! \
+			&& duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+			#kc_rfdi ${TMP_DIR}/${DATA_HH}.tif ${TMP_DIR}/${DATA_HV}.tif ${TMP_DIR}/${DATA_HH}.rfdi.tif ${LOG_DIR}
 		fi
 
 		# Layover/Shadow masking

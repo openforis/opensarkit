@@ -17,8 +17,10 @@ print_alos = eventReactive(input$alos_kc_process, {
             session$sendCustomMessage(type='jsCode', list(value = js_string))
          } else {
            dummy="dummy"
-    }
-   }
+        }
+   } else {
+     dummy="dummy"
+   }   
    
    if (dummy == "dummy"){
          

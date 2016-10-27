@@ -65,42 +65,51 @@ read -r -p " Please type your NASA Earthdata Username:" USERNAME
 read -s -p " Please type your NASA Earthdata Password:" PW
 echo ""
 
-echo "http_user=${USERNAME}" >> wget.conf
-echo "http_password=${PW}" >> wget.conf
+echo "http_user=${USERNAME}" >> ${TMP_DIR}/wget.conf
+echo "http_password=${PW}" >> ${TMP_DIR}/wget.conf
 chmod 600 ${TMP_DIR}/wget.conf
-export WGETRC="wget.conf"
+export WGETRC="${TMP_DIR}/wget.conf"
 
 echo ""
 echo -ne " Logging in ..." &&
 #wget --keep-session-cookies --save-cookies ${TMP_DIR}/cookies.txt -P ${TMP_DIR}/ --post-data='userid='${USERNAME}'&password='${PW} --no-check-certificate "https://vertex.daac.asf.alaska.edu/services/authentication" -o ${TMP_DIR}/cookieslog.txt 
 echo -e " done"
-if cat ${TMP_DIR}/cookies.txt | grep -q .alaska.edu; then
-	unset PW
-else
-	echo -e " Authorization failed"
-	exit
-fi
+#if cat ${TMP_DIR}/cookies.txt | grep -q .alaska.edu; then
+#	unset PW
+#else
+	#echo -e " Authorization failed"
+	#exit
+#fi
 
 echo -ne " Preparing download ..."
-ogrinfo $2 -al | grep DL_Path | sed 's/  DL_Path (String) = //g' | tail -n +2 > ${TMP_DIR}/download_list
-ogrinfo $2 -al | grep Date | sed 's/  Date (Integer) = //g' | tail -n +2 > ${TMP_DIR}/acq_date
-ogrinfo $2 -al | grep Mode | sed 's/  Mode (String) = //g' | tail -n +2 > ${TMP_DIR}/mode
-ogrinfo $2 -al | grep Track | sed 's/  Track (Integer) = //g' | tail -n +2 > ${TMP_DIR}/track
-ogrinfo $2 -al | grep Scene_ID | sed 's/  Scene_ID (String) = //g' | tail -n +2 > ${TMP_DIR}/scene
+SECONDS=0
+ogrinfo $2 -al | grep Product_ID | sed 's/  Product_ID (String) = //g' | tail -n +2 > ${TMP_DIR}/tmp_download_list &&
+ogrinfo $2 -al | grep Track | sed 's/  Track (Integer) = //g' | tail -n +2 > ${TMP_DIR}/tmp_track_list &&
+ogrinfo $2 -al | grep Orbit_Dir | sed 's/  Orbit_Dir (String) = //g' | tail -n +2 | cut -c -1 > ${TMP_DIR}/tmp_orb_dir_list &&
+ogrinfo $2 -al | grep Date | sed 's/  Date (Integer) = //g'| tail -n +2 > ${TMP_DIR}/tmp_date_list \
+& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+echo ""
 
 # counter for info on number of download products
-NR=`cat ${TMP_DIR}/download_list | wc -l`
+NR=`cat ${TMP_DIR}/tmp_download_list | wc -l`
 COUNT=1
-echo -e " done"
+paste -d ';' ${TMP_DIR}/tmp_download_list ${TMP_DIR}/tmp_track_list ${TMP_DIR}/tmp_orb_dir_list ${TMP_DIR}/tmp_date_list >> ${TMP_DIR}/tmp_list
+
+
 
 while read line; do 
 
-	MODE=`cat ${TMP_DIR}/mode | awk "NR==${COUNT}"`
-	ACQ_DATE=`cat ${TMP_DIR}/acq_date | awk "NR==${COUNT}"`
-	TRACK=`cat ${TMP_DIR}/track | awk "NR==${COUNT}"`
-	SCENE=`cat ${TMP_DIR}/scene | awk "NR==${COUNT}"`
-
-	mkdir -p ${PROC_DIR}/${MODE}/${ACQ_DATE}-${TRACK}
+	# get the data via the UUID
+	LINK=`echo $line | awk -F ";" '{print $1}'`		
+	TRACK=`echo $line | awk -F ";" '{print $2}'`
+	if [ `echo $TRACK | wc -c` -eq 2 ];then
+		TRACK=`echo "00${TRACK}"`
+	elif [ `echo $TRACK | wc -c` -eq 3 ];then
+		TRACK=`echo "0${TRACK}"`
+	fi
+	ORB_DIR=`echo $line | awk -F ";" '{print $3}'`
+	DATE=`echo $line | awk -F ";" '{print $4}'`
+	mkdir -p ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/
 
 	# prepare a loop to avoid uncomplete data downloads		
 #	i=1
@@ -114,9 +123,9 @@ while read line; do
 		#	i=1
 
 
-			echo -ne " Downloading Product ${COUNT} of ${NR} (Granule: ${SCENE}) " &&
-			wget -c -P ${PROC_DIR}/${MODE}/${ACQ_DATE}-${TRACK} "${line}" >> $TMP_DIR/log_download 2>&1 & spinner $! \
-			&& duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	echo -ne " Downloading Product ${COUNT} of ${NR} (Granule: ${SCENE}) " &&
+	wget -c -P ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/ "${LINK}" >> $TMP_DIR/log_download 2>&1 & spinner $! \
+	&& duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 #			aria2c --load-cookies="${TMP_DIR}/cookies.txt" --dir=${PROC_DIR}/${MODE}/${ACQ_DATE}-${TRACK} --continue=true "${line}" > ${TMP_DIR}/tmp_error \
 		
 		#fi
@@ -124,7 +133,7 @@ while read line; do
 	
 	COUNT=`expr ${COUNT} + 1`
 
-done < ${TMP_DIR}/download_list
+done < ${TMP_DIR}/tmp_list
 
 echo "---------------------------------------------"
 echo " Download of all products succesfully completed"

@@ -162,14 +162,13 @@ if grep --quiet "Authentication Failed" ${TMP_DIR}/log_inventory; then
 	rm -rf ${TMP_DIR}
 fi
 
-# get nr. of products
-NR_OF_PRODUCTS=`s1_ident ${TMP_DIR}/datalist | wc -l `
-
-if [ `xml_grep --text_only "opensearch:totalResults" ${TMP_DIR}/datalist` == 0 ];then
+if [ `wc -l ${TMP_DIR}/datalist | awk '{print $1}'` -eq 0 ];then
 	echo " Empty search result. Check your search criteria." && exit 1	
 	rm -rf ${TMP_DIR}
 fi
 
+# get nr. of products
+NR_OF_PRODUCTS=`s1_ident ${TMP_DIR}/datalist | wc -l `
 
 echo "-------------------------------------------------"
 echo " Info: There are ${NR_OF_PRODUCTS} Products available"
@@ -221,4 +220,4 @@ if [[ $7 == 1 ]];then
 fi
 
 # remove TMP folder
-rm -rf ${TMP_DIR}
+#rm -rf ${TMP_DIR}

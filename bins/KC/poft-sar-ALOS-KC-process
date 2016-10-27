@@ -194,11 +194,11 @@ echo "---------------------------"
 cd ${TMP_DIR}
 
 if [ `echo $2 | grep shp` ]; then
-	for TILE in `ls -1 *${YEAR_SHORT}"_sl_HH"`; do 
-		echo "source ${OPENSARKIT}/lib/kc_libs; kc_process ${TILE} ${AOI} $4 ${YEAR} $TMP_DIR $LOG_DIR" >> ${TMP_DIR}/proc_list
+	for TILE in `ls -1 *${YEAR_SHORT}"_sl_HH"* | grep -v hdr`; do 
+		echo "source ${OPENSARKIT}/lib/kc_libs; kc_process ${TILE} ${AOI} $4 ${YEAR} ${TMP_DIR} ${LOG_DIR}" >> ${TMP_DIR}/proc_list
 	done
 else
-	for TILE in `ls -1 *${YEAR_SHORT}"_sl_HH"`; do 
+	for TILE in `ls -1 *${YEAR_SHORT}"_sl_HH"* | grep -v hdr`; do 
 		echo "source ${OPENSARKIT}/lib/kc_libs; kc_process ${TILE} ${AOI_BUF} $4 ${YEAR} ${TMP_DIR} ${LOG_DIR}" >> ${TMP_DIR}/proc_list
 	done
 fi
@@ -240,7 +240,7 @@ fi
 #--------------------------------------------------------------
 
 # remove Temp Folder
-rm -rf ${TMP_DIR}
+#rm -rf ${TMP_DIR}
 
 echo " ---------------------------------------------------------------------------------------------"
 echo " Succesfully processed the K&C tiles "
