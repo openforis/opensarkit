@@ -1,0 +1,164 @@
+#-----------------------------------------------------------------------------
+# About OST tab
+tabItem(tabName = "about",
+        "Welcome to the Open Foris SAR Toolkit",
+        fluidRow(
+        ) # close box
+) # close tabItem
+
+
+#-----------------------------------------------------------------------------
+# ALOS K&C Tab
+tabItem(tabName = "alos_kc",
+        fluidRow(
+           # Include the line below in ui.R so you can send messages
+           tags$head(tags$script(HTML('Shiny.addCustomMessageHandler("jsCode",function(message) {eval(message.value);});'))),
+           
+           #----------------------------------------------------------------------------------
+           # Processing Panel ALOS K&C
+           box(
+              
+              # Title                     
+              title = "Processing Panel", status = "success", solidHeader= TRUE,
+              tags$h4("ALOS Kyoto & Carbon initiative"),
+              hr(),
+              "Please choose a Project folder where the final data will be stored:",br(),
+              br(),
+              #div(style="display:inline-block",shinyDirButton('directory', 'Browse', 'Select a folder')),
+              #div(style="display:inline-block",verbatimTextOutput("project_dir")),
+              shinyDirButton('directory', 'Browse', 'Select a folder'),
+              br(),
+              br(),
+              verbatimTextOutput("KC_project_dir"),
+              hr(),
+              "This parameter will define the spatial extent of the processing. You can either choose the borders of a country or a shapefile that bounds your area of interest.",
+              # AOI choice
+              radioButtons("ALOS_AOI", "Choose AOI type:",
+                           c("Country" = "country",
+                             "Shapefile (on Server/local)" = "AOI_shape_local",
+                             "Shapefile (upload)" = "AOI_shape_upload")),
+              
+              conditionalPanel(
+                 "input.ALOS_AOI == 'country'",
+                 selectInput(
+                    inputId = 'countryname', 
+                    label= 'Name of the country', 
+                    choices = dbGetQuery(
+                       dbConnect(SQLite(),dbname=Sys.getenv("OST_DB")),
+                       sprintf("SELECT name FROM %s WHERE iso3 <> -99 ORDER BY name ASC", "countries")), 
+                    selected=NULL)
+              ),
+              
+              conditionalPanel(
+                 "input.ALOS_AOI == 'AOI_shape_local'",
+                 #div(style="display:inline-block",shinyFilesButton("shapefile","Choose file","Choose one or more files",FALSE)),
+                 #div(style="display:inline-block",textOutput("filepath"))
+                 shinyFilesButton("shapefile","Choose file","Choose one or more files",FALSE),
+                 br(),
+                 br(),
+                 verbatimTextOutput("KC_filepath")
+              ),
+              
+              conditionalPanel(
+                 "input.ALOS_AOI == 'AOI_shape_upload'",
+                 fileInput('shapefile_path', label = 'Choose a shapefile',accept = c(".shp"))
+              ),
+              
+              hr(),
+              
+              selectInput("year","Year of data",c(
+                 "2007" = "2007",
+                 "2008" = "2008",
+                 "2009" = "2009",
+                 "2010" = "2010",
+                 "2015" = "2015")),                   
+              hr(),
+              radioButtons("ALOS_KC_speckle", "Do you want to apply speckle filtering?",
+                           c("Yes" = "Yes",
+                             "No" = "No")),
+              
+              hr(),
+              
+              "Please type in your ALOS K&C username and password. If you are not in possess of a user account: ",
+              a(href = "http://www.eorc.jaxa.jp/ALOS/en/palsar_fnf/registration.htm", "Click Here!"),
+              
+              textInput(inputId = "uname",
+                        label = "Username", 
+                        value = "Type in your username" 
+              ),
+              
+              passwordInput(inputId = "piwo",
+                            label = "Password",
+                            value = "Type in your password"),
+              hr(),
+              div(style="display:inline-block",actionButton("alos_kc_process", "Start processing")),
+              div(style="display:inline-block",actionButton("alos_kc_abort", "Abort processing")),
+              #actionButton("alos_kc_process", "Start processing"),
+              br(),
+              br(),
+              "Command Line Syntax:",
+              verbatimTextOutput("processALOS")
+           ), # close box
+           #----------------------------------------------------------------------------------
+           
+           
+           #----------------------------------------------------------------------------------
+           # Info Panel
+           box(
+              title = "Info Panel", status = "success", solidHeader= TRUE,
+              
+              tabBox(width = 700,
+                     
+                     tabPanel("General Info",
+                              tags$h4("ALOS Kyoto & Carbon initiative"),
+                              p("Global 25m resolution PALSAR-2/PALSAR mosaic and forest/non-forest map
+                              are free and open datasets generated by applying JAXAs sophisticated processing
+                              and analysis method/technique to a lot of images obtained with Japanese L-band
+                              Synthetic Aperture Radars (PALSAR and PALSAR-2) on Advanced Land Observing 
+                              Satellite (ALOS) and Advanced Land Observing Satellite-2 (ALOS-2)."),
+                              img(src = "shimada_alos_global.png", width = "100%", height = "100%"),
+                              tags$b("Figure 1: 2007 - 2010 global mosaics of ALOS Kyoto & Carbon initiative"),br(),
+                              p("The global 25m resolution PALSAR/PALSAR-2 mosaic is a seamless global SAR
+                              image created by mosaicking SAR images of backscattering coefficient measured
+                              by PALSAR/PALSAR-2, where all the path within 10x10 degrees in latitude and
+                              longitude are path processed and mosaicked for the sake of processing efficiency.
+                              Correction of geometric distortion specific to SAR (ortho-rectification) and topo-
+                              graphic effects on image intensity (slope correction) are applied to make forest
+                              classification easy. The size of one pixel is approximately 25 meter by 25 meter.
+                              The temporal interval of the mosaic is generally 1 year."),
+                              img(src = "shimada_fnf_global.png", width = "100%", height = "100%"),
+                              tags$b("Figure 2: 2007 - 2010 global forest/non-forest maps of the ALOS Kyoto & Carbon initiative"),br(),
+                              p("The global forest/non-forest map (FNF) is generated by classifying the SAR image
+                              (backscattering coefficient) in the global 25m resolution PALSAR-2/PALSAR
+                              mosaic so that strong and low backscatter pixels are assigned as forest (colored in
+                              green) and non-forest (colored in yellow), respectively. Here, the forest is defined
+                              as the natural forest with the area larger than 0.5ha and forest cover over 90%, as
+                              same to the FAO definition. Since the radar backscatter from the forest depends
+                              on the region (climate zone), the classification of 2 Forest/Non-forest is conducted
+                              by using the region dependent threshold of backscatter. The classification accu-
+                              racy is checked by using in-situ photos and high-resolution optical satellite images.")
+                              
+                              
+                     ),
+                     
+                     tabPanel("Processing",
+                              br(),
+                              "Not my fault"
+                     ),
+                     
+                     tabPanel("Disclaimer",
+                              br(),
+                              "Not my fault"
+                     ),
+                     
+                     tabPanel("References",
+                              br(),
+                              "Interesting results can be found in the Kyoto and Carbon booklet provided by the Japanese Space Agnecy",br(),
+                              "http://www.eorc.jaxa.jp/ALOS/en/kyoto/ref/KC-Booklet_2010_comp.pdf",
+                              "References"
+                     )
+              ) # close tab box
+           ) # close box
+           #----------------------------------------------------------------------------------
+) # close fluidRow
+) # close tabItem
