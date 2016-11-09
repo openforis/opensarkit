@@ -156,7 +156,8 @@ if grep -q "qgis.org/ubuntugis" /etc/apt/sources.list;then
 else
 	add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu ${RELEASE}/"
 	#apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9 
-
+	gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys E084DAB9 >> ${OSK_HOME}/LOG/log_install 2>&1 
+	gpg -a --export E084DAB9 | apt-key add - >> ${OSK_HOME}/LOG/log_install 2>&1 
 fi 
 
 if grep -q "qgis.org/ubuntugis" /etc/apt/sources.list;then 
@@ -171,7 +172,11 @@ else
 	echo "deb http://qgis.org/ubuntugis ${RELEASE} main" >> /etc/apt/sources.list
 	echo "deb-src http://qgis.org/ubuntugis ${RELEASE} main" >> /etc/apt/sources.list
 	# add key
-	apt-key adv --keyserver keyserver.ubuntu.com --recv-key 073D307A618E5811 >> ${OSK_HOME}/LOG/log_install 2>&1
+	#apt-key adv --keyserver keyserver.ubuntu.com --recv-key 073D307A618E5811 >> ${OSK_HOME}/LOG/log_install 2>&1
+	#apt-key adv --keyserver keyserver.ubuntu.com --recv-key 073D307A618E5811
+
+	wget -O - http://qgis.org/downloads/qgis-2016.gpg.key | gpg --import >> ${OSK_HOME}/LOG/log_install 2>&1 
+	gpg --export --armor 073D307A618E5811 | apt-key add - >> ${OSK_HOME}/LOG/log_install 2>&1 
 fi
 
 #------------------------------------------------------------------
@@ -211,9 +216,6 @@ echo -ne " Getting the Open Foris SAR Toolkit ..." &&
 git clone $OSK_GIT_URL >> ${OSK_HOME}/LOG/log_install 2>&1 \
 & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
-echo "OPENSARKIT=${OSK_HOME}/opensarkit" | tee -a /etc/environment
-echo "OST_DB=${OSK_HOME}/Database/OFST_db.sqlite" | tee -a /etc/environment
-
 
 OSK_VERSION=0.1-beta
 
@@ -224,7 +226,7 @@ BINDIR=/usr/local/bin/
 for OST_BINS in `ls -1`;do 
 
 	cd $OST_BINS	
-	for exe in `ls -1 {oft*,poft*}`;do
+	for exe in `ls -1 {oft*,poft*} 2>/dev/null`;do
 
 		exepath=`readlink -f $exe`	
 		ln -s $exepath ${BINDIR}/
@@ -241,11 +243,12 @@ if [ `locate gpt.vmoptions | wc -c` -gt 0 ];then
 
 	SNAP_DIR=`locate gpt.vmoptions`
 	SNAP=`dirname ${SNAP_DIR}`
+	echo " Adding environmental variables to /etc/environment ..." 
+	echo "OPENSARKIT=${OSK_HOME}/opensarkit" | tee -a /etc/environment
+	echo "OST_DB=${OSK_HOME}/Database/OFST_db.sqlite" | tee -a /etc/environment
 	echo "SNAP_EXE=${SNAP}/gpt" | tee -a /etc/environment
 	
 else
-	
-	cd ${OSK_HOME}/Programs/
 	
 	SECONDS=0
 	echo -ne " Downloading the SNAP software ..." &&
@@ -258,10 +261,11 @@ else
 	& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 	rm -f esa-snap_sentinel_unix_4_0.sh
-	#echo 'export SNAP=/usr/local/snap' >> ${OSK_HOME}/OpenSARKit_source.bash
-	echo 'SNAP_EXE=/usr/local/snap/bin/gpt' | tee -a /etc/environment
-
 	
+	echo -ne " Adding environmental variables to /etc/environment ..." 
+	echo "OPENSARKIT=${OSK_HOME}/opensarkit" | tee -a /etc/environment
+	echo "OST_DB=${OSK_HOME}/Database/OFST_db.sqlite" | tee -a /etc/environment
+	echo 'SNAP_EXE=/usr/local/snap/bin/gpt' | tee -a /etc/environment
 
 fi
 
@@ -271,7 +275,7 @@ echo -ne " Updating SNAP to the latest version ..." &&
 snap --nosplash --nogui --modules --update-all  >> ${OSK_HOME}/LOG/log_install 2>&1 \
 & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
-HOME_USER=`stat -c '%U' ${HOME}/.snap`
+HOME_USER=`stat -c '%U' ${HOME}/.bashrc`
 chown -R ${HOME_USER}:${HOME_USER} ${HOME}/.snap
 
 #-------------------------------------
@@ -289,13 +293,25 @@ wget https://www.dropbox.com/s/qvujm3l0ba0frch/OFST_db.sqlite?dl=0  >> ${OSK_HOM
 & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 mv OFST_db.sqlite?dl=0 OFST_db.sqlite
 
-echo -ne " Creating a start up icon on the Desktop" 
+
+echo -ne " Installing R packages for shiny app ..." &&
+/usr/bin/R -e "install.packages('shiny', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1 
+/usr/bin/R -e "install.packages('shinydashboard', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1 
+/usr/bin/R -e "install.packages('shinyFiles', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1 
+/usr/bin/R -e "install.packages('RSQLite', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1 
+/usr/bin/R -e "install.packages('RColorBrewer', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1 
+/usr/bin/R -e "install.packages('random', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1 
+/usr/bin/R -e "install.packages('raster', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1 
+/usr/bin/R -e "install.packages('mapview', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1 
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+echo -ne " Creating a start up icon on the Desktop ..." 
 
 echo "[Desktop Entry]" > ${HOME}/Desktop/OST.desktop
 echo "Version=1.0" >> ${HOME}/Desktop/OST.desktop
 echo "Name=Open Foris SAR Toolkit" >> ${HOME}/Desktop/OST.desktop
 echo "Comment=" >> ${HOME}/Desktop/OST.desktop
-echo "Exec=bash -c \'R CMD BATCH ${OPENSARKIT}/shiny/ost.R;$SHELL\'" >> ${HOME}/Desktop/OST.desktop
+echo 'Exec=bash -c "R CMD BATCH ${OPENSARKIT}/shiny/ost.R;$SHELL"' >> ${HOME}/Desktop/OST.desktop
 echo "Icon=${OPENSARKIT}/OST_icon_trans.png" >> ${HOME}/Desktop/OST.desktop
 echo "Terminal=true" >> ${HOME}/Desktop/OST.desktop
 echo "Type=Application" >> ${HOME}/Desktop/OST.desktop
@@ -304,8 +320,14 @@ echo "Path=" >> ${HOME}/Desktop/OST.desktop
 echo "StartupNotify=false" >> ${HOME}/Desktop/OST.desktop
 
 echo "require(shiny)" > ${OPENSARKIT}/shiny/ost.R
-echo "runApp(\'${OPENSARKIT}/shiny/\',launch.browser = T)" >> ${OPENSARKIT}/shiny/ost.R
+echo "runApp('${OPENSARKIT}/shiny/',launch.browser = T)" >> ${OPENSARKIT}/shiny/ost.R
 
+chmod +x ${HOME}/Desktop/OST.desktop
+chown ${HOME_USER}:${HOME_USER} ${HOME}/Desktop/OST.desktop
+
+cp ${HOME}/Desktop/OST.desktop /usr/share/applications/OST.desktop
+
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 echo "---------------------------------------------------------------------------------------------------------------------------"
 echo " Installation of OFST succesfully completed"

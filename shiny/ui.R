@@ -28,6 +28,7 @@ packages(RSQLite)
 packages(random)
 packages(mapview)
 packages(raster)
+packages(shinyjs)
 #-----------------------------------------------------------------------------------
 
 
@@ -92,28 +93,23 @@ ui = dashboardPage(
       
       #-----------------------------------------------------------------------------
       # About OST tab
-      source(file.path("ui/GeneralInfo","About_OST.R"), local=TRUE)$value,
-      source(file.path("ui/GeneralInfo","SARtheory.R"), local=TRUE)$value,
-      source(file.path("ui/GeneralInfo","SARmissions.R"), local=TRUE)$value,
-      source(file.path("ui/GeneralInfo","SARimage.R"), local=TRUE)$value,
-      source(file.path("ui/GeneralInfo","SARrefs.R"), local=TRUE)$value,
+      source(file.path("ui","About_OST.R"), local=TRUE)$value,
+      source(file.path("ui","SARtheory.R"), local=TRUE)$value,
+      source(file.path("ui","SARmissions.R"), local=TRUE)$value,
+      source(file.path("ui","SARimage.R"), local=TRUE)$value,
+      source(file.path("ui","SARrefs.R"), local=TRUE)$value,
       #-----------------------------------------------------------------------------
       
       #-----------------------------------------------------------------------------
       # ALOS K&C Tab
-      source(file.path("ui/Alos","ALOS_tab_ui.R"), local=TRUE)$value,
+      source(file.path("ui","ALOS_KC_tab_ui.R"), local=TRUE)$value,
+      
       #-----------------------------------------------------------------------------
       
       #-----------------------------------------------------------------------------
       # Sentinel 1 Tab
-         tabItem(tabName = "s1_inv",
-                 fluidRow(
-                    box(
-                       title = "Description", status = "success", solidHeader= TRUE,
-                       "This tool helps you to search and sort for Sentinel-1 data"
-                    ) # close box
-                 ) # close fluidRow
-         ), # close tabItem
+      source(file.path("ui","S1_inv_tab_ui.R"), local=TRUE)$value,
+      
       #-----------------------------------------------------------------------------
          
       #-----------------------------------------------------------------------------

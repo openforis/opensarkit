@@ -59,11 +59,11 @@ if [ "$#" == "8" ]; then
 	elif [ $7 == "2" ];then 
 		LEVEL="GRD_HD"
 		POL=VV%2bVH
-		POL=VV-VH
+		POL_2=VV-VH
 	elif [ $7 == "3" ];then 
 		LEVEL="GRD_HS"
-		POL=VV
-		POL_2=VV
+		POL="VV"
+		POL_2="VV"
 	elif [ $7 == "4" ];then 
 		LEVEL="GRD_HS,GRD_HD"
 		POL=HH%2bVH,HH
@@ -71,7 +71,7 @@ if [ "$#" == "8" ]; then
 	elif [ $7 == "5" ];then 
 		LEVEL="GRD_HD"
 		POL=HH%2bHV
-		POL=HH-HV
+		POL_2=HH-HV
 	elif [ $7 == "6" ];then 
 		LEVEL="GRD_HS"
 		POL=HH
@@ -79,7 +79,7 @@ if [ "$#" == "8" ]; then
 	fi
 
 	PROCESSING="processingLevel=${LEVEL}"
-
+	POLAR="polarization=${POL}"
 	# source libs
 	source ${OPENSARKIT}/lib/helpers_source
 
@@ -168,14 +168,14 @@ echo -e " done"
 OUTPUT_FORMAT="output=csv"
 OUTPUT="${MODE}-data_inventory"
 OUT_FILE=${TMP_DIR}/$OUTPUT.csv
-ASK="\&polygon=${AOI}&${PLATFORM}&${BEAM}&${PERIOD}&${POL}&${PROCESSING}&${OUTPUT_FORMAT}"
+ASK="\&polygon=${AOI}&${PLATFORM}&${BEAM}&${PERIOD}&${POLAR}&${PROCESSING}&${OUTPUT_FORMAT}"
 #ASK="\&polygon=${AOI}&${PLATFORM}&${BEAM}&${PERIOD}&${PROCESSING}&${OUTPUT_FORMAT}"
 echo -ne " Data inventory from ASF server ..." &&
 curl -s https://api.daac.asf.alaska.edu/services/search/param?keyword=value$ASK | tail -n +2  > ${OUT_FILE} \
 & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 echo "" >>  ${OUT_FILE}
 NR_OF_PRODUCTS=`wc -l ${OUT_FILE} | awk '{print $1}'`
-
+#echo "curl -s https://api.daac.asf.alaska.edu/services/search/param?keyword=value$ASK"
 echo "-------------------------------------------------"
 echo " Info: There are ${NR_OF_PRODUCTS} Products available"
 echo "-------------------------------------------------"
@@ -285,7 +285,7 @@ rm -rf "${INV}/S1_ASF_${MODE}_${LEVEL_2}_${POL_2}.shp"
 ogr2ogr -f "Esri Shapefile" "${INV}/S1_ASF_${MODE}_${LEVEL_2}_${POL_2}.shp" "${TMP_DIR}/wkt.vrt" & spinner $! && duration=$SECONDS \
 && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
-rm -rf ${TMP_DIR}
+#rm -rf ${TMP_DIR}
 
 # download if needed
 if [[ $8 == 1 ]];then

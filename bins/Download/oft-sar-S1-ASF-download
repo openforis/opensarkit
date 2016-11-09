@@ -92,11 +92,10 @@ echo ""
 
 # counter for info on number of download products
 NR=`cat ${TMP_DIR}/tmp_download_list | wc -l`
-COUNT=1
+
 paste -d ';' ${TMP_DIR}/tmp_download_list ${TMP_DIR}/tmp_track_list ${TMP_DIR}/tmp_orb_dir_list ${TMP_DIR}/tmp_date_list >> ${TMP_DIR}/tmp_list
 
-
-
+COUNT=1
 while read line; do 
 
 	# get the data via the UUID
@@ -112,24 +111,30 @@ while read line; do
 	mkdir -p ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/
 
 	# prepare a loop to avoid uncomplete data downloads		
-#	i=1
-#	echo "bla" > ${TMP_DIR}/tmp_error
-	# do the loop 
-	#for(( i=1; i<=2; i++ ));do
+	i=1
+	echo "bla" > ${TMP_DIR}/tmp_error
+	#do the loop 
+	for(( i=1; i<=2; i++ ));do
 
-		#if grep -q "download completed" ${TMP_DIR}/tmp_error;then
-		#	i=3
-		#else
-		#	i=1
-
-
-	echo -ne " Downloading Product ${COUNT} of ${NR} (Granule: ${SCENE}) " &&
-	wget -c -P ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/ "${LINK}" >> $TMP_DIR/log_download 2>&1 & spinner $! \
-	&& duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+		i=1
+		SECONDS=0
+		echo -ne " Downloading Product ${COUNT} of ${NR} (Granule: ${SCENE}) " &&
+		wget -c -P ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/ "${LINK}" >> $TMP_DIR/log_download_$COUNT 2>&1 & spinner $! \
+		&& duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 #			aria2c --load-cookies="${TMP_DIR}/cookies.txt" --dir=${PROC_DIR}/${MODE}/${ACQ_DATE}-${TRACK} --continue=true "${line}" > ${TMP_DIR}/tmp_error \
+
+		if grep -q "100%" ${TMP_DIR}/log_download_$COUNT;then
+			i=3
 		
-		#fi
-	#done
+		elif grep -q "Username/Password Authentication Failed." ${TMP_DIR}/log_download_$COUNT;then
+
+			echo " Authorization failed. Please try again."
+			exit 1
+		else
+			
+			echo " Connection problems, will try again immediately"
+		fi		
+	done
 	
 	COUNT=`expr ${COUNT} + 1`
 
@@ -139,5 +144,5 @@ echo "---------------------------------------------"
 echo " Download of all products succesfully completed"
 echo "---------------------------------------------"
 
-rm -rf ${TMP_DIR}
+#rm -rf ${TMP_DIR}
 

@@ -189,19 +189,17 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 			echo -ne " Creating multi-channel vrt files for visualization within GIS ..."
 			gdalbuildvrt -separate -srcnodata 0 ${STACK}/vv_stack.vrt ${STACK}/mt_stack.vv.db.speckle.data/*img >> ${LOG_DIR}/log_final_vrt 2>&1 & spinner $! 
 			gdalbuildvrt -separate -srcnodata 0 ${STACK}/vh_stack.vrt ${STACK}/mt_stack.vh.db.speckle.data/*img >> ${LOG_DIR}/log_final_vrt 2>&1 & spinner $!
-			gdalbuildvrt -separate -srcnodata 0 ${STACK}/mt_stack.vrt ${STACK}/mt-metrics_sdv.data/Gamma_VV_mean.img ${STACK}/mt-metrics_sdv.data/Gamma_VV_max.img ${STACK}/mt-metrics_sdv.data/Gamma_VV_min.img \
-																						 ${STACK}/mt-metrics_sdv.data/Gamma_VV_stddev.img ${STACK}/mt-metrics_sdv.data/Gamma_VV_coef_of_var.img  \
-																						 ${STACK}/mt-metrics_sdv.data/Gamma_VH_mean.img ${STACK}/mt-metrics_sdv.data/Gamma_VH_max.img ${STACK}/mt-metrics_sdv.data/Gamma_VH_min.img \
-																						 ${STACK}/mt-metrics_sdv.data/Gamma_VH_stddev.img ${STACK}/mt-metrics_sdv.data/Gamma_VH_coef_of_var.img >> ${LOG_DIR}/log_final_vrt 2>&1 \
+			gdalbuildvrt -separate -srcnodata 0 ${STACK}/mt_stack.vrt ${STACK}/mt-metrics_sdv.data/Gamma0_VV_mean.img ${STACK}/mt-metrics_sdv.data/Gamma0_VV_max.img ${STACK}/mt-metrics_sdv.data/Gamma0_VV_min.img \
+																						 ${STACK}/mt-metrics_sdv.data/Gamma0_VV_stddev.img ${STACK}/mt-metrics_sdv.data/Gamma0_VV_coef_of_var.img  \
+																						 ${STACK}/mt-metrics_sdv.data/Gamma0_VH_mean.img ${STACK}/mt-metrics_sdv.data/Gamma0_VH_max.img ${STACK}/mt-metrics_sdv.data/Gamma0_VH_min.img \
+																						 ${STACK}/mt-metrics_sdv.data/Gamma0_VH_stddev.img ${STACK}/mt-metrics_sdv.data/Gamma0_VH_coef_of_var.img >> ${LOG_DIR}/log_final_vrt 2>&1 \
 			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 		else
 			s1_mt_metrics ${FILELIST} ${STACK} VV ${TMP_DIR_TRACK} ${LOG_DIR}
 			rm -rf ${TMP_DIR_TRACK}
 			SECONDS=0
 			echo -ne " Creating multi-channel vrt files for visualization within GIS ..."
-			gdalbuildvrt -separate -srcnodata 0 ${STACK}/vv_stack.vrt ${STACK}/mt_stack.vv.db.speckle.data/*img >> ${LOG_DIR}/log_final_vrt 2>&1 \
-			gdalbuildvrt -separate -srcnodata 0 ${STACK}/mt_stack.vrt ${STACK}/mt-metrics_ssv.data/Gamma_VV_mean.img ${STACK}/mt-metrics_ssv.data/Gamma_VV_max.img ${STACK}/mt-metrics_ssv.data/Gamma_VV_min.img \
-																						 ${STACK}/mt-metrics_ssv.data/Gamma_VV_stddev.img ${STACK}/mt-metrics_ssv.data/Gamma_VV_coef_of_var.img >> ${LOG_DIR}/log_final_vrt 2>&1 \
+			gdalbuildvrt -separate -srcnodata 0 ${STACK}/vv_stack.vrt ${STACK}/mt_stack.vv.db.speckle.data/*img >> ${LOG_DIR}/log_final_vrt 2>&1 >> ${LOG_DIR}/log_final_vrt 2>&1 \
 			& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 		fi
