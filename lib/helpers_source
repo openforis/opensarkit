@@ -40,6 +40,6 @@ export GDAL_BIN=${OPENSARKIT}/lib/GDAL
 export PATH=$PATH:$PYTHON_BIN:$GDAL_BIN
 
 export SNAP_GRAPHS=${OPENSARKIT}/workflows/SNAP
-export SNAP_EXE=/home/avollrath/snap4/bin/gpt
+
 
 #source $OPENSARKIT/lib/saga_helpers
