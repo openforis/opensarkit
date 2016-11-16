@@ -124,19 +124,19 @@ print_s1_inv = eventReactive(input$s1_inv_search, {
     } 
     
     
-    #search_message="Searching for data"
-    #js_string_search <- 'alert("SOMETHING");'
-    #js_string_search <- sub("SOMETHING",search_message,js_string_search)
-    #session$sendCustomMessage(type='jsCode', list(value = js_string_search))
+    s1_search_message="Searching for data"
+    js_string_s1_search <- 'alert("Inventory");'
+    js_string_s1_search <- sub("Inventory",s1_search_message,js_string_s1_search)
+    session$sendCustomMessage(type='jsCode', list(value = js_string_s1_search))
     print("searching...")
     # call OST command line and create inventory shapefile
     ARG_DOWN = paste(DIR, AOI, STARTDATE, ENDDATE, SMODE, PLEVEL, POLAR, "0")
     system(paste("oft-sar-S1-ASF-inventory", ARG_DOWN), intern=FALSE)
     
-    found_message="Found data"
-    js_string <- 'alert("SOMETHING");'
-    js_string <- sub("SOMETHING",found_message,js_string)
-    session$sendCustomMessage(type='jsCode', list(value = js_string))
+    s1_found_message="Found data"
+    js_string_s1_found <- 'alert("Finished");'
+    js_string_s1_found <- sub("Finished",s1_found_message,js_string_s1_found)
+    session$sendCustomMessage(type='jsCode', list(value = js_string_s1_found))
     
   }
 })

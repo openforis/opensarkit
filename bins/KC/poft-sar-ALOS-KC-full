@@ -133,4 +133,4 @@ else # country case
 fi
 echo $AOI > /home/avollrath/log_aoi
 poft-sar-ALOS-KC-download ${OUT_DIR} ${AOI} ${YEAR} ${CRED_FILE}
-poft-sar-ALOS-KC-process ${OUT_DIR} ${AOI} ${YEAR} $4
+oft-sar-ALOS-KC-process ${OUT_DIR} ${AOI} ${YEAR} $4

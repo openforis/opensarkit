@@ -14,6 +14,9 @@ server <- function(input, output, session) {
    #------------------------------------------------------------------------------------------------
    # source S1 server files
    source(file.path("server","S1_inv_tab_server.R"), local=TRUE)$value
+   source(file.path("server","S1_dow_tab_server.R"), local=TRUE)$value
+   source(file.path("server","S1_grd2rtc_tab_server.R"), local=TRUE)$value
+   source(file.path("server","S1_grd2ts_tab_server.R"), local=TRUE)$value
    #------------------------------------------------------------------------------------------------
    
    #------------------------------------------------------------------------------------------------

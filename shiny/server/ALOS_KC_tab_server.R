@@ -97,7 +97,7 @@ print_alos = eventReactive(input$alos_kc_process, {
          rm(UNAME)
          rm(PW)
     
-         print("bla")
+         
          kc_start_message="Started processing (this will take a few hours)"
          kc_start_js_string <- 'alert("Attention");'
          kc_start_js_string <- sub("Attention",kc_start_message,kc_start_js_string)
@@ -106,7 +106,6 @@ print_alos = eventReactive(input$alos_kc_process, {
          ARG_DOWN= paste(DIR, AOI, YEAR, SPECKLE, FILE)
          #print(paste("poft-sar-ALOS-KC-full", ARG_DOWN))
          system(paste("poft-sar-ALOS-KC-full", ARG_DOWN), intern=TRUE)
-         #ARGS_FIN=paste("-c \"poft-sar-ALOS-KC-full\"", ARG_DOWN)
          #system2("bash", ARGS_FIN, wait = TRUE)
          #system2("poft-sar-ALOS-KC-full", ARG_DOWN, stdout=TRUE)
          

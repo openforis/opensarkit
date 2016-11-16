@@ -11,9 +11,10 @@ tabItem(tabName = "s1_inv",
              title = "Processing Panel", status = "success", solidHeader= TRUE,
              tags$h4("Sentinel-1 data inventory"),
              hr(),
-             "Please choose a Project folder where the inventory shapefile will be written to:",
-             br(),
-             br(),
+             tags$b("1) Project Directory:"),
+             p("Note: A new folder named \"Inventory\" will be created within your Project directory. 
+                This folder contains the inventory shapefile that is produced by this interface."),
+             #br(),
              #div(style="display:inline-block",shinyDirButton('directory', 'Browse', 'Select a folder')),
              #div(style="display:inline-block",verbatimTextOutput("project_dir")),
              shinyDirButton('S1_inv_directory', 'Browse', 'Select a folder'),
@@ -21,10 +22,11 @@ tabItem(tabName = "s1_inv",
              br(),
              verbatimTextOutput("S1_inv_project_dir"),
              hr(),
-             "This parameter will define the spatial extent of the processing. You can either choose the borders of a country or a shapefile that bounds your area of interest.",
+             tags$b("2) Area of Interest"),
+             p("Note: This parameter will define the spatial extent of the processing. You can either choose the borders of a country or a shapefile that bounds your area of interest."),
              # AOI choice
-             radioButtons("S1_inv_AOI", "Choose AOI type:",
-                          c("Country" = "S1_inv_country",
+             radioButtons("S1_inv_AOI", "",
+                          c("Country boundary" = "S1_inv_country",
                             "Shapefile (on Server/local)" = "S1_inv_shape_local",
                             "Shapefile (upload)" = "S1_inv_shape_upload")),
              
@@ -32,7 +34,7 @@ tabItem(tabName = "s1_inv",
                "input.S1_inv_AOI == 'S1_inv_country'",
                selectInput(
                      inputId = 'S1_inv_countryname', 
-                     label= 'Name of the country', 
+                     label = '',
                      choices = dbGetQuery(
                      dbConnect(SQLite(),dbname=Sys.getenv("OST_DB")),
                      sprintf("SELECT name FROM %s WHERE iso3 <> -99 ORDER BY name ASC", "countries")), 
@@ -43,7 +45,7 @@ tabItem(tabName = "s1_inv",
                     "input.S1_inv_AOI == 'S1_inv_shape_local'",
                      #div(style="display:inline-block",shinyFilesButton("shapefile","Choose file","Choose one or more files",FALSE)),
                      #div(style="display:inline-block",textOutput("filepath"))
-                     shinyFilesButton("S1_inv_shapefile","Choose file","Choose one or more files",FALSE),
+                     shinyFilesButton("S1_inv_shapefile","Browse","Choose one shapefile",FALSE),
                      br(),
                      br(),
                      verbatimTextOutput("S1_inv_filepath")
@@ -51,22 +53,24 @@ tabItem(tabName = "s1_inv",
              
              conditionalPanel(
                     "input.S1_inv_AOI == 'S1_inv_shape_upload'",
-                     fileInput('S1_inv_shapefile_path', label = 'Choose a shapefile',accept = c(".shp"))
+                     fileInput('S1_inv_shapefile_path', label = '',accept = c(".shp"))
              ),
              
              hr(),
              
-             dateInput("s1_inv_startdate","Start date",
-                       value = "2014-10-01",
-                       min = "2014-10-01",
-                       format = "yyyy-mm-dd"
-                       ),
+             dateRangeInput("s1_inv_daterange",
+                            "Date Range",
+                             start = "2014-10-01",
+                             end = Sys.Date(),
+                             min = "2014-10-01",
+                             max = Sys.Date(),
+                             format = "yyyy-mm-dd"
+                          ),
              
-             dateInput("s1_inv_enddate","End date",
-                      format = "yyyy-mm-dd"
-             ),                   
              hr(),
-             selectInput("s1_inv_pol", "Choose the polarisation mode",
+             tags$b("3) Polarisation Mode"),
+             p("Note: More info on the polarisation modes of Sentinel-1 can be found in the Info Panel on the right."),
+             selectInput("s1_inv_pol", "",
                        c("Dual-pol (VV+VH) " = "dual_vv",
                          "Single-pol (VV)" = "vv",
                          "Dual-pol (VV+VH) & Single-pol (VV) " = "dual_single_vv",
@@ -75,13 +79,17 @@ tabItem(tabName = "s1_inv",
                          "Dual-pol (HH+HV) & Single-pol (HH) " = "dual_single_hh")
              ),
              hr(),
-             radioButtons("s1_inv_sensor_mode", "Choose the sensor mode?",
+             tags$b("4) Sensor Mode"),
+             p("Note: More info on the sensor modes of Sentinel-1 can be found in the Info Panel on the right."),
+             radioButtons("s1_inv_sensor_mode", "",
                           c("Interferometric Wide Swath (recommended) " = "iw",
                             "Extra Wide Swath" = "ew",
                             "Wave Mode" = "wv")
              ),
              hr(),
-             radioButtons("s1_inv_product_level", "Choose the product level?",
+             tags$b("5) Product Level"),
+             p("Note: More info on the product levels of Sentinel-1 can be found in the Info Panel on the right."),
+             radioButtons("s1_inv_product_level", "",
                           c("Level-1 GRD (recommended) " = "grd",
                             "Level-1 SLC" = "slc",
                             "Level-0 RAW" = "raw")
@@ -89,11 +97,9 @@ tabItem(tabName = "s1_inv",
              hr(),
              # div(style="display:inline-block",actionButton("s1_kc_process", "Start processing")),
              # div(style="display:inline-block",actionButton("s1_kc_abort", "Abort processing")),
-             actionButton("s1_inv_search", "Search"),
+             actionButton("s1_inv_search", "Create an OST inventory shapefile"),
              br(),
-             br(),
-             "Command Line Syntax:",
-             verbatimTextOutput("searchS1_inv")
+             textOutput("searchS1_inv")
           ), # close box
           #----------------------------------------------------------------------------------
           
@@ -106,8 +112,7 @@ tabItem(tabName = "s1_inv",
                       
                       tabPanel("General Info",
                                tags$h4("Sentinel-1 inventory "),
-                               p("Sentinel-1 is a constellation of 2 SAR satellites operated by ESA and financed 
-                                 through the EU's Copernicus programme."),
+                               p("Sentinel-1 is a constellation of 2 C-band SAR satellites."),
                                p("By using this script you can check for data availability. In detail, the script 
                                  will create a shapefile with additonal metadata for the all scenes found. This 
                                  script can later be used for the processing"),

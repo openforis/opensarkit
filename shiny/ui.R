@@ -28,7 +28,7 @@ packages(RSQLite)
 packages(random)
 packages(mapview)
 packages(raster)
-packages(shinyjs)
+#packages(shinyjs)
 #-----------------------------------------------------------------------------------
 
 
@@ -63,14 +63,15 @@ ui = dashboardPage(
       hr(),
       menuItem("ALOS Functionality", tabName = "alos_funct", icon = icon("option-vertical", lib = "glyphicon"),
          menuSubItem("ALOS K&C Mosaics", tabName = "alos_kc", icon = icon("th")),
-         menuSubItem("ALOS-1 ASF inventory", tabName = "alos_inv", icon = icon("search")),
-         menuSubItem("ALOS-1 ASF processing", tabName = "alos_pro", icon = icon("cogs"))
+         menuSubItem("Data inventory (ASF server)", tabName = "alos_inv", icon = icon("search")),
+         menuSubItem("GRD to RTC processor", tabName = "alos_pro", icon = icon("cogs"))
       ),
       hr(),
       menuItem("Sentinel-1 Functionality", tabName = "s1_funct", icon = icon("option-vertical", lib = "glyphicon"),
-         menuSubItem("S1 inventory", tabName = "s1_inv", icon = icon("search")),
-         menuSubItem("S1 GRD to RTC processor", tabName = "s1_grd2rtc", icon = icon("cogs")),
-         menuSubItem("S1 GRD time-series processor (GRD to RTC)", tabName = "s1_grd2rtc-ts", icon = icon("cogs"))
+         menuSubItem("Data inventory", tabName = "s1_inv", icon = icon("search")),
+         menuSubItem("Data download", tabName = "s1_dow", icon = icon("download")),
+         menuSubItem("GRD to RTC processor", tabName = "s1_grd2rtc", icon = icon("cogs")),
+         menuSubItem("GRD to RTC time-series ", tabName = "s1_grd2rtc-ts", icon = icon("cogs"))
       ),
       hr(),
       menuItem("Data Viewer", tabName = "dataview", icon = icon("eye")),
@@ -109,7 +110,9 @@ ui = dashboardPage(
       #-----------------------------------------------------------------------------
       # Sentinel 1 Tab
       source(file.path("ui","S1_inv_tab_ui.R"), local=TRUE)$value,
-      
+      source(file.path("ui","S1_dow_tab_ui.R"), local=TRUE)$value,
+      source(file.path("ui","S1_grd2rtc_tab_ui.R"), local=TRUE)$value,
+      source(file.path("ui","S1_grd2ts_tab_ui.R"), local=TRUE)$value,
       #-----------------------------------------------------------------------------
          
       #-----------------------------------------------------------------------------
