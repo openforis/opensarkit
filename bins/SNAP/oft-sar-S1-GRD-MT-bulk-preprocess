@@ -163,7 +163,7 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 				s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ}"_RTC" $2 0 0 ${TMP_DIR_FRAME} ${LOG_DIR}
 				
 				if [ ${MT_MODE} == 0 ];then 
-					s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ}"_RTC" $2 0 0 ${TMP_DIR_FRAME} ${LOG_DIR}
+					s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ}"_RTC" $2 1 1 ${TMP_DIR_FRAME} ${LOG_DIR}
 				fi
 			fi
 			rm -rf ${TMP_DIR_FRAME}/

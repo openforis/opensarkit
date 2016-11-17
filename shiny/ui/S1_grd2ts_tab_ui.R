@@ -15,7 +15,7 @@ tabItem(tabName = "s1_grd2rtc-ts",
             # AOI choice
             radioButtons("s1_g2ts_input_type", "1) Input type",
                          c("Folder (i.e. data is already downloaded)" = "folder",
-                           "OST inventory shapefile (i.e. data needs to be downloaded)" = "inventory")),
+                           "OST inventory shapefile (i.e. data needs to be downloaded first)" = "inventory")),
 
             conditionalPanel(
               "input.s1_g2ts_input_type == 'folder'",
@@ -90,7 +90,9 @@ tabItem(tabName = "s1_grd2rtc-ts",
                    tabPanel("General Info",
                             tags$h4("Sentinel-1 GRD to RTC time-series processing "),
                             p("This script will produce radiometrically terrain-corrected (RTC) products for a set of imagery. 
-                               If more than one frame is present for a specific acquisition date, the processing chain 
+                               Input can be either a \"DATA\" folder created by the automatic download routine of OST, or an 
+                               OST inventory shapefile, by which the data will be downloaded first and subsequent processing takes place."),
+                            p("If more than one frame is present for a specific acquisition date, the processing chain 
                                will automatically assemble them to one single product. Moreover, advantage is taken by multiple images 
                                acquired over the same satellite track. That allows for the creation of more robust data layers 
                                that can be subsequently used for different classification tasks."),
@@ -128,17 +130,7 @@ tabItem(tabName = "s1_grd2rtc-ts",
                             p(""),
                             br(),
                             p(""),
-                            br(),
-                            p("The C-SAR instrument supports operation in dual polarisation (HH+HV, VV+VH) implemented through 
-                              one transmit chain (switchable to H or V) and two parallel receive chains for H and V polarisation. 
-                              Dual polarisation data is useful for land cover classification and sea-ice applications."),
-                            br(),
-                            p("SENTINEL-1 operates in four exclusive acquisition modes:"),
-                            p(" - Stripmap (SM)"),
-                            p(" - Interferometric Wide Swath (IW)"),
-                            p(" - Extra-Wide swath (EW)"),
-                            p(" - Wave Mode (WV)"),
-                            img(src = "S1_sensor_modes.jpg", width = "100%", height = "100%")
+                            br()
                             ),
                    
                    tabPanel("Processing Level",

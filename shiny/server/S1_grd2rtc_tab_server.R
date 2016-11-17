@@ -126,7 +126,7 @@ if (input$s1_g2r_input_type == "file"){
     
     ARG_PROC=paste(INFILE, OUTDIR, MODE)
     print(paste("oft-sar-S1-GRD-single-preprocess", ARG_PROC))
-    #system(paste("oft-sar-S1-GRD-single-preprocess", ARG_PROC))
+    system(paste("oft-sar-S1-GRD-single-preprocess", ARG_PROC))
   } 
     
 } else if (input$s1_g2r_input_type == "folder"){
@@ -151,6 +151,7 @@ if (input$s1_g2r_input_type == "file"){
     
     ARG_PROC=paste(OUTDIR, MODE, "0")
     print(paste("oft-sar-S1-GRD-MT-bulk-preprocess", ARG_PROC))
+    system(paste("oft-sar-S1-GRD-MT-bulk-preprocess", ARG_PROC),intern=TRUE)
   } 
   
 } else if (input$s1_g2r_input_type == "inventory"){
@@ -192,6 +193,7 @@ if (input$s1_g2r_input_type == "file"){
     
     ARG_DOWN=paste(OUTDIR, INFILE, FILE)
     print(paste("oft-sar-S1-ASF-download", ARG_DOWN))
+    system(paste("oft-sar-S1-ASF-download", ARG_DOWN),intern=TRUE)
     
     # processing
     if (input$s1_g2r_res == "med_res"){
@@ -201,9 +203,10 @@ if (input$s1_g2r_input_type == "file"){
       MODE = "HI_RES" 
     }
  
-    OUTDIR_DATA = paste(OUTDIR,"DATA",sep="")
+    OUTDIR_DATA = paste(OUTDIR,"/DATA",sep="")
     ARG_PROC=paste(OUTDIR_DATA, MODE, "0")
     print(paste("oft-sar-S1-GRD-MT-bulk-preprocess", ARG_PROC))
+    system(paste("oft-sar-S1-GRD-MT-bulk-preprocess", ARG_PROC),intern=TRUE)
   } 
 }
 })
