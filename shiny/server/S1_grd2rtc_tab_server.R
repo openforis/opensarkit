@@ -126,7 +126,16 @@ if (input$s1_g2r_input_type == "file"){
     
     ARG_PROC=paste(INFILE, OUTDIR, MODE)
     print(paste("oft-sar-S1-GRD-single-preprocess", ARG_PROC))
+    
+    s1_g2r_message="Processing started (This will take a while.)"
+    js_string_s1_g2r <- 'alert("Processing");'
+    js_string_s1_g2r <- sub("Processing",s1_g2r_message,js_string_s1_g2r)
+    session$sendCustomMessage(type='jsCode', list(value = js_string_s1_g2r))
     system(paste("oft-sar-S1-GRD-single-preprocess", ARG_PROC))
+    s1_g2r_fin_message="Processing finished"
+    js_string_s1_g2r_fin <- 'alert("Processing");'
+    js_string_s1_g2r_fin <- sub("Processing",s1_g2r_fin_message,js_string_s1_g2r_fin)
+    session$sendCustomMessage(type='jsCode', list(value = js_string_s1_g2r_fin))
   } 
     
 } else if (input$s1_g2r_input_type == "folder"){
@@ -151,7 +160,16 @@ if (input$s1_g2r_input_type == "file"){
     
     ARG_PROC=paste(OUTDIR, MODE, "0")
     print(paste("oft-sar-S1-GRD-MT-bulk-preprocess", ARG_PROC))
+    
+    s1_g2r_message="Processing started (This can take a considerable amount of time, dependent on the number of images to be processed)"
+    js_string_s1_g2r <- 'alert("Processing");'
+    js_string_s1_g2r <- sub("Processing",s1_g2r_message,js_string_s1_g2r)
+    session$sendCustomMessage(type='jsCode', list(value = js_string_s1_g2r))
     system(paste("oft-sar-S1-GRD-MT-bulk-preprocess", ARG_PROC),intern=TRUE)
+    s1_g2r_fin_message="Processing finished"
+    js_string_s1_g2r_fin <- 'alert("Processing");'
+    js_string_s1_g2r_fin <- sub("Processing",s1_g2r_fin_message,js_string_s1_g2r_fin)
+    session$sendCustomMessage(type='jsCode', list(value = js_string_s1_g2r_fin))
   } 
   
 } else if (input$s1_g2r_input_type == "inventory"){
@@ -191,6 +209,10 @@ if (input$s1_g2r_input_type == "file"){
     system("echo $USER", intern=FALSE)
     system(paste("chmod 600",FILE), intern=TRUE)
     
+    s1_g2r_message="Download of scenes started (This can take some time.)"
+    js_string_s1_g2r <- 'alert("Download");'
+    js_string_s1_g2r <- sub("Download",s1_g2r_message,js_string_s1_g2r)
+    session$sendCustomMessage(type='jsCode', list(value = js_string_s1_g2r))
     ARG_DOWN=paste(OUTDIR, INFILE, FILE)
     print(paste("oft-sar-S1-ASF-download", ARG_DOWN))
     system(paste("oft-sar-S1-ASF-download", ARG_DOWN),intern=TRUE)
@@ -202,11 +224,18 @@ if (input$s1_g2r_input_type == "file"){
     else if (input$s1_inv_pol == "full_res"){
       MODE = "HI_RES" 
     }
- 
+    s1_g2r_message2="Download finished. Start to process the imagery. Stay patient!"
+    js_string_s1_g2r2 <- 'alert("Processing");'
+    js_string_s1_g2r2 <- sub("Processing",s1_g2r_message2,js_string_s1_g2r2)
+    session$sendCustomMessage(type='jsCode', list(value = js_string_s1_g2r2))
     OUTDIR_DATA = paste(OUTDIR,"/DATA",sep="")
     ARG_PROC=paste(OUTDIR_DATA, MODE, "0")
     print(paste("oft-sar-S1-GRD-MT-bulk-preprocess", ARG_PROC))
     system(paste("oft-sar-S1-GRD-MT-bulk-preprocess", ARG_PROC),intern=TRUE)
+    s1_g2r_fin_message="Processing finished"
+    js_string_s1_g2r_fin <- 'alert("Processing");'
+    js_string_s1_g2r_fin <- sub("Processing",s1_g2r_fin_message,js_string_s1_g2r_fin)
+    session$sendCustomMessage(type='jsCode', list(value = js_string_s1_g2r_fin))
   } 
 }
 })

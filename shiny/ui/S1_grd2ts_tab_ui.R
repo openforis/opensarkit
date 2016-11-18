@@ -120,7 +120,8 @@ tabItem(tabName = "s1_grd2rtc-ts",
                                    between the 15th of July 2016 and the 31st of October 2016, have been used. The above mentioned
                                    multi-temporal metrics were automatically produced for each polarisation."),
                             img(src = "MT_ts.png", width = "100%", height = "100%"),
-                            tags$b("Figure 2: Left: High-resolution optical imagery taken from Google Earth over an area in Congo. Right:  "),
+                            tags$b("Figure 2: Left: High-resolution optical imagery taken from Google Earth over an area in Congo. 
+                                    Right: RGB composite using the  "),
                             p("")
                             ),
                    
@@ -128,28 +129,19 @@ tabItem(tabName = "s1_grd2rtc-ts",
                             tags$h4("The Sentinel-1 GRD to RTC time-series processor"),
                             br(),
                             p(""),
+                            img(src = "S1_GRD_ts_grd2rtc.png", width = "100%", height = "100%"),
+                            tags$b("Figure 1: First part of the processing chain. This workflow is applied to every SAR acquisition."),
                             br(),
+                            br(),
+                            img(src = "S1_GRD_ts_grd2rtc_mt.png", width = "100%", height = "100%"),
+                            tags$b("Figure 2: Second part of the processing chain. This workflow creates the time-series imagery and multi-temporal stats."),
                             p(""),
                             br()
                             ),
                    
-                   tabPanel("Processing Level",
-                            tags$h4("Sentinel-1 processing levels"),
-                            br(),
-                            p("Sentinel-1 data is provided in different product levels.")
-                   ),
-                   
-                   tabPanel("Polarisation Modes",
-                            tags$h4("Sentinel-1 polarisation modes"),
-                            br(),
-                            p("Sentinel-1 can acquire data in different polarizations.")
-                   ),
-                   
                    tabPanel("References",
                             br(),
-                            "Interesting results can be found in the Kyoto and Carbon booklet provided by the Japanese Space Agnecy",br(),
-                            "http://www.eorc.jaxa.jp/ALOS/en/kyoto/ref/KC-Booklet_2010_comp.pdf",
-                            "References"
+                            tags$b("References")
                    )
                             ) # close tab box
                    ) # close box
