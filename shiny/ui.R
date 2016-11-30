@@ -51,9 +51,9 @@ ui = dashboardPage(
    dashboardSidebar(
       width = 250,
       
-      sidebarMenu(
+      sidebarMenu(id = "menus",
       br(),
-      menuItem("Getting Started", tabName = "about", icon = icon("info"),
+      menuItem("Getting Started", tabName = "info", icon = icon("info"),
          menuSubItem("About OST", tabName = "about", icon = icon("info")),
          menuSubItem("SAR theory", tabName = "SARtheory", icon = icon("info")),
          menuSubItem("SAR missions", tabName = "SARmissions", icon = icon("rocket")),

@@ -4,7 +4,7 @@ tabItem(tabName = "about",
            box(
               title = "About OST", status = "success", solidHeader= TRUE,
               
-              tabBox(width = 700,
+              tabBox(width = 1400,
                      
                      tabPanel("Welcome",
                               br(),
@@ -34,31 +34,26 @@ tabItem(tabName = "about",
                               br()
                      ),
                      
-                     tabPanel("What is OST?",
+                     tabPanel("Outline",
                               br(),
-                              p("Open Foris SAR Toolkit is a collection of prototype command-line utilities
-                                 for highly-automated SAR related processing tasks such as data inventory and
-                                 download as well as data preprocessing and some basic post-processing commands.
-                                 The toolkit aims to strongly simplify the complex process of transforming raw, or
-                                 low level SAR imagery into higher level products that are ready for subsequent
-                                 image processing tasks in order to enable the production of value-added thematic
-                                 information layers."),
-                               p("The processing chains are realized in simple bash scripts that expect a minimum
-                                  of given input parameters when executed. The output files are usually in
-                                  the GeoTiff format and stored for every band separately. A virtual-raster file is
-                                  created allowing to import the stack into GIS or RS software. The processing
-                                  commands follow standardized workflows in order to provide ready-to-classify data
-                                  stacks comparable to optical remote sensing data. The tools have been tested
-                                  solely on Ubuntu Linux 14.04 environment for now. While it should be compatible
-                                  with other with other Linux distributions (given the installation of the software
-                                  dependencies) it is foreseen to provide installers for Mac OS as well as MS Win-
-                                  dows in future. For the actual data processing, the scripts call the functionalities
-                                  of other freely available software packages such as the Sentinel Application Plat-
-                                  form (SNAP, http://step.esa.int/main/toolboxes/snap/) and geospatial
-                                  FOSS software like the GDAL libraries.")
+                              tags$h4("1  - Getting started"),
+                              p("1.1 - ", actionLink("link_to_tabpanel_sartheory", " SAR theory")),
+                              p("1.2 - ", actionLink("link_to_tabpanel_sarmissions", "SAR missions")),
+                              p("1.3 - ", actionLink("link_to_tabpanel_sarimage", "SAR image interpretation")),
+                              p("1.4 - ", actionLink("link_to_tabpanel_sarrefs", "Reference Material")),
+                              tags$h4("2  - ALOS Functionality"),
+                              p("2.1 - ", actionLink("link_to_tabpanel_alos_kc", "ALOS Kyoto & Carbon Mosaics")),
+                              p("2.2 - ", actionLink("link_to_tabpanel_alos_inv", "ALOS-1 inventory (ASF server)")),
+                              #p("2.3", actionLink("link_to_tabpanel_alos_dow", "ALOS-1 download (ASF server)")),
+                              p("2.4 - ", actionLink("link_to_tabpanel_alos_grd2rtc", "ALOS-1 GRD to RTC processor")),
+                              tags$h4("3  - Sentinel-1 Functionality"),
+                              p("3.1 - ", actionLink("link_to_tabpanel_s1_inv", "Sentinel-1 inventory (ASF server)")),
+                              p("3.2 - ", actionLink("link_to_tabpanel_s1_dow", "Sentinel-1 download (ASF server)")),
+                              p("3.3 - ", actionLink("link_to_tabpanel_s1_grd2rtc", "Sentinel-1 GRD to RTC processor")),
+                              p("3.4 - ", actionLink("link_to_tabpanel_s1_grd2ts", "Sentinel-1 GRD to RTC time-series processor"))
                      ),
                      
-                     tabPanel("Hardware requirements",
+                     tabPanel("References",
                               br(),
                               ""
                      ),

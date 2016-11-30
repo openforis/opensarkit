@@ -200,6 +200,9 @@ libcunit1-dev libfftw3-dev libshp-dev libtiff5-dev libproj-dev flex bison libgsl
 python-scipy python-h5py aria2 unrar parallel xml-twig-tools git libxinerama-dev libxrandr-dev libxcursor-dev swig r-base >> ${OSK_HOME}/LOG/log_install 2>&1 \
 & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
+# imagej 
+apt-get install --yes --allow-unauthenticated imagej xvfb
+
 #------------------------------------------------------------------
 # 4 Download & Install non-repository Software and OSK
 #------------------------------------------------------------------

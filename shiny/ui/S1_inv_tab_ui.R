@@ -112,55 +112,117 @@ tabItem(tabName = "s1_inv",
                       
                       tabPanel("General Info",
                                tags$h4("Sentinel-1 inventory "),
-                               p("Sentinel-1 is a constellation of 2 C-band SAR satellites."),
-                               p("By using this script you can check for data availability. In detail, the script 
-                                 will create a shapefile with additonal metadata for the all scenes found. This 
-                                 script can later be used for the processing"),
-                               img(src = "Sentinel-1.jpg", width = "100%", height = "100%")
+                               p("With this interface it is possible to easily search for data from the Sentinel-1 constellation for a certain area. 
+                                  An OST inventory shapefile is created, and can be edited later. An area of interest (i.e. predefined country borders 
+                                  or a single shapefile) and a date range needs to be provided."),
+                               p("Specifications of the acquisition mode can be modified as well. The default values are recommended. For more information see "),
+                               p(tags$b("Note I:"), "For subsequent processing tasks not all imaging modes are supported. At the moment OST only supports processing of
+                                            data acquired over land (i.e. IW sensor mode, VV or VV/VH polarisation) at Level-1 GRD product level. 
+                                            Data inventory and download is however possible for all kind of Sentinel-1 data."),
+                               p(tags$b("Note II:"), "Dependent on the envisaged analysis, a refinement of the inventory shapefile is", tags$b("highly recommended"),"
+                                                      before downloading and processing of data."),
+                               p(tags$b("Firstly"),", the search will use a rectangular area bounding the maximum extent of the given 
+                                  AOI. Therefore some scenes might not overlap with the actual AOI and should be sorted out. In some rare cases, scenes appear
+                                   more than once. Those can be identified by the Start and Stop time within the attrivute table of the OST inventory shapefile"),
+                               p(tags$b("Secondly"),", a proper data selection is",tags$b("most inmportant"), "for time-series processing (i.e. GRD to RTC time-series processor) 
+                                  and needs additional consideration of the:"),
+                               p(tags$b("- minimum extent:"), "The GRD to RTC time-series processor will crop the final time-series and multi-temporal metrics stack
+                                  to the smallest common area covered by all acquistions. In other words, if there is one acquisition that only covers a 
+                                  part of the AOI, the extent of all output products will hold the respective extent of this particular acquisition. Since ideally 
+                                  the whole AOI should be covered, those acquisitions should be sorted out."),
+                               p(tags$b("- quality of mosaicking:"), "If the AOI is covered by more than one track, the quality of subsequent mosaicking depends on
+                                     the homogeneity of the data selection. All tracks should therefore have the same amount of acquisitions, 
+                                     acquired as closely as possible. Thus, effects due to different environmental conditions are reduced and the radiometry of 
+                                     the output products are similar.")
+                      ),
                                
-                               ),
-                      
                       tabPanel("Sensor Mode",
                                tags$h4("Sentinel-1 sensor modes"),
-                               br(),
-                               p("Taken from https://sentinel.esa.int/web/sentinel/missions/sentinel-1/instrument-payload"),
-                               br(),
-                               p("SENTINEL-1 carries a single C-band synthetic aperture radar instrument operating at a centre 
-                                   frequency of 5.405 GHz. It includes a right-looking active phased array antenna providing fast
-                                   scanning in elevation and azimuth, data storage capacity of 1 410 Gb and 520 Mbit/s X-band downlink
-                                   capacity."),
-                               br(),
-                               p("The C-SAR instrument supports operation in dual polarisation (HH+HV, VV+VH) implemented through 
-                                    one transmit chain (switchable to H or V) and two parallel receive chains for H and V polarisation. 
-                                    Dual polarisation data is useful for land cover classification and sea-ice applications."),
-                               br(),
+                               tags$i("Note that the content is adapted from"), 
+                               a(href = "https://sentinel.esa.int/web/sentinel/missions/sentinel-1", "ESA's Sentinel-1 webpage."),
+                               hr(),
+
                                p("SENTINEL-1 operates in four exclusive acquisition modes:"),
-                               p(" - Stripmap (SM)"),
-                               p(" - Interferometric Wide Swath (IW)"),
-                               p(" - Extra-Wide swath (EW)"),
-                               p(" - Wave Mode (WV)"),
-                               img(src = "S1_sensor_modes.jpg", width = "100%", height = "100%")
+                               p(" - Stripmap (SM) - A standard SAR stripmap imaging mode where the ground swath is illuminated with a continuous 
+                                     sequence of pulses, while the antenna beam is pointing to a fixed azimuth and elevation angle."),
+                               p(" - Interferometric Wide Swath (IW) - Data is acquired in three swaths using the Terrain Observation 
+                                     with Progressive Scanning SAR (TOPSAR) imaging technique. In IW mode, bursts are synchronised from pass 
+                                     to pass to ensure the alignment of interferometric pairs. IW is SENTINEL-1's primary operational mode over land."),
+                               p(" - Extra-Wide swath (EW) - Data is acquired in five swaths using the TOPSAR imaging technique. 
+                                     EW mode provides very large swath coverage at the expense of spatial resolution."),
+                               p(" - Wave Mode (WV) - Data is acquired in small stripmap scenes called vignettes, situated at regular intervals of 100 km 
+                                     along track. The vignettes are acquired by alternating, acquiring one vignette at a near range incidence angle 
+                                    while the next vignette is acquired at a far range incidence angle. WV is SENTINEL-1's operational mode over open ocean."),
+                               img(src = "S1_sensor_modes.jpg", width = "100%", height = "100%"),
+                               tags$b("Figure 1: Representation of the different imaging modes by Sentinel-1. (image courtesy:ESA)")
                       ),
                       
                       tabPanel("Processing Level",
                                tags$h4("Sentinel-1 processing levels"),
                                br(),
-                               p("Sentinel-1 data is provided in different product levels.")
+                               p("SENTINEL-1 data products acquired in SM, IW and EW mode which are generated by the PDGS 
+                                  operationally are distributed at three levels of processing."),
+                               p(" - Level-0 (Raw)"),
+                               p(" - Level-1 (SLC or GRD)"),
+                               p(" - Level 2 (Ocean)"),
+                               p("For land applicatons the two Level-1 products are of particular interest. At the moment OST provides 
+                                  only processors for GRD products."),
+                               hr(),
+                               img(src = "Sentinel-1_product_types.jpg", width = "100%", height = "100%"),
+                               tags$b("Figure 1: Product types for the different sensor modes of Sentinel-1 (image courtesy: ESA)"),
+                               br(),
+                               tags$b("Level-0"),
+                               p("The SAR Level-0 products consist of the sequence of Flexible Dynamic Block Adaptive Quantization 
+                                 (FDBAQ) compressed unfocused SAR raw data. For the data to be usable, it will need to be decompressed 
+                                  and processed using focusing software."),
+                               br(),
+                               tags$b("Level-1"),
+                               p("Level-1 data are the generally available products intended for most data users. 
+                                  Level-1 products are produced as Single Look Complex (SLC) and Ground Range Detected (GRD)."),
+                               p("Level-1 Single Look Complex (SLC) products consist of focused SAR data geo-referenced using 
+                                  orbit and attitude data from the satellite and provided in zero-Doppler slant-range geometry. 
+                                  The products include a single look in each dimension using the full TX signal bandwidth 
+                                  and consist of complex samples preserving the phase information."),
+                               p("Level-1 Ground Range Detected (GRD) products consist of focused SAR data that has been detected,
+                                  multi-looked and projected to ground range using an Earth ellipsoid model. Phase information is lost.
+                                  The resulting product has approximately square resolution pixels and square pixel spacing with
+                                  reduced speckle at the cost of reduced geometric resolution."),
+                               tags$b("Level-2"),
+                               p("Level-2 OCN products include components for Ocean Swell spectra (OSW) providing continuity with ERS and 
+                                  ASAR WV and two new components: Ocean Wind Fields (OWI) and Surface Radial Velocities (RVL).")
                       ),
                       
                       tabPanel("Polarisation Modes",
                                tags$h4("Sentinel-1 polarisation modes"),
                                br(),
-                               p("Sentinel-1 can acquire data in different polarizations.")
+                               p("The C-SAR instrument of Sentinel-1 supports operation in dual polarisation (HH+HV, VV+VH) implemented through 
+                                  one transmit chain (switchable to H or V) and two parallel receive chains for H and V polarisation. 
+                                  Dual polarisation data is useful for land cover classification and sea-ice applications.")
                       ),
                       
                       tabPanel("References",
                                br(),
-                               "Interesting results can be found in the Kyoto and Carbon booklet provided by the Japanese Space Agnecy",br(),
-                               "http://www.eorc.jaxa.jp/ALOS/en/kyoto/ref/KC-Booklet_2010_comp.pdf",
-                               "References"
+                               tags$h4("References"),
+                               tags$b("Information Material"),
+                               p("ESA (2016): Sentinel-1. Radar Vision for Copernicus", a (href = "http://esamultimedia.esa.int/multimedia/publications/sentinel-1/"), "Link","."),
+                               tags$b("Websites"),
+                               
+                               tags$b("Scientific Articles"),
+              
+                               p("Torres et al. (2012): ")
+                               
+                      ),
+                      tabPanel("Legal Notices",
+                               br(),
+                               tags$h4("Legal notices regarding the access of Sentinel-1 data."),
+                               p("Generally speaking, the use of Coperincus Sentinel data (including Sentinel-1) is open and free. However, any public
+                                  communication material shall include a notice on the use and/or modification of the data.
+                                 The full text on the use of Copernicus Sentinel Data and Service Information can be found",
+                                 a(href = "https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice", "here." )
+                               
                       )
                   ) # close tab box
            ) # close box
         )
+)
 )

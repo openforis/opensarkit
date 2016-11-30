@@ -78,8 +78,9 @@ print_s1_inv = eventReactive(input$s1_inv_search, {
     } 
     
     # get year from input
-    STARTDATE = input$s1_inv_startdate
-    ENDDATE = input$s1_inv_enddate
+    print(input$s1_inv_daterange)
+    STARTDATE = input$s1_inv_daterange[1]
+    ENDDATE = input$s1_inv_daterange[2]
     
     # # choice of the sensor polarisation
     if (input$s1_inv_pol == "dual_vv"){
@@ -129,9 +130,13 @@ print_s1_inv = eventReactive(input$s1_inv_search, {
     js_string_s1_search <- sub("Inventory",s1_search_message,js_string_s1_search)
     session$sendCustomMessage(type='jsCode', list(value = js_string_s1_search))
     print("searching...")
+    print(STARTDATE)
+    print(ENDDATE)
     # call OST command line and create inventory shapefile
     ARG_DOWN = paste(DIR, AOI, STARTDATE, ENDDATE, SMODE, PLEVEL, POLAR, "0")
-    system(paste("oft-sar-S1-ASF-inventory", ARG_DOWN), intern=FALSE)
+    print(ARG_DOWN)
+    #system(paste("oft-sar-S1-ASF-inventory", ARG_DOWN), intern=FALSE)
+    print(paste("oft-sar-S1-ASF-inventory", ARG_DOWN), intern=FALSE)
     
     s1_found_message="Found data"
     js_string_s1_found <- 'alert("Finished");'
@@ -144,3 +149,6 @@ print_s1_inv = eventReactive(input$s1_inv_search, {
 output$searchS1_inv = renderText({
   print_s1_inv()
 })
+
+
+

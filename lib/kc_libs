@@ -105,6 +105,13 @@ source ${OPENSARKIT}/lib/helpers_source
 		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS-2/ext1/PALSAR-2_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF_F02DAR.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz & spinner $! && 
 		spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
+	elif [ ${YEAR} -lt 2000 ];then
+	
+		SECONDS=0
+		echo -ne " Downloading backscatter data tile $i/${NR_OF_TILES} (${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz) ..." &&
+		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS-2/JERS-1_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz & spinner $! &&  
+		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
 	else
 
 		SECONDS=0
@@ -260,6 +267,84 @@ function kc_process () {
 	#rm -f ${TMP_DIR}/grids_${DATA}.csv
 }
 
+function kc_process_jers (){
+
+   if [ -z "$6" ]; then 
+    echo " Missing arguments. Syntax:"
+    echo " kc_process <file> <AOI> <filter> <year> <tmp_dir> <log_dir>"
+    return
+    fi
+
+    # source other helpers
+    source ${OPENSARKIT}/lib/helpers_source
+
+    #-------------------------------------------------------------------------------------
+	# check if 1x1 tile intersects with AOI
+	
+DATA=$1
+AOI=$2
+FILTER=$3
+YEAR=$4
+TMP_DIR=$5
+LOG_DIR=$6
+
+	# create a shapefile
+SECONDS=0
+echo -ne " Check for overlap between the AOI and the 1x1 degree tile: ${DATA} " &&
+gdal_trace_outline ${DATA} -out-cs ll -ogr-out ${DATA}.shp >> ${LOG_DIR}/log_process_${DATA} 2>&1
+LAYER_TILE=`ogrinfo ${DATA}.shp | tail -1 | awk $'{print $2}'`
+DATA_PATH=`readlink -f ${DATA}`		
+AOI_PATH=`readlink -f $AOI`
+LAYER=`ogrinfo ${AOI} | tail -1 | awk $'{print $2}'`
+
+# create a vrt for intersect analysis
+echo "<OGRVRTDataSource>" > ${TMP_DIR}/intersect_tile_${DATA}.vrt
+echo "   <OGRVRTLayer name=\"${LAYER_TILE}\">" >> ${TMP_DIR}/intersect_tile_${DATA}.vrt
+echo "      <SrcDataSource>${DATA_PATH}.shp</SrcDataSource>" >> ${TMP_DIR}/intersect_tile_${DATA}.vrt
+echo "   </OGRVRTLayer>" >> ${TMP_DIR}/intersect_tile_${DATA}.vrt
+echo "   <OGRVRTLayer name=\"${LAYER}\">" >> ${TMP_DIR}/intersect_tile_${DATA}.vrt
+echo "      <SrcDataSource>${AOI_PATH}</SrcDataSource>" >> ${TMP_DIR}/intersect_tile_${DATA}.vrt
+echo "   </OGRVRTLayer>" >> ${TMP_DIR}/intersect_tile_${DATA}.vrt
+echo "</OGRVRTDataSource>" >> ${TMP_DIR}/intersect_tile_${DATA}.vrt	
+
+
+# create intersect table	
+ogr2ogr -f "csv" ${TMP_DIR}/grids_${DATA}.csv ${TMP_DIR}/intersect_tile_${DATA}.vrt -dialect sqlite -sql "SELECT * FROM ${LAYER} a, ${LAYER_TILE} b WHERE ST_Intersects(a.geometry, b.geometry)" >> ${LOG_DIR}/log_process_${DATA} 2>&1 $ spinner $!
+	
+if [ `cat ${TMP_DIR}/grids_${DATA}.csv | wc -l` -gt 1 ];then
+	
+	echo "- Overlapping data tile ${DATA} will be processed"
+	#translate ot tif to make it readable for SNAP
+	DATA_HH=${DATA}	
+	gdal_translate -of GTiff ${TMP_DIR}/${DATA_HH} ${TMP_DIR}/${DATA_HH}.tif >> ${LOG_DIR}/log_process_${DATA} 2>&1 
+	
+	# Layover/Shadow masking
+	mkdir -p ${TMP_DIR}/TILES
+
+	# Speckle Filtering
+	if [ $FILTER -eq 1 ];then #filter case
+		SECONDS=0
+		echo -ne " Applying the Refined Lee Filter on the HH band ..."
+		bash $SNAP_EXE Speckle-Filter -x -Pfilter='Refined Lee' -Ssource=${TMP_DIR}/${DATA_HH}.tif -f 'GeoTIFF' -t ${TMP_DIR}/${DATA_HH}.filtered.tif >> ${LOG_DIR}/log_process_${DATA} 2>&1
+		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	fi
+
+	SECONDS=0
+	echo -ne " Masking out layover/shadow areas ..." &&
+	gdal_calc.py -A ${DATA:0:10}"_mask" --outfile=${DATA}"_mask.tif" --calc="1*(A==255)" >> ${LOG_DIR}/log_process 2>&1
+
+	if [ $4 -eq 1 ];then #filter case
+
+		gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HH}.filtered.tif --calc=A*B --outfile=${TMP_DIR}/TILES/1_${DATA_HH}.tif --NoDataValue=0 --type='UInt16'
+	else
+		gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HH}.tif --calc=A*B --outfile=${TMP_DIR}/TILES/1_${DATA_HH}.tif --NoDataValue=0 --type='UInt16'
+	fi
+
+else 
+	
+	echo -e "- No Overlap, going on with next tile."	
+fi
+}
 
 function kc_rfdi () {
     if [ -z "$4" ]; then 

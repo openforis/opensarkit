@@ -28,4 +28,66 @@ server <- function(input, output, session) {
    #------------------------------------------------------------------------------------------------
    # end session by 
    session$onSessionEnded(stopApp)
+   
+   #-----------------------------------------------------------
+   # Links to other tabs
+   # Getting started - about
+   observeEvent(input$link_to_tabpanel_about, {
+     updateTabItems(session, "menus", "about")
+   })
+   
+   # SAR theory
+   observeEvent(input$link_to_tabpanel_sartheory, {
+   updateTabItems(session, "menus", "SARtheory")
+   })
+    
+   # SAR missions
+   observeEvent(input$link_to_tabpanel_sarmissions, {
+   updateTabItems(session, "menus", "SARmissions")
+   })
+    
+   # SAR image interpretation
+   observeEvent(input$link_to_tabpanel_sarimage, {
+   updateTabItems(session, "menus", "SARimage")
+   })
+    
+   # SAR references
+   observeEvent(input$link_to_tabpanel_sarrefs, {
+   updateTabItems(session, "menus", "SARrefs")
+   })
+    
+   # ALOS K&C
+   observeEvent(input$link_to_tabpanel_alos_kc, {
+   updateTabItems(session, "menus", "alos_kc")
+   })
+   
+   # ALOS ASF inventory
+   observeEvent(input$link_to_tabpanel_alos_inv, {
+   updateTabItems(session, "menus", "alos_inv")
+   })
+   
+   # ALOS ASF grd2rtc
+   observeEvent(input$link_to_tabpanel_alos_grd2rtc, {
+   updateTabItems(session, "menus", "alos_grd2rtc")
+   })
+    
+   # S1 inventory
+   observeEvent(input$link_to_tabpanel_s1_inv, {
+   updateTabItems(session, "menus", "s1_inv")
+   })
+   # 
+   # S1 download
+   observeEvent(input$link_to_tabpanel_s1_dow, {
+   updateTabItems(session, "menus", "s1_dow")
+   })
+    
+   # S1 grd2rtc
+   observeEvent(input$link_to_tabpanel_s1_grd2rtc, {
+   updateTabItems(session, "menus", "s1_grd2rtc")
+   })
+    
+   # S1 grd2rtc-ts
+   observeEvent(input$link_to_tabpanel_s1_grd2ts, {
+   updateTabItems(session, "menus", "s1_grd2rtc-ts")
+   })
 } # EOF

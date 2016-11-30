@@ -172,11 +172,6 @@ tabItem(tabName = "alos_kc",
                                  layer can be found here. An additional Virtual Raster file (RGB_YEAR.vrt) can be loaded into a GIS for RGB visualization purposes.")
                               ),
                      
-                     tabPanel("Disclaimer",
-                              br(),
-                              ""
-                     ),
-                     
                      tabPanel("References",
                               tags$h4("References"),
                               tags$b("Information Material"),
@@ -196,9 +191,8 @@ tabItem(tabName = "alos_kc",
                                  in: Proceedings of the IEEE IGARRS 2011, Vancouver, Canada.", a(href = "http://igarss11.org/papers/ViewPapers_MS.asp?PaperNum=3877","Link.")),
                               p("Shimada et al. (2014): New global forest/non-forest maps from ALOS PALSAR data (2007–2010). 
                                  in: Remote Sensing of Environment, 155, 13-31.", 
-                                 a(href = "http://ac.els-cdn.com/S0034425714001527/1-s2.0-S0034425714001527-main.pdf?_tid=d9c35274-acb6-11e6-b070-00000aacb360&acdnat=1479381382_15a3e412b87bf3ad00eb6833137fbf15", "Link."))
-                              
-                              
+                                 a(href = "http://ac.els-cdn.com/S0034425714001527/1-s2.0-S0034425714001527-main.pdf?_tid=d9c35274-acb6-11e6-b070-00000aacb360&acdnat=1479381382_15a3e412b87bf3ad00eb6833137fbf15", "Link.")),
+                              p("Tange, O. (2011): GNU Parallel - The Command-Line Power Tool, ;login: The USENIX Magazine, February 2011:42-47.")
                      )
               ) # close tab box
            ) # close box
