@@ -52,30 +52,56 @@ if [ "$#" == "8" ]; then
 	MODE=$5
 	LEVEL_2=$6
 
-	if [ $7 == "1" ];then 
-		LEVEL="GRD_HS,GRD_HD"
-		POL=VV%2bVH,VV
-		POL_2=VV_VV-VH
-	elif [ $7 == "2" ];then 
-		LEVEL="GRD_HD"
-		POL=VV%2bVH
-		POL_2=VV-VH
-	elif [ $7 == "3" ];then 
-		LEVEL="GRD_HS"
-		POL="VV"
-		POL_2="VV"
-	elif [ $7 == "4" ];then 
-		LEVEL="GRD_HS,GRD_HD"
-		POL=HH%2bVH,HH
-		POL_2=HH_HH-HV
-	elif [ $7 == "5" ];then 
-		LEVEL="GRD_HD"
-		POL=HH%2bHV
-		POL_2=HH-HV
-	elif [ $7 == "6" ];then 
-		LEVEL="GRD_HS"
-		POL=HH
-		POL_2=HH
+
+	if [ $LEVEL_2 = "GRD" ];then
+		if [ $7 == "1" ];then 
+			LEVEL="GRD_HS,GRD_HD"
+			POL=VV%2bVH,VV
+			POL_2=VV_VV-VH
+		elif [ $7 == "2" ];then 
+			LEVEL="GRD_HD"
+			POL=VV%2bVH
+			POL_2=VV-VH
+		elif [ $7 == "3" ];then 
+			LEVEL="GRD_HS"
+			POL="VV"
+			POL_2="VV"
+		elif [ $7 == "4" ];then 
+			LEVEL="GRD_HS,GRD_HD"
+			POL=HH%2bVH,HH
+			POL_2=HH_HH-HV
+		elif [ $7 == "5" ];then 
+			LEVEL="GRD_HD"
+			POL=HH%2bHV
+			POL_2=HH-HV
+		elif [ $7 == "6" ];then 
+			LEVEL="GRD_HS"
+			POL=HH
+			POL_2=HH
+		fi
+	
+	else
+		LEVEL=${LEVEL_2}
+
+		if [ $7 == "1" ];then 
+			POL=VV%2bVH,VV
+			POL_2=VV_VV-VH
+		elif [ $7 == "2" ];then 
+			POL=VV%2bVH
+			POL_2=VV-VH
+		elif [ $7 == "3" ];then 
+			POL="VV"
+			POL_2="VV"
+		elif [ $7 == "4" ];then 
+			POL=HH%2bVH,HH
+			POL_2=HH_HH-HV
+		elif [ $7 == "5" ];then 
+			POL=HH%2bHV
+			POL_2=HH-HV
+		elif [ $7 == "6" ];then 
+			POL=HH
+			POL_2=HH
+		fi
 	fi
 
 	PROCESSING="processingLevel=${LEVEL}"
@@ -97,7 +123,7 @@ else
 	echo -e "	- ogr2ogr"
 	echo -e "----------------------------------"
 	echo -e ""
-	echo -e " syntax: oft-sar-S1-ASF-inventory <output_folder> <area_of_interest> <start_date> <end_date> <mode> <processing_level> <script_Mode>"
+	echo -e " syntax: oft-sar-S1-ASF-inventory <output_folder> <area_of_interest> <start_date> <end_date> <mode> <product level> <polarization mode> <script_Mode>"
 	echo -e ""
 	echo -e " description of input parameters:"
 	echo -e " output_folder		(output) folder where the downloaded data will be saved"
@@ -109,12 +135,12 @@ else
 	echo -e "			  IW (Interferometric Wide Swath - recommended)"
 	echo -e "			  EW (Extra Wide Swath)"
 	echo -e "			  WV (Polarimetric Mode)"
-	echo -e " processing_level	choose the product level"			
+	echo -e " product_level		choose the product level"			
 	echo -e "			 Available choices:"
 	echo -e "			  GRD (recommended)"
 	echo -e "			  SLC (Level 1.1)"
 	echo -e "			  RAW (Level 1.0)"
-	echo -e " processing_level	choose the product level"			
+	echo -e " polarization mode	choose the product level"			
 	echo -e "			 Available choices:"
 	echo -e "			  1: Dual + Single-pol imagery (VV,VV/VH)"
 	echo -e "			  2: Dual-pol imagery (VV/VH)"

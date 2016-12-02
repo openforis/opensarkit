@@ -194,18 +194,34 @@ function kc_process () {
 			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 		fi
 
+		if [ $FILTER -eq 2 ];then #filter case
+			SECONDS=0
+			echo -ne " Applying the Unbiased Non-Local Means Filter on the HH band ..."
+			listgeo -tfw ${TMP_DIR}/${DATA_HH}.tif
+			cp ${TMP_DIR}/${DATA_HH}.tfw ${TMP_DIR}/${DATA_HH}.filtered.tfw
+			mv ${TMP_DIR}/${DATA_HH}.tfw ${TMP_DIR}/${DATA_HV}.filtered.tfw
+
+			NLM_filter --sigma 4500 --rc 5,5,5 --rs 13,13,13 --hp 1.2 ${TMP_DIR}/${DATA_HH}.tif ${TMP_DIR}/${DATA_HH}.filtered.tif  >> ${LOG_DIR}/log_process_${DATA} 2>&1
+			bash $SNAP_EXE Speckle-Filter -x -Pfilter='Refined Lee' -Ssource=${TMP_DIR}/${DATA_HH}.tif -f 'GeoTIFF' -t ${TMP_DIR}/${DATA_HH}.filtered.tif >> ${LOG_DIR}/log_process_${DATA} 2>&1
+			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+			SECONDS=0
+			echo -ne " Applying the Unbiased Non-Local Means Filter on the HV band ..."
+			NLM_filter --sigma 2250 --rc 5,5,5 --rs 13,13,13 --hp 1.2 ${TMP_DIR}/${DATA_HV}.tif ${TMP_DIR}/${DATA_HV}.filtered.tif  >> ${LOG_DIR}/log_process_${DATA} 2>&1
+			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+		fi
 		
 		SECONDS=0
 		echo -ne " Calculating RFDI and HH/HV ratio channel ..." &&
-		if [ $4 -eq 1 ];then #filter case
+		if [ $4 -gt 0 ];then #filter case
 			gdal_calc.py -A ${TMP_DIR}/${DATA_HH}.filtered.tif  -B ${TMP_DIR}/${DATA_HV}.filtered.tif --calc="A/B" --outfile=${TMP_DIR}/${DATA_HH}.ratio.tif --NoDataValue=0
 			gdal_calc.py -A ${TMP_DIR}/${DATA_HH}.filtered.tif  -B ${TMP_DIR}/${DATA_HV}.filtered.tif --calc="(A-B)/(A+B)" --outfile=${TMP_DIR}/${DATA_HH}.rfdi.tif --NoDataValue=0
 			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 #			kc_rfdi ${TMP_DIR}/${DATA_HH}.filtered.tif ${TMP_DIR}/${DATA_HV}.filtered.tif ${TMP_DIR}/${DATA_HH}.rfdi.tif ${LOG_DIR}
 		else
 
-			gdal_calc.py -A ${TMP_DIR}/${DATA_HH}.filtered.tif  -B ${TMP_DIR}/${DATA_HV}.filtered.tif --calc="A/B" --outfile=${TMP_DIR}/${DATA_HH}.ratio.tif --NoDataValue=0
-			gdal_calc.py -A ${TMP_DIR}/${DATA_HH}.filtered.tif  -B ${TMP_DIR}/${DATA_HV}.filtered.tif --calc="(A-B)/(A+B)" --outfile=${TMP_DIR}/${DATA_HH}.rfdi.tif --NoDataValue=0
+			gdal_calc.py -A ${TMP_DIR}/${DATA_HH}.tif  -B ${TMP_DIR}/${DATA_HV}.tif --calc="A/B" --outfile=${TMP_DIR}/${DATA_HH}.ratio.tif --NoDataValue=0
+			gdal_calc.py -A ${TMP_DIR}/${DATA_HH}.tif  -B ${TMP_DIR}/${DATA_HV}.tif --calc="(A-B)/(A+B)" --outfile=${TMP_DIR}/${DATA_HH}.rfdi.tif --NoDataValue=0
 			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 #			kc_rfdi ${TMP_DIR}/${DATA_HH}.tif ${TMP_DIR}/${DATA_HV}.tif ${TMP_DIR}/${DATA_HH}.rfdi.tif ${LOG_DIR}
 		fi
@@ -221,11 +237,11 @@ function kc_process () {
 			gdal_calc.py -A ${DATA:0:10}"_mask" --outfile=${DATA}"_mask.tif" --calc="1*(A==255)" >> ${LOG_DIR}/log_process 2>&1
 		fi
 		
-		if [ $4 -eq 1 ];then #filter case
+		if [ $4 -gt 0 ];then #filter case
 
 			gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HH}.filtered.tif --calc=A*B --outfile=${TMP_DIR}/TILES/1_${DATA_HH}.tif --NoDataValue=0 --type='UInt16'
 			gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HV}.filtered.tif --calc=A*B --outfile=${TMP_DIR}/TILES/2_${DATA_HV}.tif --NoDataValue=0 --type='UInt16'
-			gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HH}.rfdi.tif --calc=A*B --outfile=${TMP_DIR}/${DATA_HH}.ratio.mask.tif --NoDataValue=0
+			gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HH}.ratio.tif --calc=A*B --outfile=${TMP_DIR}/${DATA_HH}.ratio.mask.tif --NoDataValue=0
 			gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HH}.rfdi.tif --calc=A*B --outfile=${TMP_DIR}/${DATA_HH}.rfdi.mask.tif --NoDataValue=0
 
 			#bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask.xml -x -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HH}.filtered.tif" -Poutput=${TMP_DIR}/TILES/1_${DATA_HH}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! 
@@ -235,7 +251,7 @@ function kc_process () {
 		else
 			gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HH}.tif --calc=A*B --outfile=${TMP_DIR}/TILES/1_${DATA_HH}.tif --NoDataValue=0 --type='UInt16'
 			gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HV}.tif --calc=A*B --outfile=${TMP_DIR}/TILES/2_${DATA_HV}.tif --NoDataValue=0 --type='UInt16'
-			gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HH}.rfdi.tif --calc=A*B --outfile=${TMP_DIR}/${DATA_HH}.ratio.mask.tif --NoDataValue=0
+			gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HH}.ratio.tif --calc=A*B --outfile=${TMP_DIR}/${DATA_HH}.ratio.mask.tif --NoDataValue=0
 			gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HH}.rfdi.tif --calc=A*B --outfile=${TMP_DIR}/${DATA_HH}.rfdi.mask.tif --NoDataValue=0
 
 #			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask.xml -x -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HH}.tif" -Poutput=${TMP_DIR}/TILES/1_${DATA_HH}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! 

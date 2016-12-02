@@ -48,6 +48,7 @@ if [ "$#" != "4" ]; then
 	echo -e "			  Available choices:"
 	echo -e "			  0: no filtering applied"
 	echo -e "			  1: filter applied"
+	echo -e "			  2: Unbiased Non-Local Means Filter (experimental)"
 #	echo -e " texture		Calculate Texture measures"
 #	echo -e "			  Available choices:"
 #	echo -e "			  0: no calculation applied"
@@ -205,7 +206,7 @@ if [ ${YEAR} -gt 2006 ];then
 	else
 		for TILE in `ls -1 *${YEAR_SHORT}"_sl_HH"* | grep -v hdr`; do 
 			echo "source ${OPENSARKIT}/lib/kc_libs; kc_process ${TILE} ${AOI_BUF} $4 ${YEAR} ${TMP_DIR} ${LOG_DIR}" >> ${TMP_DIR}/proc_list
-	done
+		done
 	fi
 
 	SECONDS=0
@@ -276,6 +277,7 @@ else # JERS
 		echo -ne " Creating the final HH mosaic (R:HH, G:HV, B:HH/HV) ..."
 		gdalwarp -dstnodata 0 -overwrite -cutline ${AOI_BUF} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/MOS/01_Gamma0_HH_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! \
 		&& duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	fi
 
 fi
 #--------------------------------------------------------------

@@ -28,7 +28,6 @@ tabItem(tabName = "SARmissions",
                                global landmasses, coastal zones and shipping routes at high resolution and covering the global
                                ocean with vignettes. This ensures the reliability of service required by operational services 
                                and a consistent long term data archive built for applications based on long time series."),
-                            tags$b("Instrument"),
                             img(src = "Sentinel-1.jpg", width = "100%", height = "100%"),
                             tags$b("Figure 1: Artisitic representation of Sentinel-1 in orbit. (image courtesy:ESA)")
                    ),
