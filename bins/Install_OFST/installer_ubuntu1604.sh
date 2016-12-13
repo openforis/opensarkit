@@ -140,14 +140,14 @@ RELEASE=`lsb_release -sc`
 
 SECONDS=0
 echo -ne " Adding the Ubuntu GIS unstable repository ..." &&
-add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable > ${OSK_HOME}/LOG/log_install 2>&1 \
-& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable > ${OSK_HOME}/LOG/log_install 2>&1 
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 
 SECONDS=0
 echo -ne " Adding the multiverse repository ..." &&
-add-apt-repository -y "deb http://archive.ubuntu.com/ubuntu/ ${RELEASE} main multiverse"  >> ${OSK_HOME}/LOG/log_install 2>&1 \
-& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+add-apt-repository -y "deb http://archive.ubuntu.com/ubuntu/ ${RELEASE} main multiverse"  >> ${OSK_HOME}/LOG/log_install 2>&1 
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 ## IX R-CRAN from R mirror
 if grep -q "qgis.org/ubuntugis" /etc/apt/sources.list;then 
@@ -184,21 +184,21 @@ fi
 #------------------------------------------------------------------
 
 SECONDS=0
-echo -ne " Updating the system ..." &&
-apt-get update -y >> ${OSK_HOME}/LOG/log_install 2>&1 && \
-apt-get upgrade -y  >> ${OSK_HOME}/LOG/log_install 2>&1 \
-& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+echo -ne " Updating the system ..."
+apt-get update -y >> ${OSK_HOME}/LOG/log_install 2>&1 
+apt-get upgrade -y >> ${OSK_HOME}/LOG/log_install 2>&1 
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 #------------------------------------------------------------------
 # 3 install packages
 #------------------------------------------------------------------
 
 SECONDS=0
-echo -ne " Installing dependencies from Ubuntu package list ..." &&
+echo -ne " Installing dependencies from Ubuntu package list ..."
 apt-get install --yes --allow-unauthenticated gdal-bin libgdal-dev python-gdal saga libsaga-dev python-saga geotiff-bin libgeotiff-dev dans-gdal-scripts spatialite-bin spatialite-gui \
 libcunit1-dev libfftw3-dev libshp-dev libtiff5-dev libproj-dev flex bison libgsl0-dev gsl-bin libglade2-dev libgtk2.0-dev pkg-config \
-python-scipy python-h5py aria2 unrar parallel xml-twig-tools git libxinerama-dev libxrandr-dev libxcursor-dev swig r-base >> ${OSK_HOME}/LOG/log_install 2>&1 \
-& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+python-scipy python-h5py aria2 unrar parallel xml-twig-tools git libxinerama-dev libxrandr-dev libxcursor-dev swig r-base libv8-3.14-dev >> ${OSK_HOME}/LOG/log_install 2>&1 
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 # imagej 
 apt-get install --yes --allow-unauthenticated imagej xvfb
@@ -216,8 +216,8 @@ cd ${OSK_HOME}
 # get OpenSARKit from github
 SECONDS=0
 echo -ne " Getting the Open Foris SAR Toolkit ..." &&
-git clone $OSK_GIT_URL >> ${OSK_HOME}/LOG/log_install 2>&1 \
-& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+git clone $OSK_GIT_URL >> ${OSK_HOME}/LOG/log_install 2>&1 
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 
 OSK_VERSION=0.1-beta
@@ -255,15 +255,15 @@ else
 	
 	SECONDS=0
 	echo -ne " Downloading the SNAP software ..." &&
-	wget http://step.esa.int/downloads/4.0/installers/esa-snap_sentinel_unix_4_0.sh  >> ${OSK_HOME}/LOG/log_install 2>&1 \
-	& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	wget http://step.esa.int/downloads/5.0/installers/esa-snap_sentinel_unix_5_0.sh  >> ${OSK_HOME}/LOG/log_install 2>&1 
+	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 	SECONDS=0
 	echo -ne " Installing the SNAP software ..." &&
-	sh esa-snap_sentinel_unix_4_0.sh -q -overwrite  >> ${OSK_HOME}/LOG/log_install 2>&1 \
-	& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	sh esa-snap_sentinel_unix_5_0.sh -q -overwrite  >> ${OSK_HOME}/LOG/log_install 2>&1 
+	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
-	rm -f esa-snap_sentinel_unix_4_0.sh
+	rm -f esa-snap_sentinel_unix_5_0.sh
 	
 	echo -ne " Adding environmental variables to /etc/environment ..." 
 	echo "OPENSARKIT=${OSK_HOME}/opensarkit" | tee -a /etc/environment
@@ -275,8 +275,9 @@ fi
 # update SNAP
 SECONDS=0
 echo -ne " Updating SNAP to the latest version ..." &&
-snap --nosplash --nogui --modules --update-all  >> ${OSK_HOME}/LOG/log_install 2>&1 \
-& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+#/usr/local/snap/bin/snap
+snap --nosplash --nogui --modules --update-all  >> ${OSK_HOME}/LOG/log_install 2>&1 
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 HOME_USER=`stat -c '%U' ${HOME}/.bashrc`
 chown -R ${HOME_USER}:${HOME_USER} ${HOME}/.snap
@@ -292,8 +293,8 @@ cd ${OSK_HOME}/Database
 
 SECONDS=0
 echo -ne " Downloading the OFST database ..." &&
-wget https://www.dropbox.com/s/qvujm3l0ba0frch/OFST_db.sqlite?dl=0  >> ${OSK_HOME}/LOG/log_install 2>&1 \
-& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+wget https://www.dropbox.com/s/qvujm3l0ba0frch/OFST_db.sqlite?dl=0  >> ${OSK_HOME}/LOG/log_install 2>&1 
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 mv OFST_db.sqlite?dl=0 OFST_db.sqlite
 
 
@@ -301,6 +302,7 @@ echo -ne " Installing R packages for shiny app ..." &&
 /usr/bin/R -e "install.packages('shiny', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1 
 /usr/bin/R -e "install.packages('shinydashboard', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1 
 /usr/bin/R -e "install.packages('shinyFiles', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1 
+/usr/bin/R -e "install.packages('shinyjs', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1 
 /usr/bin/R -e "install.packages('RSQLite', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1 
 /usr/bin/R -e "install.packages('RColorBrewer', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1 
 /usr/bin/R -e "install.packages('random', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1 

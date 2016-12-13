@@ -56,7 +56,7 @@ if [ "$#" != "4" ]; then
 	echo -e ""		
 	echo -e ""
 
-  	#exit 1
+  	exit 1
 else
 	echo -e "-------------------------------------"
 	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
