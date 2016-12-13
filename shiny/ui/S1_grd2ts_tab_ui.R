@@ -11,11 +11,12 @@ tabItem(tabName = "s1_grd2rtc-ts",
             title = "Processing Panel", status = "success", solidHeader= TRUE,
             tags$h4("Sentinel-1 GRD to RTC time-series processor"),
             hr(),
-            #tags$b("1) Input Type:"),
+            #tags$b("Input Type:"),
             # AOI choice
-            radioButtons("s1_g2ts_input_type", "1) Input type",
+            radioButtons("s1_g2ts_input_type", "Input type",
                          c("Folder (i.e. data is already downloaded)" = "folder",
-                           "OST inventory shapefile (i.e. data needs to be downloaded first)" = "inventory")),
+                           "OST inventory shapefile (local/on server)" = "inventory",
+                           "OST inventory shapefile (upload zipped archive)" = "s1_g2ts_zipfile")),
 
             conditionalPanel(
               "input.s1_g2ts_input_type == 'folder'",
@@ -24,59 +25,59 @@ tabItem(tabName = "s1_grd2rtc-ts",
               br(),
               br(),
               verbatimTextOutput("s1_g2ts_inputfolder")
-            ),
+              ),
             
             conditionalPanel(
               "input.s1_g2ts_input_type == 'inventory'",
-              shinyFilesButton("s1_g2ts_shp","Choose S1 DATA file","Choose one or more files",FALSE),
+              shinyFilesButton("s1_g2ts_shp","Browse","Choose one file",FALSE),
               br(),
               br(),
               verbatimTextOutput("s1_g2ts_shp_filepath"),
               hr(),
-              tags$b("2) Output directory"),
+              tags$b("Output directory"),
               p("Note: A new folder named \"DATA\" will be created within the chosen Output directory. 
                Within this folder the downloaded data files will be stored and further sorted by satellite track and acquistion date."),
-              shinyDirButton("s1_g2ts_outdir","Browse","Choose the DATA folder inside your project directory",FALSE),
+              shinyDirButton("s1_g2ts_outdir","Browse","Choose output directory",FALSE),
               br(),
               br(),
-              verbatimTextOutput("s1_g2ts_outfolder"),
-              hr(),
-              tags$b("3) Provide your NASA Earthdata username/password."), 
-              p("If you are not in possess of a user account you can create one ",a(href = "https://urs.earthdata.nasa.gov/", "here"),"."),
-              textInput(inputId = "s1_asf_uname2",
-                        label = "Username", 
-                        value = "Type in your username" 
-              ),
+              verbatimTextOutput("s1_g2ts_outfolder")
+            ),
               
-              passwordInput(inputId = "s1_asf_piwo2",
-                            label = "Password",
-                            value = "Type in your password"
-              ),
-              hr()
-              
-              ),
+            conditionalPanel(
+              "input.s1_g2ts_input_type == 's1_g2ts_zipfile'",
+              fileInput('S1_g2ts_zipfile_path', label = 'Browse',accept = c(".zip")),
               hr(),
-              conditionalPanel(
-                 "input.s1_g2ts_input_type == 'folder'",
-                  radioButtons("s1_g2ts_res", "2) Choose the output resolution:",
-                           c("Medium Resolution (30m)" = "med_res",
-                             "Full resolution (10m)" = "full_res")
-               )
-             ),
+              tags$b("Output directory"),
+              p("Note: A new folder named \"DATA\" will be created within the chosen Output directory. 
+               Within this folder the downloaded data files will be stored and further sorted by satellite track and acquistion date."),
+              shinyDirButton("s1_g2ts_outdir2","Browse","Choose output directory",FALSE),
+              br(),
+              br(),
+              verbatimTextOutput("s1_g2ts_outfolder2")
+            ),
             
-             conditionalPanel(
-                "input.s1_g2ts_input_type == 'inventory'",
-                radioButtons("s1_g2ts_res", "4) Choose the output resolution:",
+            hr(),
+            radioButtons("s1_g2ts_res", "Choose the output resolution:",
                          c("Medium Resolution (30m)" = "med_res",
-                           "Full resolution (10m)" = "full_res")
-                )
-             ),
-             hr(),
-             actionButton("s1_g2ts_process", "Start processing"),
-             br(),
-             br(),
-             "Output:",
-             verbatimTextOutput("processS1_G2TS")
+                           "Full resolution (10m)" = "full_res")),
+            hr(),
+            tags$b("Provide your NASA Earthdata username/password."), 
+            p("If you are not in possess of a user account you can create one ",a(href = "https://urs.earthdata.nasa.gov/",targer="_blank", "here"),"."),
+            textInput(inputId = "s1_asf_uname2",
+                      label = "Username", 
+                      value = "Type in your username" 
+            ),
+              
+            passwordInput(inputId = "s1_asf_piwo2",
+                          label = "Password",
+                          value = "Type in your password"
+            ),
+            hr(),
+            actionButton("s1_g2ts_process", "Start processing"),
+            br(),
+            br(),
+            "Output:",
+            verbatimTextOutput("processS1_G2TS")
             
           ), #close box
           
@@ -147,7 +148,4 @@ tabItem(tabName = "s1_grd2rtc-ts",
                    ) # close box
           
         ) # close fluid row
-) # close tabitem
-            
-            
-          
+) # close tabit

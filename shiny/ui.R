@@ -28,7 +28,7 @@ packages(RSQLite)
 packages(random)
 packages(mapview)
 packages(raster)
-#packages(shinyjs)
+packages(shinyjs)
 #-----------------------------------------------------------------------------------
 
 
@@ -104,7 +104,8 @@ ui = dashboardPage(
       #-----------------------------------------------------------------------------
       # ALOS K&C Tab
       source(file.path("ui","ALOS_KC_tab_ui.R"), local=TRUE)$value,
-      
+      source(file.path("ui","ALOS_ASF_inv_tab_ui.R"), local=TRUE)$value,
+      source(file.path("ui","ALOS_ASF_grd2rtc_tab_ui.R"), local=TRUE)$value,
       #-----------------------------------------------------------------------------
       
       #-----------------------------------------------------------------------------

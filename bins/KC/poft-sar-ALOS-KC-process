@@ -56,7 +56,7 @@ if [ "$#" != "4" ]; then
 	echo -e ""		
 	echo -e ""
 
-  	exit 1
+  	#exit 1
 else
 	echo -e "-------------------------------------"
 	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
@@ -87,15 +87,9 @@ fi
 cd $ZIP_DIR
 SECONDS=0
 echo -ne " Unpacking the downloaded archives ..." &&
-ls -1 *${YEAR_SHORT}*tar.gz | parallel -j `nproc` tar -xzvf {} -C ${TMP_DIR} & spinner $! \
-&& duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+ls -1 *${YEAR_SHORT}*tar.gz | parallel -j `nproc` tar -xzvf {} -C ${TMP_DIR} 
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
-#for LINE in `ls -1 *${YEAR_SHORT}*tar.gz`;do
-
-#	tar -xzf ${LINE} -C ${TMP_DIR}
-
-#done \
-#& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 #------------------------------------------------------------------------
 
 #----------------------------------------------------------------------
@@ -109,14 +103,14 @@ else # country case
       COUNTRY=`echo "SELECT name FROM countries WHERE \"iso3\" = '$2';" | spatialite ${OST_DB} | head -50`
 		SECONDS=0
 		echo -ne " Extracting country boundaries for ${COUNTRY} ..." &&
-	  	ogr2ogr -f "Esri Shapefile" ${TMP_DIR}/AOI.shp ${OST_DB} -dsco SPATIALITE=yes -where "\"iso3\" = \"${2}\"" -nln AOI countries > ${LOG_DIR}/log_process 2>&1 \
-		& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	  	ogr2ogr -f "Esri Shapefile" ${TMP_DIR}/AOI.shp ${OST_DB} -dsco SPATIALITE=yes -where "\"iso3\" = \"${2}\"" -nln AOI countries > ${LOG_DIR}/log_process 2>&1 
+		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 		AOI=${TMP_DIR}/AOI.shp
 		
 		SECONDS=0
 		echo -ne " Creating a 0.1 degree buffer (used for final masking) ... " &&	
-	   	ogr2ogr -f "Esri Shapefile" ${TMP_DIR}/AOI_buffer.shp ${OST_DB} -dsco SPATIALITE=yes -sql "select ST_union(ST_buffer(geom,0.1)) from countries where \"iso3\" = \"${2}\""  >> ${LOG_DIR}/log_process 2>&1 \
-		& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	   	ogr2ogr -f "Esri Shapefile" ${TMP_DIR}/AOI_buffer.shp ${OST_DB} -dsco SPATIALITE=yes -sql "select ST_union(ST_buffer(geom,0.1)) from countries where \"iso3\" = \"${2}\""  >> ${LOG_DIR}/log_process 2>&1 
+		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 		AOI_BUF=${TMP_DIR}/AOI_buffer.shp
 fi
 
@@ -140,26 +134,26 @@ if [ ${YEAR} -gt 2006 ];then
 	if [ ${YEAR} -gt 2010 ];then 
 		SECONDS=0
 		echo -ne " Merging the FNF tiles ..." &&
-		gdalbuildvrt -srcnodata 0 ${TMP_DIR}/FNF_map.vrt ${TMP_DIR}/*_C_F02DAR  >> ${LOG_DIR}/log_process 2>&1\
-		& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+		gdalbuildvrt -srcnodata 0 ${TMP_DIR}/FNF_map.vrt ${TMP_DIR}/*_C_F02DAR  >> ${LOG_DIR}/log_process 2>&1
+		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 	else
 		SECONDS=0
 		echo -ne " Merging the FNF tiles ..." &&
-		gdalbuildvrt -srcnodata 0 ${TMP_DIR}/FNF_map.vrt ${TMP_DIR}/*_C  >> ${LOG_DIR}/log_process 2>&1 \
-		& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+		gdalbuildvrt -srcnodata 0 ${TMP_DIR}/FNF_map.vrt ${TMP_DIR}/*_C  >> ${LOG_DIR}/log_process 2>&1 
+		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 	fi
 
 	if [ `echo $2 | grep shp` ]; then
 		SECONDS=0	
 		echo -ne " Cropping the FNF Map to the extent of the AOI ..." &&
-		gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/FNF_map.vrt ${OUT_DIR}/${YEAR}/FNF/${YEAR}"_KC_FNF_map.tif" >> ${LOG_DIR}/log_process 2>&1 \
-		& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+		gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/FNF_map.vrt ${OUT_DIR}/${YEAR}/FNF/${YEAR}"_KC_FNF_map.tif" >> ${LOG_DIR}/log_process 2>&1 
+		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 		rm -f ${TMP_DIR}/*_C_F02DAR* 
 	else
 		SECONDS=0
 		echo -ne " Cropping the FNF Map to the extent of the AOI ..." &&
-		gdalwarp -dstnodata 0 -overwrite -cutline ${AOI_BUF} -crop_to_cutline ${TMP_DIR}/FNF_map.vrt ${OUT_DIR}/${YEAR}/FNF/${YEAR}"_KC_FNF_map.tif" >> ${LOG_DIR}/log_process 2>&1 \
-		& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+		gdalwarp -dstnodata 0 -overwrite -cutline ${AOI_BUF} -crop_to_cutline ${TMP_DIR}/FNF_map.vrt ${OUT_DIR}/${YEAR}/FNF/${YEAR}"_KC_FNF_map.tif" >> ${LOG_DIR}/log_process 2>&1 
+		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 		rm -f ${TMP_DIR}/*_C
 	fi
 fi
@@ -171,23 +165,23 @@ echo " Processing the Auxiliary information (i.e. Acquisition Date/Local Inciden
 echo "------------------------------------------------------------------------------------"
 
 SECONDS=0
-#echo -ne " Extracting auxiliary information ..." &&
-#gdalbuildvrt -srcnodata 0 ${TMP_DIR}/LINCI.vrt $(ls ${TMP_DIR}/*_linci* | grep -v hdr) >> ${LOG_DIR}/log_process 2>&1 & spinner $!
-#gdalbuildvrt -srcnodata 0 ${TMP_DIR}/DATE.vrt $(ls ${TMP_DIR}/*_date* | grep -v hdr) >> ${LOG_DIR}/log_process 2>&1 \
-#& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+echo -ne " Extracting auxiliary information ..." &&
+gdalbuildvrt -srcnodata 0 ${TMP_DIR}/LINCI.vrt $(ls ${TMP_DIR}/*_linci* | grep -v hdr) >> ${LOG_DIR}/log_process 2>&1 
+gdalbuildvrt -srcnodata 0 ${TMP_DIR}/DATE.vrt $(ls ${TMP_DIR}/*_date* | grep -v hdr) >> ${LOG_DIR}/log_process 2>&1 
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 SECONDS=0
-#if [ `echo $2 | grep shp` ]; then
-#	echo -ne " Cropping the auxiliary data to the extent of the AOI ..." &&
-#	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/LINCI.vrt ${OUT_DIR}/${YEAR}/AUX/${YEAR}"_loc_inc_angle.tif" >> ${LOG_DIR}/log_process 2>&1 & spinner $!
-#	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/DATE.vrt ${OUT_DIR}/${YEAR}/AUX/${YEAR}"_acquisition_date.tif" >> ${LOG_DIR}/log_process 2>&1 \
-#	& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-#else
-#	echo -ne " Cropping the auxiliary data to the extent of the AOI ..." &&
-#	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI_BUF} -crop_to_cutline ${TMP_DIR}/LINCI.vrt ${OUT_DIR}/${YEAR}/AUX/${YEAR}"_loc_inc_angle.tif" >> ${LOG_DIR}/log_process 2>&1 & spinner $!
-#	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI_BUF} -crop_to_cutline ${TMP_DIR}/DATE.vrt ${OUT_DIR}/${YEAR}/AUX/${YEAR}"_acquisition_date.tif" >> ${LOG_DIR}/log_process 2>&1 \
-#	& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-#fi 
+if [ `echo $2 | grep shp` ]; then
+	echo -ne " Cropping the auxiliary data to the extent of the AOI ..." &&
+	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/LINCI.vrt ${OUT_DIR}/${YEAR}/AUX/${YEAR}"_loc_inc_angle.tif" >> ${LOG_DIR}/log_process 2>&1
+	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/DATE.vrt ${OUT_DIR}/${YEAR}/AUX/${YEAR}"_acquisition_date.tif" >> ${LOG_DIR}/log_process 2>&1 
+	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+else
+	echo -ne " Cropping the auxiliary data to the extent of the AOI ..." &&
+	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI_BUF} -crop_to_cutline ${TMP_DIR}/LINCI.vrt ${OUT_DIR}/${YEAR}/AUX/${YEAR}"_loc_inc_angle.tif" >> ${LOG_DIR}/log_process 2>&1
+	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI_BUF} -crop_to_cutline ${TMP_DIR}/DATE.vrt ${OUT_DIR}/${YEAR}/AUX/${YEAR}"_acquisition_date.tif" >> ${LOG_DIR}/log_process 2>&1 
+	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+fi 
 #------------------------------------------------------------------------
 
 #-----------------------------------------------------------------------------------------------------
@@ -219,30 +213,38 @@ if [ ${YEAR} -gt 2006 ];then
 
 	SECONDS=0
 	echo -ne " Merging the data tiles ..." &&
-	gdalbuildvrt ${TMP_DIR}/TILES/mosaic_hh.vrt ${TMP_DIR}/TILES/1_*sl_HH*tif >> ${LOG_DIR}/log_process 2>&1 & spinner $!
-	gdalbuildvrt ${TMP_DIR}/TILES/mosaic_hv.vrt ${TMP_DIR}/TILES/2_*sl_HV*tif >> ${LOG_DIR}/log_process 2>&1 & spinner $!
-	gdalbuildvrt ${TMP_DIR}/TILES/mosaic_hhhv.vrt ${TMP_DIR}/TILES/3_*ratio.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! 
-	gdalbuildvrt ${TMP_DIR}/TILES/mosaic_rfdi.vrt ${TMP_DIR}/TILES/4_*rfdi.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! \
-	&& duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	gdalbuildvrt ${TMP_DIR}/TILES/mosaic_hh.vrt ${TMP_DIR}/TILES/1_*sl_HH*tif >> ${LOG_DIR}/log_process 2>&1
+	gdalbuildvrt ${TMP_DIR}/TILES/mosaic_hv.vrt ${TMP_DIR}/TILES/2_*sl_HV*tif >> ${LOG_DIR}/log_process 2>&1 
+	gdalbuildvrt ${TMP_DIR}/TILES/mosaic_hhhv.vrt ${TMP_DIR}/TILES/3_*ratio.tif >> ${LOG_DIR}/log_process 2>&1
+	gdalbuildvrt ${TMP_DIR}/TILES/mosaic_rfdi.vrt ${TMP_DIR}/TILES/4_*rfdi.tif >> ${LOG_DIR}/log_process 2>&1 
+	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 	if [ `echo $2 | grep shp` ]; then # AOI case
 		SECONDS=0
 		echo -ne " Creating RGB mosaic (R:HH, G:HV, B:HH/HV) ..."
-		gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/MOS/01_Gamma0_HH_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $!
-		gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_hv.vrt ${OUT_DIR}/${YEAR}/MOS/02_Gamma0_HV_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $!
-		gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_hhhv.vrt ${OUT_DIR}/${YEAR}/MOS/03_HHHV_ratio_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $!
-		gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_rfdi.vrt ${OUT_DIR}/${YEAR}/MOS/04_RFDI_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! 
-		gdalbuildvrt -separate -vrtnodata 0 ${OUT_DIR}/${YEAR}/MOS/RGB_${YEAR}.vrt ${OUT_DIR}/${YEAR}/MOS/01_Gamma0_HH_${YEAR}.tif ${OUT_DIR}/${YEAR}/MOS/02_Gamma0_HV_${YEAR}.tif ${OUT_DIR}/${YEAR}/MOS/03_HHHV_ratio_${YEAR}.tif \
-		>> ${LOG_DIR}/log_process 2>&1 & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+		gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/MOS/01_Gamma0_HH_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1
+		gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_hv.vrt ${OUT_DIR}/${YEAR}/MOS/02_Gamma0_HV_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1
+		gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_hhhv.vrt ${OUT_DIR}/${YEAR}/MOS/03_HHHV_ratio_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1
+		gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_rfdi.vrt ${OUT_DIR}/${YEAR}/MOS/04_RFDI_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1
+		gdalbuildvrt -separate -vrtnodata 0 ${OUT_DIR}/${YEAR}/MOS/RGB_${YEAR}.vrt \
+						    ${OUT_DIR}/${YEAR}/MOS/01_Gamma0_HH_${YEAR}.tif \
+						    ${OUT_DIR}/${YEAR}/MOS/02_Gamma0_HV_${YEAR}.tif \
+						    ${OUT_DIR}/${YEAR}/MOS/03_HHHV_ratio_${YEAR}.tif \
+				        	    >> ${LOG_DIR}/log_process 2>&1
+		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 	else # buffered country boundaries
 		SECONDS=0
 		echo -ne " Creating RGB mosaic (R:HH, G:HV, B:HH/HV) ..."
-		gdalwarp -dstnodata 0 -overwrite -cutline ${AOI_BUF} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/MOS/01_Gamma0_HH_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $!
-		gdalwarp -dstnodata 0 -overwrite -cutline ${AOI_BUF} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_hv.vrt ${OUT_DIR}/${YEAR}/MOS/02_Gamma0_HV_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $!
-		gdalwarp -dstnodata 0 -overwrite -cutline ${AOI_BUF} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_hhhv.vrt ${OUT_DIR}/${YEAR}/MOS/03_HHHV_ratio_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $!
-		gdalwarp -dstnodata 0 -overwrite -cutline ${AOI_BUF} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_rfdi.vrt ${OUT_DIR}/${YEAR}/MOS/04_RFDI_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! 	
-		gdalbuildvrt -separate -vrtnodata 0 ${OUT_DIR}/${YEAR}/MOS/RGB_${YEAR}.vrt ${OUT_DIR}/${YEAR}/MOS/01_Gamma0_HH_${YEAR}.tif ${OUT_DIR}/${YEAR}/MOS/02_Gamma0_HV_${YEAR}.tif ${OUT_DIR}/${YEAR}/MOS/03_HHHV_ratio_${YEAR}.tif \
-		>> ${LOG_DIR}/log_process 2>&1 & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+		gdalwarp -dstnodata 0 -overwrite -cutline ${AOI_BUF} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/MOS/01_Gamma0_HH_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1 
+		gdalwarp -dstnodata 0 -overwrite -cutline ${AOI_BUF} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_hv.vrt ${OUT_DIR}/${YEAR}/MOS/02_Gamma0_HV_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1 
+		gdalwarp -dstnodata 0 -overwrite -cutline ${AOI_BUF} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_hhhv.vrt ${OUT_DIR}/${YEAR}/MOS/03_HHHV_ratio_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1
+		gdalwarp -dstnodata 0 -overwrite -cutline ${AOI_BUF} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_rfdi.vrt ${OUT_DIR}/${YEAR}/MOS/04_RFDI_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1 
+		gdalbuildvrt -separate -vrtnodata 0 ${OUT_DIR}/${YEAR}/MOS/RGB_${YEAR}.vrt \
+						    ${OUT_DIR}/${YEAR}/MOS/01_Gamma0_HH_${YEAR}.tif \
+						    ${OUT_DIR}/${YEAR}/MOS/02_Gamma0_HV_${YEAR}.tif \
+						    ${OUT_DIR}/${YEAR}/MOS/03_HHHV_ratio_${YEAR}.tif \
+				    		    >> ${LOG_DIR}/log_process 2>&1
+		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 	fi
 
 else # JERS
@@ -263,27 +265,27 @@ else # JERS
 
 	SECONDS=0
 	echo -ne " Merging the data tiles ..." &&
-	gdalbuildvrt ${TMP_DIR}/TILES/mosaic_hh.vrt ${TMP_DIR}/TILES/1_*sl_HH*tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! \
-	&& duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	gdalbuildvrt ${TMP_DIR}/TILES/mosaic_hh.vrt ${TMP_DIR}/TILES/1_*sl_HH*tif >> ${LOG_DIR}/log_process 2>&1
+	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 	if [ `echo $2 | grep shp` ]; then # AOI case
 		SECONDS=0
 		echo -ne " Creating the final HH mosaic (R:HH, G:HV, B:HH/HV) ..."
-		gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/MOS/01_Gamma0_HH_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! \
-		&& duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+		gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/MOS/01_Gamma0_HH_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1 
+		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 	else # buffered country boundaries
 		SECONDS=0
 		echo -ne " Creating the final HH mosaic (R:HH, G:HV, B:HH/HV) ..."
-		gdalwarp -dstnodata 0 -overwrite -cutline ${AOI_BUF} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/MOS/01_Gamma0_HH_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! \
-		&& duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+		gdalwarp -dstnodata 0 -overwrite -cutline ${AOI_BUF} -crop_to_cutline ${TMP_DIR}/TILES/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/MOS/01_Gamma0_HH_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1
+		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 	fi
 
 fi
 #--------------------------------------------------------------
 
 # remove Temp Folder
-#rm -rf ${TMP_DIR}
+rm -rf ${TMP_DIR}
 
 echo " ---------------------------------------------------------------------------------------------"
 echo " Succesfully processed the K&C tiles "

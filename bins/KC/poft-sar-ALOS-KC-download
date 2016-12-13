@@ -82,7 +82,7 @@ elif [ "$#" != "3" ]; then
 	echo -e " Year			Acquisition Year (2007, 2008, 2009, 2010 or 2015)"
 	echo -e ""		
 
-  	exit 1
+  	#exit 1
 else
 
 	echo -e "-------------------------------------------------------------"
@@ -188,8 +188,8 @@ echo "</OGRVRTDataSource>" >> ${TMP_DIR}/intersect.vrt
 # intersect with ogr2ogr
 SECONDS=0
 echo -ne " Checking which 5x5 degree K&C tiles are intersecting with the area of interest ..."	&&
-ogr2ogr -f "csv" ${TMP_DIR}/tiles.csv ${TMP_DIR}/intersect.vrt -dialect sqlite -sql "SELECT b.x_min,b.y_max FROM ${LAYER} a, kc_grid b WHERE ST_Intersects(a.geometry, b.geom)" \
-& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+ogr2ogr -f "csv" ${TMP_DIR}/tiles.csv ${TMP_DIR}/intersect.vrt -dialect sqlite -sql "SELECT b.x_min,b.y_max FROM ${LAYER} a, kc_grid b WHERE ST_Intersects(a.geometry, b.geom)" >> $TMP_DIR/log_ogr2ogr 
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 # get tile list
 cat ${TMP_DIR}/tiles.csv | tail -n +2 | tr ',' '\ ' > ${TMP_DIR}/kc_list
@@ -207,8 +207,8 @@ while read LINE; do
 	echo "source ${OPENSARKIT}/lib/helpers_source; kc_download $LINE $YEAR $ZIP_DIR $LOG_DIR" >> ${TMP_DIR}/down_list
 
 done < ${TMP_DIR}/kc_list
-cat ${TMP_DIR}/down_list | parallel -j $NR_OF_TILES bash -c {}
 
+cat ${TMP_DIR}/down_list | parallel -j $NR_OF_TILES bash -c {}
 
 
 rm -rf ${TMP_DIR}

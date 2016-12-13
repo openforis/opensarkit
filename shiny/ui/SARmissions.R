@@ -7,7 +7,7 @@ tabItem(tabName = "SARmissions",
                    tabPanel("Sentinel-1",
                             tags$h4("The Sentinel-1 mission"),
                             tags$i("Note that the content is adapted from"), 
-                            a(href = "https://sentinel.esa.int/web/sentinel/missions/sentinel-1", "ESA's Sentinel-1 webpage."),
+                            a(href = "https://sentinel.esa.int/web/sentinel/missions/sentinel-1", target = "_blank", "ESA's Sentinel-1 webpage."),
                             hr(),
                             p("The SENTINEL-1 mission is the European Radar Observatory for the Copernicus joint initiative 
                                of the European Commission (EC) and the European Space Agency (ESA). Copernicus, previously 
@@ -33,14 +33,14 @@ tabItem(tabName = "SARmissions",
                    ),
          
                    tabPanel("ALOS-1 PALSAR",
-                            tags$h4("The ALOS-1 mission")
-
+                            tags$h4("The ALOS-1 mission"),
+                            p("under construction", icon="refresh")
                   ),
             
 
                    tabPanel("ALOS-2 PALSAR",
-                            tags$h4("The ALOS-2 mission")
-                            
+                            tags$h4("The ALOS-2 mission"),
+                            p("under construction", icon="refresh")
                    )
             )
         ) # close box

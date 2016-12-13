@@ -1,14 +1,16 @@
-library(shiny)
+  library(shiny)
 library(shinydashboard)
 library(shinyFiles)
 library(RSQLite)
 library(RColorBrewer)
-
+source("helpers.R")
 server <- function(input, output, session) {
   
    #------------------------------------------------------------------------------------------------
    # Source Alos K&C
    source(file.path("server","ALOS_KC_tab_server.R"), local=TRUE)$value
+   #source(file.path("server","ALOS_ASF_inv_tab_server.R"), local=TRUE)$value
+   #source(file.path("server","ALOS_ASF_grd2rtc_tab_server.R"), local=TRUE)$value
    #------------------------------------------------------------------------------------------------
    
    #------------------------------------------------------------------------------------------------

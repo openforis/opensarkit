@@ -11,12 +11,12 @@ tabItem(tabName = "s1_grd2rtc",
             title = "Processing Panel", status = "success", solidHeader= TRUE,
             tags$h4("Sentinel-1 GRD to RTC processor"),
             hr(),
-            tags$b("Input type:"),
             # AOI choice
-            radioButtons("s1_g2r_input_type", "Choose Input type:",
+            radioButtons("s1_g2r_input_type", "Input type:",
                          c("Original File" = "file",
                            "Folder (batch processing)" = "folder",
-                           "OST inventory shapefile" = "inventory")),
+                           "OST inventory shapefile (local/on server)" = "inventory",
+                           "OST inventory shapefile (upload zipped archive)" = "zipfile")),
             
             conditionalPanel(
               "input.s1_g2r_input_type == 'file'",
@@ -30,8 +30,13 @@ tabItem(tabName = "s1_grd2rtc",
               shinyDirButton("s1_g2r_outdir","Choose S1 DATA folder in your project directory","Choose the DATA folder inside your project directory",FALSE),
               br(),
               br(),
-              verbatimTextOutput("s1_g2r_outfolder")
-            ),
+              verbatimTextOutput("s1_g2r_outfolder"),
+              hr(),
+              radioButtons("s1_g2r_res", "Choose the output resolution:",
+                           c("Medium Resolution (30m)" = "med_res",
+                             "Full resolution (10m)" = "full_res")
+              )
+             ),
             
             conditionalPanel(
               "input.s1_g2r_input_type == 'folder'",
@@ -39,7 +44,12 @@ tabItem(tabName = "s1_grd2rtc",
               shinyDirButton("s1_g2r_inputdir","Choose S1 DATA folder in your project directory","Choose the DATA folder inside your project directory",FALSE),
               br(),
               br(),
-              verbatimTextOutput("s1_g2r_inputfolder")
+              verbatimTextOutput("s1_g2r_inputfolder"),
+              hr(),
+              radioButtons("s1_g2r_res", "Choose the output resolution:",
+                           c("Medium Resolution (30m)" = "med_res",
+                             "Full resolution (10m)" = "full_res")
+              )
             ),
             
             conditionalPanel(
@@ -57,34 +67,62 @@ tabItem(tabName = "s1_grd2rtc",
               br(),
               verbatimTextOutput("s1_g2r_outfolder2"),
               hr(),
+              radioButtons("s1_g2r_res", "Choose the output resolution:",
+                           c("Medium Resolution (30m)" = "med_res",
+                             "Full resolution (10m)" = "full_res")
+              ),
+              hr(),
               "NASA Earthdata username/password. If you are not in possess of a user account: ",
-              a(href = "https://urs.earthdata.nasa.gov/", "Click Here!"),
+              a(href = "https://urs.earthdata.nasa.gov/", target="_blank","Click Here!"),
               
-              textInput(inputId = "uname",
+              textInput(inputId = "s1_asf_uname3",
                         label = "Username", 
                         value = "Type in your username" 
               ),
               
-              passwordInput(inputId = "piwo",
+              passwordInput(inputId = "s1_asf_piwo3",
                             label = "Password",
                             value = "Type in your password"
+              )
               ),
-              hr()#,
               
+              conditionalPanel(
+                "input.s1_g2r_input_type == 'zipfile'",
+                fileInput('S1_grd2rtc_zipfile_path', label = 'Browse',accept = c(".zip")),
+                hr(),
+                tags$b("Output directory"),
+                br(),
+                shinyDirButton("s1_g2r_outdir3","Choose S1 DATA folder in your project directory","Choose the DATA folder inside your project directory",FALSE),
+                br(),
+                br(),
+                verbatimTextOutput("s1_g2r_outfolder3"),
+                hr(),
+                radioButtons("s1_g2r_res", "Choose the output resolution:",
+                             c("Medium Resolution (30m)" = "med_res",
+                               "Full resolution (10m)" = "full_res")
+                ),
+                hr(),
+                "NASA Earthdata username/password. If you are not in possess of a user account: ",
+                a(href = "https://urs.earthdata.nasa.gov/", target="_blank","Click Here!"),
+                
+                textInput(inputId = "s1_asf_uname3",
+                          label = "Username", 
+                          value = "Type in your username" 
+                ),
+                
+                passwordInput(inputId = "s1_asf_piwo3",
+                              label = "Password",
+                              value = "Type in your password"
+                )
               ),
             
-             radioButtons("s1_g2r_res", "Choose the output resolution:",
-                         c("Medium Resolution (30m)" = "med_res",
-                           "Full resolution (10m)" = "full_res")
-             ),
-             hr(),
-             actionButton("s1_g2r_process", "Start processing"),
-             br(),
-             br(),
-             "Output:",
-             verbatimTextOutput("processS1_G2R")
-            
-          ) #close box
+            hr(),
+            actionButton("s1_g2r_process", "Start processing"),
+            br(),
+            br(),
+            "Output:",
+            verbatimTextOutput("processS1_G2R")
+            ) #close box
         ) # close fluid row
 ) # close tabitem
             

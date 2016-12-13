@@ -32,8 +32,7 @@ function kc_download () {
 	LOG_DIR=$5
 
 source ${OPENSARKIT}/lib/helpers_source
-  # COL=`echo ${LINE} | awk $'{print $1}'`
-#	ROW=`echo ${LINE} | awk $'{print $2}'`
+
 	COL=$1
 	ROW=$2
 	# Create the actual Grid code for exact download address
@@ -93,35 +92,35 @@ source ${OPENSARKIT}/lib/helpers_source
 			COL=E00${COL}
 		fi
 	fi
-#set -x
+
 	if [ ${YEAR} -gt 2010 ];then
 		SECONDS=0
 		echo -ne " Downloading backscatter data tile $i/${NR_OF_TILES} (${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz) ..." &&
-		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS-2/ext1/PALSAR-2_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS_F02DAR.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz & spinner $! &&  
+		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS-2/ext1/PALSAR-2_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS_F02DAR.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz 
 		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 		SECONDS=0
 		echo -ne " Downloading forest/non-forest data tile $i/${NR_OF_TILES} (${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz) ..." &&
-		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS-2/ext1/PALSAR-2_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF_F02DAR.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz & spinner $! && 
-		spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS-2/ext1/PALSAR-2_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF_F02DAR.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz 
+		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 	elif [ ${YEAR} -lt 2000 ];then
 	
 		SECONDS=0
 		echo -ne " Downloading backscatter data tile $i/${NR_OF_TILES} (${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz) ..." &&
-		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS-2/JERS-1_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz & spinner $! &&  
+		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS-2/JERS-1_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz 
 		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 	else
 
 		SECONDS=0
 		echo -ne " Downloading backscatter data tile $i/${NR_OF_TILES} (${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz) ... " &&
-		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz & spinner $! && 
+		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz 
 		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 		SECONDS=0
 		echo -ne " Downloading forest/non-forest data tile $i/${NR_OF_TILES} (${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz) ..." &&
-		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz & spinner $! &&  
+		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz 
 		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 	fi
 
@@ -168,7 +167,7 @@ function kc_process () {
 
 
 	# create intersect table	
-	ogr2ogr -f "csv" ${TMP_DIR}/grids_${DATA}.csv ${TMP_DIR}/intersect_tile_${DATA}.vrt -dialect sqlite -sql "SELECT * FROM ${LAYER} a, ${LAYER_TILE} b WHERE ST_Intersects(a.geometry, b.geometry)" >> ${LOG_DIR}/log_process_${DATA} 2>&1 $ spinner $!
+	ogr2ogr -f "csv" ${TMP_DIR}/grids_${DATA}.csv ${TMP_DIR}/intersect_tile_${DATA}.vrt -dialect sqlite -sql "SELECT * FROM ${LAYER} a, ${LAYER_TILE} b WHERE ST_Intersects(a.geometry, b.geometry)" >> ${LOG_DIR}/log_process_${DATA} 2>&1
 	
 	if [ `cat ${TMP_DIR}/grids_${DATA}.csv | wc -l` -gt 1 ];then
 	
@@ -217,13 +216,13 @@ function kc_process () {
 			gdal_calc.py -A ${TMP_DIR}/${DATA_HH}.filtered.tif  -B ${TMP_DIR}/${DATA_HV}.filtered.tif --calc="A/B" --outfile=${TMP_DIR}/${DATA_HH}.ratio.tif --NoDataValue=0
 			gdal_calc.py -A ${TMP_DIR}/${DATA_HH}.filtered.tif  -B ${TMP_DIR}/${DATA_HV}.filtered.tif --calc="(A-B)/(A+B)" --outfile=${TMP_DIR}/${DATA_HH}.rfdi.tif --NoDataValue=0
 			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-#			kc_rfdi ${TMP_DIR}/${DATA_HH}.filtered.tif ${TMP_DIR}/${DATA_HV}.filtered.tif ${TMP_DIR}/${DATA_HH}.rfdi.tif ${LOG_DIR}
+
 		else
 
 			gdal_calc.py -A ${TMP_DIR}/${DATA_HH}.tif  -B ${TMP_DIR}/${DATA_HV}.tif --calc="A/B" --outfile=${TMP_DIR}/${DATA_HH}.ratio.tif --NoDataValue=0
 			gdal_calc.py -A ${TMP_DIR}/${DATA_HH}.tif  -B ${TMP_DIR}/${DATA_HV}.tif --calc="(A-B)/(A+B)" --outfile=${TMP_DIR}/${DATA_HH}.rfdi.tif --NoDataValue=0
 			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-#			kc_rfdi ${TMP_DIR}/${DATA_HH}.tif ${TMP_DIR}/${DATA_HV}.tif ${TMP_DIR}/${DATA_HH}.rfdi.tif ${LOG_DIR}
+
 		fi
 
 		# Layover/Shadow masking
@@ -243,20 +242,12 @@ function kc_process () {
 			gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HV}.filtered.tif --calc=A*B --outfile=${TMP_DIR}/TILES/2_${DATA_HV}.tif --NoDataValue=0 --type='UInt16'
 			gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HH}.ratio.tif --calc=A*B --outfile=${TMP_DIR}/${DATA_HH}.ratio.mask.tif --NoDataValue=0
 			gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HH}.rfdi.tif --calc=A*B --outfile=${TMP_DIR}/${DATA_HH}.rfdi.mask.tif --NoDataValue=0
-
-			#bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask.xml -x -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HH}.filtered.tif" -Poutput=${TMP_DIR}/TILES/1_${DATA_HH}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! 
-			#bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask.xml -x -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HV}.filtered.tif" -Poutput=${TMP_DIR}/TILES/2_${DATA_HV}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $!
-			#bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask_rfdi.xml -x -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HH}.rfdi.tif" -Poutput=${TMP_DIR}/${DATA_HH}.rfdi.mask.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! \
 			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 		else
 			gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HH}.tif --calc=A*B --outfile=${TMP_DIR}/TILES/1_${DATA_HH}.tif --NoDataValue=0 --type='UInt16'
 			gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HV}.tif --calc=A*B --outfile=${TMP_DIR}/TILES/2_${DATA_HV}.tif --NoDataValue=0 --type='UInt16'
 			gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HH}.ratio.tif --calc=A*B --outfile=${TMP_DIR}/${DATA_HH}.ratio.mask.tif --NoDataValue=0
 			gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HH}.rfdi.tif --calc=A*B --outfile=${TMP_DIR}/${DATA_HH}.rfdi.mask.tif --NoDataValue=0
-
-#			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask.xml -x -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HH}.tif" -Poutput=${TMP_DIR}/TILES/1_${DATA_HH}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! 
-#			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask.xml -x -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HV}.tif" -Poutput=${TMP_DIR}/TILES/2_${DATA_HV}.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! 
-#			bash $SNAP_EXE ${SNAP_GRAPHS}/KC_mask_rfdi.xml -x -Pfilelist="${TMP_DIR}/${DATA}"_mask.tif",${TMP_DIR}/${DATA_HH}.rfdi.tif" -Poutput=${TMP_DIR}/${DATA_HH}.rfdi.mask.tif >> ${LOG_DIR}/log_process 2>&1 & spinner $! \
 			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 		fi	
 
@@ -280,7 +271,7 @@ function kc_process () {
 		echo -e "- No Overlap, going on with next tile."	
 	fi
 
-	#rm -f ${TMP_DIR}/grids_${DATA}.csv
+	rm -f ${TMP_DIR}/grids_${DATA}.csv
 }
 
 function kc_process_jers (){
@@ -325,8 +316,8 @@ echo "</OGRVRTDataSource>" >> ${TMP_DIR}/intersect_tile_${DATA}.vrt
 
 
 # create intersect table	
-ogr2ogr -f "csv" ${TMP_DIR}/grids_${DATA}.csv ${TMP_DIR}/intersect_tile_${DATA}.vrt -dialect sqlite -sql "SELECT * FROM ${LAYER} a, ${LAYER_TILE} b WHERE ST_Intersects(a.geometry, b.geometry)" >> ${LOG_DIR}/log_process_${DATA} 2>&1 $ spinner $!
-	
+ogr2ogr -f "csv" ${TMP_DIR}/grids_${DATA}.csv ${TMP_DIR}/intersect_tile_${DATA}.vrt -dialect sqlite -sql "SELECT * FROM ${LAYER} a, ${LAYER_TILE} b WHERE ST_Intersects(a.geometry, b.geometry)" >> ${LOG_DIR}/log_process_${DATA} 2>&1 
+
 if [ `cat ${TMP_DIR}/grids_${DATA}.csv | wc -l` -gt 1 ];then
 	
 	echo "- Overlapping data tile ${DATA} will be processed"
@@ -374,8 +365,8 @@ function kc_rfdi () {
     FILELIST="$1,$2"
     SECONDS=0
     echo -ne " Calculating the Radar Forest Degradation Index ..." &&
-    bash $SNAP_EXE ${SNAP_GRAPHS}/KC_RFDI.xml -x -Pfilelist=${FILELIST} -Poutput=$3 >> $4/log_rfdi 2>&1 & spinner $! \
-    && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    bash $SNAP_EXE ${SNAP_GRAPHS}/KC_RFDI.xml -x -Pfilelist=${FILELIST} -Poutput=$3 >> $4/log_rfdi 2>&1 
+    duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 }	 
 
 

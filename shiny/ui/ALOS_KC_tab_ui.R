@@ -1,13 +1,4 @@
 #-----------------------------------------------------------------------------
-# About OST tab
-tabItem(tabName = "about",
-        "Welcome to the Open Foris SAR Toolkit",
-        fluidRow(
-        ) # close box
-) # close tabItem
-
-
-#-----------------------------------------------------------------------------
 # ALOS K&C Tab
 tabItem(tabName = "alos_kc",
         fluidRow(
@@ -38,7 +29,7 @@ tabItem(tabName = "alos_kc",
               radioButtons("ALOS_AOI", "",
                            c("Country" = "country",
                              "Shapefile (on Server/local)" = "AOI_shape_local",
-                             "Shapefile (upload)" = "AOI_shape_upload")),
+                             "Shapefile (upload zipped archive)" = "AOI_zip_upload")),
               
               conditionalPanel(
                  "input.ALOS_AOI == 'country'",
@@ -62,13 +53,14 @@ tabItem(tabName = "alos_kc",
               ),
               
               conditionalPanel(
-                 "input.ALOS_AOI == 'AOI_shape_upload'",
-                 fileInput('shapefile_path', label = '',accept = c(".shp"))
+                 "input.ALOS_AOI == 'AOI_zip_upload'",
+                 fileInput('zipfile_path', label = 'Browse',accept = c(".zip"))
               ),
               
               hr(),
               
               selectInput("year","3) Year",c(
+                 "1996" = "1996",
                  "2007" = "2007",
                  "2008" = "2008",
                  "2009" = "2009",
@@ -96,10 +88,12 @@ tabItem(tabName = "alos_kc",
               hr(),
               #div(style="display:inline-block",actionButton("alos_kc_process", "Start processing")),
               #div(style="display:inline-block",actionButton("alos_kc_abort", "Abort processing")),
+              #withBusyIndicatorUI(
               actionButton("alos_kc_process", "Start processing"),
+              #)
               br(),
               br(),
-              "Command Line Syntax:",
+              "Output:",
               verbatimTextOutput("processALOS")
            ), # close box
            #----------------------------------------------------------------------------------

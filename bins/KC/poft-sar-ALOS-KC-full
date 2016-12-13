@@ -131,6 +131,6 @@ else # country case
 	aoi_from_iso3 $2 ${OUT_DIR}/AOI
 	AOI=${OUT_DIR}/AOI/$2.shp
 fi
-echo $AOI > /home/avollrath/log_aoi
-poft-sar-ALOS-KC-download ${OUT_DIR} ${AOI} ${YEAR} ${CRED_FILE}
-oft-sar-ALOS-KC-process ${OUT_DIR} ${AOI} ${YEAR} $4
+
+poft-sar-ALOS-KC-download ${OUT_DIR} ${AOI} ${YEAR} ${CRED_FILE} 
+poft-sar-ALOS-KC-process ${OUT_DIR} ${AOI} ${YEAR} $4

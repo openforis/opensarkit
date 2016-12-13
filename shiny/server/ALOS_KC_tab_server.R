@@ -39,7 +39,7 @@ print_alos = eventReactive(input$alos_kc_process, {
    if (is.null(input$directory)){
       empty_dir_message="No project folder chosen"
       js_string <- 'alert("SOMETHING");'
-      js_string <- sub("SOMETHING",empty_dir_message,js_string)
+      js_string <- sub("SOMETHING",empty_dir_message,js_strign)
       session$sendCustomMessage(type='jsCode', list(value = js_string))
    } else if (input$ALOS_AOI == "AOI_shape_local"){
          
@@ -51,7 +51,19 @@ print_alos = eventReactive(input$alos_kc_process, {
             session$sendCustomMessage(type='jsCode', list(value = js_string))
          } else {
            dummy="dummy"
-        }
+         }
+     
+   } else if (input$ALOS_AOI == "AOI_zip_upload"){
+     
+     # if local shapefile is clicked, check if it actually chosen
+     if(is.null(input$zipfile_path)){
+       empty_shp_message="No zip-archive chosen"
+       js_string <- 'alert("SOMETHING");'
+       js_string <- sub("SOMETHING",empty_shp_message,js_string)
+       session$sendCustomMessage(type='jsCode', list(value = js_string))
+     } else {
+       dummy="dummy"
+     }
    } else {
      dummy="dummy"
    }   
@@ -74,8 +86,18 @@ print_alos = eventReactive(input$alos_kc_process, {
          } else if (input$ALOS_AOI == "AOI_shape_local"){
             df = parseFilePaths(volumes, input$shapefile)
             AOI = as.character(df[,"datapath"])
-         } else if (input$ALOS_AOI == "AOI_shape_upload"){
-            AOI = input$shapefile_path
+         } else if (input$ALOS_AOI == "AOI_zip_upload"){
+           
+            df = input$zipfile_path
+            print(df)
+            ARCHIVE = df$datapath
+            print(ARCHIVE)
+            OUT_ARCHIVE = paste(DIR, "/AOI", sep = "")
+            print(OUT_ARCHIVE)
+            dir.create(OUT_ARCHIVE)
+            unzip(ARCHIVE, junkpaths = TRUE, exdir = OUT_ARCHIVE)
+            AOI_SHP=list.files(OUT_ARCHIVE, pattern = "*.shp")
+            AOI = paste(OUT_ARCHIVE,"/",AOI_SHP,sep = "")
          } 
    
          # get year from input
@@ -96,19 +118,15 @@ print_alos = eventReactive(input$alos_kc_process, {
          write(PW, FILE, append = TRUE)
          rm(UNAME)
          rm(PW)
-    
-         
+
          kc_start_message="Started processing (this will take a few hours)"
          kc_start_js_string <- 'alert("Attention");'
          kc_start_js_string <- sub("Attention",kc_start_message,kc_start_js_string)
          session$sendCustomMessage(type='jsCode', list(value = kc_start_js_string))
          # print command
-         ARG_DOWN= paste(DIR, AOI, YEAR, SPECKLE, FILE)
-         #print(paste("poft-sar-ALOS-KC-full", ARG_DOWN))
+         ARG_DOWN= paste(DIR, AOI, YEAR, SPECKLE, FILE, "")
+         print(paste("poft-sar-ALOS-KC-full", ARG_DOWN))
          system(paste("poft-sar-ALOS-KC-full", ARG_DOWN), intern=TRUE)
-         #system2("bash", ARGS_FIN, wait = TRUE)
-         #system2("poft-sar-ALOS-KC-full", ARG_DOWN, stdout=TRUE)
-         
          kc_end_message="Finished processing"
          kc_end_js_string <- 'alert("SUCCESS");'
          kc_end_js_string <- sub("SUCCESS",kc_end_message,kc_end_js_string)

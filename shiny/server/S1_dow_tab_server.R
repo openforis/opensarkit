@@ -34,22 +34,37 @@ output$S1_dow_filepath = renderPrint({
 print_S1_dow = eventReactive(input$S1_download, {
   
   volumes = c('User directory'=Sys.getenv("HOME"))
-  
+  dummy=""
   # check if processing directory is chosen
   if (is.null(input$S1_dow_directory)){
     s1_dow_empty_dir_message="No download folder chosen"
     s1_dow_ed_js_string <- 'alert("SOMETHING");'
     s1_dow_ed_js_string <- sub("SOMETHING",s1_dow_empty_dir_message,s1_dow_ed_js_string)
     session$sendCustomMessage(type='jsCode', list(value = s1_dow_ed_js_string))
-  } else if (is.null(input$S1_dow_shapefile)){
-    s1_dow_empty_shp_message="No inventory shapefile chosen"
+  } else if (input$S1_DOWNFILE == "S1_AOI_shape_local"){
+  
+      if (is.null(input$S1_dow_shapefile)){
+        s1_dow_empty_shp_message="No inventory shapefile chosen"
+        s1_dow_ef_js_string <- 'alert("SOMETHING");'
+        s1_dow_ef_js_string <- sub("SOMETHING",s1_dow_empty_shp_message,s1_dow_ef_js_string)
+        session$sendCustomMessage(type='jsCode', list(value = s1_dow_ef_js_string))
+      } else {
+        dummy="dummy"
+      }
+    
+  } else if (input$S1_DOWNFILE == "S1_AOI_zip_upload"){
+  
+    if (is.null(input$S1_zipfile_path)){
+      s1_dow_empty_shp_message="No zip archive chosen"
       s1_dow_ef_js_string <- 'alert("SOMETHING");'
       s1_dow_ef_js_string <- sub("SOMETHING",s1_dow_empty_shp_message,s1_dow_ef_js_string)
       session$sendCustomMessage(type='jsCode', list(value = s1_dow_ef_js_string))
-  } else {
+    } else {
       dummy="dummy"
-  }
-  
+    }
+  } else {
+    dummy="dummy"
+  }  
   
   if (dummy == "dummy"){
     
@@ -58,8 +73,13 @@ print_S1_dow = eventReactive(input$S1_download, {
     DIR = parseDirPath(volumes, input$S1_dow_directory)
     
     # get inventory shapefile
-    df = parseFilePaths(volumes, input$S1_dow_shapefile)
-    INV_FILE = as.character(df[,"datapath"])
+    df = input$S1_zipfile_path
+    ARCHIVE = df$datapath
+    OUT_ARCHIVE = paste(DIR, "/Inventory_upload", sep = "")
+    dir.create(OUT_ARCHIVE)
+    unzip(ARCHIVE, junkpaths = TRUE, exdir = OUT_ARCHIVE)
+    OST_inv=list.files(OUT_ARCHIVE, pattern = "*.shp")
+    INV_FILE = paste(OUT_ARCHIVE,"/",OST_inv,sep = "")
     
     # handling username and password data
     UNAME = paste("http_user=",input$s1_asf_uname, sep = "")
@@ -75,13 +95,13 @@ print_S1_dow = eventReactive(input$S1_download, {
     
     ARG_DOWN=paste(DIR, INV_FILE, FILE)
     
-    
     s1_dow_start_message="Started downloading (this will take a few hours)"
     s1_dow_js_string <- 'alert("Attention");'
     s1_dow_js_string <- sub("Attention",s1_dow_start_message,s1_dow_js_string)
     session$sendCustomMessage(type='jsCode', list(value = s1_dow_js_string))
+    print(paste("oft-sar-S1-ASF-download",ARG_DOWN),intern=FALSE)
     system(paste("oft-sar-S1-ASF-download",ARG_DOWN),intern=FALSE)
-    #paste("command")
+    unlink(FILE)
     s1_dow_end_message="Finished downloading"
     s1_dow_js_string <- 'alert("SUCCESS");'
     s1_dow_js_string <- sub("SUCCESS",s1_dow_end_message,s1_dow_js_string)

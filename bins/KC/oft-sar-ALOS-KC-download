@@ -167,15 +167,15 @@ echo "   <OGRVRTLayer name=\"${LAYER}\">" >> ${TMP_DIR}/intersect.vrt
 echo "      <SrcDataSource>${AOI}</SrcDataSource>" >> ${TMP_DIR}/intersect.vrt
 echo "   </OGRVRTLayer>" >> ${TMP_DIR}/intersect.vrt
 echo "   <OGRVRTLayer name=\"kc_grid\">" >> ${TMP_DIR}/intersect.vrt
-echo "      <SrcDataSource>${DB_GLOBAL}</SrcDataSource>" >> ${TMP_DIR}/intersect.vrt
+echo "      <SrcDataSource>${OST_DB}</SrcDataSource>" >> ${TMP_DIR}/intersect.vrt
 echo "   </OGRVRTLayer>" >> ${TMP_DIR}/intersect.vrt
 echo "</OGRVRTDataSource>" >> ${TMP_DIR}/intersect.vrt
 
 # intersect with ogr2ogr
 SECONDS=0
 echo -ne " Checking which 5x5 degree K&C tiles are intersecting with the area of interest ..."	&&
-ogr2ogr -f "csv" ${TMP_DIR}/tiles.csv ${TMP_DIR}/intersect.vrt -dialect sqlite -sql "SELECT b.x_min,b.y_max FROM ${LAYER} a, kc_grid b WHERE ST_Intersects(a.geometry, b.geometry)" \
-& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+ogr2ogr -f "csv" ${TMP_DIR}/tiles.csv ${TMP_DIR}/intersect.vrt -dialect sqlite -sql "SELECT b.x_min,b.y_max FROM ${LAYER} a, kc_grid b WHERE ST_Intersects(a.geometry, b.geom)" >> $TMP_DIR/log_ogr2ogr
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 # get tile list
 cat ${TMP_DIR}/tiles.csv | tail -n +2 | tr ',' '\ ' > ${TMP_DIR}/kc_list
@@ -190,14 +190,14 @@ i=1
 while read LINE; do
 
 	cd ${OUT_DIR}
-	#echo $LINE
+
 	COL=`echo ${LINE} | awk $'{print $1}'`
 	ROW=`echo ${LINE} | awk $'{print $2}'`
 
 	# Create the actual Grid code for exact download address
 	if [ `echo $ROW | grep -` ];then 
 
-		# eliminate - sign 
+		# eliminate - sign #
 		ROW=`echo ${ROW} | sed 's|-||g'`
 
 		# create ROW in Form SXX
@@ -251,28 +251,28 @@ while read LINE; do
 			COL=E00${COL}
 		fi
 	fi
-#set -x
+
 	if [ ${YEAR} -gt 2010 ];then
 		SECONDS=0
 		echo -ne " Downloading backscatter data tile $i/${NR_OF_TILES} (${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz) ..." &&
-		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS-2/ext1/PALSAR-2_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS_F02DAR.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz & spinner $! &&  
+		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS-2/ext1/PALSAR-2_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS_F02DAR.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz 
 		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 		SECONDS=0
 		echo -ne " Downloading forest/non-forest data tile $i/${NR_OF_TILES} (${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz) ..." &&
-		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS-2/ext1/PALSAR-2_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF_F02DAR.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz & spinner $! && 
-		spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS-2/ext1/PALSAR-2_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF_F02DAR.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz 
+		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 	else
 
 		SECONDS=0
 		echo -ne " Downloading backscatter data tile $i/${NR_OF_TILES} (${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz) ... " &&
-		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz & spinner $! && 
+		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz 
 		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 		SECONDS=0
 		echo -ne " Downloading forest/non-forest data tile $i/${NR_OF_TILES} (${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz) ..." &&
-		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz & spinner $! &&  
+		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz 
 		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 	fi
 

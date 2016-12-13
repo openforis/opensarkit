@@ -22,15 +22,28 @@ tabItem(tabName = "s1_dow",
             verbatimTextOutput("S1_dow_project_dir"),
             hr(),
             tags$b("2) OST S1 inventory file"),
+            
+            radioButtons("S1_DOWNFILE", "",
+                         c("OST Inventory Shapefile (local/on server)" = "S1_AOI_shape_local",
+                           "OST Inventory Shapefile (upload zipped archive)" = "S1_AOI_zip_upload")),
+            
+            conditionalPanel(
+              "input.S1_DOWNFILE == 'S1_AOI_shape_local'",
             p("Note: This browse should point to an OST inventory file created under the data inventory tab."),
             br(),
             shinyFilesButton("S1_dow_shapefile","Choose file","Choose one or more files",FALSE),
             br(),
             br(),
-            verbatimTextOutput("S1_dow_filepath"),
+            verbatimTextOutput("S1_dow_filepath")
+            ),
+            
+            conditionalPanel(
+              "input.S1_DOWNFILE == 'S1_AOI_zip_upload'",
+              fileInput('S1_zipfile_path', label = 'Browse',accept = c(".zip"))
+            ),
             hr(),
             tags$b("3) Provide your NASA Earthdata username/password."), 
-            p("If you are not in possess of a user account you can create one ",a(href = "https://urs.earthdata.nasa.gov/", "here"),"."),
+            p("If you are not in possess of a user account you can create one ",a(href = "https://urs.earthdata.nasa.gov/",target="_blank", "here"),"."),
             br(),
             textInput(inputId = "s1_asf_uname",
                 label = "Username", 

@@ -40,7 +40,7 @@ if [ "$#" != "3" ]; then
 	echo -e ""
 	echo -e " input parameters:"
 	echo -e "  filename		(input) filename of the downloaded zip file"
-	echo -e "  output_folder		(output) pathname of the output folder"
+	echo -e "  output_folder	(output) pathname of the output folder"
 	echo -e "  mode			processing mode"
 	echo -e "			  Available choices:"
 	echo -e "			  HI_RES (10m output) "
@@ -88,14 +88,14 @@ fi
 if [[ ${POL_MODE} == "SDV" ]];then
 	SECONDS=0
 	echo -ne " Creating final output file (Band 1: VV, Band 2: VH, Band 3 VV/VH ratio) ..."
-	gdal_merge.py -o ${OUT_DIR}/${SCENE_ID}"_RTC".tif -n 0 -a_nodata 0 -separate ${TMP_DIR}/${SCENE_ID}"_RTC".data/Gamma0_VV_db.img ${TMP_DIR}/${SCENE_ID}"_RTC".data/Gamma0_VH_db.img ${TMP_DIR}/${SCENE_ID}"_RTC".data/VV-VH_ratio.img > $OUT_DIR/log_export 2>&1 \
-   & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	gdal_merge.py -o ${OUT_DIR}/${SCENE_ID}"_RTC".tif -n 0 -a_nodata 0 -separate ${TMP_DIR}/${SCENE_ID}"_RTC".data/Gamma0_VV_db.img ${TMP_DIR}/${SCENE_ID}"_RTC".data/Gamma0_VH_db.img ${TMP_DIR}/${SCENE_ID}"_RTC".data/VV-VH_ratio.img > $OUT_DIR/log_export 2>&1 
+        duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 elif [[ ${POL_MODE} == "SSV" ]];then
 	SECONDS=0
 	echo -ne " Creating final output file (Band 1: VV) ..."
-	gdal_translate -a_nodata 0 ${TMP_DIR}/${SCENE_ID}"_RTC".data/Gamma0_VV_db.img ${OUT_DIR}/${SCENE_ID}"_RTC".tif > $OUT_DIR/log_export 2>&1 \
-   & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	gdal_translate -a_nodata 0 ${TMP_DIR}/${SCENE_ID}"_RTC".data/Gamma0_VV_db.img ${OUT_DIR}/${SCENE_ID}"_RTC".tif > $OUT_DIR/log_export 2>&1 
+        duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 fi
 
 rm -rf ${TMP1}

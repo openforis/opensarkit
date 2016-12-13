@@ -86,6 +86,26 @@ output$s1_g2r_outfolder2 = renderPrint({
 })
 
 #---------------------------------------------------------------------------
+# Zip file
+# output folder 
+output$s1_g2r_outfolder3 = renderPrint({
+  
+  # root directory for file selection
+  volumes = c('User directory'=Sys.getenv("HOME"))
+  shinyDirChoose(input, 's1_g2r_outdir3', roots=volumes)
+  
+  validate (
+    need(input$s1_g2r_outdir3 != "","No folder selected"),
+    errorClass = "missing-folder"
+  )
+  
+  df = parseDirPath(volumes, input$s1_g2r_outdir3)
+  cat(df) #}
+})
+#---------------------------------------------------------------------------
+
+
+#---------------------------------------------------------------------------
 # Processing functions
 print_s1_g2r = eventReactive(input$s1_g2r_process, {
   
@@ -158,7 +178,7 @@ if (input$s1_g2r_input_type == "file"){
       MODE = "HI_RES" 
     }
     
-    ARG_PROC=paste(OUTDIR, MODE, "0")
+    ARG_PROC=paste(OUTDIR, MODE, "0","> ~/log_processing")
     print(paste("oft-sar-S1-GRD-MT-bulk-preprocess", ARG_PROC))
     
     s1_g2r_message="Processing started (This can take a considerable amount of time, dependent on the number of images to be processed)"
@@ -187,7 +207,7 @@ if (input$s1_g2r_input_type == "file"){
     s1_g2t_shp_js_string <- sub("SOMETHING",s1_g2t_shp_empty_dir_message, s1_g2t_shp_js_string)
     session$sendCustomMessage(type='jsCode', list(value = s1_g2t_shp_js_string))
   }
-  
+
   else {
     
     # download
@@ -198,15 +218,14 @@ if (input$s1_g2r_input_type == "file"){
     OUTDIR = parseDirPath(volumes, input$s1_g2r_outdir2)
     
     # handling username and password data
-    UNAME = paste("http_user=",input$s1_asf_uname, sep = "")
-    PW = paste("http_password=",input$s1_asf_piwo,sep="")
+    UNAME = paste("http_user=",input$s1_asf_uname3, sep = "")
+    PW = paste("http_password=",input$s1_asf_piwo3,sep="")
     HOME_DIR = Sys.getenv("HOME")
     FILE = file.path(HOME_DIR,"wget.conf")
     write(UNAME, FILE)
     write(PW, FILE, append = TRUE)
     rm(UNAME)
     rm(PW)
-    system("echo $USER", intern=FALSE)
     system(paste("chmod 600",FILE), intern=TRUE)
     
     s1_g2r_message="Download of scenes started (This can take some time.)"
@@ -216,7 +235,7 @@ if (input$s1_g2r_input_type == "file"){
     ARG_DOWN=paste(OUTDIR, INFILE, FILE)
     print(paste("oft-sar-S1-ASF-download", ARG_DOWN))
     system(paste("oft-sar-S1-ASF-download", ARG_DOWN),intern=TRUE)
-    
+    unlink(FILE)
     # processing
     if (input$s1_g2r_res == "med_res"){
       MODE = "MED_RES" 
@@ -237,7 +256,79 @@ if (input$s1_g2r_input_type == "file"){
     js_string_s1_g2r_fin <- sub("Processing",s1_g2r_fin_message,js_string_s1_g2r_fin)
     session$sendCustomMessage(type='jsCode', list(value = js_string_s1_g2r_fin))
   } 
+} else if (input$s1_g2r_input_type == "zipfile"){
+  
+  if(is.null(input$S1_grd2rtc_zipfile_path)){
+    s1_g2t_file_empty_shp_message="No zip archive chosen"
+    s1_g2t_file_js_string <- 'alert("SOMETHING");'
+    s1_g2t_file_js_string <- sub("SOMETHING",s1_g2t_file_empty_shp_message,s1_g2t_file_js_string)
+    session$sendCustomMessage(type='jsCode', list(value = s1_g2t_file_js_string))
+  } 
+  
+  else if(is.null(input$s1_g2r_outdir3)){
+    s1_g2t_shp_empty_dir_message="No output folder chosen"
+    s1_g2t_shp_js_string <- 'alert("SOMETHING");'
+    s1_g2t_shp_js_string <- sub("SOMETHING",s1_g2t_shp_empty_dir_message, s1_g2t_shp_js_string)
+    session$sendCustomMessage(type='jsCode', list(value = s1_g2t_shp_js_string))
+  }
+  
+  else {
+    
+    volumes = c('User directory'=Sys.getenv("HOME"))
+    OUTDIR = parseDirPath(volumes, input$s1_g2r_outdir3)
+    
+    df = input$S1_grd2rtc_zipfile_path
+    ARCHIVE = df$datapath
+    OUT_ARCHIVE = paste(OUTDIR, "/Inventory_upload", sep = "")
+    dir.create(OUT_ARCHIVE)
+    unzip(ARCHIVE, junkpaths = TRUE, exdir = OUT_ARCHIVE)
+    OST_inv=list.files(OUT_ARCHIVE, pattern = "*.shp")
+    INFILE = paste(OUT_ARCHIVE,"/",OST_inv,sep = "")
+    
+    # handling username and password data
+    UNAME = paste("http_user=",input$s1_asf_uname3, sep = "")
+    PW = paste("http_password=",input$s1_asf_piwo3,sep="")
+    HOME_DIR = Sys.getenv("HOME")
+    FILE = file.path(HOME_DIR,"wget.conf")
+    print(FILE)
+    write(UNAME, FILE)
+    write(PW, FILE, append = TRUE)
+    rm(UNAME)
+    rm(PW)
+    system("echo $USER", intern=FALSE)
+    system(paste("chmod 600",FILE), intern=TRUE)
+    
+    s1_g2r_message="Download of scenes started (This can take some time.)"
+    js_string_s1_g2r <- 'alert("Download");'
+    js_string_s1_g2r <- sub("Download",s1_g2r_message,js_string_s1_g2r)
+    session$sendCustomMessage(type='jsCode', list(value = js_string_s1_g2r))
+    ARG_DOWN=paste(OUTDIR, INFILE, FILE)
+    print(paste("oft-sar-S1-ASF-download", ARG_DOWN))
+    system(paste("oft-sar-S1-ASF-download", ARG_DOWN),intern=TRUE)
+    #unlink(FILE)
+    # processing
+    if (input$s1_g2r_res == "med_res"){
+      MODE = "MED_RES" 
+    } 
+    else if (input$s1_inv_pol == "full_res"){
+      MODE = "HI_RES" 
+    }
+    s1_g2r_message2="Download finished. Start to process the imagery. Stay patient!"
+    js_string_s1_g2r2 <- 'alert("Processing");'
+    js_string_s1_g2r2 <- sub("Processing",s1_g2r_message2,js_string_s1_g2r2)
+    session$sendCustomMessage(type='jsCode', list(value = js_string_s1_g2r2))
+    OUTDIR_DATA = paste(OUTDIR,"/DATA",sep="")
+    ARG_PROC=paste(OUTDIR_DATA, MODE, "0")
+    print(paste("oft-sar-S1-GRD-MT-bulk-preprocess", ARG_PROC))
+    system(paste("oft-sar-S1-GRD-MT-bulk-preprocess", ARG_PROC),intern=TRUE)
+    s1_g2r_fin_message="Processing finished"
+    js_string_s1_g2r_fin <- 'alert("Processing");'
+    js_string_s1_g2r_fin <- sub("Processing",s1_g2r_fin_message,js_string_s1_g2r_fin)
+    session$sendCustomMessage(type='jsCode', list(value = js_string_s1_g2r_fin))
+    
+  }
 }
+
 })
 
 

@@ -98,8 +98,8 @@ SECONDS=0
 ogrinfo $2 -al | grep Product_ID | sed 's/  Product_ID (String) = //g' | tail -n +2 > ${TMP_DIR}/tmp_download_list &&
 ogrinfo $2 -al | grep Track | sed 's/  Track (Integer) = //g' | tail -n +2 > ${TMP_DIR}/tmp_track_list &&
 ogrinfo $2 -al | grep Orbit_Dir | sed 's/  Orbit_Dir (String) = //g' | tail -n +2 | cut -c -1 > ${TMP_DIR}/tmp_orb_dir_list &&
-ogrinfo $2 -al | grep Date | sed 's/  Date (Integer) = //g'| tail -n +2 > ${TMP_DIR}/tmp_date_list \
-& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+ogrinfo $2 -al | grep Date | sed 's/  Date (Integer) = //g'| tail -n +2 > ${TMP_DIR}/tmp_date_list 
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 echo ""
 
 # counter for info on number of download products
@@ -131,8 +131,8 @@ while read line; do
 		i=1
 		SECONDS=0
 		echo -ne " Downloading Product ${COUNT} of ${NR} (Granule: ${SCENE}) " &&
-		wget -c -P ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/ "${LINK}" >> $TMP_DIR/log_download_$COUNT 2>&1 & spinner $! \
-		&& duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+		wget -c -P ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/ "${LINK}" >> $TMP_DIR/log_download_$COUNT 2>&1 
+		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 #			aria2c --load-cookies="${TMP_DIR}/cookies.txt" --dir=${PROC_DIR}/${MODE}/${ACQ_DATE}-${TRACK} --continue=true "${line}" > ${TMP_DIR}/tmp_error \
 
 		if grep -q "100%" ${TMP_DIR}/log_download_$COUNT;then
