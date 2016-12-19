@@ -8,3 +8,7 @@ OpenSARKit_source.bash
 to-do_OSK.odt
 
 shiny/ost.R
+
+shiny/.RHistory
+
+.DS_Store

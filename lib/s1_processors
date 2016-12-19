@@ -1,3 +1,5 @@
+#! /bin/bash
+
 # The MIT License (MIT)
 # Copyright (c) 2016 Andreas Vollrath
 
@@ -86,7 +88,7 @@ function s1_swath_import() {
 
 	    SECONDS=0
 	    echo -ne " Assembling the products of the same swath ..." &&
-       	    bash $SNAP_EXE SliceAssembly -PselectedPolarisations=VV $(ls -1 $3/*-import.dim | tr '\n' ' ' | rev | cut -c 2- | rev) -t $2 > $4/log_swath_assembly 2>&1 
+       	bash $SNAP_EXE SliceAssembly -PselectedPolarisations=VV $(ls -1 $3/*-import.dim | tr '\n' ' ' | rev | cut -c 2- | rev) -t $2 > $4/log_swath_assembly 2>&1 
 	    duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 	    [ $? -ne 0 ] && return ${ERR_ASSEMBLE}
 	    rm -rf $3/*-import.dim.d*
@@ -137,9 +139,9 @@ function s1_rtc_processing() {
 			elif [[ $4 == 1 && $5 == 0 ]];then # ratio but no db scale
 
 				SECONDS=0
-	      			echo -ne " Applying the geometric terrain correction, and calculate the VV/VH Band Ratio  ..." &&
+	      		echo -ne " Applying the geometric terrain correction, and calculate the VV/VH Band Ratio  ..." &&
 				bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TC_Ratio.xml -x -Pinput=$6/TF.dim -Poutput=$6/TC -PoutputRatio=$6/Ratio > $7/log_ratio 2>&1 
-    				duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 				[ $? -ne 0 ] && return ${ERR_TC} 
       		rm -rf $6/TF.d*
 
@@ -397,20 +399,20 @@ function s1_mt_metrics() {
 	STACK_DATA=${STACK_NAME}.data
 
 	sed -i 's|Gamma0_VV_2|Gamma0_VV_max|g' ${STACK_DIM}
-    	sed -i 's|Gamma0_VV_3|Gamma0_VV_min|g' ${STACK_DIM}
+    sed -i 's|Gamma0_VV_3|Gamma0_VV_min|g' ${STACK_DIM}
 	sed -i 's|Gamma0_VV_4|Gamma0_VV_stddev|g' ${STACK_DIM}
-       	sed -i 's|Gamma0_VV_5|Gamma0_VV_coef_of_var|g' ${STACK_DIM}
+    sed -i 's|Gamma0_VV_5|Gamma0_VV_coef_of_var|g' ${STACK_DIM}
 	sed -i 's|\<Gamma0_VV\>|Gamma0_VV_mean|g' ${STACK_DIM}
-        mv ${STACK_DATA}/Gamma0_VV.img ${STACK_DATA}/Gamma0_VV_mean.img
-       	mv ${STACK_DATA}/Gamma0_VV.hdr ${STACK_DATA}/Gamma0_VV_mean.hdr
+    mv ${STACK_DATA}/Gamma0_VV.img ${STACK_DATA}/Gamma0_VV_mean.img
+    mv ${STACK_DATA}/Gamma0_VV.hdr ${STACK_DATA}/Gamma0_VV_mean.hdr
 	mv ${STACK_DATA}/Gamma0_VV_2.img ${STACK_DATA}/Gamma0_VV_max.img
    	mv ${STACK_DATA}/Gamma0_VV_2.hdr ${STACK_DATA}/Gamma0_VV_max.hdr
-    	mv ${STACK_DATA}/Gamma0_VV_3.img ${STACK_DATA}/Gamma0_VV_min.img
-    	mv ${STACK_DATA}/Gamma0_VV_3.hdr ${STACK_DATA}/Gamma0_VV_min.hdr
-    	mv ${STACK_DATA}/Gamma0_VV_4.img ${STACK_DATA}/Gamma0_VV_stddev.img
+    mv ${STACK_DATA}/Gamma0_VV_3.img ${STACK_DATA}/Gamma0_VV_min.img
+    mv ${STACK_DATA}/Gamma0_VV_3.hdr ${STACK_DATA}/Gamma0_VV_min.hdr
+    mv ${STACK_DATA}/Gamma0_VV_4.img ${STACK_DATA}/Gamma0_VV_stddev.img
    	mv ${STACK_DATA}/Gamma0_VV_4.hdr ${STACK_DATA}/Gamma0_VV_stddev.hdr
    	mv ${STACK_DATA}/Gamma0_VV_5.img ${STACK_DATA}/Gamma0_VV_coef_of_var.img
-    	mv ${STACK_DATA}/Gamma0_VV_5.hdr ${STACK_DATA}/Gamma0_VV_coef_of_var.hdr
+    mv ${STACK_DATA}/Gamma0_VV_5.hdr ${STACK_DATA}/Gamma0_VV_coef_of_var.hdr
 
 
     elif [ $3 == VH ];then

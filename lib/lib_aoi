@@ -47,15 +47,15 @@ function aoi_valid_poly() {
 		echo -e " Warning: Too many layers in your AOI File."
 		echo -ne " Will create a convex hull of your AOI ..." &&
 		oft_convex_hull.py -i $1 -o $2 & spinner $!
-		cp ${AOI_PROJ_FILE}.prj ${OUT_PROJ_FILE}.prj & spinner $! \
-		& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+		cp ${AOI_PROJ_FILE}.prj ${OUT_PROJ_FILE}.prj & spinner $! 
+		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
  	 elif [ ${AOI_NR_OF_FEATURES} -gt 1 ];then
 		SECONDS=0
 		echo -e " Warning: Too many polygons in your AOI file."
 		echo -ne " Will create a convex hull of your AOI file ..." &&
 		oft_convex_hull.py -i $1 -o $2 & spinner $!
-		cp ${AOI_PROJ_FILE}.prj ${OUT_PROJ_FILE}.prj & spinner $! \
-		& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+		cp ${AOI_PROJ_FILE}.prj ${OUT_PROJ_FILE}.prj & spinner $! 
+		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 	 fi
 }
 
@@ -74,8 +74,8 @@ function aoi_valid_epsg() {
 		SECONDS=0
 		echo " Warning: Shapefile is not in Lat/Long Projection"
 		echo -ne " Transforming AOI shapefile to Lat/Long Projection ..." &&
-		ogr2ogr -f "ESRI Shapefile" -t_srs EPSG:4326 $2 $1 > /dev/null 2>&1 \
-		& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+		ogr2ogr -f "ESRI Shapefile" -t_srs EPSG:4326 $2 $1 > /dev/null 2>&1 
+		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 	fi
 }
 
@@ -94,15 +94,15 @@ COUNTRY=`echo "SELECT name FROM countries WHERE \"iso3\" = '$1';" | spatialite $
 
 SECONDS=0
 echo -ne " Extracting country boundaries for ${COUNTRY} ..." &&
-ogr2ogr -f "Esri Shapefile" $2/$1.shp ${OST_DB} -dsco SPATIALITE=yes -where "\"iso3\" = \"${1}\"" -nln AOI countries > /dev/null 2>&1 \
-& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+ogr2ogr -f "Esri Shapefile" $2/$1.shp ${OST_DB} -dsco SPATIALITE=yes -where "\"iso3\" = \"${1}\"" -nln AOI countries > /dev/null 2>&1 
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 		
 AOI=${OUT_DIR}/AOI/$2.shp
 
 SECONDS=0
 echo -ne " Creating a 0.1 degree buffered shapefile ..."	&&
-ogr2ogr -f "Esri Shapefile" $2/$1_"buffer.shp" ${OST_DB} -dsco SPATIALITE=yes -sql "select ST_union(ST_buffer(geom,0.1)) from countries where \"iso3\" = \"${1}\"" > /dev/null 2>&1 \
-& spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+ogr2ogr -f "Esri Shapefile" $2/$1_"buffer.shp" ${OST_DB} -dsco SPATIALITE=yes -sql "select ST_union(ST_buffer(geom,0.1)) from countries where \"iso3\" = \"${1}\"" > /dev/null 2>&1 
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 		
 AOI_BUF=${OUT_DIR}/AOI/$2"_buffer.shp"
 }

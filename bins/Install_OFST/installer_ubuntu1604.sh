@@ -195,7 +195,7 @@ duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duratio
 
 SECONDS=0
 echo -ne " Installing dependencies from Ubuntu package list ..."
-apt-get install --yes --allow-unauthenticated gdal-bin libgdal-dev python-gdal saga libsaga-dev python-saga geotiff-bin libgeotiff-dev dans-gdal-scripts spatialite-bin spatialite-gui \
+apt-get install --yes --allow-unauthenticated gdal-bin libgdal-dev python-gdal saga libsaga-dev python-saga geotiff-bin libgeotiff-dev spatialite-bin spatialite-gui \
 libcunit1-dev libfftw3-dev libshp-dev libtiff5-dev libproj-dev flex bison libgsl0-dev gsl-bin libglade2-dev libgtk2.0-dev pkg-config \
 python-scipy python-h5py aria2 unrar parallel xml-twig-tools git libxinerama-dev libxrandr-dev libxcursor-dev swig r-base libv8-3.14-dev >> ${OSK_HOME}/LOG/log_install 2>&1 
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
