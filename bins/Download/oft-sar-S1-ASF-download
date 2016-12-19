@@ -111,15 +111,15 @@ COUNT=1
 while read line; do 
 
 	# get the data via the UUID
-	LINK=`echo $line | awk -F ";" '{print $1}'`		
-	TRACK=`echo $line | awk -F ";" '{print $2}'`
+	LINK=`echo $line | awk -F "\;" '{print $1}'`		
+	TRACK=`echo $line | awk -F "\;" '{print $2}'`
 	if [ `echo $TRACK | wc -c` -eq 2 ];then
 		TRACK=`echo "00${TRACK}"`
 	elif [ `echo $TRACK | wc -c` -eq 3 ];then
 		TRACK=`echo "0${TRACK}"`
 	fi
-	ORB_DIR=`echo $line | awk -F ";" '{print $3}'`
-	DATE=`echo $line | awk -F ";" '{print $4}'`
+	ORB_DIR=`echo $line | awk -F "\;" '{print $3}'`
+	DATE=`echo $line | awk -F "\;" '{print $4}'`
 	mkdir -p ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/
 
 	# prepare a loop to avoid uncomplete data downloads		

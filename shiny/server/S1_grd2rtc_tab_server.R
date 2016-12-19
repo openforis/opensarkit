@@ -286,8 +286,8 @@ if (input$s1_g2r_input_type == "file"){
     INFILE = paste(OUT_ARCHIVE,"/",OST_inv,sep = "")
     
     # handling username and password data
-    UNAME = paste("http_user=",input$s1_asf_uname3, sep = "")
-    PW = paste("http_password=",input$s1_asf_piwo3,sep="")
+    UNAME = paste("http_user=",input$s1_asf_uname4, sep = "")
+    PW = paste("http_password=",input$s1_asf_piwo4,sep="")
     HOME_DIR = Sys.getenv("HOME")
     FILE = file.path(HOME_DIR,"wget.conf")
     print(FILE)

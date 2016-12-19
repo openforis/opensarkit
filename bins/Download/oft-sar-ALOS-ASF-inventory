@@ -125,7 +125,7 @@ else # country case
 fi
 
 ogr2ogr -f CSV ${TMP_DIR}/AOI_WKT.csv ${TMP_DIR}/aoi_convex.shp -lco GEOMETRY=AS_WKT
-AOI=`grep POLYGON ${TMP_DIR}/AOI_WKT.csv | sed 's|\"POLYGON ((||g' | awk -F "))" $'{print $1}' | sed 's/\ /,/g'`
+AOI=`grep POLYGON ${TMP_DIR}/AOI_WKT.csv | sed 's|\"POLYGON ((||g' | awk -F "\)\)" $'{print $1}' | sed 's/\ /,/g'`
 
 # Search Parameters
 PERIOD="start="${START}"T11:59:59UTC&end="${END}"T00:00:00UTC"

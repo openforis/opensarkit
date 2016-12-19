@@ -136,10 +136,10 @@ fi
 SECONDS=0
 echo -ne " Create Query URL from search parameters ... " 
 LAYER=`ogrinfo $AOI | grep 1: | awk $'{print $2}'` 
-X_MIN=`ogrinfo $AOI $LAYER | grep Extent | awk -F '(' $'{print $2}' | awk -F ','  $'{print $1}'` 
-X_MAX=`ogrinfo $AOI $LAYER | grep Extent | awk -F '(' $'{print $3}' | awk -F ','  $'{print $1}'` 
-Y_MIN=`ogrinfo $AOI $LAYER | grep Extent | awk -F ',' $'{print $2}' | awk -F ')' $'{print $1}'` 
-Y_MAX=`ogrinfo $AOI $LAYER | grep Extent | awk -F ',' $'{print $3}' | awk -F ')' $'{print $1}'` 
+X_MIN=`ogrinfo $AOI $LAYER | grep Extent | awk -F '\(' $'{print $2}' | awk -F '\,'  $'{print $1}'` 
+X_MAX=`ogrinfo $AOI $LAYER | grep Extent | awk -F '\(' $'{print $3}' | awk -F '\,'  $'{print $1}'` 
+Y_MIN=`ogrinfo $AOI $LAYER | grep Extent | awk -F '\,' $'{print $2}' | awk -F '\)' $'{print $1}'` 
+Y_MAX=`ogrinfo $AOI $LAYER | grep Extent | awk -F '\,' $'{print $3}' | awk -F '\)' $'{print $1}'` 
 AOI="POLYGON(($X_MIN$Y_MIN, $X_MIN$Y_MAX, $X_MAX$Y_MAX, $X_MAX$Y_MIN, $X_MIN$Y_MIN ))" 
 #QUERY_URL="https://scihub.esa.int/dhus//search?q=producttype:${PRODUCT_TYPE}+AND+polarisationMode:${POLAR}+AND+( footprint:\"Intersects($AOI)\")+AND+${PERIOD}&rows=10000&start=0" 
 QUERY_URL="https://scihub.copernicus.eu/apihub/search?q=producttype:${PRODUCT_TYPE}+AND+polarisationMode:${POLAR}+AND+( footprint:\"Intersects($AOI)\")+AND+${PERIOD}&rows=10000&start=0" 

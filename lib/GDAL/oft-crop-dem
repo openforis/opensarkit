@@ -50,14 +50,14 @@ if [ ${SATELLITE} == ALOS ];then
 	unzip -q -j "${FILE}" "${SCENE_ID}/workreport" -d ${TMP_DIR}
 
 	cd ${PROC_DIR}
-	UL_LAT=`cat ${TMP_DIR}/workreport | grep Brs_ImageSceneLeftTopLatitude | awk -F"=" $'{print $2}' | sed 's|"||g'`
-	UL_LON=`cat ${TMP_DIR}/workreport | grep Brs_ImageSceneLeftTopLongitude | awk -F"=" $'{print $2}' | sed 's|"||g'`
-	LR_LAT=`cat ${TMP_DIR}/workreport | grep Brs_ImageSceneRightBottomLatitude | awk -F"=" $'{print $2}' | sed 's|"||g'`
-	LR_LON=`cat ${TMP_DIR}/workreport | grep Brs_ImageSceneRightBottomLongitude | awk -F"=" $'{print $2}' | sed 's|"||g'`
-	UR_LAT=`cat ${TMP_DIR}/workreport | grep Brs_ImageSceneRightTopLatitude | awk -F"=" $'{print $2}' | sed 's|"||g'`
-	UR_LON=`cat ${TMP_DIR}/workreport | grep Brs_ImageSceneRightTopLongitude | awk -F"=" $'{print $2}' | sed 's|"||g'`
-	LL_LAT=`cat ${TMP_DIR}/workreport | grep Brs_ImageSceneLeftBottomLatitude | awk -F"=" $'{print $2}' | sed 's|"||g'`
-	LL_LON=`cat ${TMP_DIR}/workreport | grep Brs_ImageSceneLeftBottomLongitude | awk -F"=" $'{print $2}' | sed 's|"||g'`
+	UL_LAT=`cat ${TMP_DIR}/workreport | grep Brs_ImageSceneLeftTopLatitude | awk -F"\=" $'{print $2}' | sed 's|"||g'`
+	UL_LON=`cat ${TMP_DIR}/workreport | grep Brs_ImageSceneLeftTopLongitude | awk -F"\=" $'{print $2}' | sed 's|"||g'`
+	LR_LAT=`cat ${TMP_DIR}/workreport | grep Brs_ImageSceneRightBottomLatitude | awk -F"\=" $'{print $2}' | sed 's|"||g'`
+	LR_LON=`cat ${TMP_DIR}/workreport | grep Brs_ImageSceneRightBottomLongitude | awk -F"\=" $'{print $2}' | sed 's|"||g'`
+	UR_LAT=`cat ${TMP_DIR}/workreport | grep Brs_ImageSceneRightTopLatitude | awk -F"\=" $'{print $2}' | sed 's|"||g'`
+	UR_LON=`cat ${TMP_DIR}/workreport | grep Brs_ImageSceneRightTopLongitude | awk -F"\=" $'{print $2}' | sed 's|"||g'`
+	LL_LAT=`cat ${TMP_DIR}/workreport | grep Brs_ImageSceneLeftBottomLatitude | awk -F"\=" $'{print $2}' | sed 's|"||g'`
+	LL_LON=`cat ${TMP_DIR}/workreport | grep Brs_ImageSceneLeftBottomLongitude | awk -F"\=" $'{print $2}' | sed 's|"||g'`
 
 elif [ ${SATELLITE} == "Sentinel-1" ];then
 
@@ -65,14 +65,14 @@ elif [ ${SATELLITE} == "Sentinel-1" ];then
 	SCENE_ID=`echo ${BASE} | rev | cut -c 5- | rev`
 	unzip -q -j "${FILE}" "${SCENE_ID}.SAFE/preview/map-overlay.kml" -d ${TMP_DIR}
 
-	LR_LON=`cat map-overlay.kml | xml_grep coordinates --text_only | awk -F" " $'{print $1}' | awk -F","  $'{print $1}'`
-	LR_LAT=`cat map-overlay.kml | xml_grep coordinates --text_only | awk -F" " $'{print $1}' | awk -F","  $'{print $2}'`
-	LL_LON=`cat map-overlay.kml | xml_grep coordinates --text_only | awk -F" " $'{print $2}'| awk -F","  $'{print $1}'` 
-	LL_LAT=`cat map-overlay.kml | xml_grep coordinates --text_only | awk -F" " $'{print $2}' | awk -F","  $'{print $2}'`
- 	UL_LON=`cat map-overlay.kml | xml_grep coordinates --text_only | awk -F" " $'{print $3}' | awk -F","  $'{print $1}'` 
-	UL_LAT=`cat map-overlay.kml | xml_grep coordinates --text_only | awk -F" " $'{print $3}' | awk -F","  $'{print $2}'`
- 	UR_LON=`cat map-overlay.kml | xml_grep coordinates --text_only | awk -F" " $'{print $4}' | awk -F","  $'{print $1}'` 
-	UR_LAT=`cat map-overlay.kml | xml_grep coordinates --text_only | awk -F" " $'{print $4}' | awk -F","  $'{print $2}'`
+	LR_LON=`cat map-overlay.kml | xml_grep coordinates --text_only | awk -F"\ " $'{print $1}' | awk -F"\,"  $'{print $1}'`
+	LR_LAT=`cat map-overlay.kml | xml_grep coordinates --text_only | awk -F"\ " $'{print $1}' | awk -F"\,"  $'{print $2}'`
+	LL_LON=`cat map-overlay.kml | xml_grep coordinates --text_only | awk -F"\ " $'{print $2}'| awk -F"\,"  $'{print $1}'` 
+	LL_LAT=`cat map-overlay.kml | xml_grep coordinates --text_only | awk -F"\ " $'{print $2}' | awk -F"\,"  $'{print $2}'`
+ 	UL_LON=`cat map-overlay.kml | xml_grep coordinates --text_only | awk -F"\ " $'{print $3}' | awk -F"\,"  $'{print $1}'` 
+	UL_LAT=`cat map-overlay.kml | xml_grep coordinates --text_only | awk -F"\ " $'{print $3}' | awk -F"\,"  $'{print $2}'`
+ 	UR_LON=`cat map-overlay.kml | xml_grep coordinates --text_only | awk -F"\ " $'{print $4}' | awk -F"\,"  $'{print $1}'` 
+	UR_LAT=`cat map-overlay.kml | xml_grep coordinates --text_only | awk -F"\ " $'{print $4}' | awk -F"\,"  $'{print $2}'`
 fi	
 #----------------------------------------------------------------------------
 
