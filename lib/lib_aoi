@@ -46,15 +46,15 @@ function aoi_valid_poly() {
 		SECONDS=0
 		echo -e " Warning: Too many layers in your AOI File."
 		echo -ne " Will create a convex hull of your AOI ..." &&
-		oft_convex_hull.py -i $1 -o $2 & spinner $!
-		cp ${AOI_PROJ_FILE}.prj ${OUT_PROJ_FILE}.prj & spinner $! 
+		oft_convex_hull.py -i $1 -o $2 
+		cp ${AOI_PROJ_FILE}.prj ${OUT_PROJ_FILE}.prj 
 		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
  	 elif [ ${AOI_NR_OF_FEATURES} -gt 1 ];then
 		SECONDS=0
 		echo -e " Warning: Too many polygons in your AOI file."
 		echo -ne " Will create a convex hull of your AOI file ..." &&
-		oft_convex_hull.py -i $1 -o $2 & spinner $!
-		cp ${AOI_PROJ_FILE}.prj ${OUT_PROJ_FILE}.prj & spinner $! 
+		oft_convex_hull.py -i $1 -o $2 
+		cp ${AOI_PROJ_FILE}.prj ${OUT_PROJ_FILE}.prj 
 		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 	 fi
 }
