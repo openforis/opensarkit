@@ -151,7 +151,7 @@ tabItem(tabName = "s1_inv",
                                   a(href = "https://en.wikipedia.org/wiki/European_Data_Relay_System", "European Data Relay System (EDRS)"),
                                   ", constant image acqusition is in place since October 2016."),
                                p("Detailed information on the acquisition strategy can be found", 
-                                 a(href = "https://sentinel.esa.int/web/sentinel/missions/sentinel-1/observation-scenario", "here"), "."),
+                                 a(href = "https://sentinel.esa.int/web/sentinel/missions/sentinel-1/observation-scenario", target = "_blank", "here"), "."),
                                img(src = "Sentinel-1-revisit-frequency.jpg", width = "100%", height = "100%"),
                                tags$b("Figure 1: Revisit and coverage frequency of the SENTINEL-1 constellation as from October 2016 (image courtesy:ESA)."),
                                br(),
@@ -161,7 +161,7 @@ tabItem(tabName = "s1_inv",
                       tabPanel("Sensor Mode",
                                tags$h4("Sentinel-1 sensor modes"),
                                tags$i("Note that the content is adapted from"), 
-                               a(href = "https://sentinel.esa.int/web/sentinel/missions/sentinel-1", "ESA's Sentinel-1 webpage."),
+                               a(href = "https://sentinel.esa.int/web/sentinel/missions/sentinel-1", target = "_blank", "ESA's Sentinel-1 webpage."),
                                hr(),
                                p("SENTINEL-1 operates in four exclusive acquisition modes:"),
                                p(tags$b(" - Interferometric Wide Swath (IW):"), " IW is SENTINEL-1's primary operational mode over land masses 
@@ -182,7 +182,7 @@ tabItem(tabName = "s1_inv",
                       tabPanel("Processing Level",
                                tags$h4("Sentinel-1 processing levels"),
                                tags$i("Note that the content is adapted from"), 
-                               a(href = "https://sentinel.esa.int/web/sentinel/missions/sentinel-1", "ESA's Sentinel-1 webpage."),
+                               a(href = "https://sentinel.esa.int/web/sentinel/missions/sentinel-1", target = "_blank", "ESA's Sentinel-1 webpage."),
                                hr(),
                                p("SENTINEL-1 data products acquired in SM, IW and EW mode are operationally distributed at three levels of processing."),
                                p(" - Level-0 (Raw)"),
@@ -226,7 +226,7 @@ tabItem(tabName = "s1_inv",
                                br(),
                                tags$h4("References"),
                                tags$b("Information Material"),
-                               p("ESA (2016): Sentinel-1. Radar Vision for Copernicus", a (href = "http://esamultimedia.esa.int/multimedia/publications/sentinel-1/"), "Link","."),
+                               p("ESA (2016): Sentinel-1. Radar Vision for Copernicus", a (href = "http://esamultimedia.esa.int/multimedia/publications/sentinel-1/", target = "_blank", "Link"),"."),
                                tags$b("Websites"),
                                
                                tags$b("Scientific Articles"),
@@ -240,7 +240,7 @@ tabItem(tabName = "s1_inv",
                                p("Generally speaking, the use of Coperincus Sentinel data (including Sentinel-1) is open and free. However, any public
                                   communication material shall include a notice on the use and/or modification of the data.
                                  The full text on the use of Copernicus Sentinel Data and Service Information can be found",
-                                 a(href = "https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice", "here." )
+                                 a(href = "https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice", target = "_blank", "here." )
                                
                       )
                   ) # close tab box

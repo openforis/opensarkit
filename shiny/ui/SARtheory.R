@@ -40,9 +40,12 @@ tabItem(tabName = "SARtheory",
                             br(),
                             tags$h4("")
                    ),
-                   tabPanel("SAR acquisition",
+                   tabPanel("SAR principle",
                             br(),
-                            tags$h4("")
+                            tags$h4("Introduction"),
+                            p("Synthetic Aperture Radar is not an instrument, but rather refers to a signal processing technique
+                               that allows for high resolution imaging from distance by using microwave radiation. For a 
+                               basic understanding",a(href = "https://www.youtube.com/watch?v=g-YICKbcC-A", target = "_blank", "click here"),".")
                    )
             )
           ),

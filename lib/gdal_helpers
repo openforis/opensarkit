@@ -120,7 +120,7 @@ function gdal_max() {
 function gdal_min() {
     if [ -z "$1" ]; then 
         echo "Missing arguments. Syntax:"
-        echo "  gdal_max <input_raster>"
+        echo "  gdal_min <input_raster>"
         return
     fi
     MIN=$(gdalinfo -stats $1 |\
@@ -132,7 +132,7 @@ function gdal_min() {
 function gdal_mean() {
     if [ -z "$1" ]; then 
         echo "Missing arguments. Syntax:"
-        echo "  gdal_max <input_raster>"
+        echo "  gdal_mean <input_raster>"
         return
     fi
     MEAN=$(gdalinfo -stats $1 |\
@@ -144,7 +144,7 @@ function gdal_mean() {
 function gdal_stddev() {
     if [ -z "$1" ]; then 
         echo "Missing arguments. Syntax:"
-        echo "  gdal_max <input_raster>"
+        echo "  gdal_stddev <input_raster>"
         return
     fi
     STDDEV=$(gdalinfo -stats $1 |\

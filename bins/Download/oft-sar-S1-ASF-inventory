@@ -30,7 +30,7 @@ if [ "$#" == "8" ]; then
 
 	echo -e "-------------------------------------"
 	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
-	echo -e " Search ALOS data on ASF server"
+	echo -e " Search Sentinel-1 data on ASF server"
 	echo -e "-------------------------------------"
 	
 	if [ -d $1 ];then

@@ -214,7 +214,7 @@ function kc_process () {
 		
 		SECONDS=0
 		echo -ne " Calculating RFDI and HH/HV ratio channel ..." &&
-		if [ $4 -gt 0 ];then #filter case
+		if [ $FILTER -gt 0 ];then #filter case
 			gdal_calc.py -A ${TMP_DIR}/${DATA_HH}.filtered.tif  -B ${TMP_DIR}/${DATA_HV}.filtered.tif --calc="A/B" --outfile=${TMP_DIR}/${DATA_HH}.ratio.tif --NoDataValue=0
 			gdal_calc.py -A ${TMP_DIR}/${DATA_HH}.filtered.tif  -B ${TMP_DIR}/${DATA_HV}.filtered.tif --calc="(A-B)/(A+B)" --outfile=${TMP_DIR}/${DATA_HH}.rfdi.tif --NoDataValue=0
 			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
@@ -238,7 +238,7 @@ function kc_process () {
 			gdal_calc.py -A ${DATA:0:10}"_mask" --outfile=${DATA}"_mask.tif" --calc="1*(A==255)" >> ${LOG_DIR}/log_process 2>&1
 		fi
 		
-		if [ $4 -gt 0 ];then #filter case
+		if [ $FILTER -gt 0 ];then #filter case
 
 			gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HH}.filtered.tif --calc=A*B --outfile=${TMP_DIR}/TILES/1_${DATA_HH}.tif --NoDataValue=0 --type='UInt16'
 			gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HV}.filtered.tif --calc=A*B --outfile=${TMP_DIR}/TILES/2_${DATA_HV}.tif --NoDataValue=0 --type='UInt16'
@@ -342,7 +342,7 @@ if [ `cat ${TMP_DIR}/grids_${DATA}.csv | wc -l` -gt 1 ];then
 	echo -ne " Masking out layover/shadow areas ..." &&
 	gdal_calc.py -A ${DATA:0:10}"_mask" --outfile=${DATA}"_mask.tif" --calc="1*(A==255)" >> ${LOG_DIR}/log_process 2>&1
 
-	if [ $4 -eq 1 ];then #filter case
+	if [ $FILTER -eq 1 ];then #filter case
 
 		gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HH}.filtered.tif --calc=A*B --outfile=${TMP_DIR}/TILES/1_${DATA_HH}.tif --NoDataValue=0 --type='UInt16'
 	else

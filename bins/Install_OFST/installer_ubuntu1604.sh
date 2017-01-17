@@ -201,8 +201,8 @@ python-scipy python-h5py aria2 unrar parallel xml-twig-tools git libxinerama-dev
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 # imagej 
-apt-get install --yes --allow-unauthenticated imagej xvfb
-
+#apt-get install --yes --allow-unauthenticated imagej xvfb
+apt-get --yes install dans-gdal-scripts 
 #------------------------------------------------------------------
 # 4 Download & Install non-repository Software and OSK
 #------------------------------------------------------------------
