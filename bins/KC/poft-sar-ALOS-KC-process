@@ -149,7 +149,7 @@ if [ ${YEAR} -gt 2006 ];then
 	#if [ `echo $2 | grep shp` ]; then
 		SECONDS=0	
 		echo -ne " Cropping the FNF Map to the extent of the AOI ..." &&
-		gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/FNF_map.vrt ${OUT_DIR}/${YEAR}/FNF/${YEAR}"_KC_FNF_map.tif" >> ${LOG_DIR}/log_process 2>&1 
+		gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/FNF_map.vrt -co COMPRESS=LZW ${OUT_DIR}/${YEAR}/FNF/${YEAR}"_KC_FNF_map.tif" >> ${LOG_DIR}/log_process 2>&1 
 		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 		rm -f ${TMP_DIR}/*_C_F02DAR* 
 	#else
@@ -178,7 +178,7 @@ duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duratio
 SECONDS=0
 #if [ `echo $2 | grep shp` ]; then
 	echo -ne " Cropping the auxiliary data to the extent of the AOI ..." &&
-	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/LINCI.vrt ${OUT_DIR}/${YEAR}/Auxiliary/${YEAR}"_loc_inc_angle.tif" >> ${LOG_DIR}/log_process 2>&1
+	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/LINCI.vrt -co COMPRESS=LZW ${OUT_DIR}/${YEAR}/Auxiliary/${YEAR}"_loc_inc_angle.tif" >> ${LOG_DIR}/log_process 2>&1
 #	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/DATE.vrt ${OUT_DIR}/${YEAR}/Auxiliary/${YEAR}"_acquisition_date.tif" >> ${LOG_DIR}/log_process 2>&1 
 	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 #else
