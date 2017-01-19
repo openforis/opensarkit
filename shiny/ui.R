@@ -55,6 +55,7 @@ ui = dashboardPage(
       br(),
       menuItem("Getting Started", tabName = "info", icon = icon("info"),
          menuSubItem("About OST", tabName = "about", icon = icon("info")),
+         menuSubItem("SAR history", tabName = "SARhistory", icon = icon("info")),
          menuSubItem("SAR theory", tabName = "SARtheory", icon = icon("info")),
          menuSubItem("SAR missions", tabName = "SARmissions", icon = icon("rocket")),
          menuSubItem("SAR image interpretation", tabName = "SARimage", icon = icon("eye")),
@@ -95,6 +96,7 @@ ui = dashboardPage(
       #-----------------------------------------------------------------------------
       # About OST tab
       source(file.path("ui","About_OST.R"), local=TRUE)$value,
+      source(file.path("ui","SARhistory.R"), local=TRUE)$value,
       source(file.path("ui","SARtheory.R"), local=TRUE)$value,
       source(file.path("ui","SARmissions.R"), local=TRUE)$value,
       source(file.path("ui","SARimage.R"), local=TRUE)$value,

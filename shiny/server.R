@@ -37,7 +37,12 @@ server <- function(input, output, session) {
    observeEvent(input$link_to_tabpanel_about, {
      updateTabItems(session, "menus", "about")
    })
-   
+
+   # SAR theory
+   observeEvent(input$link_to_tabpanel_sarhistory, {
+     updateTabItems(session, "menus", "SARhistory")
+   })
+      
    # SAR theory
    observeEvent(input$link_to_tabpanel_sartheory, {
    updateTabItems(session, "menus", "SARtheory")
