@@ -5,6 +5,9 @@ tabItem(tabName = "alos_kc",
            # Include the line below in ui.R so you can send messages
            tags$head(tags$script(HTML('Shiny.addCustomMessageHandler("jsCode",function(message) {eval(message.value);});'))),
            
+           # for busy indicator 
+           useShinyjs(),
+           tags$style(appCSS),
            #----------------------------------------------------------------------------------
            # Processing Panel ALOS K&C
            box(
@@ -88,13 +91,12 @@ tabItem(tabName = "alos_kc",
               hr(),
               #div(style="display:inline-block",actionButton("alos_kc_process", "Start processing")),
               #div(style="display:inline-block",actionButton("alos_kc_abort", "Abort processing")),
-              #withBusyIndicatorUI(
-              actionButton("alos_kc_process", "Start processing"),
-              #)
+              withBusyIndicatorUI(
+                actionButton("alos_kc_process", "Start processing")
+              ),
               br(),
-              br(),
-              "Output:",
-              verbatimTextOutput("processALOS")
+              #"Output:",
+              textOutput("processALOS")
            ), # close box
            #----------------------------------------------------------------------------------
            
@@ -151,9 +153,10 @@ tabItem(tabName = "alos_kc",
                               p("The processing includes various steps. Downloaded archives are first extracted. In a next step 
                                  the auxiliary data files (Acquisition Date, Local Incidence Angle) as well as the forest/non-forest\
                                  map are mosaicked and cropped to the extent of the Area of Interest."),
-                              p("The preparation of the backscatter tiles includes the optional speckle filter as well as the calculation of the
+                              p("The preparation of the backscatter tiles includes the optional speckle filter (Refined Lee) as well as the calculation of the
                                  backscatter ratio (HH pol/ HV pol) and the Radar Forest Degradation Index (RFDI, Saatchi et al. 2011). 
-                                 The former is usually for a proper RGB visualization, although it is useful for multi-temporal analysis, 
+                                 The former is generally used for a proper RGB visualization (i.e. R: HH, G: HV, B: HH/HV ratio), 
+                                 although it is useful for multi-temporal analysis, 
                                  since environmental effects are somewhat cancelled out (Reiche et al. 2015).
                                  The RFDI depicts a normalized ratio similar to the NDVI from optical data. It is designed to assess the 
                                  strength of the double bounce scattering term by combining the power of the HH and HV polarisations. The HH polarisation
@@ -189,6 +192,14 @@ tabItem(tabName = "alos_kc",
                                  in: Remote Sensing of Environment, 155, 13-31.", 
                                  a(href = "http://ac.els-cdn.com/S0034425714001527/1-s2.0-S0034425714001527-main.pdf?_tid=d9c35274-acb6-11e6-b070-00000aacb360&acdnat=1479381382_15a3e412b87bf3ad00eb6833137fbf15", target = "_blank", "Link"),"."),
                               p("Tange, O. (2011): GNU Parallel - The Command-Line Power Tool, ;login: The USENIX Magazine, February 2011:42-47.")
+                     ),
+                     
+                     tabPanel("Legal Notices",
+                              tags$h4("Legal notice"),
+                              p("- JAXA retains ownership of the dataset. JAXA cannot guarantee any problem caused by or possibly caused by using the datasets."),
+                              p("- Anyone wishing to publish any results using the datasets should clearly acknowledge the ownership of the data in the publication."),
+                              p("- Note that the datasets are provided free of charge, but are available for research and educational purposes only. It is prohibited to use the datasets for commercial, 
+                                 profit-making purposes without JAXA's consent. If users wish to use the datasets for such purposes, please make contact to JAXA.")
                      )
               ) # close tab box
            ) # close box

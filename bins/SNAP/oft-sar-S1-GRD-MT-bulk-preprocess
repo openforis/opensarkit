@@ -4,31 +4,31 @@
 # Copyright (c) 2016 Andreas Vollrath
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal 
-# in the Software without restriction, including without limitation the rights 
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is furnished
 # to do so, subject to the following conditions:
 
 # The above copyright notice and this permission notice shall be
 # included in all copies or substantial portions of the Software.
 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
 # INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
 # HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE 
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 # OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#-------------------------------------------------------------------------------------------	
+#-------------------------------------------------------------------------------------------
 # 	0.1 Check for right usage & set up basic Script Variables
 if [ "$#" != "3" ]; then
-	
+
 	echo -e "------------------------------------------------------------------"
 	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
 	echo -e " Bulk preprocessing Sentinel-1 GRD scenes to geocoded, "
 	echo -e " radiometrically terrain corrected Gamma0 backscatter products and"
-	echo -e " and optionally calculate multi-temporal metrics"	
+	echo -e " and optionally calculate multi-temporal metrics"
 	echo -e "------------------------------------------------------------------"
 	echo -e ""
 	echo -e "----------------------------------"
@@ -63,15 +63,16 @@ else
 	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
 	echo -e " Bulk preprocessing Sentinel-1 GRD scenes to a geocoded, "
 	echo -e " radiometrically-terrain-corrected, multi-temporal Gamma0 backscatter stack"
-	echo -e " and optionally calculate multi-temporal metrics"	
+	echo -e " and optionally calculate multi-temporal metrics"
 	echo -e "------------------------------------------------------------------"
 
 	# set up initial script variables
 	cd $1
 	PROC_DIR=`pwd`
-	TMP_DIR=${PROC_DIR}/TMP
+	TMP_DIR=${SAR_TMP:-$PROC_DIR/TMP}
+	#TMP_DIR=${PROC_DIR}/TMP
 	rm -rf $TMP_DIR
-	
+
 	# MT_MODE Flag
 	MT_MODE=$3
 
@@ -98,26 +99,26 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 	NR_OF_ACQ=`ls -1 | wc -l`
 	echo " Info: Found ${NR_OF_ACQ} acquisitions for this swath"
 
-	# loop through acquisition dates	
-	for ACQ in `ls -1`;do 	
-	
+	# loop through acquisition dates
+	for ACQ in `ls -1`;do
+
 		echo " Info: Entering ${ACQ}"
-		cd ${ACQ}		
+		cd ${ACQ}
 
 		if ls ${PWD}/*imported_subset.dim > /dev/null 2>&1;then
 			SCRIPT_MODE=SUBSET
-			NR_FRAMES=`ls -1 -d ${PWD}/*dim 2>/dev/null | wc -l` 
+			NR_FRAMES=`ls -1 -d ${PWD}/*dim 2>/dev/null | wc -l`
 		elif ls ${PWD}/*.dim  > /dev/null 2>&1 ;then
 			SCRIPT_MODE=DIM
-			NR_FRAMES=`ls -1 -d ${PWD}/*dim 2>/dev/null | wc -l` 
+			NR_FRAMES=`ls -1 -d ${PWD}/*dim 2>/dev/null | wc -l`
 		elif ls ${PWD}/*zip > /dev/null 2>&1 ;then
 			SCRIPT_MODE=RAW
-			NR_FRAMES=`ls -1 -d ${PWD}/*zip 2>/dev/null | wc -l` 
+			NR_FRAMES=`ls -1 -d ${PWD}/*zip 2>/dev/null | wc -l`
 		else
 			echo " ERROR: No valid files found in directory ${PWD}" #&& exit 1
 		fi
 
-		
+
 		if [ ${NR_FRAMES} -eq 1 ];then
 
 			echo " Info: Found ${NR_FRAMES} scene to process"
@@ -129,7 +130,7 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 			TMP_DIR_FRAME=${PWD}/TMP
 			mkdir -p ${LOG_DIR}
 			mkdir -p ${TMP_DIR_FRAME}
-		
+
 			if [[ ${SCRIPT_MODE} == SUBSET && ${MT_MODE} == 0 ]];then
 				s1_rtc_processing ${FRAME} ${PWD}/${ACQ}"_RTC" $2 1 1 ${TMP_DIR_FRAME} ${LOG_DIR}
 			elif [[ ${SCRIPT_MODE} == SUBSET && ${MT_MODE} == 1 ]];then
@@ -141,28 +142,28 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 				s1_frame_import ${FRAME} ${TMP_DIR_FRAME}/${ACQ}"_import" ${LOG_DIR}
 				s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ}"_RTC" $2 0 0 ${TMP_DIR_FRAME} ${LOG_DIR}
 			fi
-			rm -rf ${TMP_DIR_FRAME}			
-		
+			rm -rf ${TMP_DIR_FRAME}
+
 		else
 
 			echo " Info: Found ${NR_FRAMES} scenes to assemble and process"
-	
+
 			LOG_DIR=${PWD}/LOG
 			TMP_DIR_FRAME=${PWD}/TMP
 			mkdir -p ${LOG_DIR}
 			mkdir -p ${TMP_DIR_FRAME}
 
 			ls -1 -d ${PWD}/*dim 2>/dev/null || ls -1 -d ${PWD}/*zip 2>/dev/null > ${TMP_DIR_FRAME}/filelist
-			
+
 			if [ ${SCRIPT_MODE} == SUBSET ];then
-				echo " Subset mode"						
-				#in case of subset area covering 2 scenesTO BE DONE s1_subset_rtc_processing ${TMP_DIR_FRAME}/filelist ${PWD}/${ACQ}"_RTC.dim" $2 ${TMP_DIR_FRAME} ${LOG_DIR}		
+				echo " Subset mode"
+				#in case of subset area covering 2 scenesTO BE DONE s1_subset_rtc_processing ${TMP_DIR_FRAME}/filelist ${PWD}/${ACQ}"_RTC.dim" $2 ${TMP_DIR_FRAME} ${LOG_DIR}
 			else
-				
+
 				s1_swath_import ${TMP_DIR_FRAME}/filelist ${TMP_DIR_FRAME}/${ACQ}"_import" ${TMP_DIR_FRAME} ${LOG_DIR}
 				s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ}"_RTC" $2 0 0 ${TMP_DIR_FRAME} ${LOG_DIR}
-				
-				if [ ${MT_MODE} == 0 ];then 
+
+				if [ ${MT_MODE} == 0 ];then
 					s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ}"_RTC" $2 1 1 ${TMP_DIR_FRAME} ${LOG_DIR}
 				fi
 			fi
@@ -171,7 +172,7 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 
 		cd ../
 
-	done # finish acquisition date loop 
+	done # finish acquisition date loop
 
 	if [ $3 == 1 ];then
 		STACK=${PWD}/MT_STACK
@@ -187,19 +188,19 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 			rm -rf ${TMP_DIR_TRACK}
 			SECONDS=0
 			echo -ne " Creating multi-channel vrt files for visualization within GIS ..."
-			gdalbuildvrt -separate -srcnodata 0 ${STACK}/vv_stack.vrt ${STACK}/mt_stack.vv.db.speckle.data/*img >> ${LOG_DIR}/log_final_vrt 2>&1 
-			gdalbuildvrt -separate -srcnodata 0 ${STACK}/vh_stack.vrt ${STACK}/mt_stack.vh.db.speckle.data/*img >> ${LOG_DIR}/log_final_vrt 2>&1 
+			gdalbuildvrt -separate -srcnodata 0 ${STACK}/vv_stack.vrt ${STACK}/mt_stack.vv.db.speckle.data/*img >> ${LOG_DIR}/log_final_vrt 2>&1
+			gdalbuildvrt -separate -srcnodata 0 ${STACK}/vh_stack.vrt ${STACK}/mt_stack.vh.db.speckle.data/*img >> ${LOG_DIR}/log_final_vrt 2>&1
 			gdalbuildvrt -separate -srcnodata 0 ${STACK}/mt_stack.vrt ${STACK}/mt-metrics_sdv.data/Gamma0_VV_mean.img ${STACK}/mt-metrics_sdv.data/Gamma0_VV_max.img ${STACK}/mt-metrics_sdv.data/Gamma0_VV_min.img \
 							    			  ${STACK}/mt-metrics_sdv.data/Gamma0_VV_stddev.img ${STACK}/mt-metrics_sdv.data/Gamma0_VV_coef_of_var.img  \
 										  ${STACK}/mt-metrics_sdv.data/Gamma0_VH_mean.img ${STACK}/mt-metrics_sdv.data/Gamma0_VH_max.img ${STACK}/mt-metrics_sdv.data/Gamma0_VH_min.img \
-										  ${STACK}/mt-metrics_sdv.data/Gamma0_VH_stddev.img ${STACK}/mt-metrics_sdv.data/Gamma0_VH_coef_of_var.img >> ${LOG_DIR}/log_final_vrt 2>&1 
+										  ${STACK}/mt-metrics_sdv.data/Gamma0_VH_stddev.img ${STACK}/mt-metrics_sdv.data/Gamma0_VH_coef_of_var.img >> ${LOG_DIR}/log_final_vrt 2>&1
 			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 		else
 			s1_mt_metrics ${FILELIST} ${STACK} VV ${TMP_DIR_TRACK} ${LOG_DIR}
 			rm -rf ${TMP_DIR_TRACK}
 			SECONDS=0
 			echo -ne " Creating multi-channel vrt files for visualization within GIS ..."
-			gdalbuildvrt -separate -srcnodata 0 ${STACK}/vv_stack.vrt ${STACK}/mt_stack.vv.db.speckle.data/*img >> ${LOG_DIR}/log_final_vrt 2>&1 >> ${LOG_DIR}/log_final_vrt 2>&1 
+			gdalbuildvrt -separate -srcnodata 0 ${STACK}/vv_stack.vrt ${STACK}/mt_stack.vv.db.speckle.data/*img >> ${LOG_DIR}/log_final_vrt 2>&1 >> ${LOG_DIR}/log_final_vrt 2>&1
 			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 		fi
@@ -209,4 +210,4 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 		cd ${PROC_DIR}
 done # finish track loop
 
-rm -rf $TMP_DIR 
+rm -rf $TMP_DIR

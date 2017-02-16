@@ -4,6 +4,11 @@ tabItem(tabName = "s1_grd2rtc-ts",
         fluidRow(
           # Include the line below in ui.R so you can send messages
           tags$head(tags$script(HTML('Shiny.addCustomMessageHandler("jsCode",function(message) {eval(message.value);});'))),
+          
+          # for busy indicator 
+          useShinyjs(),
+          tags$style(appCSS),
+          
           #----------------------------------------------------------------------------------
           # Processing Panel Sentinel-1
           box(
@@ -73,12 +78,13 @@ tabItem(tabName = "s1_grd2rtc-ts",
                           value = "Type in your password"
             ),
             hr(),
-            actionButton("s1_g2ts_process", "Start processing"),
+            withBusyIndicatorUI(
+              actionButton("s1_g2ts_process", "Start processing")
+            ),
             br(),
             br(),
-            "Output:",
-            verbatimTextOutput("processS1_G2TS")
-            
+            #"Output:",
+            textOutput("processS1_G2TS")
           ), #close box
           
           #   #----------------------------------------------------------------------------------

@@ -57,7 +57,9 @@ tabItem(tabName = "s1_dow",
             hr(),
             # div(style="display:inline-block",actionButton("s1_kc_process", "Start processing")),
             # div(style="display:inline-block",actionButton("s1_kc_abort", "Abort processing")),
-            actionButton("S1_download", "Start downloading"),
+            withBusyIndicatorUI(
+             actionButton("S1_download", "Start downloading")
+            ),
             br(),
             # "Command Line Syntax:",
             textOutput("S1_down")

@@ -15,7 +15,7 @@ tabItem(tabName = "SARhistory",
                               and receivers for communication purposes."),
                             img(src = "SARtheory/radiowaves.png", width = "100%", height = "100%"),
                             tags$b("Figure 1: The spectrum of electromagnetic waves and the indicative transmittance 
-                                   of the atmosphere from space to earth (adapted from: Richards 2009)"),
+                                   of the atmosphere from space to earth (image courtesy: CNES)"),
                             br(),
                             br(),
                             p("In 1904 Christian Hülsmeyer discovered the ability to detect remote metallic objects even

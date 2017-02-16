@@ -4,6 +4,11 @@ tabItem(tabName = "s1_inv",
         fluidRow(
           # Include the line below in ui.R so you can send messages
           tags$head(tags$script(HTML('Shiny.addCustomMessageHandler("jsCode",function(message) {eval(message.value);});'))),
+          
+          # for busy indicator 
+          useShinyjs(),
+          tags$style(appCSS),
+          
           #----------------------------------------------------------------------------------
           # Processing Panel Sentinel-1
           box(
@@ -27,8 +32,8 @@ tabItem(tabName = "s1_inv",
              # AOI choice
              radioButtons("S1_inv_AOI", "",
                           c("Country boundary" = "S1_inv_country",
-                            "Shapefile (on Server/local)" = "S1_inv_shape_local",
-                            "Shapefile (upload)" = "S1_inv_shape_upload")),
+                            "Shapefile (local/ on server)" = "S1_inv_shape_local",
+                            "Shapefile (upload a zipped archive)" = "S1_inv_shape_upload")),
              
              conditionalPanel(
                "input.S1_inv_AOI == 'S1_inv_country'",
@@ -97,7 +102,9 @@ tabItem(tabName = "s1_inv",
              hr(),
              # div(style="display:inline-block",actionButton("s1_kc_process", "Start processing")),
              # div(style="display:inline-block",actionButton("s1_kc_abort", "Abort processing")),
-             actionButton("s1_inv_search", "Create an OST inventory shapefile"),
+             withBusyIndicatorUI(
+                  actionButton("s1_inv_search", "Create an OST inventory shapefile")
+             ),
              br(),
              textOutput("searchS1_inv")
           ), # close box
