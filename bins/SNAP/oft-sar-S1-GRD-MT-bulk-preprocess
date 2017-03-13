@@ -22,7 +22,7 @@
 
 #-------------------------------------------------------------------------------------------
 # 	0.1 Check for right usage & set up basic Script Variables
-if [ "$#" != "3" ]; then
+if [ "$#" != "5" ]; then
 
 	echo -e "------------------------------------------------------------------"
 	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
@@ -37,18 +37,24 @@ if [ "$#" != "3" ]; then
 	echo -e "	- gdal-bin"
 	echo -e "----------------------------------"
 	echo -e ""
-	echo -e " Usage: oft-sar-S1-GRD-bulk-preprocess <input directory> <output resolution> <MT-metrics>"
+	echo -e " Usage: oft-sar-S1-GRD-bulk-preprocess <input directory> <ISO3/AOI> <output resolution> <MT-metrics> <output datatype>"
 	echo -e ""
 	echo -e " input parameters:"
-	echo -e " input directory	(input) higher-level directory of the downloaded zip file (i.e. DATA folder created by oft-sar-S1-download)"
-	echo -e " output resolution 	the output resolution"
+	echo -e " input directory (input) higher-level directory of the downloaded zip file (i.e. DATA folder created by oft-sar-S1-download)"
+	echo -e " ISO3/AOI (input)	 ISO3 country code or shapefile of your area of interest"
+	echo -e " output resolution 	 the output resolution"
+	echo -e "			   Available choices:"
+	echo -e "			    HI_RES (10m output) "
+	echo -e "			    MED_RES (30m output)"
+	echo -e " MT-metrics		 calculate muti-temporal metrics"
 	echo -e "			  Available choices:"
-	echo -e "			  HI_RES (10m output) "
-	echo -e "			  MED_RES (30m output)"
-	echo -e " MT-metrics		calculate muti-temporal metrics"
+	echo -e "			   0: does not calculate the MT-metrics "
+	echo -e "			   1: calculates the MT-metrics"
+	echo -e " datatype		 choose the output datatype (applies only to MT layers)"
 	echo -e "			  Available choices:"
-	echo -e "			  0: does not calculate the MT-metrics "
-	echo -e "			  1: calculates the MT-metrics"
+	echo -e "			   1: unsigned 8-bit integer (UInt8)"
+	echo -e "			   2: unsigned 16-bit integer (UInt16)"
+	echo -e "			   3: 32-bit float (Float32)"
 #	echo -e " filtering		do additional Multi-Directional Filtering (recommended for single time "
 #	echo -e "			  Available choices:"
 #	echo -e "			   0: No additional filter applied"
@@ -73,8 +79,17 @@ else
 	#TMP_DIR=${PROC_DIR}/TMP
 	rm -rf $TMP_DIR
 
+	if [ "`echo $2 | grep shp`" ]; then # AOI case
+		AOI=`readlink -f $2`
+		echo " Selected AOI file: ${AOI}"
+	else # country case
+		AOI=$2
+	fi
+
+	RESOLUTION=$3
 	# MT_MODE Flag
-	MT_MODE=$3
+	MT_MODE=$4
+	DATATYPE=$5
 
 	# source libs
 	source ${OPENSARKIT}/lib/helpers_source
@@ -132,15 +147,15 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 			mkdir -p ${TMP_DIR_FRAME}
 
 			if [[ ${SCRIPT_MODE} == SUBSET && ${MT_MODE} == 0 ]];then
-				s1_rtc_processing ${FRAME} ${PWD}/${ACQ}"_RTC" $2 1 1 ${TMP_DIR_FRAME} ${LOG_DIR}
+				s1_rtc_processing ${FRAME} ${PWD}/${ACQ}"_RTC" ${RESOLUTION} 1 1 ${TMP_DIR_FRAME} ${LOG_DIR}
 			elif [[ ${SCRIPT_MODE} == SUBSET && ${MT_MODE} == 1 ]];then
-				s1_rtc_processing ${FRAME} ${PWD}/${ACQ}"_RTC" $2 0 0 ${TMP_DIR_FRAME} ${LOG_DIR}
+				s1_rtc_processing ${FRAME} ${PWD}/${ACQ}"_RTC" ${RESOLUTION} 0 0 ${TMP_DIR_FRAME} ${LOG_DIR}
 			elif [[ ${SCRIPT_MODE} != SUBSET && ${MT_MODE} == 0 ]];then
 				s1_frame_import ${FRAME} ${TMP_DIR_FRAME}/${ACQ}"_import" ${LOG_DIR}
-				s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ}"_RTC" $2 1 1 ${TMP_DIR_FRAME} ${LOG_DIR}
+				s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ}"_RTC" ${RESOLUTION} 1 1 ${TMP_DIR_FRAME} ${LOG_DIR}
 			elif [[ ${MODE} != SUBSET && ${MT_MODE} == 1 ]];then
 				s1_frame_import ${FRAME} ${TMP_DIR_FRAME}/${ACQ}"_import" ${LOG_DIR}
-				s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ}"_RTC" $2 0 0 ${TMP_DIR_FRAME} ${LOG_DIR}
+				s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ}"_RTC" ${RESOLUTION} 0 0 ${TMP_DIR_FRAME} ${LOG_DIR}
 			fi
 			rm -rf ${TMP_DIR_FRAME}
 
@@ -161,10 +176,10 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 			else
 
 				s1_swath_import ${TMP_DIR_FRAME}/filelist ${TMP_DIR_FRAME}/${ACQ}"_import" ${TMP_DIR_FRAME} ${LOG_DIR}
-				s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ}"_RTC" $2 0 0 ${TMP_DIR_FRAME} ${LOG_DIR}
+				s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ}"_RTC" ${RESOLUTION} 0 0 ${TMP_DIR_FRAME} ${LOG_DIR}
 
 				if [ ${MT_MODE} == 0 ];then
-					s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ}"_RTC" $2 1 1 ${TMP_DIR_FRAME} ${LOG_DIR}
+					s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ}"_RTC" ${RESOLUTION} 1 1 ${TMP_DIR_FRAME} ${LOG_DIR}
 				fi
 			fi
 			rm -rf ${TMP_DIR_FRAME}/
@@ -174,40 +189,16 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 
 	done # finish acquisition date loop
 
-	if [ $3 == 1 ];then
-		STACK=${PWD}/MT_STACK
-		LOG_DIR=${PWD}/MT_STACK/LOG
-		TMP_DIR_TRACK=${PWD}/MT_STACK/TMP
-		mkdir -p ${LOG_DIR}
-		mkdir -p ${TMP_DIR_TRACK}
+	j=`expr $j + 1`
+	cd ${PROC_DIR}
 
-
-		FILELIST=$(ls -1 ${PWD}/*/*_RTC.dim | tr '\n' ',' | rev | cut -c 2- | rev)
-		if [[ `ls -1 ${PWD}/*/*_RTC.data/*VH*img 2>/dev/null | wc -l` -eq ${NR_OF_ACQ} ]];then
-			s1_mt_metrics ${FILELIST} ${STACK} VH ${TMP_DIR_TRACK} ${LOG_DIR}
-			rm -rf ${TMP_DIR_TRACK}
-			SECONDS=0
-			echo -ne " Creating multi-channel vrt files for visualization within GIS ..."
-			gdalbuildvrt -separate -srcnodata 0 ${STACK}/vv_stack.vrt ${STACK}/mt_stack.vv.db.speckle.data/*img >> ${LOG_DIR}/log_final_vrt 2>&1
-			gdalbuildvrt -separate -srcnodata 0 ${STACK}/vh_stack.vrt ${STACK}/mt_stack.vh.db.speckle.data/*img >> ${LOG_DIR}/log_final_vrt 2>&1
-			gdalbuildvrt -separate -srcnodata 0 ${STACK}/mt_stack.vrt ${STACK}/mt-metrics_sdv.data/Gamma0_VV_mean.img ${STACK}/mt-metrics_sdv.data/Gamma0_VV_max.img ${STACK}/mt-metrics_sdv.data/Gamma0_VV_min.img \
-							    			  ${STACK}/mt-metrics_sdv.data/Gamma0_VV_stddev.img ${STACK}/mt-metrics_sdv.data/Gamma0_VV_coef_of_var.img  \
-										  ${STACK}/mt-metrics_sdv.data/Gamma0_VH_mean.img ${STACK}/mt-metrics_sdv.data/Gamma0_VH_max.img ${STACK}/mt-metrics_sdv.data/Gamma0_VH_min.img \
-										  ${STACK}/mt-metrics_sdv.data/Gamma0_VH_stddev.img ${STACK}/mt-metrics_sdv.data/Gamma0_VH_coef_of_var.img >> ${LOG_DIR}/log_final_vrt 2>&1
-			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-		else
-			s1_mt_metrics ${FILELIST} ${STACK} VV ${TMP_DIR_TRACK} ${LOG_DIR}
-			rm -rf ${TMP_DIR_TRACK}
-			SECONDS=0
-			echo -ne " Creating multi-channel vrt files for visualization within GIS ..."
-			gdalbuildvrt -separate -srcnodata 0 ${STACK}/vv_stack.vrt ${STACK}/mt_stack.vv.db.speckle.data/*img >> ${LOG_DIR}/log_final_vrt 2>&1 >> ${LOG_DIR}/log_final_vrt 2>&1
-			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-
-		fi
-	fi
-
-		j=`expr $j + 1`
-		cd ${PROC_DIR}
 done # finish track loop
 
-rm -rf $TMP_DIR
+# calculate MT-metrics
+if [ ${MT_MODE} == 1 ];then
+
+		oft-sar-S1-GRD-MT-metrics ${PROC_DIR} ${AOI} ${DATATYPE}
+
+fi
+
+rm -rf ${TMP_DIR}

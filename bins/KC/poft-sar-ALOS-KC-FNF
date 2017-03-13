@@ -1,0 +1,286 @@
+#! /bin/bash
+
+# The MIT License (MIT)
+# Copyright (c) 2016 Andreas Vollrath
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is furnished
+# to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+# OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+# to dos
+# secure download, assuring for connection time outs and see if md5sum test is feasible
+
+# 	0.1 Check for right usage & set up basic Script Variables
+if [ "$#" == "5" ];then
+
+  echo -e ""
+  echo -e "-------------------------------------------------------------"
+  echo -e " Open Foris SARKit, version ${OSK_VERSION}"
+  echo -e " This scripts download ALOS K&C mosaics based on the extent"
+  echo -e "  of a given a given shapefile or a country boundary"
+  echo -e "------------------------------------------------------------"
+  echo -e ""
+
+  # set up initial script variables
+
+  CRED_FILE=`readlink -f $4`
+  UNAME=`awk 'NR==1' ${CRED_FILE}`
+  PW=`awk 'NR==2' ${CRED_FILE}`
+  rm -f ${CRED_FILE}
+
+  mkdir -p $1
+  cd $1
+  OUT_DIR=`pwd`
+
+  if [ "`echo $2 | grep shp`" ]; then # AOI case
+    AOI=`readlink -f $2`
+    AOI_PATH=`dirname ${AOI}`
+  fi
+
+  ZIP_DIR=${OUT_DIR}/ZIP
+  mkdir -p ${ZIP_DIR}
+
+  YEAR=$3
+  YEAR_SHORT=${YEAR:2:2}
+
+  export TMP_DIR=${OUT_DIR}/.TMP${YEAR}/
+  rm -rf ${TMP_DIR}
+  mkdir -p ${TMP_DIR}
+
+  LOG_DIR=$OUT_DIR/LOG
+  mkdir -p ${LOG_DIR}
+
+  # source libs
+  source ${OPENSARKIT}/lib/helpers_source
+
+elif [ "$#" != "3" ]; then
+
+  echo -e "-------------------------------------------------------------"
+  echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
+  echo -e " This scripts download ALOS K&C mosaics based on the extent"
+  echo -e " of a given a given shapefile or a country boundary"
+  echo -e "------------------------------------------------------------"
+  echo -e ""
+  echo -e "----------------------------------"
+  echo -e " Software dependencies:"
+  echo -e "	- gdal-bin"
+  echo -e "----------------------------------"
+  echo -e ""
+  echo -e " syntax: oft-sar-ALOS-KC-download <project_folder> <ISO3/AOI> <year>"
+  echo -e ""
+  echo -e " description of input parameters:"
+  echo -e " project_folder	(output) pathname of the folder where the data will be stored (will create a subfolder ZIP with the downloaded files)"
+  echo -e " ISO3/AOI		ISO3 country code or shapefile of your area of interest"
+  echo -e " Year			Acquisition Year (2007, 2008, 2009, 2010 or 2015)"
+  echo -e ""
+
+  exit 1
+else
+
+  echo -e "-------------------------------------------------------------"
+  echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
+  echo -e " This scripts download ALOS K&C mosaics based on the extent"
+  echo -e "  of a given a given shapefile or a country boundary"
+  echo -e "------------------------------------------------------------"
+  echo -e ""
+
+  mkdir -p $1
+  cd $1
+  OUT_DIR=`pwd`
+
+  if [ "`echo $2 | grep shp`" ]; then # AOI case
+    AOI=`readlink -f $2`
+    AOI_PATH=`dirname ${AOI}`
+  fi
+
+  ZIP_DIR=${OUT_DIR}/ZIP
+  mkdir -p ${ZIP_DIR}
+
+  YEAR=$3
+
+  export TMP_DIR=${OUT_DIR}/.TMP${YEAR}/
+  rm -rf ${TMP_DIR}
+  mkdir -p ${TMP_DIR}
+
+  LOG_DIR=$OUT_DIR/LOG
+  mkdir -p ${LOG_DIR}
+
+  YEAR=$3
+  YEAR_SHORT=${YEAR:2:2}
+  # source libs
+  source ${OPENSARKIT}/lib/helpers_source
+fi
+
+
+
+
+#----------------------------------------------------------------------
+# 1 ask for user access
+echo -e "------------------------------------------------------------"
+echo -e " If you have no registered account, go to:"
+echo -e " http://www.eorc.jaxa.jp/ALOS/en/palsar_fnf/registration.htm"
+echo -e "------------------------------------------------------------"
+echo ""
+
+if [ "$#" == "4" ];then
+
+  echo " Non-interactive mode"
+
+else
+  read -r -p " Please type your K&C mosaic username:" UNAME
+  read -s -p " Please type your K&C mosaic password:" PW
+  echo ""
+fi
+#----------------------------------------------------------------------
+
+
+#----------------------------------------------------------------------
+# 2 check if AOI comes from country code or is already a shapefile
+
+
+if [ "`echo $AOI | grep shp`" ]; then # AOI case
+
+  # check numberof layers/polygons
+  aoi_valid_poly ${AOI} ${TMP_DIR}/aoi_convex.shp ${TMP_DIR}
+
+  #check EPSG
+  if [ -e ${TMP_DIR}/aoi_convex.shp ];then
+    aoi_valid_epsg ${TMP_DIR}/aoi_convex.shp ${TMP_DIR}/aoi_wgs84.shp ${TMP_DIR}
+  else
+    aoi_valid_epsg ${AOI} ${TMP_DIR}/aoi_wgs84.shp ${TMP_DIR}
+  fi
+  if [ -e ${TMP_DIR}/aoi_wgs84.shp ];then
+    mv ${TMP_DIR}/aoi_wgs84* ${AOI_PATH}
+    AOI=${AOI_PATH}/aoi_wgs84.shp
+    elif [ -e ${TMP_DIR}/aoi_convex.shp ];then
+    mv ${TMP_DIR}/aoi_convex* ${AOI_PATH}
+    AOI=${AOI_PATH}/aoi_convex.shp
+  else
+    AOI=${AOI}
+  fi
+else # country case
+  mkdir -p ${OUT_DIR}/AOI/
+  aoi_from_iso3 $2 ${OUT_DIR}/AOI
+  AOI=${OUT_DIR}/AOI/$2.shp
+fi
+#----------------------------------------------------------------------
+
+
+#----------------------------------------------------------------------
+# 3 Get K&C 5x5 Tiles list
+LAYER=`ogrinfo ${AOI} | tail -1 | awk $'{print $2}'`
+
+# create a vrt layer for consequent interect operation with ogr2ogr
+echo "<OGRVRTDataSource>" > ${TMP_DIR}/intersect.vrt
+echo "   <OGRVRTLayer name=\"${LAYER}\">" >> ${TMP_DIR}/intersect.vrt
+echo "      <SrcDataSource>${AOI}</SrcDataSource>" >> ${TMP_DIR}/intersect.vrt
+echo "   </OGRVRTLayer>" >> ${TMP_DIR}/intersect.vrt
+echo "   <OGRVRTLayer name=\"kc_grid\">" >> ${TMP_DIR}/intersect.vrt
+echo "      <SrcDataSource>${OST_DB}</SrcDataSource>" >> ${TMP_DIR}/intersect.vrt
+echo "   </OGRVRTLayer>" >> ${TMP_DIR}/intersect.vrt
+echo "</OGRVRTDataSource>" >> ${TMP_DIR}/intersect.vrt
+
+# intersect with ogr2ogr
+SECONDS=0
+echo -ne " Checking which 5x5 degree K&C tiles are intersecting with the area of interest ..."	&&
+ogr2ogr -f "csv" ${TMP_DIR}/tiles.csv ${TMP_DIR}/intersect.vrt -dialect sqlite -sql "SELECT b.x_min,b.y_max FROM ${LAYER} a, kc_grid b WHERE ST_Intersects(a.geometry, b.geom)" >> $TMP_DIR/log_ogr2ogr
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+# get tile list
+cat ${TMP_DIR}/tiles.csv | tail -n +2 | tr ',' '\ ' > ${TMP_DIR}/kc_list
+#----------------------------------------------------------------------
+
+#----------------------------------------------------------------------
+# 4 Download the data
+
+NR_OF_TILES=`wc -l $TMP_DIR/kc_list | awk $'{print $1}'`
+
+cd ${OUT_DIR}
+
+while read LINE; do
+
+  echo "source ${OPENSARKIT}/lib/helpers_source; kc_fnf_download $LINE $YEAR $ZIP_DIR $LOG_DIR" >> ${TMP_DIR}/down_list
+
+done < ${TMP_DIR}/kc_list
+
+cat ${TMP_DIR}/down_list | parallel -j $NR_OF_TILES bash -c {}
+
+echo "-----------------------------------------------------------------------"
+echo " Succesfully downloaded all ALOS PalSAR K&C tiles from JAXA the server "
+echo "-----------------------------------------------------------------------"
+
+#------------------------------------------------------------------------
+# extract data
+cd $ZIP_DIR
+SECONDS=0
+echo -ne " Unpacking the downloaded archives ..." &&
+ls -1 *_${YEAR_SHORT}_*tar.gz | parallel -j "`nproc`" tar -xzvf {} -C ${TMP_DIR}
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+#----------------------------------------------------------------------
+# check if AOI comes from country code or is already a shape
+cd ${OUT_DIR}
+
+if [ "`echo $2 | grep shp`" ]; then # AOI case
+	AOI=`readlink -f $2`
+	echo " Selected AOI file: ${AOI}"
+else # country case
+  COUNTRY=`echo "SELECT name FROM countries WHERE \"iso3\" = '$2';" | spatialite ${OST_DB} | head -50`
+	SECONDS=0
+	echo -ne " Extracting country boundaries for ${COUNTRY} ..." &&
+	ogr2ogr -f "Esri Shapefile" ${TMP_DIR}/AOI.shp ${OST_DB} -dsco SPATIALITE=yes -where "\"iso3\" = \"${2}\"" -nln AOI countries > ${LOG_DIR}/log_process 2>&1
+	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	AOI=${TMP_DIR}/AOI.shp
+
+	SECONDS=0
+	echo -ne " Creating a 0.1 degree buffer (used for final masking) ... " &&
+ 	ogr2ogr -f "Esri Shapefile" ${TMP_DIR}/AOI_buffer.shp ${OST_DB} -dsco SPATIALITE=yes -sql "select ST_union(ST_buffer(geom,0.1)) from countries where \"iso3\" = \"${2}\""  >> ${LOG_DIR}/log_process 2>&1
+	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	# in case a country is selected we use the buffered AOI
+	AOI=${TMP_DIR}/AOI_buffer.shp
+fi
+#----------------------------------------------------------------------
+
+#------------------------------------------------------------------------
+# create output folders
+mkdir -p ${OUT_DIR}/${YEAR}/FNF
+
+#------------------------------------------------------------------------
+echo "----------------------------------------------"
+echo " Preparing the K&C Forest/Non-Forest map tiles"
+echo "----------------------------------------------"
+
+if [ ${YEAR} -gt 2006 ];then
+
+	if [ ${YEAR} -gt 2010 ];then
+		SECONDS=0
+		echo -ne " Merging the FNF tiles ..." &&
+		gdalbuildvrt -srcnodata 0 ${TMP_DIR}/FNF_map.vrt ${TMP_DIR}/*_C_F02DAR  >> ${LOG_DIR}/log_process 2>&1
+		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	else
+		SECONDS=0
+		echo -ne " Merging the FNF tiles ..." &&
+		gdalbuildvrt -srcnodata 0 ${TMP_DIR}/FNF_map.vrt ${TMP_DIR}/*_C  >> ${LOG_DIR}/log_process 2>&1
+		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	fi
+
+	SECONDS=0
+	echo -ne " Cropping the FNF Map to the extent of the AOI ..." &&
+	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/FNF_map.vrt -co COMPRESS=LZW ${OUT_DIR}/${YEAR}/FNF/${YEAR}"_KC_FNF_map.tif" >> ${LOG_DIR}/log_process 2>&1
+	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	rm -f ${TMP_DIR}/*_C_F02DAR*
+fi
+#------------------------------------------------------------------------

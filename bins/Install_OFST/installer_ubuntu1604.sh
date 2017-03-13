@@ -1,21 +1,23 @@
+#!/bin/bash
+
 # The MIT License (MIT)
 # Copyright (c) 2016 Andreas Vollrath
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal 
-# in the Software without restriction, including without limitation the rights 
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is furnished
 # to do so, subject to the following conditions:
 
 # The above copyright notice and this permission notice shall be
 # included in all copies or substantial portions of the Software.
 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
 # INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
 # HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE 
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 # OR THE USE OR OTHER DEALINGS IN THE SOFTWARE
 
 OSK_VERSION="0.1-beta"
@@ -51,7 +53,7 @@ elif [ "$#" == "2" ];then
 	echo -e ""
 	export OSK_HOME=$1
 
-else 
+else
 
 	echo -e ""
 	echo -e "----------------------------------"
@@ -99,19 +101,19 @@ echo " included in all copies or substantial portions of the Software."
 echo " "
 echo " THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, "
 echo " INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A"
-echo " PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT" 
+echo " PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT"
 echo " HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION"
 echo " OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE "
 echo " OR THE USE OR OTHER DEALINGS IN THE SOFTWARE."
 echo " "
 
 if [[ $2 != yes ]];then
-read -p " Did you read and accept the terms and conditions? (yes/no) "  
+read -p " Did you read and accept the terms and conditions? (yes/no) "
 if [[ $REPLY != yes ]]
 then
     exit 1
 fi
-fi 
+fi
 
 echo ""
 echo ""
@@ -121,7 +123,7 @@ if [[ $2 != yes ]];then
 echo " This script downloads the external software SNAP, which is licensed under the GNU GPL version 3 and can be found here"
 echo " https://www.gnu.org/licenses/gpl.html"
 echo ""
-read -p " Do you accept the terms and conditions of the use of the SNAP software  (yes/no) "  
+read -p " Do you accept the terms and conditions of the use of the SNAP software  (yes/no) "
 if [[ $REPLY != yes ]]
 then
     exit 1
@@ -140,33 +142,33 @@ RELEASE=`lsb_release -sc`
 
 SECONDS=0
 echo -ne " Adding the Ubuntu GIS unstable repository ..." &&
-add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable > ${OSK_HOME}/LOG/log_install 2>&1 
+add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable > ${OSK_HOME}/LOG/log_install 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 
 SECONDS=0
 echo -ne " Adding the multiverse repository ..." &&
-add-apt-repository -y "deb http://archive.ubuntu.com/ubuntu/ ${RELEASE} main multiverse"  >> ${OSK_HOME}/LOG/log_install 2>&1 
+add-apt-repository -y "deb http://archive.ubuntu.com/ubuntu/ ${RELEASE} main multiverse"  >> ${OSK_HOME}/LOG/log_install 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 ## IX R-CRAN from R mirror
-if grep -q "qgis.org/ubuntugis" /etc/apt/sources.list;then 
-	
+if grep -q "qgis.org/ubuntugis" /etc/apt/sources.list;then
+
 	echo "detected cran repository for R installation"
 else
 	add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu ${RELEASE}/"
-	#apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9 
-	gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys E084DAB9 >> ${OSK_HOME}/LOG/log_install 2>&1 
-	gpg -a --export E084DAB9 | apt-key add - >> ${OSK_HOME}/LOG/log_install 2>&1 
-fi 
+	#apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
+	gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys E084DAB9 >> ${OSK_HOME}/LOG/log_install 2>&1
+	gpg -a --export E084DAB9 | apt-key add - >> ${OSK_HOME}/LOG/log_install 2>&1
+fi
 
-if grep -q "qgis.org/ubuntugis" /etc/apt/sources.list;then 
+if grep -q "qgis.org/ubuntugis" /etc/apt/sources.list;then
 	echo " Yeah, you are already a QGIS user, nice!"
 else
 
 	echo " "
 	echo " Adding the QGIS repository"
-	echo " Note: QGIS will not be installed, in order to do so type: " 
+	echo " Note: QGIS will not be installed, in order to do so type: "
 	echo " sudo apt-get install --yes qgis libqgis-dev"
 	echo " "
 	echo "deb http://qgis.org/ubuntugis ${RELEASE} main" >> /etc/apt/sources.list
@@ -175,8 +177,8 @@ else
 	#apt-key adv --keyserver keyserver.ubuntu.com --recv-key 073D307A618E5811 >> ${OSK_HOME}/LOG/log_install 2>&1
 	#apt-key adv --keyserver keyserver.ubuntu.com --recv-key 073D307A618E5811
 
-	wget -O - http://qgis.org/downloads/qgis-2016.gpg.key | gpg --import >> ${OSK_HOME}/LOG/log_install 2>&1 
-	gpg --export --armor 073D307A618E5811 | apt-key add - >> ${OSK_HOME}/LOG/log_install 2>&1 
+	wget -O - http://qgis.org/downloads/qgis-2016.gpg.key | gpg --import >> ${OSK_HOME}/LOG/log_install 2>&1
+	gpg --export --armor 073D307A618E5811 | apt-key add - >> ${OSK_HOME}/LOG/log_install 2>&1
 fi
 
 #------------------------------------------------------------------
@@ -185,8 +187,8 @@ fi
 
 SECONDS=0
 echo -ne " Updating the system ..."
-apt-get update -y >> ${OSK_HOME}/LOG/log_install 2>&1 
-apt-get upgrade -y >> ${OSK_HOME}/LOG/log_install 2>&1 
+apt-get update -y >> ${OSK_HOME}/LOG/log_install 2>&1
+apt-get upgrade -y >> ${OSK_HOME}/LOG/log_install 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 #------------------------------------------------------------------
@@ -197,12 +199,14 @@ SECONDS=0
 echo -ne " Installing dependencies from Ubuntu package list ..."
 apt-get install --yes --allow-unauthenticated gdal-bin libgdal-dev python-gdal saga libsaga-dev python-saga geotiff-bin libgeotiff-dev spatialite-bin spatialite-gui \
 libcunit1-dev libfftw3-dev libshp-dev libtiff5-dev libproj-dev flex bison libgsl0-dev gsl-bin libglade2-dev libgtk2.0-dev pkg-config \
-python-scipy python-h5py aria2 unrar parallel xml-twig-tools git libxinerama-dev libxrandr-dev libxcursor-dev swig r-base libv8-3.14-dev >> ${OSK_HOME}/LOG/log_install 2>&1 
+python-scipy python-h5py aria2 unrar parallel xml-twig-tools git libxinerama-dev libxrandr-dev libxcursor-dev swig r-base libv8-3.14-dev \
+# added lately (need to be added to init script)
+python-progressbar python-numpy >> ${OSK_HOME}/LOG/log_install 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-
-# imagej 
+# python-pandas python-geopandas
+# imagej
 #apt-get install --yes --allow-unauthenticated imagej xvfb
-apt-get --yes install dans-gdal-scripts 
+apt-get --yes install dans-gdal-scripts
 #------------------------------------------------------------------
 # 4 Download & Install non-repository Software and OSK
 #------------------------------------------------------------------
@@ -216,7 +220,7 @@ cd ${OSK_HOME}
 # get OpenSARKit from github
 SECONDS=0
 echo -ne " Getting the Open Foris SAR Toolkit ..." &&
-git clone $OSK_GIT_URL >> ${OSK_HOME}/LOG/log_install 2>&1 
+git clone $OSK_GIT_URL >> ${OSK_HOME}/LOG/log_install 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 
@@ -226,12 +230,12 @@ cd ${OSK_HOME}/opensarkit/bins
 
 BINDIR=/usr/local/bin/
 
-for OST_BINS in `ls -1`;do 
+for OST_BINS in `ls -1`;do
 
-	cd $OST_BINS	
+	cd $OST_BINS
 	for exe in `ls -1 {oft*,poft*} 2>/dev/null`;do
 
-		exepath=`readlink -f $exe`	
+		exepath=`readlink -f $exe`
 		ln -s $exepath ${BINDIR}/
 
 	done
@@ -242,30 +246,30 @@ done
 #-------------------------------------
 # Install SNAP
 # check if installed
-if [ `locate gpt.vmoptions | wc -c` -gt 0 ];then 
+if [ `locate gpt.vmoptions | wc -c` -gt 0 ];then
 
 	SNAP_DIR=`locate gpt.vmoptions`
 	SNAP=`dirname ${SNAP_DIR}`
-	echo " Adding environmental variables to /etc/environment ..." 
+	echo " Adding environmental variables to /etc/environment ..."
 	echo "OPENSARKIT=${OSK_HOME}/opensarkit" | tee -a /etc/environment
 	echo "OST_DB=${OSK_HOME}/Database/OFST_db.sqlite" | tee -a /etc/environment
 	echo "SNAP_EXE=${SNAP}/gpt" | tee -a /etc/environment
-	
+
 else
-	
+
 	SECONDS=0
 	echo -ne " Downloading the SNAP software ..." &&
-	wget http://step.esa.int/downloads/5.0/installers/esa-snap_sentinel_unix_5_0.sh  >> ${OSK_HOME}/LOG/log_install 2>&1 
+	wget http://step.esa.int/downloads/5.0/installers/esa-snap_sentinel_unix_5_0.sh  >> ${OSK_HOME}/LOG/log_install 2>&1
 	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 	SECONDS=0
 	echo -ne " Installing the SNAP software ..." &&
-	sh esa-snap_sentinel_unix_5_0.sh -q -overwrite  >> ${OSK_HOME}/LOG/log_install 2>&1 
+	sh esa-snap_sentinel_unix_5_0.sh -q -overwrite  >> ${OSK_HOME}/LOG/log_install 2>&1
 	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 	rm -f esa-snap_sentinel_unix_5_0.sh
-	
-	echo -ne " Adding environmental variables to /etc/environment ..." 
+
+	echo -ne " Adding environmental variables to /etc/environment ..."
 	echo "OPENSARKIT=${OSK_HOME}/opensarkit" | tee -a /etc/environment
 	echo "OST_DB=${OSK_HOME}/Database/OFST_db.sqlite" | tee -a /etc/environment
 	echo 'SNAP_EXE=/usr/local/snap/bin/gpt' | tee -a /etc/environment
@@ -276,7 +280,7 @@ fi
 SECONDS=0
 echo -ne " Updating SNAP to the latest version ..." &&
 #/usr/local/snap/bin/snap
-snap --nosplash --nogui --modules --update-all  >> ${OSK_HOME}/LOG/log_install 2>&1 
+snap --nosplash --nogui --modules --update-all  >> ${OSK_HOME}/LOG/log_install 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 HOME_USER=`stat -c '%U' ${HOME}/.bashrc`
@@ -293,24 +297,24 @@ cd ${OSK_HOME}/Database
 
 SECONDS=0
 echo -ne " Downloading the OFST database ..." &&
-wget https://www.dropbox.com/s/qvujm3l0ba0frch/OFST_db.sqlite?dl=0  >> ${OSK_HOME}/LOG/log_install 2>&1 
+wget https://www.dropbox.com/s/qvujm3l0ba0frch/OFST_db.sqlite?dl=0  >> ${OSK_HOME}/LOG/log_install 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 mv OFST_db.sqlite?dl=0 OFST_db.sqlite
 
 
 echo -ne " Installing R packages for shiny app ..." &&
-/usr/bin/R -e "install.packages('shiny', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1 
-/usr/bin/R -e "install.packages('shinydashboard', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1 
-/usr/bin/R -e "install.packages('shinyFiles', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1 
-/usr/bin/R -e "install.packages('shinyjs', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1 
-/usr/bin/R -e "install.packages('RSQLite', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1 
-/usr/bin/R -e "install.packages('RColorBrewer', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1 
-/usr/bin/R -e "install.packages('random', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1 
-/usr/bin/R -e "install.packages('raster', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1 
-/usr/bin/R -e "install.packages('mapview', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1 
+/usr/bin/R -e "install.packages('shiny', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1
+/usr/bin/R -e "install.packages('shinydashboard', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1
+/usr/bin/R -e "install.packages('shinyFiles', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1
+/usr/bin/R -e "install.packages('shinyjs', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1
+/usr/bin/R -e "install.packages('RSQLite', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1
+/usr/bin/R -e "install.packages('RColorBrewer', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1
+/usr/bin/R -e "install.packages('random', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1
+/usr/bin/R -e "install.packages('raster', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1
+/usr/bin/R -e "install.packages('mapview', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
-echo -ne " Creating a start up icon on the Desktop ..." 
+echo -ne " Creating a start up icon on the Desktop ..."
 
 echo "[Desktop Entry]" > ${HOME}/Desktop/OST.desktop
 echo "Version=1.0" >> ${HOME}/Desktop/OST.desktop
@@ -339,5 +343,3 @@ echo " Installation of OFST succesfully completed"
 echo " In order to be able to launch the scripts immediately on the command line, type: source /etc/profile.d/OpenSARKit.sh "
 echo " Otherwise restart your computer"
 echo "---------------------------------------------------------------------------------------------------------------------------"
-
-

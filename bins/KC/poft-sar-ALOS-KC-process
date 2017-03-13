@@ -84,7 +84,7 @@ fi
 cd $ZIP_DIR
 SECONDS=0
 echo -ne " Unpacking the downloaded archives ..." &&
-ls -1 *${YEAR_SHORT}*tar.gz | parallel -j "`nproc`" tar -xzvf {} -C ${TMP_DIR}
+ls -1 *_${YEAR_SHORT}_*tar.gz | parallel -j "`nproc`" tar -xzvf {} -C ${TMP_DIR}
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 #------------------------------------------------------------------------

@@ -22,60 +22,46 @@
 
 #-------------------------------------------------------------------------------------------
 # 	0.1 Check for right usage & set up basic Script Variables
-if [ "$#" != "4" ]; then
+if [ "$#" != "3" ]; then
 
+	echo -e "------------------------------------------------------------------"
+	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
+	echo -e " Create timeseries stack and multi-temporal statistics from preprocessed single scenes"
+	echo -e "------------------------------------------------------------------"
 	echo -e ""
-	echo -e "----------------------------------------------------------------------------------"
-	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
-	echo -e " Subsetting Sentinel-1 GRD data to a given Area of Interest - Bulk Mode"
-	echo -e "----------------------------------------------------------------------------------"
-	echo -e ""
-	echo -e "----------------------------------------------------------------------------------"
-	echo -e " Software dependencies:"
+	echo -e "----------------------------------"
+	echo -e "Software dependencies:"
 	echo -e "	- ESA Sentinel Application Platform SNAP"
 	echo -e "	- gdal-bin"
-	echo -e "----------------------------------------------------------------------------------"
+	echo -e "----------------------------------"
 	echo -e ""
-	echo -e " oft-sar-S1-GRD-bulk-subset <project folder> <AOI> <clean import> <delete zips>"
+	echo -e " Usage: oft-sar-correct-offset <input directory> <x-offset> <y-offset> "
+	echo -e ""
+	echo -e " input parameters:"
+	echo -e " input directory	(input):this folder should contain all the files to correct"
+	echo -e " x-offset: offset in x direction (positive in eastwards direction)"
+  echo -e " y-offset: offset in y direction (positive in northwards direction)"
 	echo -e ""
 	exit 1
-
 else
-	echo -e ""
-	echo -e "----------------------------------------------------------------------------------"
+	echo -e "------------------------------------------------------------------"
 	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
-	echo -e " Subsetting Sentinel-1 GRD data to a given Area of Interest - Bulk Mode"
-	echo -e "----------------------------------------------------------------------------------"
-	echo -e ""
+	echo -e " Create timeseries stack and multi-temporal statistics from preprocessed single scenes"
+	echo -e "------------------------------------------------------------------"
 
-
-	# set up initial script variables
-	AOI=`readlink -f $2`
+	# source OST libs
+	source ${OPENSARKIT}/lib/helpers_source
+  	# set up initial script variables
 	cd $1
 	PROC_DIR=`pwd`
 
-	source ${OPENSARKIT}/lib/helpers_source
 fi
 
+for file in $(ls -1 *.tif);do
 
+	SECONDS=0
+	echo -ne " Manipulating metadata for linear offset correction for ${file}..."
+	gdal_edit.py -a_ullr $(gdal_offset ${file} $2 $3) ${file}
+	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
-
-for LINE in `ls -1 ${PROC_DIR}`;do
-
-	cd ${LINE}
-
-	for TRACK in `ls -1 ${PROC_DIR}/${LINE}`;do
-
-		cd $TRACK
-
-		for FILE in `ls -1 *zip`;do
-
-			oft-sar-S1-GRD-subset ${FILE} ${AOI} $3 $4
-
-		done
-
-		cd ../
-	done
-
-	cd ${PROC_DIR}
 done

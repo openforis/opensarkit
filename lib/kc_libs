@@ -4,24 +4,24 @@
 # Copyright (c) 2016 Andreas Vollrath
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal 
-# in the Software without restriction, including without limitation the rights 
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is furnished
 # to do so, subject to the following conditions:
 
 # The above copyright notice and this permission notice shall be
 # included in all copies or substantial portions of the Software.
 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
 # INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
 # HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE 
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 # OR THE USE OR OTHER DEALINGS IN THE SOFTWARE
 
 function kc_download () {
-    if [ -z "$5" ]; then 
+    if [ -z "$5" ]; then
     echo " Missing arguments. Syntax:"
     echo " kc_download <LAT> <LONG> <year> <out_dir> <log_dir>"
     return
@@ -38,13 +38,13 @@ source ${OPENSARKIT}/lib/helpers_source
 	COL=$1
 	ROW=$2
 	# Create the actual Grid code for exact download address
-	if [ `echo $ROW | grep -` ];then 
+	if [ `echo $ROW | grep -` ];then
 
-		# eliminate - sign 
+		# eliminate - sign
 		ROW=`echo ${ROW} | sed 's|-||g'`
 
 		# create ROW in Form SXX
-		if [ ${#ROW} == 1 ];then 
+		if [ ${#ROW} == 1 ];then
 
 			ROW=S0$ROW
 		else
@@ -53,9 +53,9 @@ source ${OPENSARKIT}/lib/helpers_source
 		fi
 
 	else
-		
+
 		# create ROW in Form NXX
-		if [ ${#ROW} == 1 ];then 
+		if [ ${#ROW} == 1 ];then
 
 			ROW=N0$ROW
 		else
@@ -64,33 +64,33 @@ source ${OPENSARKIT}/lib/helpers_source
 
 	fi
 
-	if [ `echo $COL | grep -` ];then 
+	if [ `echo $COL | grep -` ];then
 
-		# eliminate - sign 
+		# eliminate - sign
 		COL=`echo ${COL} | sed 's|-||g'`
 
 		# create COL in Form WXXX
-		if [ ${#COL}  == 3 ];then 
+		if [ ${#COL}  == 3 ];then
 
 			COL=W${COL}
 
 		elif [ ${#COL} == 2 ];then
 
 			COL=W0${COL}
-		else 
+		else
 			COL=W00${COL}
 		fi
 
 	else
 		# COL in Form EXXX
-		if [ ${#COL} == 3 ];then 
+		if [ ${#COL} == 3 ];then
 
 			COL=E${COL}
 
 		elif [ ${#COL} == 2 ];then
 
 			COL=E0${COL}
-		else 
+		else
 			COL=E00${COL}
 		fi
 	fi
@@ -98,38 +98,130 @@ source ${OPENSARKIT}/lib/helpers_source
 	if [ ${YEAR} -gt 2010 ];then
 		SECONDS=0
 		echo -ne " Downloading backscatter data tile $i/${NR_OF_TILES} (${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz) ..." &&
-		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS-2/ext1/PALSAR-2_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS_F02DAR.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz 
+		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS-2/ext1/PALSAR-2_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS_F02DAR.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz
 		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 		SECONDS=0
 		echo -ne " Downloading forest/non-forest data tile $i/${NR_OF_TILES} (${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz) ..." &&
-		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS-2/ext1/PALSAR-2_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF_F02DAR.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz 
+		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS-2/ext1/PALSAR-2_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF_F02DAR.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz
 		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 	elif [ ${YEAR} -lt 2000 ];then
-	
+
 		SECONDS=0
 		echo -ne " Downloading backscatter data tile $i/${NR_OF_TILES} (${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz) ..." &&
-		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS-2/JERS-1_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz 
+		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS-2/JERS-1_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz
 		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 	else
 
 		SECONDS=0
 		echo -ne " Downloading backscatter data tile $i/${NR_OF_TILES} (${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz) ... " &&
-		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz 
+		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz
 		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 		SECONDS=0
 		echo -ne " Downloading forest/non-forest data tile $i/${NR_OF_TILES} (${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz) ..." &&
-		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz 
+		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz
 		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 	fi
-
 }
 
+  function kc_fnf_download () {
+      if [ -z "$5" ]; then
+      echo " Missing arguments. Syntax:"
+      echo " kc_download <LAT> <LONG> <year> <out_dir> <log_dir>"
+      return
+      fi
+
+  	LINE=$1
+  	YEAR=$3
+  	YEAR_SHORT=${YEAR:2:2}
+  	ZIP_DIR=$4
+  	LOG_DIR=$5
+
+  source ${OPENSARKIT}/lib/helpers_source
+
+  	COL=$1
+  	ROW=$2
+  	# Create the actual Grid code for exact download address
+  	if [ `echo $ROW | grep -` ];then
+
+  		# eliminate - sign
+  		ROW=`echo ${ROW} | sed 's|-||g'`
+
+  		# create ROW in Form SXX
+  		if [ ${#ROW} == 1 ];then
+
+  			ROW=S0$ROW
+  		else
+  			ROW=S$ROW
+
+  		fi
+
+  	else
+
+  		# create ROW in Form NXX
+  		if [ ${#ROW} == 1 ];then
+
+  			ROW=N0$ROW
+  		else
+  			ROW=N$ROW
+  		fi
+
+  	fi
+
+  	if [ `echo $COL | grep -` ];then
+
+  		# eliminate - sign
+  		COL=`echo ${COL} | sed 's|-||g'`
+
+  		# create COL in Form WXXX
+  		if [ ${#COL}  == 3 ];then
+
+  			COL=W${COL}
+
+  		elif [ ${#COL} == 2 ];then
+
+  			COL=W0${COL}
+  		else
+  			COL=W00${COL}
+  		fi
+
+  	else
+  		# COL in Form EXXX
+  		if [ ${#COL} == 3 ];then
+
+  			COL=E${COL}
+
+  		elif [ ${#COL} == 2 ];then
+
+  			COL=E0${COL}
+  		else
+  			COL=E00${COL}
+  		fi
+  	fi
+
+  	if [ ${YEAR} -gt 2010 ];then
+
+  		SECONDS=0
+  		echo -ne " Downloading forest/non-forest data tile $i/${NR_OF_TILES} (${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz) ..." &&
+  		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS-2/ext1/PALSAR-2_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF_F02DAR.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz
+  		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+  	else
+
+  		SECONDS=0
+  		echo -ne " Downloading forest/non-forest data tile $i/${NR_OF_TILES} (${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz) ..." &&
+  		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz
+  		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+  	fi
+
+  }
+
 function kc_process () {
-    if [ -z "$6" ]; then 
+    if [ -z "$6" ]; then
     echo " Missing arguments. Syntax:"
     echo " kc_process <file> <AOI> <filter> <year> <tmp_dir> <log_dir>"
     return
@@ -140,7 +232,7 @@ function kc_process () {
 
     #-------------------------------------------------------------------------------------
 	# check if 1x1 tile intersects with AOI
-	
+
    	DATA=$1
 	AOI=$2
 	FILTER=$3
@@ -153,7 +245,7 @@ function kc_process () {
 	echo -ne " Check for overlap between the AOI and the 1x1 degree tile: ${DATA} " &&
 	gdal_trace_outline ${DATA} -out-cs ll -ogr-out ${DATA}.shp >> ${LOG_DIR}/log_process_${DATA} 2>&1
 	LAYER_TILE=`ogrinfo ${DATA}.shp | tail -1 | awk $'{print $2}'`
-	DATA_PATH=`readlink -f ${DATA}`		
+	DATA_PATH=`readlink -f ${DATA}`
 	AOI_PATH=`readlink -f $AOI`
 	LAYER=`ogrinfo ${AOI} | tail -1 | awk $'{print $2}'`
 
@@ -165,22 +257,22 @@ function kc_process () {
 	echo "   <OGRVRTLayer name=\"${LAYER}\">" >> ${TMP_DIR}/intersect_tile_${DATA}.vrt
 	echo "      <SrcDataSource>${AOI_PATH}</SrcDataSource>" >> ${TMP_DIR}/intersect_tile_${DATA}.vrt
 	echo "   </OGRVRTLayer>" >> ${TMP_DIR}/intersect_tile_${DATA}.vrt
-	echo "</OGRVRTDataSource>" >> ${TMP_DIR}/intersect_tile_${DATA}.vrt	
+	echo "</OGRVRTDataSource>" >> ${TMP_DIR}/intersect_tile_${DATA}.vrt
 
 
-	# create intersect table	
+	# create intersect table
 	ogr2ogr -f "csv" ${TMP_DIR}/grids_${DATA}.csv ${TMP_DIR}/intersect_tile_${DATA}.vrt -dialect sqlite -sql "SELECT * FROM ${LAYER} a, ${LAYER_TILE} b WHERE ST_Intersects(a.geometry, b.geometry)" >> ${LOG_DIR}/log_process_${DATA} 2>&1
-	
+
 	if [ `cat ${TMP_DIR}/grids_${DATA}.csv | wc -l` -gt 1 ];then
-	
+
 		echo "- Overlapping data tile ${DATA} will be processed"
-			
+
 		DATA_HH=${DATA}
 		DATA_HV=$(sed 's|_sl_HH|_sl_HV|g' <<< ${DATA_HH})
 
 		#translate ot tif to make it readable for SNAP
-		gdal_translate -of GTiff ${TMP_DIR}/${DATA_HH} ${TMP_DIR}/${DATA_HH}.tif >> ${LOG_DIR}/log_process_${DATA} 2>&1 
-		gdal_translate -of GTiff ${TMP_DIR}/${DATA_HV} ${TMP_DIR}/${DATA_HV}.tif >> ${LOG_DIR}/log_process_${DATA} 2>&1 
+		gdal_translate -of GTiff ${TMP_DIR}/${DATA_HH} ${TMP_DIR}/${DATA_HH}.tif >> ${LOG_DIR}/log_process_${DATA} 2>&1
+		gdal_translate -of GTiff ${TMP_DIR}/${DATA_HV} ${TMP_DIR}/${DATA_HV}.tif >> ${LOG_DIR}/log_process_${DATA} 2>&1
 
 		# Speckle Filtering
 		if [ $FILTER -eq 1 ];then #filter case
@@ -211,7 +303,7 @@ function kc_process () {
 			NLM_filter --sigma 2250 --rc 5,5,5 --rs 13,13,13 --hp 1.2 ${TMP_DIR}/${DATA_HV}.tif ${TMP_DIR}/${DATA_HV}.filtered.tif  >> ${LOG_DIR}/log_process_${DATA} 2>&1
 			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 		fi
-		
+
 		SECONDS=0
 		echo -ne " Calculating RFDI and HH/HV ratio channel ..." &&
 		if [ $FILTER -gt 0 ];then #filter case
@@ -229,15 +321,15 @@ function kc_process () {
 
 		# Layover/Shadow masking
 		mkdir -p ${TMP_DIR}/TILES
-		
+
 		SECONDS=0
 		echo -ne " Masking out layover/shadow areas ..." &&
-		if [ ${YEAR} -gt 2010 ];then 
+		if [ ${YEAR} -gt 2010 ];then
 			gdal_calc.py -A ${DATA:0:10}"_mask_F02DAR" --outfile=${DATA}"_mask.tif" --calc="1*(A==255)" >> ${LOG_DIR}/log_process 2>&1
 		else
 			gdal_calc.py -A ${DATA:0:10}"_mask" --outfile=${DATA}"_mask.tif" --calc="1*(A==255)" >> ${LOG_DIR}/log_process 2>&1
 		fi
-		
+
 		if [ $FILTER -gt 0 ];then #filter case
 
 			gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HH}.filtered.tif --calc=A*B --outfile=${TMP_DIR}/TILES/1_${DATA_HH}.tif --NoDataValue=0 --type='UInt16'
@@ -251,26 +343,26 @@ function kc_process () {
 			gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HH}.ratio.tif --calc=A*B --outfile=${TMP_DIR}/${DATA_HH}.ratio.mask.tif --NoDataValue=0
 			gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HH}.rfdi.tif --calc=A*B --outfile=${TMP_DIR}/${DATA_HH}.rfdi.mask.tif --NoDataValue=0
 			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-		fi	
+		fi
 
 
 		SECONDS=0
 		echo -ne " Rescaling the RFDI to unsigned 16 bit integer values ..." &&
 		MIN="0"
 		MAX="1"
-		gdal_translate -scale ${MIN} ${MAX} 0 65535 -a_nodata 0 -ot UInt16 ${TMP_DIR}/${DATA_HH}.rfdi.mask.tif ${TMP_DIR}/TILES/4_${DATA_HH}.rfdi.tif >> ${LOG_DIR}/log_process 2>&1 
-		
+		gdal_translate -scale ${MIN} ${MAX} 0 65535 -a_nodata 0 -ot UInt16 ${TMP_DIR}/${DATA_HH}.rfdi.mask.tif ${TMP_DIR}/TILES/4_${DATA_HH}.rfdi.tif >> ${LOG_DIR}/log_process 2>&1
+
 		MIN=0  #	`gdal_min ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif"`
 		MAX=15 #`gdal_max ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif"`
-   		gdal_translate -scale ${MIN} ${MAX} 0 65535 -a_nodata 0 -ot UInt16 ${TMP_DIR}/${DATA_HH}.ratio.mask.tif ${TMP_DIR}/TILES/3_${DATA_HH}.ratio.tif >> ${LOG_DIR}/log_process 2>&1 
+   		gdal_translate -scale ${MIN} ${MAX} 0 65535 -a_nodata 0 -ot UInt16 ${TMP_DIR}/${DATA_HH}.ratio.mask.tif ${TMP_DIR}/TILES/3_${DATA_HH}.ratio.tif >> ${LOG_DIR}/log_process 2>&1
 		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 		rm -f ${TMP_DIR}/${DATA_HH}*
 		rm -f ${TMP_DIR}/${DATA_HV}*
-			
-	else 
-	
-		echo -e "- No Overlap, going on with next tile."	
+
+	else
+
+		echo -e "- No Overlap, going on with next tile."
 	fi
 
 	rm -f ${TMP_DIR}/grids_${DATA}.csv
@@ -278,7 +370,7 @@ function kc_process () {
 
 function kc_process_jers (){
 
-   if [ -z "$6" ]; then 
+   if [ -z "$6" ]; then
     echo " Missing arguments. Syntax:"
     echo " kc_process <file> <AOI> <filter> <year> <tmp_dir> <log_dir>"
     return
@@ -289,7 +381,7 @@ function kc_process_jers (){
 
     #-------------------------------------------------------------------------------------
 	# check if 1x1 tile intersects with AOI
-	
+
 DATA=$1
 AOI=$2
 FILTER=$3
@@ -302,7 +394,7 @@ SECONDS=0
 echo -ne " Check for overlap between the AOI and the 1x1 degree tile: ${DATA} " &&
 gdal_trace_outline ${DATA} -out-cs ll -ogr-out ${DATA}.shp >> ${LOG_DIR}/log_process_${DATA} 2>&1
 LAYER_TILE=`ogrinfo ${DATA}.shp | tail -1 | awk $'{print $2}'`
-DATA_PATH=`readlink -f ${DATA}`		
+DATA_PATH=`readlink -f ${DATA}`
 AOI_PATH=`readlink -f $AOI`
 LAYER=`ogrinfo ${AOI} | tail -1 | awk $'{print $2}'`
 
@@ -314,19 +406,19 @@ echo "   </OGRVRTLayer>" >> ${TMP_DIR}/intersect_tile_${DATA}.vrt
 echo "   <OGRVRTLayer name=\"${LAYER}\">" >> ${TMP_DIR}/intersect_tile_${DATA}.vrt
 echo "      <SrcDataSource>${AOI_PATH}</SrcDataSource>" >> ${TMP_DIR}/intersect_tile_${DATA}.vrt
 echo "   </OGRVRTLayer>" >> ${TMP_DIR}/intersect_tile_${DATA}.vrt
-echo "</OGRVRTDataSource>" >> ${TMP_DIR}/intersect_tile_${DATA}.vrt	
+echo "</OGRVRTDataSource>" >> ${TMP_DIR}/intersect_tile_${DATA}.vrt
 
 
-# create intersect table	
-ogr2ogr -f "csv" ${TMP_DIR}/grids_${DATA}.csv ${TMP_DIR}/intersect_tile_${DATA}.vrt -dialect sqlite -sql "SELECT * FROM ${LAYER} a, ${LAYER_TILE} b WHERE ST_Intersects(a.geometry, b.geometry)" >> ${LOG_DIR}/log_process_${DATA} 2>&1 
+# create intersect table
+ogr2ogr -f "csv" ${TMP_DIR}/grids_${DATA}.csv ${TMP_DIR}/intersect_tile_${DATA}.vrt -dialect sqlite -sql "SELECT * FROM ${LAYER} a, ${LAYER_TILE} b WHERE ST_Intersects(a.geometry, b.geometry)" >> ${LOG_DIR}/log_process_${DATA} 2>&1
 
 if [ `cat ${TMP_DIR}/grids_${DATA}.csv | wc -l` -gt 1 ];then
-	
+
 	echo "- Overlapping data tile ${DATA} will be processed"
 	#translate ot tif to make it readable for SNAP
-	DATA_HH=${DATA}	
-	gdal_translate -of GTiff ${TMP_DIR}/${DATA_HH} ${TMP_DIR}/${DATA_HH}.tif >> ${LOG_DIR}/log_process_${DATA} 2>&1 
-	
+	DATA_HH=${DATA}
+	gdal_translate -of GTiff ${TMP_DIR}/${DATA_HH} ${TMP_DIR}/${DATA_HH}.tif >> ${LOG_DIR}/log_process_${DATA} 2>&1
+
 	# Layover/Shadow masking
 	mkdir -p ${TMP_DIR}/TILES
 
@@ -349,26 +441,24 @@ if [ `cat ${TMP_DIR}/grids_${DATA}.csv | wc -l` -gt 1 ];then
 		gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HH}.tif --calc=A*B --outfile=${TMP_DIR}/TILES/1_${DATA_HH}.tif --NoDataValue=0 --type='UInt16'
 	fi
 
-else 
-	
-	echo -e "- No Overlap, going on with next tile."	
+else
+
+	echo -e "- No Overlap, going on with next tile."
 fi
 }
 
 function kc_rfdi () {
-    if [ -z "$4" ]; then 
+    if [ -z "$4" ]; then
     echo " Missing arguments. Syntax:"
     echo " kc_rfdi <HH-pol> <HV-pol> <output> <log_dir>"
     return
     fi
-	
+
     source ${OPENSARKIT}/lib/helpers_source
-   
+
     FILELIST="$1,$2"
     SECONDS=0
     echo -ne " Calculating the Radar Forest Degradation Index ..." &&
-    bash $SNAP_EXE ${SNAP_GRAPHS}/KC_RFDI.xml -x -Pfilelist=${FILELIST} -Poutput=$3 >> $4/log_rfdi 2>&1 
+    bash $SNAP_EXE ${SNAP_GRAPHS}/KC_RFDI.xml -x -Pfilelist=${FILELIST} -Poutput=$3 >> $4/log_rfdi 2>&1
     duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-}	 
-
-
+}

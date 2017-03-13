@@ -1,5 +1,4 @@
 #! /bin/bash
-
 # If not stated otherwise (i.e. taken from https://github.com/dwtkns/gdal-cheat-sheet)
 # the MIT License applies
 
@@ -7,27 +6,27 @@
 # Copyright (c) 2016 Andreas Vollrath
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal 
-# in the Software without restriction, including without limitation the rights 
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is furnished
 # to do so, subject to the following conditions:
 
 # The above copyright notice and this permission notice shall be
 # included in all copies or substantial portions of the Software.
 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
 # INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
 # HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE 
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 # OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 function gdal_size() {
 # taken from https://github.com/dwtkns/gdal-cheat-sheet
 #Size Functions
 #This size function echos the pixel dimensions of a given file in the format expected by gdalwarp.
-    if [ -z "$1" ]; then 
+    if [ -z "$1" ]; then
         echo "Missing arguments. Syntax:"
         echo "  gdal_size <input_raster>"
         return
@@ -43,7 +42,7 @@ function gdal_size() {
 
 function gdal_extent() {
 # taken from https://github.com/dwtkns/gdal-cheat-sheet
-    if [ -z "$1" ]; then 
+    if [ -z "$1" ]; then
         echo "Missing arguments. Syntax:"
         echo "  gdal_extent <input_raster>"
         return
@@ -71,9 +70,9 @@ function ogr_extent() {
 # gdal_translate -projwin $(ogr_extent boundingbox.shp) input.tif clipped_output.tif
 # or
 # gdal_translate -projwin $(gdal_extent target_crop.tif) input.tif clipped_output.tif
-# This can be a useful way to quickly crop one raster to the same extent as another. 
+# This can be a useful way to quickly crop one raster to the same extent as another.
 # Add these to your ~/.bash_profile file for easy terminal access.
-    if [ -z "$1" ]; then 
+    if [ -z "$1" ]; then
         echo "Missing arguments. Syntax:"
         echo "  ogr_extent <input_vector>"
         return
@@ -90,7 +89,7 @@ function ogr_extent() {
 
 function ogr_layer_extent() {
 # taken from https://github.com/dwtkns/gdal-cheat-sheet
-    if [ -z "$2" ]; then 
+    if [ -z "$2" ]; then
         echo "Missing arguments. Syntax:"
         echo "  ogr_extent <input_vector> <layer_name>"
         return
@@ -106,7 +105,7 @@ function ogr_layer_extent() {
 }
 
 function gdal_max() {
-    if [ -z "$1" ]; then 
+    if [ -z "$1" ]; then
         echo "Missing arguments. Syntax:"
         echo "  gdal_max <input_raster>"
         return
@@ -118,7 +117,7 @@ function gdal_max() {
 }
 
 function gdal_min() {
-    if [ -z "$1" ]; then 
+    if [ -z "$1" ]; then
         echo "Missing arguments. Syntax:"
         echo "  gdal_min <input_raster>"
         return
@@ -130,7 +129,7 @@ function gdal_min() {
 }
 
 function gdal_mean() {
-    if [ -z "$1" ]; then 
+    if [ -z "$1" ]; then
         echo "Missing arguments. Syntax:"
         echo "  gdal_mean <input_raster>"
         return
@@ -142,7 +141,7 @@ function gdal_mean() {
 }
 
 function gdal_stddev() {
-    if [ -z "$1" ]; then 
+    if [ -z "$1" ]; then
         echo "Missing arguments. Syntax:"
         echo "  gdal_stddev <input_raster>"
         return
@@ -153,8 +152,8 @@ function gdal_stddev() {
     echo -n "$STDDEV"
 }
 
-function gdal_format() { 
-    if [ -z "$1" ]; then 
+function gdal_format() {
+    if [ -z "$1" ]; then
         echo "Missing arguments. Syntax:"
         echo "  gdal_format <input_raster>"
         return
@@ -166,8 +165,8 @@ function gdal_format() {
 	echo -n "$FORMAT"
 }
 
-function gdal_nodata() { 
-    if [ -z "$1" ]; then 
+function gdal_nodata() {
+    if [ -z "$1" ]; then
         echo "Missing arguments. Syntax:"
         echo "  gdal_nodata <input_raster>"
         return
@@ -178,8 +177,8 @@ function gdal_nodata() {
 	echo -n "$NODATA"
 }
 
-function gdal_EPSG() { 
-    if [ -z "$1" ]; then 
+function gdal_EPSG() {
+    if [ -z "$1" ]; then
         echo "Missing arguments. Syntax:"
         echo "  gdal_EPSG <input_raster>"
         return
@@ -190,4 +189,91 @@ function gdal_EPSG() {
 	   sed 's/    AUTHORITY\[\"EPSG\"\,\"//g' |\
 	   sed 's/\"\]\]//')
 	echo -n "$EPSG"
+}
+
+
+function gdal_datatype() {
+  if [ -z "$1" ]; then
+      echo "Missing arguments. Syntax:"
+      echo "  gdal_datatype <input_raster>"
+      return
+  fi
+  DTYPE=$(gdalinfo $1 |\
+          grep Type |\
+          awk '{print $4}' |\
+          awk -F"=" '{print $2}' |\
+          rev | cut -c 2- | rev)
+          echo -n "$DTYPE"
+}
+
+function gdal_resolution() {
+  if [ -z "$1" ]; then
+      echo "Missing arguments. Syntax:"
+      echo "  gdal_resolution <input_raster>"
+      return
+  fi
+  RES=$(gdalinfo $1 |\
+       grep "Pixel Size" |\
+       sed -e 's/Pixel Size = (//g' |\
+       sed 's/,/ /g' |\
+       sed 's/)//g')
+       echo -n "$RES"
+}
+
+function gdal_offset() {
+  # intended for use with gdal_edit.py
+  if [ -z "$3" ]; then
+      echo "Missing arguments. Syntax:"
+      echo " gdal_offset <input_raster> <x-offset> <y-offset>"
+      return
+  fi
+
+  source ${OPENSARKIT}/lib/helpers_source
+  RES=$(gdal_resolution $1 | awk '{print $1}')
+  XMIN=$(gdal_extent $1 | awk '{print $1}')
+  YMIN=$(gdal_extent $1 | awk '{print $2}')
+  XMAX=$(gdal_extent $1 | awk '{print $3}')
+  YMAX=$(gdal_extent $1 | awk '{print $4}')
+  NEW_XMIN=$(echo ${RES}*$2 + ${XMIN} | bc -l)
+  NEW_XMAX=$(echo ${RES}*$2 + ${XMAX} | bc -l)
+  NEW_YMIN=$(echo ${RES}*$3 + ${YMIN} | bc -l)
+  NEW_YMAX=$(echo ${RES}*$3 + ${YMAX} | bc -l)
+  echo -n "${NEW_XMIN} ${NEW_YMAX} ${NEW_XMAX} ${NEW_YMIN} "
+}
+
+function intersect_shp() {
+
+    if [ -z "$3" ]; then
+        echo " Missing arguments. Syntax:"
+        echo " intersect_shp <input_shape 1> <input_shape 2> <output_shape>"
+        return
+    fi
+
+    ISHAPE1=$(readlink -f $1)
+    ISHAPE2=$(readlink -f $2)
+    OSHAPE=$(readlink -f $3)
+
+    ILAYER1=$(ogrinfo ${ISHAPE1} | awk 'NR==3' | awk '{print $2}')
+    ILAYER2=$(ogrinfo ${ISHAPE2} | awk 'NR==3' | awk '{print $2}')
+    VRTDIR=$(dirname ${ISHAPE1})
+
+    echo $VRTDIR
+    echo $ISHAPE1
+    echo $ISHAPE2
+    echo $OSHAPE
+
+    echo "<OGRVRTDataSource>" > ${VRTDIR}/.intersect.vrt
+    echo "<OGRVRTLayer name=\"layer1\">" >> ${VRTDIR}/.intersect.vrt
+    echo "<SrcDataSource>${ISHAPE1}</SrcDataSource>" >> ${VRTDIR}/.intersect.vrt
+    echo "<SrcLayer>${ILAYER1}</SrcLayer>" >> ${VRTDIR}/.intersect.vrt
+    echo "</OGRVRTLayer>" >> ${VRTDIR}/.intersect.vrt
+    echo "<OGRVRTLayer name=\"layer2\">" >> ${VRTDIR}/.intersect.vrt
+    echo "<SrcDataSource>${ISHAPE2}</SrcDataSource>" >> ${VRTDIR}/.intersect.vrt
+    echo "<SrcLayer>${ILAYER2}</SrcLayer>" >> ${VRTDIR}/.intersect.vrt
+    echo "</OGRVRTLayer>" >> ${VRTDIR}/.intersect.vrt
+    echo "</OGRVRTDataSource>" >> ${VRTDIR}/.intersect.vrt
+
+    ogr2ogr -f "ESRI Shapefile" ${OSHAPE} ${VRTDIR}/.intersect.vrt -dialect sqlite -sql "SELECT ST_Intersection(a.geometry, b.geometry) AS geometry FROM layer1 a, layer2 b" >> ${VRTDIR}/.tmp_intersect 2>&1
+    [ $? -ne 0 ] && echo " Intersection was not possible" && return 1
+    rm -f ${VRTDIR}/.intersect.vrt
 }
