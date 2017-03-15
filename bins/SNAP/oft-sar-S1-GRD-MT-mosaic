@@ -270,7 +270,7 @@ if [ $(ls -1 ${TMP_DIR}/*_mosaiclist_vh) -gt 0 ]; then
 	SECONDS=0
 	echo -ne " Mosaicking Gamma0 VH mean layer..."
 	otbcli_Mosaic -ram 8192 -vdcut $(cat ${TMP_DIR}/ndv_list | tr '\n' ' ') -vdstats $(cat ${TMP_DIR}/stat_list | tr '\n' ' ') -progress 1 -comp.feather large \
-	 							-harmo.method band -harmo.cost mu -il $(cat ${TMP_DIR}/vh.meanlist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/06_Gamma0.VH.mean.tif ${ITYPE}
+	 							-harmo.method band -harmo.cost mu -il $(cat ${TMP_DIR}/vh.meanlist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/06_Gamma0.VH.avg.tif ${ITYPE}
   duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 
@@ -298,14 +298,14 @@ if [ $(ls -1 ${TMP_DIR}/*_mosaiclist_vh) -gt 0 ]; then
 	 							-harmo.method band -harmo.cost mu -il $(cat ${TMP_DIR}/vh.covlist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/10_Gamma0.VH.cov.tif ${ITYPE}
   duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
-	gdalbuildvrt -separate -srcnodata 0 $PROC_DIR/MOSAIC/MT_metrics/MT_metrics.VV.vrt $PROC_DIR/MOSAIC/MT_metrics/01_Gamma0.VV.mean.tif $PROC_DIR/MOSAIC/MT_metrics/02_Gamma0.VV.max.tif \
+	gdalbuildvrt -separate -srcnodata 0 $PROC_DIR/MOSAIC/MT_metrics/MT_metrics.VV.vrt $PROC_DIR/MOSAIC/MT_metrics/01_Gamma0.VV.avg.tif $PROC_DIR/MOSAIC/MT_metrics/02_Gamma0.VV.max.tif \
 																			$PROC_DIR/MOSAIC/MT_metrics/03_Gamma0.VV.min.tif $PROC_DIR/MOSAIC/MT_metrics/04_Gamma0.VV.std.tif $PROC_DIR/MOSAIC/MT_metrics/05_Gamma0.VV.cov.tif \
 																			$PROC_DIR/MOSAIC/MT_metrics/06_Gamma0.VH.mean.tif $PROC_DIR/MOSAIC/MT_metrics/07_Gamma0.VH.max.tif $PROC_DIR/MOSAIC/MT_metrics/08_Gamma0.VH.min.tif \
 																		 	$PROC_DIR/MOSAIC/MT_metrics/09_Gamma0.VH.std.tif $PROC_DIR/MOSAIC/MT_metrics/10_Gamma0.VH.cov.tif
 
 else
 
-	gdalbuildvrt -separate -srcnodata 0 $PROC_DIR/MOSAIC/MT_metrics/MT_metrics.VV.vrt $PROC_DIR/MOSAIC/MT_metrics/01_Gamma0.VV.mean.tif $PROC_DIR/MOSAIC/MT_metrics/02_Gamma0.VV.max.tif \
+	gdalbuildvrt -separate -srcnodata 0 $PROC_DIR/MOSAIC/MT_metrics/MT_metrics.VV.vrt $PROC_DIR/MOSAIC/MT_metrics/01_Gamma0.VV.avg.tif $PROC_DIR/MOSAIC/MT_metrics/02_Gamma0.VV.max.tif \
 																			$PROC_DIR/MOSAIC/MT_metrics/03_Gamma0.VV.min.tif $PROC_DIR/MOSAIC/MT_metrics/04_Gamma0.VV.std.tif $PROC_DIR/MOSAIC/MT_metrics/05_Gamma0.VV.cov.tif
 
   # creating the vrts

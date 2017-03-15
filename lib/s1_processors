@@ -826,7 +826,7 @@ function s1_mt_metrics() {
     SECONDS=0
     echo -ne " Calculating multi-temporal metrics for the VV polarization ..."
     ost_mt_metrics.py -i ${OUT_STACK_MT}/Timeseries/timeseries.VV.vrt -o ${OUT_STACK_MT}/MT_metrics/Gamma0.VV  >> ${LOG_MT}/log_mt_stacking 2>&1
-    mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.mean.tif ${OUT_STACK_MT}/MT_metrics/01_Gamma0.VV.mean.tif
+    mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.avg.tif ${OUT_STACK_MT}/MT_metrics/01_Gamma0.VV.avg.tif
     mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.max.tif ${OUT_STACK_MT}/MT_metrics/02_Gamma0.VV.max.tif
     mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.min.tif ${OUT_STACK_MT}/MT_metrics/03_Gamma0.VV.min.tif
     mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.std.tif ${OUT_STACK_MT}/MT_metrics/04_Gamma0.VV.std.tif
@@ -836,15 +836,15 @@ function s1_mt_metrics() {
     SECONDS=0
     echo -ne " Calculating multi-temporal metrics for the VH polarization ..."
     ost_mt_metrics.py -i ${OUT_STACK_MT}/Timeseries/timeseries.VH.vrt -o ${OUT_STACK_MT}/MT_metrics/Gamma0.VH  >> ${LOG_MT}/log_mt_stacking 2>&1
-    mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VH.mean.tif ${OUT_STACK_MT}/MT_metrics/06_Gamma0.VH.mean.tif
+    mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VH.avg.tif ${OUT_STACK_MT}/MT_metrics/06_Gamma0.VH.avg.tif
     mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VH.max.tif ${OUT_STACK_MT}/MT_metrics/07_Gamma0.VH.max.tif
     mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VH.min.tif ${OUT_STACK_MT}/MT_metrics/08_Gamma0.VH.min.tif
     mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VH.std.tif ${OUT_STACK_MT}/MT_metrics/09_Gamma0.VH.std.tif
     duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
-    gdalbuildvrt -separate -srcnodata 0 ${OUT_STACK_MT}/MT_metrics/Mt_metrics.VVVH.vrt ${OUT_STACK_MT}/MT_metrics/01_Gamma0.VV.mean.tif ${OUT_STACK_MT}/MT_metrics/02_Gamma0.VV.max.tif \
+    gdalbuildvrt -separate -srcnodata 0 ${OUT_STACK_MT}/MT_metrics/Mt_metrics.VVVH.vrt ${OUT_STACK_MT}/MT_metrics/01_Gamma0.VV.avg.tif ${OUT_STACK_MT}/MT_metrics/02_Gamma0.VV.max.tif \
                                         ${OUT_STACK_MT}/MT_metrics/03_Gamma0.VV.min.tif ${OUT_STACK_MT}/MT_metrics/04_Gamma0.VV.std.tif ${OUT_STACK_MT}/MT_metrics/05_Gamma0.VV.cov.tif \
-                                        ${OUT_STACK_MT}/MT_metrics/06_Gamma0.VH.mean.tif ${OUT_STACK_MT}/MT_metrics/07_Gamma0.VH.max.tif ${OUT_STACK_MT}/MT_metrics/08_Gamma0.VH.min.tif \
+                                        ${OUT_STACK_MT}/MT_metrics/06_Gamma0.VH.avg.tif ${OUT_STACK_MT}/MT_metrics/07_Gamma0.VH.max.tif ${OUT_STACK_MT}/MT_metrics/08_Gamma0.VH.min.tif \
                                         ${OUT_STACK_MT}/MT_metrics/09_Gamma0.VH.std.tif ${OUT_STACK_MT}/MT_metrics/10_Gamma0.VH.cov.tif
                                            >> ${LOG_MT}/log_mt_stacking 2>&1
 
