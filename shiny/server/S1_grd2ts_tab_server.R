@@ -83,6 +83,14 @@ print_s1_g2ts = eventReactive(input$s1_g2ts_process, {
       stop("No output folder chosen")
     }
   
+    else if ((input$S1_g2ts_AOI == "S1_inv_shape_local")&(is.null(input$S1_inv_shapefile))){
+      stop("Select a shapefile")
+    }
+    
+    else if ((input$S1_g2ts_AOI == "S1_inv_shape_upload")&(is.null(input$S1_inv_shapefile_path))){
+      stop("Select a Zipfile that contains an AOI shapefile")
+    }
+    
     else {
       volumes = c('User directory'=Sys.getenv("HOME"))
       OUTDIR = parseDirPath(volumes, input$s1_g2ts_inputdir)
@@ -117,6 +125,14 @@ print_s1_g2ts = eventReactive(input$s1_g2ts_process, {
       stop("No S1 inputfile chosen")
     } 
   
+    else if ((input$S1_g2ts_AOI == "S1_inv_shape_local")&(is.null(input$S1_inv_shapefile))){
+      stop("Select a shapefile")
+    }
+    
+    else if ((input$S1_g2ts_AOI == "S1_inv_shape_upload")&(is.null(input$S1_inv_shapefile_path))){
+      stop("Select a Zipfile that contains an AOI shapefile")
+    }
+    
     else if(is.null(input$s1_g2ts_outdir)){
       stop("No output folder chosen")
     }
@@ -183,6 +199,14 @@ print_s1_g2ts = eventReactive(input$s1_g2ts_process, {
       stop("No zip archive chosen")
     } 
   
+    else if ((input$S1_g2ts_AOI == "S1_inv_shape_local")&(is.null(input$S1_inv_shapefile))){
+      stop("Select a shapefile")
+    }
+    
+    else if ((input$S1_g2ts_AOI == "S1_inv_shape_upload")&(is.null(input$S1_inv_shapefile_path))){
+      stop("Select a Zipfile that contains an AOI shapefile")
+    }
+    
     else if(is.null(input$s1_g2ts_outdir2)){
       stop("No output folder chosen")
     }

@@ -1,26 +1,26 @@
-#! /bin/bash 
+#! /bin/bash
 
 # The MIT License (MIT)
 # Copyright (c) 2016 Andreas Vollrath
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal 
-# in the Software without restriction, including without limitation the rights 
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is furnished
 # to do so, subject to the following conditions:
 
 # The above copyright notice and this permission notice shall be
 # included in all copies or substantial portions of the Software.
 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
 # INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
 # HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE 
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 # OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#-------------------------------------------------------------------------------------------	
+#-------------------------------------------------------------------------------------------
 # 	0.1 Check for right usage & set up basic Script Variables
 if [ "$#" != "2" ]; then
 
@@ -72,7 +72,7 @@ export WGETRC="wget.conf"
 
 echo ""
 echo -ne " Logging in ..." &&
-#wget --keep-session-cookies --save-cookies ${TMP_DIR}/cookies.txt -P ${TMP_DIR}/ --post-data='userid='${USERNAME}'&password='${PW} --no-check-certificate "https://vertex.daac.asf.alaska.edu/services/authentication" -o ${TMP_DIR}/cookieslog.txt 
+#wget --keep-session-cookies --save-cookies ${TMP_DIR}/cookies.txt -P ${TMP_DIR}/ --post-data='userid='${USERNAME}'&password='${PW} --no-check-certificate "https://vertex.daac.asf.alaska.edu/services/authentication" -o ${TMP_DIR}/cookieslog.txt
 echo -e " done"
 if cat ${TMP_DIR}/cookies.txt | grep -q .alaska.edu; then
 	unset PW
@@ -93,7 +93,7 @@ NR=`cat ${TMP_DIR}/download_list | wc -l`
 COUNT=1
 echo -e " done"
 
-while read line; do 
+while read line; do
 
 	MODE=`cat ${TMP_DIR}/mode | awk "NR==${COUNT}"`
 	ACQ_DATE=`cat ${TMP_DIR}/acq_date | awk "NR==${COUNT}"`
@@ -102,26 +102,20 @@ while read line; do
 
 	mkdir -p ${PROC_DIR}/${MODE}/${ACQ_DATE}-${TRACK}
 
-	# prepare a loop to avoid uncomplete data downloads		
-#	i=1
-#	echo "bla" > ${TMP_DIR}/tmp_error
-	# do the loop 
-	#for(( i=1; i<=2; i++ ));do
+	# prepare a loop to avoid uncomplete data downloads
+	i=1
+	# do the loop
+	for(( i=1; i<=2; i++ ));do
 
-		#if grep -q "download completed" ${TMP_DIR}/tmp_error;then
-		#	i=3
-		#else
-		#	i=1
+		i=3
+		echo -ne " Downloading Product ${COUNT} of ${NR} (Granule: ${SCENE}) " &&
+		wget -c -P ${PROC_DIR}/${MODE}/${ACQ_DATE}-${TRACK} "${line}" >> $TMP_DIR/log_download 2>&1
+		[ $! -ne 0 ] && i=1 && echo " download failed, having another try."
+		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+#		aria2c --load-cookies="${TMP_DIR}/cookies.txt" --dir=${PROC_DIR}/${MODE}/${ACQ_DATE}-${TRACK} --continue=true "${line}" > ${TMP_DIR}/tmp_error \
 
+	done
 
-			echo -ne " Downloading Product ${COUNT} of ${NR} (Granule: ${SCENE}) " &&
-			wget -c -P ${PROC_DIR}/${MODE}/${ACQ_DATE}-${TRACK} "${line}" >> $TMP_DIR/log_download 2>&1 & spinner $! \
-			&& duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-#			aria2c --load-cookies="${TMP_DIR}/cookies.txt" --dir=${PROC_DIR}/${MODE}/${ACQ_DATE}-${TRACK} --continue=true "${line}" > ${TMP_DIR}/tmp_error \
-		
-		#fi
-	#done
-	
 	COUNT=`expr ${COUNT} + 1`
 
 done < ${TMP_DIR}/download_list
@@ -131,4 +125,3 @@ echo " Download of all products succesfully completed"
 echo "---------------------------------------------"
 
 rm -rf ${TMP_DIR}
-

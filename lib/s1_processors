@@ -36,7 +36,7 @@ function s1_frame_import() {
   BASE=`basename $1`
   echo ""
   SECONDS=0
-  echo -ne " Importing S1 GRD data file, applying the precise orbit file and applying the Refined Lee Speckle Filter ..." &&
+  echo -ne " Importing S1 GRD data file, applying the precise orbit file and removing thermal noise ..." &&
   #bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_AO_TNR_BRD_SPK.xml -x -Pinput=$1 -Poutput=$2 > $3/log_import 2>&1
   bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_AO_TNR_BRD.xml -x -Pinput=$1 -Poutput=$2 > $3/log_import 2>&1
   duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
@@ -427,7 +427,7 @@ function s1_mt_metrics() {
     rm -f ${TMP_MT}/Gamma0_VV_coef_of_var.8bit.tif
 
     # cut to the actual extent of interest coming from the intersect above
-    gdalwarp -overwrite -co "COMPRESS=LZW" -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${TMP_MT}/Gamma0_VV_coef_of_var.16bit.ones.tif ${OUT_STACK_MT}/MT_metrics/05_Gamma0.VV.cov.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+    gdalwarp -overwrite -co "COMPRESS=LZW" -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${TMP_MT}/Gamma0_VV_coef_of_var.8bit.ones.tif ${OUT_STACK_MT}/MT_metrics/05_Gamma0.VV.cov.tif >> ${LOG_MT}/log_mt_stacking 2>&1
     rm -f ${TMP_MT}/Gamma0_VV_coef_of_var.8bit.ones.tif
     duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
@@ -452,7 +452,7 @@ function s1_mt_metrics() {
   done
 
   paste ${TMP_MT}/tmp.date ${TMP_MT}/tmp.filename >> ${TMP_MT}/tmp.date.filename
-  sort ${TMP_MT}/tmp.date.filename >> ${TMP_MT}/tmp.date.filename.sorted
+  sort -g ${TMP_MT}/tmp.date.filename >> ${TMP_MT}/tmp.date.filename.sorted
 
   i=1
   while read line; do
@@ -479,13 +479,13 @@ function s1_mt_metrics() {
       if [ ${POL_MODE_MT} == VV ];then
         SECONDS=0
         echo -ne " Creating a thumbnail file for the acquisition of ${DATE} ..."
-        gdal_contrast_stretch -ndv 0 -percentile-range 0.02 0.98 ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.16bit.tif ${TMP_MT}/${i}_${DATE}.VV.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+        gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.16bit.tif ${TMP_MT}/${i}_${DATE}.VV.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
         # create jpg
         gdal_translate -of JPEG -outsize 20% 20% -a_nodata 0 ${TMP_MT}/${i}_${DATE}.VV.TN.tif ${TMP_MT}/${i}_${DATE}.VV.TN.jpg >> ${LOG_MT}/log_mt_stacking 2>&1
         # get width of jpeg
         WIDTH_TN=$(identify -format %w ${TMP_MT}/${i}_${DATE}.VV.TN.jpg)
         HEIGHT_TN=$(identify -format %h ${TMP_MT}/${i}_${DATE}.VV.TN.jpg)
-        HEIGHT_LABEL=$(expr $HEIGHT_TN / 10)
+        HEIGHT_LABEL=$(expr $HEIGHT_TN / 15)
         # add annotation with date
         convert -background '#0008' -fill white -gravity center -size ${WIDTH_TN}x${HEIGHT_LABEL} caption:"${DATE}" \
                 ${TMP_MT}/${i}_${DATE}.VV.TN.jpg +swap -gravity north -composite ${TMP_MT}/${i}_${DATE}.VV.TN.jpg
@@ -519,7 +519,7 @@ function s1_mt_metrics() {
         # get width of jpeg
         WIDTH_TN=$(identify -format %w ${TMP_MT}/${i}_${DATE}.VV.TN.jpg)
         HEIGHT_TN=$(identify -format %h ${TMP_MT}/${i}_${DATE}.VV.TN.jpg)
-        HEIGHT_LABEL=$(expr $HEIGHT_TN / 10)
+        HEIGHT_LABEL=$(expr $HEIGHT_TN / 15)
         # add annotation with date
         convert -background '#0008' -fill white -gravity center -size ${WIDTH_TN}x${HEIGHT_LABEL} caption:"${DATE}" ${TMP_MT}/${i}_${DATE}.VV.TN.jpg +swap -gravity north -composite ${TMP_MT}/${i}_${DATE}.VV.TN.jpg
         # create a tif thumbnail for visualization in sepal
@@ -537,13 +537,13 @@ function s1_mt_metrics() {
 
       if [ ${POL_MODE_MT} == VV ];then
         echo -ne " Creating a thumbnail file for the acquisition of ${DATE} ..."
-        gdal_contrast_stretch -ndv 0 -percentile-range 0.02 0.98 ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.tif ${TMP_MT}/${i}_${DATE}.VV.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+        gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.tif ${TMP_MT}/${i}_${DATE}.VV.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
         # create jpg
         gdal_translate -of JPEG -outsize 20% 20% -a_nodata 0 ${TMP_MT}/${i}_${DATE}.VV.TN.tif ${TMP_MT}/${i}_${DATE}.VV.TN.jpg >> ${LOG_MT}/log_mt_stacking 2>&1
         # get width of jpeg
         WIDTH_TN=$(identify -format %w ${TMP_MT}/${i}_${DATE}.VV.TN.jpg)
         HEIGHT_TN=$(identify -format %h ${TMP_MT}/${i}_${DATE}.VV.TN.jpg)
-        HEIGHT_LABEL=$(expr $HEIGHT_TN / 10)
+        HEIGHT_LABEL=$(expr $HEIGHT_TN / 15)
         # add annotation with date
         convert -background '#0008' -fill white -gravity center -size ${WIDTH_TN}x${HEIGHT_LABEL} caption:"${DATE}" \
                 ${TMP_MT}/${i}_${DATE}.VV.TN.jpg +swap -gravity north -composite ${TMP_MT}/${i}_${DATE}.VV.TN.jpg
@@ -563,29 +563,33 @@ function s1_mt_metrics() {
   rm -f ${TMP_MT}/ts_vrt_list.txt
 
   if [ ${POL_MODE_MT} == VV ];then
+
     # Create a time-series animation
-    convert -delay 100 -loop 10 ${TMP_MT}/*.VV.TN.jpg ${OUT_STACK_MT}/Timeseries/time_animation.gif  >> ${LOG_MT}/log_mt_stacking 2>&1
+    REC_DIR=${PWD}
+    cd ${TMP_MT}
+    convert -delay 100 -loop 10 $(ls -1 *.VV.TN.jpg | sort -n) ${OUT_STACK_MT}/Timeseries/time_animation.gif  >> ${LOG_MT}/log_mt_stacking 2>&1
+    cd ${REC_DIR}
     rm -f ${TMP_MT}/*.VV.TN.jpg
 
-    SECONDS=0
-    echo -ne " Calculating temporal percentiles ..."
-    ost_mt_percentiles.py -i ${OUT_STACK_MT}/Timeseries/timeseries.VV.vrt -o ${OUT_STACK_MT}/MT_metrics/Gamma0.VV  >> ${LOG_MT}/log_mt_stacking 2>&1
-    mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.p90.tif ${OUT_STACK_MT}/MT_metrics/01_Gamma0.VV.p90.tif
-    mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.p10.tif ${OUT_STACK_MT}/MT_metrics/02_Gamma0.VV.p10.tif
-    mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.pDiff.tif ${OUT_STACK_MT}/MT_metrics/03_Gamma0.VV.pDiff.tif
-    gdalbuildvrt -separate -srcnodata 0 ${OUT_STACK_MT}/MT_metrics/Percentile.VV.vrt ${OUT_STACK_MT}/MT_metrics/01_Gamma0.VV.p90.tif ${OUT_STACK_MT}/MT_metrics/02_Gamma0.VV.p10.tif \
-                                        ${OUT_STACK_MT}/MT_metrics/03_Gamma0.VV.pDiff.tif  >> ${LOG_MT}/log_mt_stacking 2>&1
-    duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    #SECONDS=0
+    #echo -ne " Calculating temporal percentiles ..."
+    #ost_mt_percentiles.py -i ${OUT_STACK_MT}/Timeseries/timeseries.VV.vrt -o ${OUT_STACK_MT}/MT_metrics/Gamma0.VV  >> ${LOG_MT}/log_mt_stacking 2>&1
+    #mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.p90.tif ${OUT_STACK_MT}/MT_metrics/01_Gamma0.VV.p90.tif
+    #mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.p10.tif ${OUT_STACK_MT}/MT_metrics/02_Gamma0.VV.p10.tif
+    #mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.pDiff.tif ${OUT_STACK_MT}/MT_metrics/03_Gamma0.VV.pDiff.tif
+    #gdalbuildvrt -separate -srcnodata 0 ${OUT_STACK_MT}/MT_metrics/Percentile.VV.vrt ${OUT_STACK_MT}/MT_metrics/01_Gamma0.VV.p90.tif ${OUT_STACK_MT}/MT_metrics/02_Gamma0.VV.p10.tif \
+  #                                      ${OUT_STACK_MT}/MT_metrics/03_Gamma0.VV.pDiff.tif  >> ${LOG_MT}/log_mt_stacking 2>&1
+  #  duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
     SECONDS=0
     echo -ne " Calculating multi-temporal metrics ..."
     ost_mt_metrics.py -i ${OUT_STACK_MT}/Timeseries/timeseries.VV.vrt -o ${OUT_STACK_MT}/MT_metrics/Gamma0.VV  >> ${LOG_MT}/log_mt_stacking 2>&1
-    mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.mean.tif ${OUT_STACK_MT}/MT_metrics/01_Gamma0.VV.mean.tif
+    mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.avg.tif ${OUT_STACK_MT}/MT_metrics/01_Gamma0.VV.avg.tif
     mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.min.tif ${OUT_STACK_MT}/MT_metrics/02_Gamma0.VV.min.tif
     mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.max.tif ${OUT_STACK_MT}/MT_metrics/03_Gamma0.VV.max.tif
     mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.std.tif ${OUT_STACK_MT}/MT_metrics/04_Gamma0.VV.std.tif
     #mv ${OUT_STACK_MT}/MT_metrics/05_Gamma0_VV_coef_of_var.16bit.tif ${OUT_STACK_MT}/MT_metrics/05_Gamma0.VV.cov.tif
-    gdalbuildvrt -separate -srcnodata 0 ${OUT_STACK_MT}/MT_metrics/Mt_metrics.VV.vrt ${OUT_STACK_MT}/MT_metrics/01_Gamma0.VV.mean.tif ${OUT_STACK_MT}/MT_metrics/02_Gamma0.VV.min.tif ${OUT_STACK_MT}/MT_metrics/03_Gamma0.VV.max.tif \
+    gdalbuildvrt -separate -srcnodata 0 ${OUT_STACK_MT}/MT_metrics/Mt_metrics.VV.vrt ${OUT_STACK_MT}/MT_metrics/01_Gamma0.VV.avg.tif ${OUT_STACK_MT}/MT_metrics/02_Gamma0.VV.min.tif ${OUT_STACK_MT}/MT_metrics/03_Gamma0.VV.max.tif \
                                         ${OUT_STACK_MT}/MT_metrics/04_Gamma0.VV.std.tif ${OUT_STACK_MT}/MT_metrics/05_Gamma0.VV.cov.tif  >> ${LOG_MT}/log_mt_stacking 2>&1
     duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
   fi
@@ -673,7 +677,7 @@ function s1_mt_metrics() {
     done
 
     paste ${TMP_MT}/tmp.date ${TMP_MT}/tmp.filename >> ${TMP_MT}/tmp.date.filename
-    sort ${TMP_MT}/tmp.date.filename >> ${TMP_MT}/tmp.date.filename.sorted
+    sort -g ${TMP_MT}/tmp.date.filename >> ${TMP_MT}/tmp.date.filename.sorted
 
     i=1
     while read line; do
@@ -684,7 +688,7 @@ function s1_mt_metrics() {
       if [ ${ODATATYPE} = "UInt16" ]; then
 
         SECONDS=0
-        echo " Scaling ${DATE} layer to 16 bit (-25 dB to 5dB) ..."
+        echo -ne " Scaling ${DATE} layer to 16 bit (-25 dB to 5dB) ..."
         gdal_translate -ot "UInt16" -projwin $(ogr_extent ${CROPLINE}) -scale -25 5 1 65536 ${file} ${TMP_MT}/${DATE}.VH.16bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
 
         # replace all zeros to one to avoid outlier removal from rescaling
@@ -698,7 +702,7 @@ function s1_mt_metrics() {
         echo ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.16bit.tif >> ${TMP_MT}/ts_vrt_list.VH.txt
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
-        echo " Creating a thumbnail file for the acquisition of ${DATE} ..."
+        echo -ne " Creating a thumbnail file for the acquisition of ${DATE} ..."
         gdal_contrast_stretch -ndv 0 -percentile-range 0.02 0.98 ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.16bit.tif ${TMP_MT}/${i}_${DATE}.VV.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
         gdal_contrast_stretch -ndv 0 -percentile-range 0.02 0.98 ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.16bit.tif ${TMP_MT}/${i}_${DATE}.VH.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
         gdal_calc.py -A ${TMP_MT}/${i}_${DATE}.VV.TN.tif -B ${TMP_MT}/${i}_${DATE}.VH.TN.tif --calc="A-B" --type=Byte --outfile=${TMP_MT}/${i}_${DATE}.VVVH.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
@@ -711,7 +715,7 @@ function s1_mt_metrics() {
         # get width of jpeg
         WIDTH_TN=$(identify -format %w ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg)
         HEIGHT_TN=$(identify -format %h ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg)
-        HEIGHT_LABEL=$(expr $HEIGHT_TN / 10)
+        HEIGHT_LABEL=$(expr $HEIGHT_TN / 15)
         # add annotation with date
         convert -background '#0008' -fill white -gravity center -size ${WIDTH_TN}x${HEIGHT_LABEL} caption:"${DATE}" \
                 ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg +swap -gravity north -composite ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg
@@ -732,7 +736,7 @@ function s1_mt_metrics() {
         # cut to the actual extent of interest coming from the intersect above
         gdalwarp -overwrite -co "COMPRESS=LZW" -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${TMP_MT}/${DATE}.VH.8bit.ones.tif ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.8bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
         rm -f ${TMP_MT}/${DATE}.VH.8bit.ones.tif
-        echo ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.8bit.tif >> ${TMP_MT}/ts_vrt_list.VH.txt
+        echo ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.8bit.tif >> ${TMP_MT}/ts_vrt_list.VH.txt
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
         echo -ne " Creating a thumbnail file for the acquisition of ${DATE} ..."
@@ -748,7 +752,7 @@ function s1_mt_metrics() {
         # get width of jpeg
         WIDTH_TN=$(identify -format %w ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg)
         HEIGHT_TN=$(identify -format %h ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg)
-        HEIGHT_LABEL=$(expr $HEIGHT_TN / 10)
+        HEIGHT_LABEL=$(expr $HEIGHT_TN / 15)
         # add annotation with date
         convert -background '#0008' -fill white -gravity center -size ${WIDTH_TN}x${HEIGHT_LABEL} caption:"${DATE}" \
                 ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg +swap -gravity north -composite ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg
@@ -779,7 +783,7 @@ function s1_mt_metrics() {
         # get width of jpeg
         WIDTH_TN=$(identify -format %w ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg)
         HEIGHT_TN=$(identify -format %h ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg)
-        HEIGHT_LABEL=$(expr $HEIGHT_TN / 10)
+        HEIGHT_LABEL=$(expr $HEIGHT_TN / 15)
         # add annotation with date
         convert -background '#0008' -fill white -gravity center -size ${WIDTH_TN}x${HEIGHT_LABEL} caption:"${DATE}" \
                 ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg +swap -gravity north -composite ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg
@@ -796,32 +800,35 @@ function s1_mt_metrics() {
     rm -rf ${TMP_MT}/mt_stack.vh.db.speckle.d*
 
     # Create a time-series animation
-    convert -delay 100 -loop 10 ${TMP_MT}/*.RGB.TN.jpg ${OUT_STACK_MT}/Timeseries/time_animation.gif  >> ${LOG_MT}/log_mt_stacking 2>&1
+    REC_DIR=${PWD}
+    cd ${TMP_MT}
+    convert -delay 100 -loop 10 $(ls -1 *.RGB.TN.jpg | sort -g) ${OUT_STACK_MT}/Timeseries/time_animation.gif  >> ${LOG_MT}/log_mt_stacking 2>&1
+    cd ${REC_DIR}
     #rm -f ${TMP_MT}/*.RGB.TN.jpg
 
     # create a virtual raster
     gdalbuildvrt -separate -srcnodata 0 ${OUT_STACK_MT}/Timeseries/timeseries.VH.vrt $(cat ${TMP_MT}/ts_vrt_list.VH.txt | tr "\n" " ")  >> ${LOG_MT}/log_mt_stacking 2>&1
     rm -f ${TMP_MT}/ts_vrt_list.txt
 
-    SECONDS=0
-    echo -ne " Calculating temporal percentiles for VV polarization ..."
-    ost_mt_percentiles.py -i ${OUT_STACK_MT}/Timeseries/timeseries.VV.vrt -o ${OUT_STACK_MT}/MT_metrics/Gamma0.VV  >> ${LOG_MT}/log_mt_stacking 2>&1
-    mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.p90.tif ${OUT_STACK_MT}/MT_metrics/01_Gamma0.VV.p90.tif
-    mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.p10.tif ${OUT_STACK_MT}/MT_metrics/02_Gamma0.VV.p10.tif
-    mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.pDiff.tif ${OUT_STACK_MT}/MT_metrics/03_Gamma0.VV.pDiff.tif
-    duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    #SECONDS=0
+    #echo -ne " Calculating temporal percentiles for VV polarization ..."
+    #ost_mt_percentiles.py -i ${OUT_STACK_MT}/Timeseries/timeseries.VV.vrt -o ${OUT_STACK_MT}/MT_metrics/Gamma0.VV  >> ${LOG_MT}/log_mt_stacking 2>&1
+    #mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.p90.tif ${OUT_STACK_MT}/MT_metrics/01_Gamma0.VV.p90.tif
+    #mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.p10.tif ${OUT_STACK_MT}/MT_metrics/02_Gamma0.VV.p10.tif
+    #mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.pDiff.tif ${OUT_STACK_MT}/MT_metrics/03_Gamma0.VV.pDiff.tif
+    #duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
-    SECONDS=0
-    echo -ne " Calculating temporal percentiles for VH polarization ..."
-    ost_mt_percentiles.py -i ${OUT_STACK_MT}/Timeseries/timeseries.VH.vrt -o ${OUT_STACK_MT}/MT_metrics/Gamma0.VH  >> ${LOG_MT}/log_mt_stacking 2>&1
-    mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VH.p90.tif ${OUT_STACK_MT}/MT_metrics/04_Gamma0.VH.p90.tif
-    mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VH.p10.tif ${OUT_STACK_MT}/MT_metrics/05_Gamma0.VH.p10.tif
-    mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VH.pDiff.tif ${OUT_STACK_MT}/MT_metrics/06_Gamma0.VH.pDiff.tif
-    duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    #SECONDS=0
+    #echo -ne " Calculating temporal percentiles for VH polarization ..."
+    #ost_mt_percentiles.py -i ${OUT_STACK_MT}/Timeseries/timeseries.VH.vrt -o ${OUT_STACK_MT}/MT_metrics/Gamma0.VH  >> ${LOG_MT}/log_mt_stacking 2>&1
+    #mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VH.p90.tif ${OUT_STACK_MT}/MT_metrics/04_Gamma0.VH.p90.tif
+    #mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VH.p10.tif ${OUT_STACK_MT}/MT_metrics/05_Gamma0.VH.p10.tif
+    #mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VH.pDiff.tif ${OUT_STACK_MT}/MT_metrics/06_Gamma0.VH.pDiff.tif
+    #duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
-    gdalbuildvrt -separate -srcnodata 0 ${OUT_STACK_MT}/MT_metrics/Percentile.VVVH.vrt ${OUT_STACK_MT}/MT_metrics/01_Gamma0.VV.p90.tif ${OUT_STACK_MT}/MT_metrics/02_Gamma0.VV.p10.tif \
-                                          ${OUT_STACK_MT}/MT_metrics/03_Gamma0.VV.pDiff.tif  ${OUT_STACK_MT}/MT_metrics/04_Gamma0.VH.p90.tif ${OUT_STACK_MT}/MT_metrics/05_Gamma0.VH.p10.tif \
-                                          ${OUT_STACK_MT}/MT_metrics/06_Gamma0.VH.pDiff.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+    #gdalbuildvrt -separate -srcnodata 0 ${OUT_STACK_MT}/MT_metrics/Percentile.VVVH.vrt ${OUT_STACK_MT}/MT_metrics/01_Gamma0.VV.p90.tif ${OUT_STACK_MT}/MT_metrics/02_Gamma0.VV.p10.tif \
+    #                                      ${OUT_STACK_MT}/MT_metrics/03_Gamma0.VV.pDiff.tif  ${OUT_STACK_MT}/MT_metrics/04_Gamma0.VH.p90.tif ${OUT_STACK_MT}/MT_metrics/05_Gamma0.VH.p10.tif \
+    #                                      ${OUT_STACK_MT}/MT_metrics/06_Gamma0.VH.pDiff.tif >> ${LOG_MT}/log_mt_stacking 2>&1
 
     SECONDS=0
     echo -ne " Calculating multi-temporal metrics for the VV polarization ..."
@@ -845,87 +852,7 @@ function s1_mt_metrics() {
     gdalbuildvrt -separate -srcnodata 0 ${OUT_STACK_MT}/MT_metrics/Mt_metrics.VVVH.vrt ${OUT_STACK_MT}/MT_metrics/01_Gamma0.VV.avg.tif ${OUT_STACK_MT}/MT_metrics/02_Gamma0.VV.max.tif \
                                         ${OUT_STACK_MT}/MT_metrics/03_Gamma0.VV.min.tif ${OUT_STACK_MT}/MT_metrics/04_Gamma0.VV.std.tif ${OUT_STACK_MT}/MT_metrics/05_Gamma0.VV.cov.tif \
                                         ${OUT_STACK_MT}/MT_metrics/06_Gamma0.VH.avg.tif ${OUT_STACK_MT}/MT_metrics/07_Gamma0.VH.max.tif ${OUT_STACK_MT}/MT_metrics/08_Gamma0.VH.min.tif \
-                                        ${OUT_STACK_MT}/MT_metrics/09_Gamma0.VH.std.tif ${OUT_STACK_MT}/MT_metrics/10_Gamma0.VH.cov.tif
-                                           >> ${LOG_MT}/log_mt_stacking 2>&1
-
-    # SECONDS=0
-    # echo -ne " Creating the final stack ..." &&
-    # bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_MT_BandMerge.xml -x \
-    # -Pfilelist=${TMP_MT}/mean.VV.dim,${TMP_MT}/max.VV.dim,${TMP_MT}/min.VV.dim,${TMP_MT}/stdev.VV.dim,${TMP_MT}/cof_var.VV.dim,${TMP_MT}/mean.VH.dim,${TMP_MT}/max.VH.dim,${TMP_MT}/min.VH.dim,${TMP_MT}/stdev.VH.dim,${TMP_MT}/cof_var.VH.dim \
-    # -Poutput=${TMP_MT}/mt-metrics_sdv >> ${LOG_MT}/log_mt_stacking 2>&1
-    # duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-    # [ $? -ne 0 ] && return ${ERR_STACKING}
-
-    # SECONDS=0
-    # echo -ne " Create the minimum extent mask  ..." &&
-    # bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_MT_create_mask.xml -x -Pfilelist=${TMP_MT}/max.VV.dim,${TMP_MT}/min.VV.dim -Poutput=${TMP_MT}/mask >> ${LOG_MT}/log_mt_stacking 2>&1
-    # gdal_trace_outline ${TMP_MT}/mask.data/mask.img -ndv 0 -no-donuts -out-cs ll -ogr-out ${TMP_MT}/extent.shp >> ${LOG_MT}/log_mt_stacking 2>&1
-    # ogr2ogr -f CSV ${TMP_MT}/extent.csv ${TMP_MT}/extent.shp -lco GEOMETRY=AS_WKT >> ${LOG_MT}/log_mt_stacking 2>&1
-    # duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-    # echo '#defaultCSS=fill:#00ff00; fill-opacity:0.5; stroke:#ffffff; stroke-opacity:1.0; stroke-width:1.0; symbol:cross' > ${TMP_MT}/mt-metrics_sdv.data/vector_data/extent_1.csv
-    # echo -e 'extent\tthe_geom:MultiPolygon\tFID:Long' >> ${TMP_MT}/mt-metrics_sdv.data/vector_data/extent_1.csv
-    # tail -n +2 ${TMP_MT}/extent.csv | sed 's|"POLYGON ((|extent.1\tMULTIPOLYGON (((|g' | sed 's|))",0|)))\t0|g' | sed 's|,|, |g' >> ${TMP_MT}/mt-metrics_sdv.data/vector_data/extent_1.csv
-    #
-    # cp ${TMP_MT}/mt-metrics_sdv.data/vector_data/extent_1.csv ${TMP_MT}/mt_stack.vv.db.speckle.data/vector_data/extent_1.csv
-    # cp ${TMP_MT}/mt-metrics_sdv.data/vector_data/extent_1.csv ${TMP_MT}/mt_stack.vh.db.speckle.data/vector_data/extent_1.csv
-    #
-    # SECONDS=0
-    # echo -ne " Apply the mask on the multi-temporal metrics stack ..." &&
-    # bash $SNAP_EXE Land-Sea-Mask -Ssource=${TMP_MT}/mt-metrics_sdv.dim -PuseSRTM=false -Pgeometry=extent_1 -t ${OUT_STACK_MT}/mt-metrics_sdv.dim >> ${LOG_MT}/log_mt_stacking 2>&1
-    # duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-    # sed -i 's|<NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>|<NO_DATA_VALUE_USED>true</NO_DATA_VALUE_USED>|g' ${OUT_STACK_MT}/mt-metrics_sdv.dim
-    #
-    # SECONDS=0
-    # echo -ne " Apply the mask on the multi-temporal VV stack ..." &&
-    # bash $SNAP_EXE Land-Sea-Mask -Ssource=${TMP_MT}/mt_stack.vv.db.speckle.dim -PuseSRTM=false -Pgeometry=extent_1 -t ${OUT_STACK_MT}/mt_stack.vv.db.speckle.dim >> ${LOG_MT}/log_mt_stacking 2>&1
-    # duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-    # sed -i 's|<NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>|<NO_DATA_VALUE_USED>true</NO_DATA_VALUE_USED>|g' ${OUT_STACK_MT}/mt_stack.vv.db.speckle.dim
-    #
-    # SECONDS=0
-    # echo -ne " Apply the mask on the multi-temporal VH stack ..." &&
-    # bash $SNAP_EXE Land-Sea-Mask -Ssource=${TMP_MT}/mt_stack.vh.db.speckle.dim -PuseSRTM=false -Pgeometry=extent_1 -t ${OUT_STACK_MT}/mt_stack.vh.db.speckle.dim >> ${LOG_MT}/log_mt_stacking 2>&1
-    # duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-    # sed -i 's|<NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>|<NO_DATA_VALUE_USED>true</NO_DATA_VALUE_USED>|g' ${OUT_STACK_MT}/mt_stack.vh.db.speckle.dim
-
-    #
-    # STACK_DIM=${OUT_STACK_MT}/mt-metrics_sdv.dim
-    # STACK_NAME=`echo "${OUT_STACK_MT}/mt-metrics_sdv.dim" | rev | cut -c 5- | rev`
-    # STACK_DATA=${STACK_NAME}.data
-    #
-    # SECONDS=0
-    # echo -ne " Renaming the layers of the multi-temporal stacks  ..." &&
-    # sed -i 's|Gamma0_VV_2|Gamma0_VV_max|g' ${STACK_DIM}
-    # sed -i 's|Gamma0_VV_3|Gamma0_VV_min|g' ${STACK_DIM}
-    # sed -i 's|Gamma0_VV_4|Gamma0_VV_stddev|g' ${STACK_DIM}
-    # sed -i 's|Gamma0_VV_5|Gamma0_VV_coef_of_var|g' ${STACK_DIM}
-    # sed -i 's|\<Gamma0_VV\>|Gamma0_VV_mean|g' ${STACK_DIM}
-    # sed -i 's|Gamma0_VH_2|Gamma0_VH_max|g' ${STACK_DIM}
-    # sed -i 's|Gamma0_VH_3|Gamma0_VH_min|g' ${STACK_DIM}
-    # sed -i 's|Gamma0_VH_4|Gamma0_VH_stddev|g' ${STACK_DIM}
-    # sed -i 's|Gamma0_VH_5|Gamma0_VH_coef_of_var|g' ${STACK_DIM}
-    # sed -i 's|\<Gamma0_VH\>|Gamma0_VH_mean|g' ${STACK_DIM}
-    #
-    # mv ${STACK_DATA}/Gamma0_VV.img ${STACK_DATA}/Gamma0_VV_mean.img
-    # mv ${STACK_DATA}/Gamma0_VV.hdr ${STACK_DATA}/Gamma0_VV_mean.hdr
-    # mv ${STACK_DATA}/Gamma0_VV_2.img ${STACK_DATA}/Gamma0_VV_max.img
-    # mv ${STACK_DATA}/Gamma0_VV_2.hdr ${STACK_DATA}/Gamma0_VV_max.hdr
-    # mv ${STACK_DATA}/Gamma0_VV_3.img ${STACK_DATA}/Gamma0_VV_min.img
-    # mv ${STACK_DATA}/Gamma0_VV_3.hdr ${STACK_DATA}/Gamma0_VV_min.hdr
-    # mv ${STACK_DATA}/Gamma0_VV_4.img ${STACK_DATA}/Gamma0_VV_stddev.img
-    # mv ${STACK_DATA}/Gamma0_VV_4.hdr ${STACK_DATA}/Gamma0_VV_stddev.hdr
-    # mv ${STACK_DATA}/Gamma0_VV_5.img ${STACK_DATA}/Gamma0_VV_coef_of_var.img
-    # mv ${STACK_DATA}/Gamma0_VV_5.hdr ${STACK_DATA}/Gamma0_VV_coef_of_var.hdr
-    # mv ${STACK_DATA}/Gamma0_VH.img ${STACK_DATA}/Gamma0_VH_mean.img
-    # mv ${STACK_DATA}/Gamma0_VH.hdr ${STACK_DATA}/Gamma0_VH_mean.hdr
-    # mv ${STACK_DATA}/Gamma0_VH_2.img ${STACK_DATA}/Gamma0_VH_max.img
-    # mv ${STACK_DATA}/Gamma0_VH_2.hdr ${STACK_DATA}/Gamma0_VH_max.hdr
-    # mv ${STACK_DATA}/Gamma0_VH_3.img ${STACK_DATA}/Gamma0_VH_min.img
-    # mv ${STACK_DATA}/Gamma0_VH_3.hdr ${STACK_DATA}/Gamma0_VH_min.hdr
-    # mv ${STACK_DATA}/Gamma0_VH_4.img ${STACK_DATA}/Gamma0_VH_stddev.img
-    # mv ${STACK_DATA}/Gamma0_VH_4.hdr ${STACK_DATA}/Gamma0_VH_stddev.hdr
-    # mv ${STACK_DATA}/Gamma0_VH_5.img ${STACK_DATA}/Gamma0_VH_coef_of_var.img
-    # mv ${STACK_DATA}/Gamma0_VH_5.hdr ${STACK_DATA}/Gamma0_VH_coef_of_var.hdr
-    # duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+                                        ${OUT_STACK_MT}/MT_metrics/09_Gamma0.VH.std.tif ${OUT_STACK_MT}/MT_metrics/10_Gamma0.VH.cov.tif >> ${LOG_MT}/log_mt_stacking 2>&1
   fi
 
   echo "------------------------------------------------------------------------------------------------------"

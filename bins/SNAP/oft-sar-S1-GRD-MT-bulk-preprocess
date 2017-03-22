@@ -73,8 +73,9 @@ else
 	echo -e "------------------------------------------------------------------"
 
 	# set up initial script variables
-	cd $1
-	PROC_DIR=`pwd`
+	#cd $1
+	#PROC_DIR=`pwd`
+	PROC_DIR=$(readlink -f $1)
 	TMP_DIR=${SAR_TMP:-$PROC_DIR/TMP}
 	#TMP_DIR=${PROC_DIR}/TMP
 	rm -rf $TMP_DIR
@@ -96,6 +97,7 @@ else
 
 fi
 
+cd ${PROC_DIR}
 NR_OF_TRACKS=`ls -1 -d ${PROC_DIR}/[0-9]* | wc -l`
 j=1
 # loop thorugh the tracks

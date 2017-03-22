@@ -150,23 +150,23 @@ def mt_metrics(rasterfn,newRasterfn):
                     outmetric = np.std(stacked_array, axis=0)
                     outband_std.WriteArray(outmetric, x, y)
 
-                elif metric == "cov":
-
-                    if k == 1:
-                        outRaster_cov = driver.Create(newRasterfn + ".cov.tif", cols, rows, 1, data_type,
-                                options=[           # Format-specific creation options.
-                                'TILED=YES',
-                                'BIGTIFF=IF_SAFER',
-                                'BLOCKXSIZE=256',   # must be a power of 2
-                                'BLOCKYSIZE=256',  # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
-                                'COMPRESS=LZW'
-                                ] )
-                        outRaster_cov.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
-                        outband_cov = outRaster_cov.GetRasterBand(1)
-                        outRaster_cov.SetProjection(outRasterSRS.ExportToWkt())
-
-                    outmetric = scipy.stats.variation(stacked_array, axis=0)
-                    outband_cov.WriteArray(outmetric, x, y)
+                # elif metric == "cov":
+                #
+                #     if k == 1:
+                #         outRaster_cov = driver.Create(newRasterfn + ".cov.tif", cols, rows, 1, data_type,
+                #                 options=[           # Format-specific creation options.
+                #                 'TILED=YES',
+                #                 'BIGTIFF=IF_SAFER',
+                #                 'BLOCKXSIZE=256',   # must be a power of 2
+                #                 'BLOCKYSIZE=256',  # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
+                #                 'COMPRESS=LZW'
+                #                 ] )
+                #         outRaster_cov.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
+                #         outband_cov = outRaster_cov.GetRasterBand(1)
+                #         outRaster_cov.SetProjection(outRasterSRS.ExportToWkt())
+                #
+                #     outmetric = scipy.stats.variation(stacked_array, axis=0)
+                #     outband_cov.WriteArray(outmetric, x, y)
 
             # counter to write the outbup just once
             k = k + 1

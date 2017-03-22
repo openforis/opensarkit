@@ -4,27 +4,27 @@
 # Copyright (c) 2016 Andreas Vollrath
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal 
-# in the Software without restriction, including without limitation the rights 
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is furnished
 # to do so, subject to the following conditions:
 
 # The above copyright notice and this permission notice shall be
 # included in all copies or substantial portions of the Software.
 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
 # INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
 # HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE 
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 # OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #----------------------------------------------------------------------
 #	0 Set up Script variables
 #----------------------------------------------------------------------
 
-#-------------------------------------------------------------------------------------------	
+#-------------------------------------------------------------------------------------------
 # 	0.1 Check for right usage & set up basic Script Variables
 if [ "$#" == "8" ]; then
 
@@ -32,16 +32,16 @@ if [ "$#" == "8" ]; then
 	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
 	echo -e " Search Sentinel-1 data on ASF server"
 	echo -e "-------------------------------------"
-	
+
 	if [ -d $1 ];then
-	
+
 		cd $1
 	else
 
 		mkdir -p $1
 		cd $1
 	fi
-	
+
    	PROC_DIR=`pwd`
    	TMP_DIR=${PROC_DIR}/.TMP
 		rm -rf ${TMP_DIR} > /dev/null
@@ -54,51 +54,51 @@ if [ "$#" == "8" ]; then
 
 
 	if [ $LEVEL_2 = "GRD" ];then
-		if [ $7 == "1" ];then 
+		if [ $7 == "1" ];then
 			LEVEL="GRD_HS,GRD_HD"
 			POL=VV%2bVH,VV
 			POL_2=VV_VV-VH
-		elif [ $7 == "2" ];then 
+		elif [ $7 == "2" ];then
 			LEVEL="GRD_HD"
 			POL=VV%2bVH
 			POL_2=VV-VH
-		elif [ $7 == "3" ];then 
+		elif [ $7 == "3" ];then
 			LEVEL="GRD_HS"
 			POL="VV"
 			POL_2="VV"
-		elif [ $7 == "4" ];then 
+		elif [ $7 == "4" ];then
 			LEVEL="GRD_HS,GRD_HD"
 			POL=HH%2bVH,HH
 			POL_2=HH_HH-HV
-		elif [ $7 == "5" ];then 
+		elif [ $7 == "5" ];then
 			LEVEL="GRD_HD"
 			POL=HH%2bHV
 			POL_2=HH-HV
-		elif [ $7 == "6" ];then 
+		elif [ $7 == "6" ];then
 			LEVEL="GRD_HS"
 			POL=HH
 			POL_2=HH
 		fi
-	
+
 	else
 		LEVEL=${LEVEL_2}
 
-		if [ $7 == "1" ];then 
+		if [ $7 == "1" ];then
 			POL=VV%2bVH,VV
 			POL_2=VV_VV-VH
-		elif [ $7 == "2" ];then 
+		elif [ $7 == "2" ];then
 			POL=VV%2bVH
 			POL_2=VV-VH
-		elif [ $7 == "3" ];then 
+		elif [ $7 == "3" ];then
 			POL="VV"
 			POL_2="VV"
-		elif [ $7 == "4" ];then 
+		elif [ $7 == "4" ];then
 			POL=HH%2bVH,HH
 			POL_2=HH_HH-HV
-		elif [ $7 == "5" ];then 
+		elif [ $7 == "5" ];then
 			POL=HH%2bHV
 			POL_2=HH-HV
-		elif [ $7 == "6" ];then 
+		elif [ $7 == "6" ];then
 			POL=HH
 			POL_2=HH
 		fi
@@ -135,12 +135,12 @@ else
 	echo -e "			  IW (Interferometric Wide Swath - recommended)"
 	echo -e "			  EW (Extra Wide Swath)"
 	echo -e "			  WV (Polarimetric Mode)"
-	echo -e " product_level		choose the product level"			
+	echo -e " product_level		choose the product level"
 	echo -e "			 Available choices:"
 	echo -e "			  GRD (recommended)"
 	echo -e "			  SLC (Level 1.1)"
 	echo -e "			  RAW (Level 1.0)"
-	echo -e " polarization mode	choose the product level"			
+	echo -e " polarization mode	choose the product level"
 	echo -e "			 Available choices:"
 	echo -e "			  1: Dual + Single-pol imagery (VV,VV/VH)"
 	echo -e "			  2: Dual-pol imagery (VV/VH)"
@@ -148,7 +148,7 @@ else
 	echo -e "			  4: Dual + Single-pol imagery (HH,HH/HV)"
 	echo -e "			  5: Dual-pol imagery (HH/HV)"
 	echo -e "			  6: Single-pol imagery (HH)"
-	echo -e " script_Mode		choose between data inventory only or immediate download "	
+	echo -e " script_Mode		choose between data inventory only or immediate download "
 	echo -e "			 Available choices"
 	echo -e "			  0 (only do the data inventory)"
 	echo -e "			  1 (data inventory + direct data download)"
@@ -162,7 +162,7 @@ echo -ne " Generating search query ..."
 if [ `echo $2 | grep shp` ]; then # AOI case
 	# check EPSG
 	AOI=`readlink -f $2`
-	aoi_valid_epsg ${AOI} ${TMP_DIR}/aoi_wgs84.shp ${TMP_DIR} 
+	aoi_valid_epsg ${AOI} ${TMP_DIR}/aoi_wgs84.shp ${TMP_DIR}
 
 	if [ -e ${TMP_DIR}/aoi_wgs84.shp ];then
 		oft_convex_hull.py -i ${TMP_DIR}/aoi_wgs84.shp -o ${TMP_DIR}/aoi_convex.shp
@@ -179,12 +179,12 @@ else # country case
 fi
 
 ogr2ogr -f CSV ${TMP_DIR}/AOI_WKT.csv ${TMP_DIR}/aoi_convex.shp -lco GEOMETRY=AS_WKT
-AOI=`grep POLYGON ${TMP_DIR}/AOI_WKT.csv | sed 's|\"POLYGON ((||g' | awk -F "\)\)" $'{print $1}' | sed 's/\ /,/g'`
+AOI=`grep POLYGON ${TMP_DIR}/AOI_WKT.csv | sed 's|\"POLYGON ((||g' | awk -F "\)\)" $'{print $1}' 2>/dev/null | sed 's/\ /,/g'`
 
 # Search Parameters
 PERIOD="start="${START}"T11:59:59UTC&end="${END}"T00:00:00UTC"
 PLATFORM="platform=Sentinel-1A,Sentinel-1B"
-BEAM="beamMode=${MODE}"  
+BEAM="beamMode=${MODE}"
 
 echo -e " done"
 #----------------------------------------------------------------------------------
@@ -197,7 +197,7 @@ OUT_FILE=${TMP_DIR}/$OUTPUT.csv
 ASK="\&polygon=${AOI}&${PLATFORM}&${BEAM}&${PERIOD}&${POLAR}&${PROCESSING}&${OUTPUT_FORMAT}"
 #ASK="\&polygon=${AOI}&${PLATFORM}&${BEAM}&${PERIOD}&${PROCESSING}&${OUTPUT_FORMAT}"
 echo -ne " Data inventory from ASF server ..." &&
-curl -s https://api.daac.asf.alaska.edu/services/search/param?keyword=value$ASK | tail -n +2  > ${OUT_FILE} 
+curl -s https://api.daac.asf.alaska.edu/services/search/param?keyword=value$ASK | tail -n +2  > ${OUT_FILE}
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 echo "" >>  ${OUT_FILE}
 NR_OF_PRODUCTS=`wc -l ${OUT_FILE} | awk '{print $1}'`
@@ -208,7 +208,7 @@ echo "-------------------------------------------------"
 #----------------------------------------------------------------------------------
 
 #----------------------------------------------------------------------------------
-echo -ne " Creating an OFST inventory shapefile ... " 
+echo -ne " Creating an OFST inventory shapefile ... "
 # sort the data
 cat ${OUT_FILE} | awk -F ',' $'{print $1}' | sed 's/"//g' > ${TMP_DIR}/granule
 cat ${OUT_FILE} | awk -F ',' $'{print $2}' | sed 's/"//g' > ${TMP_DIR}/satellite
@@ -249,19 +249,13 @@ for LINE in $(cat $TMP_DIR/granule);do
 done
 
 # wkt polygon
-#for LINE in `cat $OUT_FILE | awk -F "," $'{print $16 "," $17 "," $18 "," $19 "," $20 "," $21 "," $22 "," $23}' | sed 's/"//g'`; do 
-for LINE in `cat $OUT_FILE | awk -F "," $'{print $17 "," $18 "," $19 "," $20 "," $21 "," $22 "," $23 "," $24}' | sed 's/"//g'`; do 
+#for LINE in `cat $OUT_FILE | awk -F "," $'{print $16 "," $17 "," $18 "," $19 "," $20 "," $21 "," $22 "," $23}' | sed 's/"//g'`; do
+for LINE in `cat $OUT_FILE | awk -F "," $'{print $17 "," $18 "," $19 "," $20 "," $21 "," $22 "," $23 "," $24}' | sed 's/"//g'`; do
 
 	N_START=`echo $LINE | awk -F "," '{print $2; print $1}'`
 	F_START=`echo $LINE | awk -F "," '{print $4; print $3}'`
 	N_END=`echo $LINE | awk -F "," '{print $6; print $5}'`
 	F_END=`echo $LINE | awk -F "," '{print $8; print $7}'`
-
-#	N_START=`echo $LINE | awk -F "," '{print $1; print $2}'`
-#	F_START=`echo $LINE | awk -F "," '{print $3; print $4}'`
-#	N_END=`echo $LINE | awk -F "," '{print $5; print $6}'`
-#	F_END=`echo $LINE | awk -F "," '{print $7; print $8}'`
-
 
 	N_START_LAT=`echo $N_START | awk $'{print $2}'`
 	N_END_LAT=`echo $N_END | awk $'{print $2}'`
@@ -280,15 +274,11 @@ done
 
 
 # write header
-#echo "Scene_ID,DL_Path,Date,Mode,Track,Frame,Orbit,Orbit_Dir,Product,WKTGeom" > ${TMP_DIR}/wkt.csv
-#echo '"String(15)","String(90)","Integer(8)","String(5)","Integer(3)","Integer(3)","String(5)","String(11)","String(11)","String"' > ${TMP_DIR}/wkt.csvt
-
 echo "Scene_ID,Product_ID,Date,Track,Pol_Mode,Orbit_Dir,Orbit_Nr,Swath,Start_Time,Stop_Time,WKTGeom" > ${TMP_DIR}/wkt.csv
 echo '"String(68)","String(37)","Integer(8)","Integer(3)","String(5)","String(11)","Integer(6)","String(5)","Integer(6)","Integer(6)",String' > ${TMP_DIR}/wkt.csvt
 
 
 # write data
-#paste -d "," ${TMP_DIR}/granule ${TMP_DIR}/download ${TMP_DIR}/acq_date ${TMP_DIR}/mode ${TMP_DIR}/track ${TMP_DIR}/frame ${TMP_DIR}/orbit ${TMP_DIR}/orbit_dir ${TMP_DIR}/product_type ${TMP_DIR}/polys >> ${TMP_DIR}/wkt.csv
 paste -d "," ${TMP_DIR}/granule ${TMP_DIR}/download ${TMP_DIR}/acq_date ${TMP_DIR}/track ${TMP_DIR}/pol_mode ${TMP_DIR}/orbit_dir ${TMP_DIR}/orbit ${TMP_DIR}/mode ${TMP_DIR}/start ${TMP_DIR}/stop ${TMP_DIR}/polys >> ${TMP_DIR}/wkt.csv
 
 mkdir -p ${PROC_DIR}/
@@ -308,7 +298,7 @@ echo "</OGRVRTDataSource>" >> ${TMP_DIR}/wkt.vrt
 # convert to final shapefile
 SECONDS=0
 rm -rf "${INV}/S1_ASF_${MODE}_${LEVEL_2}_${POL_2}.shp"
-ogr2ogr -f "Esri Shapefile" "${INV}/S1_ASF_${MODE}_${LEVEL_2}_${POL_2}.shp" "${TMP_DIR}/wkt.vrt" 
+ogr2ogr -f "Esri Shapefile" "${INV}/S1_ASF_${MODE}_${LEVEL_2}_${POL_2}.shp" "${TMP_DIR}/wkt.vrt"
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 rm -rf ${TMP_DIR}

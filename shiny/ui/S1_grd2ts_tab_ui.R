@@ -12,59 +12,62 @@ tabItem(tabName = "s1_grd2rtc-ts",
           #----------------------------------------------------------------------------------
           # Processing Panel Sentinel-1
           box(
+
             # Title                     
             title = "Processing Panel", status = "success", solidHeader= TRUE,
-            tags$h4("Sentinel-1 GRD to RTC time-series processor"),
+            tags$h4("Sentinel-1 GRD to RTC time-series & timescan processor"),
             hr(),
-            #tags$b("Input Type:"),
+            tags$b("DATA Directory:"),
+            br(),
+            shinyDirButton("s1_g2ts_inputdir","Select S1 DATA folder in your project directory","Choose the DATA folder inside your project directory",FALSE),
+            br(),
+            br(),
+            verbatimTextOutput("s1_g2ts_inputfolder"),
+            hr(),
+            tags$b("Area of Interest"),
+            p("Note: This parameter will apply only to the timeseries and timescan products."),
             # AOI choice
-            radioButtons("s1_g2ts_input_type", "Input type",
-                         c("Folder (i.e. data is already downloaded)" = "folder",
-                           "OST inventory shapefile (local/on server)" = "inventory",
-                           "OST inventory shapefile (upload zipped archive)" = "s1_g2ts_zipfile")),
-
-            conditionalPanel(
-              "input.s1_g2ts_input_type == 'folder'",
-              
-              shinyDirButton("s1_g2ts_inputdir","Choose S1 DATA folder in your project directory","Choose the DATA folder inside your project directory",FALSE),
-              br(),
-              br(),
-              verbatimTextOutput("s1_g2ts_inputfolder")
-              ),
+            radioButtons("S1_g2ts_AOI", "",
+                         c("Country boundary" = "S1_g2ts_country",
+                           "Shapefile (local/ on server)" = "S1_g2ts_shape_local",
+                           "Shapefile (upload a zipped archive)" = "S1_g2ts_shape_upload")),
             
             conditionalPanel(
-              "input.s1_g2ts_input_type == 'inventory'",
-              shinyFilesButton("s1_g2ts_shp","Browse","Choose one file",FALSE),
-              br(),
-              br(),
-              verbatimTextOutput("s1_g2ts_shp_filepath"),
-              hr(),
-              tags$b("Output directory"),
-              p("Note: A new folder named \"DATA\" will be created within the chosen Output directory. 
-               Within this folder the downloaded data files will be stored and further sorted by satellite track and acquistion date."),
-              shinyDirButton("s1_g2ts_outdir","Browse","Choose output directory",FALSE),
-              br(),
-              br(),
-              verbatimTextOutput("s1_g2ts_outfolder")
+              "input.S1_g2ts_AOI == 'S1_g2ts_country'",
+              selectInput(
+                inputId = 'S1_g2ts_countryname', 
+                label = '',
+                choices = dbGetQuery(
+                  dbConnect(SQLite(),dbname=Sys.getenv("OST_DB")),
+                  sprintf("SELECT name FROM %s WHERE iso3 <> -99 ORDER BY name ASC", "countries")), 
+                selected=NULL)
             ),
-              
+            
             conditionalPanel(
-              "input.s1_g2ts_input_type == 's1_g2ts_zipfile'",
-              fileInput('S1_g2ts_zipfile_path', label = 'Browse',accept = c(".zip")),
-              hr(),
-              tags$b("Output directory"),
-              p("Note: A new folder named \"DATA\" will be created within the chosen Output directory. 
-               Within this folder the downloaded data files will be stored and further sorted by satellite track and acquistion date."),
-              shinyDirButton("s1_g2ts_outdir2","Browse","Choose output directory",FALSE),
+              "input.S1_g2ts_AOI == 'S1_g2ts_shape_local'",
+              shinyFilesButton("S1_g2ts_shapefile","Browse","Choose one shapefile",FALSE),
               br(),
               br(),
-              verbatimTextOutput("s1_g2ts_outfolder2")
+              verbatimTextOutput("S1_g2ts_filepath")
+            ),
+            
+            conditionalPanel(
+              "input.S1_g2ts_AOI == 'S1_g2ts_shape_upload'",
+              fileInput('S1_g2ts_shapefile_path', label = '',accept = c(".shp"))
             ),
             
             hr(),
             radioButtons("s1_g2ts_res", "Choose the output resolution:",
-                         c("Medium Resolution (30m)" = "med_res",
+                         c("Medium Resolution (30m, recommended)" = "med_res",
                            "Full resolution (10m)" = "full_res")),
+            hr(),
+            tags$b("Choose the output datatype for the timeseries/timescan products."), 
+            p("Note: Those values represent the amount of space reserved for one pixel per band. "),
+            radioButtons("s1_g2ts_dtype", "Choose the output datatype:",
+                         c("Unsigned Integer (8 bit)" = "8_bit",
+                           "Unsigned Integer (16 bit, recommended)" = "16_bit",
+                           "Floating Point (32 bit)" = "32_bit")),
+            
             hr(),
             tags$b("Provide your NASA Earthdata username/password."), 
             p("If you are not in possess of a user account you can create one ",a(href = "https://urs.earthdata.nasa.gov/",targer="_blank", "here"),"."),

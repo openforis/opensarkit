@@ -57,24 +57,13 @@ else
 	source ${OPENSARKIT}/lib/helpers_source
 
 	# set up initial script variables
-	cd $1
-	PROC_DIR=`pwd`
+	PROC_DIR=$(readlink -f $1)
 	TMP_DIR=${SAR_TMP:-$PROC_DIR/TMP}
-	#TMP_DIR=${PROC_DIR}/TMP
-	rm -rf $TMP_DIR
+	rm -rf ${TMP_DIR}
 	mkdir -p ${TMP_DIR}
 
 	LOG_DIR=${PROC_DIR}/MT_LOG
 	mkdir -p ${LOG_DIR}
-
-	# Datatype Flag
-	if [ $3 == 1 ]; then
-		ODATATYPE="UInt8"
-	elif [ $3 == 2 ]; then
-		ODATATYPE="UInt16"
-	elif [ $3 == 3 ]; then
-		ODATATYPE="Float32"
-	fi
 
 	if [ "`echo $2 | grep shp`" ]; then # AOI case
 		AOI=`readlink -f $2`
@@ -88,7 +77,7 @@ else
 		fi
 
 	else # country case
-	  COUNTRY=`echo "SELECT name FROM countries WHERE \"iso3\" = '$2';" | spatialite ${OST_DB} | head -50`
+		COUNTRY=`echo "SELECT name FROM countries WHERE \"iso3\" = '$2';" | spatialite ${OST_DB} | head -50`
 		SECONDS=0
 		echo -ne " Extracting country boundaries for ${COUNTRY} ..." &&
 		ogr2ogr -f "Esri Shapefile" ${TMP_DIR}/AOI.shp ${OST_DB} -dsco SPATIALITE=yes -where "\"iso3\" = \"${2}\"" -nln AOI countries > ${LOG_DIR}/log_process 2>&1
@@ -97,14 +86,23 @@ else
 
 		SECONDS=0
 		echo -ne " Creating a 0.1 degree buffer (used for final masking) ... " &&
-	 	ogr2ogr -f "Esri Shapefile" ${TMP_DIR}/AOI_buffer.shp ${OST_DB} -dsco SPATIALITE=yes -sql "select ST_union(ST_buffer(geom,0.1)) from countries where \"iso3\" = \"${2}\""  >> ${LOG_DIR}/log_process 2>&1
+		ogr2ogr -f "Esri Shapefile" ${TMP_DIR}/AOI_buffer.shp ${OST_DB} -dsco SPATIALITE=yes -sql "select ST_union(ST_buffer(geom,0.1)) from countries where \"iso3\" = \"${2}\""  >> ${LOG_DIR}/log_process 2>&1
 		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 		# in case a country is selected we use the buffered AOI
 		AOI=${TMP_DIR}/AOI_buffer.shp
 	fi
 
+	# Datatype Flag
+	if [ $3 == 1 ]; then
+		ODATATYPE="UInt8"
+	elif [ $3 == 2 ]; then
+		ODATATYPE="UInt16"
+	elif [ $3 == 3 ]; then
+		ODATATYPE="Float32"
+	fi
 fi
 
+cd ${PROC_DIR}
 NR_OF_TRACKS=`ls -1 -d ${PROC_DIR}/[0-9]* | wc -l`
 j=1
 # loop thorugh the tracks
@@ -134,6 +132,8 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 	else
 		s1_mt_metrics ${FILELIST} ${AOI} ${STACK} ${ODATATYPE} VV ${TMP_DIR_TRACK} ${LOG_DIR}
 	fi
+
+	rm -rf ${TMP_DIR_TRACK}
 
 	j=`expr $j + 1`
 	cd ${PROC_DIR}

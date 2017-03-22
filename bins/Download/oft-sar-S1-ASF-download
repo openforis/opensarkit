@@ -1,26 +1,26 @@
-#! /bin/bash 
+#! /bin/bash
 
 # The MIT License (MIT)
 # Copyright (c) 2016 Andreas Vollrath
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal 
-# in the Software without restriction, including without limitation the rights 
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is furnished
 # to do so, subject to the following conditions:
 
 # The above copyright notice and this permission notice shall be
 # included in all copies or substantial portions of the Software.
 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
 # INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
 # HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE 
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 # OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#-------------------------------------------------------------------------------------------	
+#-------------------------------------------------------------------------------------------
 # 	0.1 Check for right usage & set up basic Script Variables
 if [ "$#" == "3" ]; then
 	echo -e "---------------------------------------------------------------------------"
@@ -51,7 +51,7 @@ elif [ "$#" != "2" ]; then
 	echo -e "	- ogrinfo"
 	echo -e "----------------------------------"
 	echo -e ""
-	echo -e " syntax: oft-sar-ALOS-ASF-download <output_folder> <Inventory Shapefile>"
+	echo -e " syntax: oft-sar-S1-ASF-download <output_folder> <Inventory Shapefile>"
 	echo -e ""
 	echo -e " input parameters:"
 	echo -e " output_folder			(output) folder where the downloaded data will be saved"
@@ -80,7 +80,7 @@ if [ "$#" == "3" ];then
 	echo " Non-interactive mode"
 
 else
-	
+
 #	Credentials
 	read -r -p " Please type your NASA Earthdata Username:" USERNAME
 	read -s -p " Please type your NASA Earthdata Password:" PW
@@ -98,7 +98,7 @@ SECONDS=0
 ogrinfo $2 -al | grep Product_ID | sed 's/  Product_ID (String) = //g' | tail -n +2 > ${TMP_DIR}/tmp_download_list &&
 ogrinfo $2 -al | grep Track | sed 's/  Track (Integer) = //g' | tail -n +2 > ${TMP_DIR}/tmp_track_list &&
 ogrinfo $2 -al | grep Orbit_Dir | sed 's/  Orbit_Dir (String) = //g' | tail -n +2 | cut -c -1 > ${TMP_DIR}/tmp_orb_dir_list &&
-ogrinfo $2 -al | grep Date | sed 's/  Date (Integer) = //g'| tail -n +2 > ${TMP_DIR}/tmp_date_list 
+ogrinfo $2 -al | grep Date | sed 's/  Date (Integer) = //g'| tail -n +2 > ${TMP_DIR}/tmp_date_list
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 echo ""
 
@@ -108,46 +108,38 @@ NR=`cat ${TMP_DIR}/tmp_download_list | wc -l`
 paste -d ';' ${TMP_DIR}/tmp_download_list ${TMP_DIR}/tmp_track_list ${TMP_DIR}/tmp_orb_dir_list ${TMP_DIR}/tmp_date_list >> ${TMP_DIR}/tmp_list
 
 COUNT=1
-while read line; do 
+while read line; do
 
 	# get the data via the UUID
-	LINK=`echo $line | awk -F "\;" '{print $1}'`		
-	TRACK=`echo $line | awk -F "\;" '{print $2}'`
+	LINK=`echo $line | awk -F "\;" '{print $1}' 2>/dev/null`
+	TRACK=`echo $line | awk -F "\;" '{print $2}' 2>/dev/null`
 	if [ `echo $TRACK | wc -c` -eq 2 ];then
 		TRACK=`echo "00${TRACK}"`
 	elif [ `echo $TRACK | wc -c` -eq 3 ];then
 		TRACK=`echo "0${TRACK}"`
 	fi
-	ORB_DIR=`echo $line | awk -F "\;" '{print $3}'`
-	DATE=`echo $line | awk -F "\;" '{print $4}'`
+	ORB_DIR=`echo $line | awk -F "\;" '{print $3}' 2>/dev/null`
+	DATE=`echo $line | awk -F "\;" '{print $4}' 2>/dev/null`
 	mkdir -p ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/
 
-	# prepare a loop to avoid uncomplete data downloads		
+	# prepare a loop to avoid uncomplete data downloads
 	i=1
 	echo "bla" > ${TMP_DIR}/tmp_error
-	#do the loop 
+	#do the loop
 	for(( i=1; i<=2; i++ ));do
 
-		i=1
+		i=3
 		SECONDS=0
 		echo -ne " Downloading Product ${COUNT} of ${NR} (Granule: ${SCENE}) " &&
-		wget -c -P ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/ "${LINK}" >> $TMP_DIR/log_download_$COUNT 2>&1 
-		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-#			aria2c --load-cookies="${TMP_DIR}/cookies.txt" --dir=${PROC_DIR}/${MODE}/${ACQ_DATE}-${TRACK} --continue=true "${line}" > ${TMP_DIR}/tmp_error \
-
-		if grep -q "100%" ${TMP_DIR}/log_download_$COUNT;then
-			i=3
-		
-		elif grep -q "Username/Password Authentication Failed." ${TMP_DIR}/log_download_$COUNT;then
-
-			echo " Authorization failed. Please try again."
-			exit 1
+		wget -c -P ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/ "${LINK}" >> ${TMP_DIR}/log_download_${COUNT}
+		if [ $? -ne 0 ]; then
+			i=1 && echo -e " download failed, having another try."
 		else
-			
-			echo " Connection problems, will try again immediately"
-		fi		
+			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+		fi
+
 	done
-	
+
 	COUNT=`expr ${COUNT} + 1`
 
 done < ${TMP_DIR}/tmp_list
@@ -157,4 +149,3 @@ echo " Download of all products succesfully completed"
 echo "---------------------------------------------"
 
 rm -rf ${TMP_DIR}
-
