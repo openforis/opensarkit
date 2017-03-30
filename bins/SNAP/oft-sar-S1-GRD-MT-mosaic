@@ -73,26 +73,26 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 	# create the list files for mt-metrics
 	cd ${TRACK}/MT_metrics
 
-	if [ j == 1 ];then
+	if [ $j == 1 ];then
 
-		ITYPE=$(gdal_datatype 01_Gamma0.VV.mean.tif | tr '[:upper:]' '[:lower:]')
+		ITYPE=$(gdal_datatype 01_Gamma0.VV.avg.tif | tr '[:upper:]' '[:lower:]')
 
-		if [ ITYPE == "byte" ];then
+		if [ ${ITYPE} == "byte" ];then
 			ITYPE=uint8
-		elif [ ITYPE == "float32" ];then
+		elif [ ${ITYPE} == "float32" ];then
 			ITYPE=float
 		fi
 
 	fi
 
-	echo $(readlink -f 01_Gamma0.VV.mean.tif) >> ${TMP_DIR}/meanlist
+	echo $(readlink -f 01_Gamma0.VV.avg.tif) >> ${TMP_DIR}/meanlist
 	echo $(readlink -f 02_Gamma0.VV.max.tif) >> ${TMP_DIR}/minlist
 	echo $(readlink -f 03_Gamma0.VV.min.tif) >> ${TMP_DIR}/maxlist
 	echo $(readlink -f 04_Gamma0.VV.std.tif) >> ${TMP_DIR}/stdlist
 	echo $(readlink -f 05_Gamma0.VV.cov.tif) >> ${TMP_DIR}/covlist
 
-	if [ -e 06_Gamma0.VH.mean.tif ]; then
-		echo $(readlink -f 06_Gamma0.VH.mean.tif) >> ${TMP_DIR}/vh.meanlist
+	if [ -e 06_Gamma0.VH.avg.tif ]; then
+		echo $(readlink -f 06_Gamma0.VH.avg.tif) >> ${TMP_DIR}/vh.meanlist
 		echo $(readlink -f 07_Gamma0.VH.max.tif) >> ${TMP_DIR}/vh.minlist
 		echo $(readlink -f 08_Gamma0.VH.min.tif) >> ${TMP_DIR}/vh.maxlist
 		echo $(readlink -f 09_Gamma0.VH.std.tif) >> ${TMP_DIR}/vh.stdlist
@@ -128,16 +128,16 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 		echo -ne " Creating data mask for stable areas ..."
 		SECONDS=0
 		# create a stats layer
-		gdal_trace_outline MT_metrics/01_Gamma0.VV.mean.tif -ndv "0" -out-cs ll -ogr-out ${TMP_DIR}/IMG${j}_ndv.shp
+		gdal_trace_outline MT_metrics/01_Gamma0.VV.avg.tif -ndv "0" -out-cs ll -ogr-out ${TMP_DIR}/IMG${j}_ndv.shp
 
 		# create a cut stats layer
 		if [ ${ITYPE} == "uint16" ];then
-			gdal_trace_outline MT_metrics/01_Gamma0.VV.mean.tif -valid-range '35000..65536' -erosion -min-ring-area 25 -out-cs ll -ogr-out ${TMP_DIR}/IMG${j}_stat.shp
+			gdal_trace_outline MT_metrics/01_Gamma0.VV.avg.tif -valid-range '35000..65536' -erosion -min-ring-area 25 -out-cs ll -ogr-out ${TMP_DIR}/IMG${j}_stat.shp
 			cd ${PROC_DIR}
 		elif [ ${ITYPE} == "uint8" ];then
-			gdal_trace_outline MT_metrics/01_Gamma0.VV.mean.tif -valid-range '160..255' -erosion -min-ring-area 25 -out-cs ll -ogr-out ${TMP_DIR}/IMG${j}_stat.shp
+			gdal_trace_outline MT_metrics/01_Gamma0.VV.avg.tif -valid-range '160..255' -erosion -min-ring-area 25 -out-cs ll -ogr-out ${TMP_DIR}/IMG${j}_stat.shp
 		elif [ ${ITYPE} == "float" ];then
-			gdal_trace_outline MT_metrics/01_Gamma0.VV.mean.tif -ndv '-99999..-18' -erosion -min-ring-area 25 -out-cs ll -ogr-out ${TMP_DIR}/IMG${j}_stat.shp
+			gdal_trace_outline MT_metrics/01_Gamma0.VV.avg.tif -ndv '-99999..-18' -erosion -min-ring-area 25 -out-cs ll -ogr-out ${TMP_DIR}/IMG${j}_stat.shp
 		fi
 
 		echo "${TMP_DIR}/IMG${j}_ndv.shp" >> ${TMP_DIR}/ndv_list
@@ -145,6 +145,7 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 	fi
+
 j=$(expr $j + 1)
 done
 
@@ -159,8 +160,9 @@ if [ $2 == 1 ];then
 
 			SECONDS=0
 			echo -ne " Mosaicking the VV polarized timeseries data layers ..."
-			otbcli_Mosaic -ram 8192 -progress 1 -comp.feather large -harmo.method band -harmo.cost mu -tmpdir ${TMP_DIR} -il $(cat ${TMP_DIR}/${i}_mosaiclist_vv | tr '\n' ' ') \
+			otbcli_Mosaic -ram 8192 -progress 1 -comp.feather large -harmo.method band -harmo.cost rmse -tmpdir ${TMP_DIR} -il $(cat ${TMP_DIR}/${i}_mosaiclist_vv | tr '\n' ' ') \
 										-out $PROC_DIR/MOSAIC/Timeseries/${i}_Gamma0.VV.tif ${ITYPE}
+
 			i=$(expr ${i} + 1)
 			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
@@ -168,11 +170,11 @@ if [ $2 == 1 ];then
 
 	SECONDS=0
 	echo -ne " Mosaicking the multi-temporal metrics layers ..."
-	otbcli_Mosaic -ram 8192 -progress 1 -comp.feather large -harmo.method band -harmo.cost mu -tmpdir ${TMP_DIR} -il $(cat ${TMP_DIR}/meanlist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/01_Gamma0.VV.mean.tif ${ITYPE}
-	otbcli_Mosaic -ram 8192 -progress 1 -comp.feather large -harmo.method band -harmo.cost mu -tmpdir ${TMP_DIR} -il $(cat ${TMP_DIR}/minlist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/02_Gamma0.VV.max.tif ${ITYPE}
-	otbcli_Mosaic -ram 8192 -progress 1 -comp.feather large -harmo.method band -harmo.cost mu -tmpdir ${TMP_DIR} -il $(cat ${TMP_DIR}/maxlist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/03_Gamma0.VV.min.tif ${ITYPE}
-	otbcli_Mosaic -ram 8192 -progress 1 -comp.feather large -harmo.method band -harmo.cost mu -tmpdir ${TMP_DIR} -il $(cat ${TMP_DIR}/stdlist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/04_Gamma0.VV.std.tif ${ITYPE}
-	tbcli_Mosaic -ram 8192 -progress 1 -comp.feather large -harmo.method band -harmo.cost mu -tmpdir ${TMP_DIR} -il $(cat ${TMP_DIR}/covlist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/05_Gamma0.VV.cov.tif ${ITYPE}
+	otbcli_Mosaic -ram 8192 -progress 1 -comp.feather large -harmo.method band -harmo.cost rmse -tmpdir ${TMP_DIR} -il $(cat ${TMP_DIR}/meanlist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/01_Gamma0.VV.avg.tif ${ITYPE}
+	otbcli_Mosaic -ram 8192 -progress 1 -comp.feather large -harmo.method band -harmo.cost rmse -tmpdir ${TMP_DIR} -il $(cat ${TMP_DIR}/minlist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/02_Gamma0.VV.max.tif ${ITYPE}
+	otbcli_Mosaic -ram 8192 -progress 1 -comp.feather large -harmo.method band -harmo.cost rmse -tmpdir ${TMP_DIR} -il $(cat ${TMP_DIR}/maxlist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/03_Gamma0.VV.min.tif ${ITYPE}
+	otbcli_Mosaic -ram 8192 -progress 1 -comp.feather large -harmo.method band -harmo.cost rmse -tmpdir ${TMP_DIR} -il $(cat ${TMP_DIR}/stdlist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/04_Gamma0.VV.std.tif ${ITYPE}
+	otbcli_Mosaic -ram 8192 -progress 1 -comp.feather large -harmo.method band -harmo.cost rmse -tmpdir ${TMP_DIR} -il $(cat ${TMP_DIR}/covlist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/05_Gamma0.VV.cov.tif ${ITYPE}
 	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 	# percentile
@@ -181,7 +183,7 @@ if [ $2 == 1 ];then
 	#otbcli_Mosaic -ram 8192 -progress 1 -comp.feather large -harmo.method band -harmo.cost mu -tmpdir ${TMP_DIR} -il $(cat ${TMP_DIR}/pDifflist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/03_Gamma0.VV.pDiff.tif ${ITYPE}
 
 	# IF LOOP FOR VH POLARISATIONS
-	if [ $(ls -1 ${TMP_DIR}/*_mosaiclist_vh) -gt 0 ]; then
+	if [ $(ls -1 ${TMP_DIR}/*_mosaiclist_vh | wc -l) -gt 0 ]; then
 
 		# loop thorugh the time-series
 		i=1
@@ -189,7 +191,7 @@ if [ $2 == 1 ];then
 
 				SECONDS=0
 				echo -ne " Mosaicking the VH polarized timeseries data layers ..."
-				otbcli_Mosaic -ram 8192 -progress 1 -comp.feather large -harmo.method band -harmo.cost mu -tmpdir ${TMP_DIR} -il $(cat ${TMP_DIR}/${i}_mosaiclist_vh | tr '\n' ' ') \
+				otbcli_Mosaic -ram 8192 -progress 1 -comp.feather large -harmo.method band -harmo.cost rmse -tmpdir ${TMP_DIR} -il $(cat ${TMP_DIR}/${i}_mosaiclist_vh | tr '\n' ' ') \
 											-out $PROC_DIR/MOSAIC/Timeseries/${i}_Gamma0.VH.tif ${ITYPE}
 				i=$(expr ${i} + 1)
 				duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
@@ -198,11 +200,11 @@ if [ $2 == 1 ];then
 		# create the timescans
 		SECONDS=0
 		echo -ne " Mosaicking the multi=temporal metrics layers ..."
-		otbcli_Mosaic -ram 8192 -progress 1 -comp.feather large -harmo.method band -harmo.cost mu -tmpdir ${TMP_DIR} -il $(cat ${TMP_DIR}/vh.meanlist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/06_Gamma0.VH.mean.tif ${ITYPE}
-		otbcli_Mosaic -ram 8192 -progress 1 -comp.feather large -harmo.method band -harmo.cost mu -tmpdir ${TMP_DIR} -il $(cat ${TMP_DIR}/vh.minlist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/07_Gamma0.VH.max.tif ${ITYPE}
-		otbcli_Mosaic -ram 8192 -progress 1 -comp.feather large -harmo.method band -harmo.cost mu -tmpdir ${TMP_DIR} -il $(cat ${TMP_DIR}/vh.maxlist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/08_Gamma0.VH.min.tif ${ITYPE}
-		otbcli_Mosaic -ram 8192 -progress 1 -comp.feather large -harmo.method band -harmo.cost mu -tmpdir ${TMP_DIR} -il $(cat ${TMP_DIR}/vh.stdlist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/09_Gamma0.VH.std.tif ${ITYPE}
-		otbcli_Mosaic -ram 8192 -progress 1 -comp.feather large -harmo.method band -harmo.cost mu -tmpdir ${TMP_DIR} -il $(cat ${TMP_DIR}/vh.covlist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/10_Gamma0.VH.cov.tif ${ITYPE}
+		otbcli_Mosaic -ram 8192 -progress 1 -comp.feather large -harmo.method band -harmo.cost rmse -tmpdir ${TMP_DIR} -il $(cat ${TMP_DIR}/vh.meanlist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/06_Gamma0.VH.avg.tif ${ITYPE}
+		otbcli_Mosaic -ram 8192 -progress 1 -comp.feather large -harmo.method band -harmo.cost rmse -tmpdir ${TMP_DIR} -il $(cat ${TMP_DIR}/vh.minlist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/07_Gamma0.VH.max.tif ${ITYPE}
+		otbcli_Mosaic -ram 8192 -progress 1 -comp.feather large -harmo.method band -harmo.cost rmse -tmpdir ${TMP_DIR} -il $(cat ${TMP_DIR}/vh.maxlist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/08_Gamma0.VH.min.tif ${ITYPE}
+		otbcli_Mosaic -ram 8192 -progress 1 -comp.feather large -harmo.method band -harmo.cost rmse -tmpdir ${TMP_DIR} -il $(cat ${TMP_DIR}/vh.stdlist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/09_Gamma0.VH.std.tif ${ITYPE}
+		otbcli_Mosaic -ram 8192 -progress 1 -comp.feather large -harmo.method band -harmo.cost rmse -tmpdir ${TMP_DIR} -il $(cat ${TMP_DIR}/vh.covlist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/10_Gamma0.VH.cov.tif ${ITYPE}
 		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 	fi
@@ -223,9 +225,9 @@ elif [ $2 == 2 ];then
 	done
 
 	SECONDS=0
-	echo -ne " Mosaicking Gamma0 VV mean layer..."
+	echo -ne " Mosaicking Gamma0 VV average layer..."
 	otbcli_Mosaic -ram 8192 -vdcut $(cat ${TMP_DIR}/ndv_list | tr '\n' ' ') -vdstats $(cat ${TMP_DIR}/stat_list | tr '\n' ' ') -progress 1 -comp.feather large \
-	 							-harmo.method band -harmo.cost mu -il $(cat ${TMP_DIR}/meanlist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/01_Gamma0.VV.mean.tif ${ITYPE}
+	 							-harmo.method band -harmo.cost mu -il $(cat ${TMP_DIR}/meanlist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/01_Gamma0.VV.avg.tif ${ITYPE}
   duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 
@@ -252,55 +254,58 @@ elif [ $2 == 2 ];then
 	otbcli_Mosaic -ram 8192 -vdcut $(cat ${TMP_DIR}/ndv_list | tr '\n' ' ') -vdstats $(cat ${TMP_DIR}/stat_list | tr '\n' ' ') -progress 1 -comp.feather large \
 	 							-harmo.method band -harmo.cost mu -il $(cat ${TMP_DIR}/covlist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/05_Gamma0.VV.cov.tif ${ITYPE}
   duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-fi
 
-if [ $(ls -1 ${TMP_DIR}/*_mosaiclist_vh) -gt 0 ]; then
 
-	i=1
-	for MOSAIC in $(ls -1 ${TMP_DIR}/*_mosaiclist_vh);do
-		SECONDS=0
-		echo -ne " Mosaicking VH polarized timeseries data layers ..."
-		otbcli_Mosaic -ram 8192  -vdcut $(cat ${TMP_DIR}/ndv_list | tr '\n' ' ') -vdstats $(cat ${TMP_DIR}/stat_list | tr '\n' ' ') \
+	if [ $(ls -1 ${TMP_DIR}/*_mosaiclist_vh | wc -l) -gt 0 ]; then
+
+		i=1
+		for MOSAIC in $(ls -1 ${TMP_DIR}/*_mosaiclist_vh);do
+			SECONDS=0
+			echo -ne " Mosaicking VH polarized timeseries data layers ..."
+			otbcli_Mosaic -ram 8192  -vdcut $(cat ${TMP_DIR}/ndv_list | tr '\n' ' ') -vdstats $(cat ${TMP_DIR}/stat_list | tr '\n' ' ') \
 									-progress 1 -comp.feather large -harmo.method band -harmo.cost mu -tmpdir ${TMP_DIR} -il $(cat ${TMP_DIR}/${i}_mosaiclist_vh | tr '\n' ' ') \
 									-out $PROC_DIR/MOSAIC/Timeseries/${i}_Gamma0.VH.tif ${ITYPE}
-		i=$(expr ${i} + 1)
-		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-	done
+									i=$(expr ${i} + 1)
+			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+		done
 
-	SECONDS=0
-	echo -ne " Mosaicking Gamma0 VH mean layer..."
-	otbcli_Mosaic -ram 8192 -vdcut $(cat ${TMP_DIR}/ndv_list | tr '\n' ' ') -vdstats $(cat ${TMP_DIR}/stat_list | tr '\n' ' ') -progress 1 -comp.feather large \
+		SECONDS=0
+		echo -ne " Mosaicking Gamma0 VH mean layer..."
+		otbcli_Mosaic -ram 8192 -vdcut $(cat ${TMP_DIR}/ndv_list | tr '\n' ' ') -vdstats $(cat ${TMP_DIR}/stat_list | tr '\n' ' ') -progress 1 -comp.feather large \
 	 							-harmo.method band -harmo.cost mu -il $(cat ${TMP_DIR}/vh.meanlist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/06_Gamma0.VH.avg.tif ${ITYPE}
-  duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 
-	SECONDS=0
-	echo -ne " Mosaicking Gamma0 VH max layer..."
-	otbcli_Mosaic -ram 8192 -vdcut $(cat ${TMP_DIR}/ndv_list | tr '\n' ' ') -vdstats $(cat ${TMP_DIR}/stat_list | tr '\n' ' ') -progress 1 -comp.feather large \
+		SECONDS=0
+	  echo -ne " Mosaicking Gamma0 VH max layer..."
+	  otbcli_Mosaic -ram 8192 -vdcut $(cat ${TMP_DIR}/ndv_list | tr '\n' ' ') -vdstats $(cat ${TMP_DIR}/stat_list | tr '\n' ' ') -progress 1 -comp.feather large \
 	 							-harmo.method band -harmo.cost mu -il $(cat ${TMP_DIR}/vh.maxlist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/07_Gamma0.VH.max.tif ${ITYPE}
-  duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
-	SECONDS=0
-	echo -ne " Mosaicking Gamma0 VH min layer..."
-	otbcli_Mosaic -ram 8192 -vdcut $(cat ${TMP_DIR}/ndv_list | tr '\n' ' ') -vdstats $(cat ${TMP_DIR}/stat_list | tr '\n' ' ') -progress 1 -comp.feather large \
+	  SECONDS=0
+	  echo -ne " Mosaicking Gamma0 VH min layer..."
+	  otbcli_Mosaic -ram 8192 -vdcut $(cat ${TMP_DIR}/ndv_list | tr '\n' ' ') -vdstats $(cat ${TMP_DIR}/stat_list | tr '\n' ' ') -progress 1 -comp.feather large \
 	 							-harmo.method band -harmo.cost mu -il $(cat ${TMP_DIR}/vh.minlist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/08_Gamma0.VH.min.tif ${ITYPE}
-  duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
-	SECONDS=0
-	echo -ne " Mosaicking Gamma0 VH standard deviation layer..."
-	otbcli_Mosaic -ram 8192 -vdcut $(cat ${TMP_DIR}/ndv_list | tr '\n' ' ') -vdstats $(cat ${TMP_DIR}/stat_list | tr '\n' ' ') -progress 1 -comp.feather large \
+	  SECONDS=0
+	  echo -ne " Mosaicking Gamma0 VH standard deviation layer..."
+	  otbcli_Mosaic -ram 8192 -vdcut $(cat ${TMP_DIR}/ndv_list | tr '\n' ' ') -vdstats $(cat ${TMP_DIR}/stat_list | tr '\n' ' ') -progress 1 -comp.feather large \
 	 							-harmo.method band -harmo.cost mu -il $(cat ${TMP_DIR}/vh.stdlist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/09_Gamma0.VH.std.tif ${ITYPE}
-  duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
-	SECONDS=0
-	echo -ne " Mosaicking Gamma0 VH Coefficient of Variation layer..."
-	otbcli_Mosaic -ram 8192 -vdcut $(cat ${TMP_DIR}/ndv_list | tr '\n' ' ') -vdstats $(cat ${TMP_DIR}/stat_list | tr '\n' ' ') -progress 1 -comp.feather large \
+	  SECONDS=0
+	  echo -ne " Mosaicking Gamma0 VH Coefficient of Variation layer..."
+	  otbcli_Mosaic -ram 8192 -vdcut $(cat ${TMP_DIR}/ndv_list | tr '\n' ' ') -vdstats $(cat ${TMP_DIR}/stat_list | tr '\n' ' ') -progress 1 -comp.feather large \
 	 							-harmo.method band -harmo.cost mu -il $(cat ${TMP_DIR}/vh.covlist | tr '\n' ' ') -out $PROC_DIR/MOSAIC/MT_metrics/10_Gamma0.VH.cov.tif ${ITYPE}
-  duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	fi
+fi
 
-	gdalbuildvrt -separate -srcnodata 0 $PROC_DIR/MOSAIC/MT_metrics/MT_metrics.VV.vrt $PROC_DIR/MOSAIC/MT_metrics/01_Gamma0.VV.avg.tif $PROC_DIR/MOSAIC/MT_metrics/02_Gamma0.VV.max.tif \
+if [ $(ls -1 ${TMP_DIR}/*_mosaiclist_vh | wc -l) -gt 0 ]; then
+ 	gdalbuildvrt -separate -srcnodata 0 $PROC_DIR/MOSAIC/MT_metrics/MT_metrics.VVVH.vrt $PROC_DIR/MOSAIC/MT_metrics/01_Gamma0.VV.avg.tif $PROC_DIR/MOSAIC/MT_metrics/02_Gamma0.VV.max.tif \
 																			$PROC_DIR/MOSAIC/MT_metrics/03_Gamma0.VV.min.tif $PROC_DIR/MOSAIC/MT_metrics/04_Gamma0.VV.std.tif $PROC_DIR/MOSAIC/MT_metrics/05_Gamma0.VV.cov.tif \
-																			$PROC_DIR/MOSAIC/MT_metrics/06_Gamma0.VH.mean.tif $PROC_DIR/MOSAIC/MT_metrics/07_Gamma0.VH.max.tif $PROC_DIR/MOSAIC/MT_metrics/08_Gamma0.VH.min.tif \
+																			$PROC_DIR/MOSAIC/MT_metrics/06_Gamma0.VH.avg.tif $PROC_DIR/MOSAIC/MT_metrics/07_Gamma0.VH.max.tif $PROC_DIR/MOSAIC/MT_metrics/08_Gamma0.VH.min.tif \
 																		 	$PROC_DIR/MOSAIC/MT_metrics/09_Gamma0.VH.std.tif $PROC_DIR/MOSAIC/MT_metrics/10_Gamma0.VH.cov.tif
 
 else
@@ -316,4 +321,4 @@ fi
 
 
 
-rm -rf ${TMP_DIR}
+#rm -rf ${TMP_DIR}

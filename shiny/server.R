@@ -19,6 +19,7 @@ server <- function(input, output, session) {
    source(file.path("server","S1_dow_tab_server.R"), local=TRUE)$value
    source(file.path("server","S1_grd2rtc_tab_server.R"), local=TRUE)$value
    source(file.path("server","S1_grd2ts_tab_server.R"), local=TRUE)$value
+   source(file.path("server","S1_ts2mos_tab_server.R"), local=TRUE)$value
    #------------------------------------------------------------------------------------------------
    
    #------------------------------------------------------------------------------------------------
@@ -96,5 +97,10 @@ server <- function(input, output, session) {
    # S1 grd2rtc-ts
    observeEvent(input$link_to_tabpanel_s1_grd2ts, {
    updateTabItems(session, "menus", "s1_grd2rtc-ts")
+   })
+   
+   # S1 grd2rtc-ts
+   observeEvent(input$link_to_tabpanel_s1_ts2mos, {
+   updateTabItems(session, "menus", "s1_ts2mos")
    })
 } # EOF

@@ -16,9 +16,14 @@ tabItem(tabName = "s1_inv",
              title = "Processing Panel", status = "success", solidHeader= TRUE,
              tags$h4("Sentinel-1 data inventory"),
              hr(),
-             tags$b("1) Project Directory:"),
-             p("Note: A new folder named \"Inventory\" will be created within your Project directory. 
-                This folder contains the inventory shapefile that is produced by this interface."),
+             tags$b("Short description:"),
+             p("This interface allows to create a shapefile that contains all available Sentinel-1 scenes according to the parameters set below.
+               A careful refinement of the selection for the subsequent timeseries/timescan product generation is strongly encouraged."),
+             hr(),
+             tags$b(" Project Directory:"),
+             br(),
+             p("A new folder named \"Inventory\" will be created within your Project directory. 
+                This folder contains the OST inventory shapefile that is produced by this interface."),
              #br(),
              #div(style="display:inline-block",shinyDirButton('directory', 'Browse', 'Select a folder')),
              #div(style="display:inline-block",verbatimTextOutput("project_dir")),
@@ -27,8 +32,11 @@ tabItem(tabName = "s1_inv",
              br(),
              verbatimTextOutput("S1_inv_project_dir"),
              hr(),
-             tags$b("2) Area of Interest"),
-             p("Note: This parameter will define the spatial extent of the processing. You can either choose the borders of a country or a shapefile that bounds your area of interest."),
+             tags$b("Area of Interest"),
+             p("This parameter will define the spatial extent of the processing. You can either choose the borders 
+                of a country or a shapefile that bounds your area of interest. If you are working from remote, 
+                you can transfer a zipped archive containing a shapefile and its associated files 
+                from your local machine to the server by selecting the third option."),
              # AOI choice
              radioButtons("S1_inv_AOI", "",
                           c("Country boundary" = "S1_inv_country",
@@ -62,9 +70,10 @@ tabItem(tabName = "s1_inv",
              ),
              
              hr(),
-             
+             tags$b("Date Range"),
+             p("Select a period for which data acquisitions will be searched."),
              dateRangeInput("s1_inv_daterange",
-                            "3) Date Range",
+                            "",
                              start = "2014-10-01",
                              end = Sys.Date(),
                              min = "2014-10-01",
@@ -73,8 +82,9 @@ tabItem(tabName = "s1_inv",
                           ),
              
              hr(),
-             tags$b("4) Polarisation Mode"),
-             p("Note: More info on the polarisation modes of Sentinel-1 can be found in the Info Panel on the right."),
+             tags$b("Polarisation Mode"),
+             p("Note that for subsequent processing tasks only the VV co- and VH cross-polarisations are supported
+                by OST for now. More info on the polarisation modes of Sentinel-1 can be found in the Info Panel on the right."),
              selectInput("s1_inv_pol", "",
                        c("Dual-pol (VV+VH) " = "dual_vv",
                          "Single-pol (VV)" = "vv",
@@ -84,16 +94,19 @@ tabItem(tabName = "s1_inv",
                          "Dual-pol (HH+HV) & Single-pol (HH) " = "dual_single_hh")
              ),
              hr(),
-             tags$b("5) Sensor Mode"),
-             p("Note: More info on the sensor modes of Sentinel-1 can be found in the Info Panel on the right."),
+             tags$b("Sensor Mode"),
+             p(" Note that for subsequent processing tasks only the standard Interferometric Wide Swath is 
+                 supported by OST for now. More info on the sensor modes of Sentinel-1 can be found in the 
+                 Info Panel on the right. "),
              radioButtons("s1_inv_sensor_mode", "",
                           c("Interferometric Wide Swath (recommended) " = "iw",
                             "Extra Wide Swath" = "ew",
                             "Wave Mode" = "wv")
              ),
              hr(),
-             tags$b("6) Product Level"),
-             p("Note: More info on the product levels of Sentinel-1 can be found in the Info Panel on the right."),
+             tags$b("Product Level"),
+             p("Note that for subsequent processing tasks only the GRD products are supported by OST for now.
+                More info on the product levels of Sentinel-1 can be found in the Info Panel on the right."),
              radioButtons("s1_inv_product_level", "",
                           c("Level-1 GRD (recommended) " = "grd",
                             "Level-1 SLC" = "slc",
@@ -124,9 +137,7 @@ tabItem(tabName = "s1_inv",
                                   defined by country borders or a self-provided shapefile delimiting the area of interest. Based on this selection, as well as the 
                                   other criteria, an", tags$b("OST inventory shapefile"), "is created. This shapefile shows the footprints of the 
                                   matching scenes and contains further metadata in its attribute table. Thus, the selection of scenes can be further refined
-                                  manually. Ultimately, this shapefile is needed for the subsequent", actionLink("link_to_tabpanel_s1_dow", "Data Download"), 
-                                  "or as input to the bulk processing routines for the", actionLink("link_to_tabpanel_s1_grd2rtc", "GRD to RTC processor"), "
-                                   as well as the", actionLink("link_to_tabpanel_s1_grd2ts", "GRD to RTC time-series processor"),"."),
+                                  manually. Ultimately, this shapefile is needed for the subsequent", actionLink("link_to_tabpanel_s1_dow", "Data Download"),"."),
                                p("Specifications of the acquisition mode can be modified as well. The default values are recommended. 
                                   For more information see the other tabs within this Info Panel."),
                                p(tags$b("Note I:"), "For subsequent processing tasks not all imaging modes are supported. At the moment OST only supports processing of
@@ -233,7 +244,8 @@ tabItem(tabName = "s1_inv",
                                br(),
                                tags$h4("References"),
                                tags$b("Information Material"),
-                               p("ESA (2016): Sentinel-1. Radar Vision for Copernicus", a (href = "http://esamultimedia.esa.int/multimedia/publications/sentinel-1/", target = "_blank", "Link"),"."),
+                               p("ESA (2016): Sentinel-1. Radar Vision for Copernicus", 
+                                 a (href = "http://esamultimedia.esa.int/multimedia/publications/sentinel-1/", target = "_blank", "Link"),"."),
                                tags$b("Websites"),
                                
                                tags$b("Scientific Articles"),

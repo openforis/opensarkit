@@ -12,25 +12,36 @@ tabItem(tabName = "s1_grd2rtc-ts",
           #----------------------------------------------------------------------------------
           # Processing Panel Sentinel-1
           box(
-
             # Title                     
             title = "Processing Panel", status = "success", solidHeader= TRUE,
+            
+            tabBox(width = 700,
+                   
+            tabPanel("Bulk processing",
             tags$h4("Sentinel-1 GRD to RTC time-series & timescan processor"),
-            hr(),
-            tags$b("DATA directory:"),
             br(),
-            shinyDirButton("s1_g2ts_inputdir","Select S1 DATA folder in your project directory","Select S1 DATA folder in your project directory",FALSE),
+            tags$b("Short description:"),
+            p("This interface allows the fully-automated generation of radiometrically-terrain corrected products
+               and the additional creation of time-series and timescan products. It expects the folder structure 
+               created by the data download tab. If more than one track is present within the data folder, the procedure will generate 
+               the final product for each track separately. They can be subsequently mosaicked by using the Time-series mosaics tab. "),
+            hr(),
+            tags$b("Processing directory:"),
+            p("This parameter should point to the", tags$b(" DATA directory "), "created by the data download tab, within your project folder, 
+               i.e. \"/path/to/project/DATA\""),
+            shinyDirButton("s1_g2ts_inputdir","Browse","Browse",FALSE),
             br(),
             br(),
             verbatimTextOutput("s1_g2ts_inputfolder"),
             hr(),
             tags$b("Area of Interest"),
-            p("Note: This parameter will apply only to the timeseries and timescan products."),
+            p("The dataset(s) will be cropped to the intersect of the full data take and the AOI. 
+               This parameter will apply only to the timeseries and timescan products."),
             # AOI choice
             radioButtons("S1_g2ts_AOI", "",
                          c("Country boundary" = "S1_g2ts_country",
-                           "Shapefile (local/ on server)" = "S1_g2ts_shape_local",
-                           "Shapefile (upload a zipped archive)" = "S1_g2ts_shape_upload")),
+                           "Shapefile (local)" = "S1_g2ts_shape_local",
+                           "Shapefile (upload a zipped archive, applies only if you run it on a cloud environment.)" = "S1_g2ts_shape_upload")),
             
             conditionalPanel(
               "input.S1_g2ts_AOI == 'S1_g2ts_country'",
@@ -57,15 +68,19 @@ tabItem(tabName = "s1_grd2rtc-ts",
             ),
             
             hr(),
-            radioButtons("s1_g2ts_res", "Choose the output resolution:",
+            tags$b("Choose the output resolution:"),
+            p("This parameter defines the output resolution of your products in meter. Note that for SAR data a 
+               higher resolution is not alawys favorable since it is more affected by Speckle noise."),
+            radioButtons("s1_g2ts_res", "",
                          c("Medium Resolution (30m, recommended)" = "med_res",
                            "Full resolution (10m)" = "full_res")),
             hr(),
             tags$b("Choose the output datatype for the timeseries/timescan products."), 
-            p("Note: Those values represent the amount of space reserved for one pixel per band. "),
+            p("Those values represent the amount of space reserved for one pixel per band. 
+               It applies only for the final timeseries/timescan products."),
             radioButtons("s1_g2ts_dtype", "",
-                         c("Unsigned Integer (8 bit)" = "8_bit",
-                           "Unsigned Integer (16 bit, recommended)" = "16_bit",
+                         c("Unsigned Integer (16 bit, recommended)" = "16_bit",
+                           "Unsigned Integer (8 bit)" = "8_bit",
                            "Floating Point (32 bit)" = "32_bit")),
             hr(),
             withBusyIndicatorUI(
@@ -75,6 +90,74 @@ tabItem(tabName = "s1_grd2rtc-ts",
             br(),
             #"Output:",
             textOutput("processS1_G2TS")
+            ),
+            
+            tabPanel("Reprocess timescan",
+                     # Title                     
+                     tags$h4("Reprocess RTC time-series & timescan"),
+                     tags$b("DATA directory:"),
+                     br(),
+                     br(),
+                     shinyDirButton("S1_re_ts_inputdir","Select S1 DATA folder in your project directory","Select S1 DATA folder in your project directory",FALSE),
+                     br(),
+                     br(),
+                     verbatimTextOutput("S1_re_ts_inputfolder"),
+                     hr(),
+                     tags$b("Area of Interest"),
+                     p("The datasets will  be cropped to the intersect of data take and the AOI. 
+                        This parameter will apply only to the timeseries and timescan products."),
+                     # AOI choice
+                     radioButtons("S1_re_ts_AOI", "",
+                                  c("Country boundary" = "S1_re_ts_country",
+                                    "Shapefile (local)" = "S1_re_ts_shape_local",
+                                    "Shapefile (upload a zipped archive)" = "S1_re_ts_shape_upload")),
+                     
+                     conditionalPanel(
+                       "input.S1_re_ts_AOI == 'S1_re_ts_country'",
+                       selectInput(
+                         inputId = 'S1_re_ts_countryname', 
+                         label = '',
+                         choices = dbGetQuery(
+                           dbConnect(SQLite(),dbname=Sys.getenv("OST_DB")),
+                           sprintf("SELECT name FROM %s WHERE iso3 <> -99 ORDER BY name ASC", "countries")), 
+                         selected=NULL)
+                     ),
+                     
+                     conditionalPanel(
+                       "input.S1_re_ts_AOI == 'S1_re_ts_shape_local'",
+                       shinyFilesButton("S1_re_ts_shapefile","Browse","Choose one shapefile",FALSE),
+                       br(),
+                       br(),
+                       verbatimTextOutput("S1_re_ts_filepath")
+                     ),
+                     
+                     conditionalPanel(
+                       "input.S1_re_ts_AOI == 'S1_re_ts_shape_upload'",
+                       fileInput('S1_re_ts_shapefile_path', label = '',accept = c(".shp"))
+                     ),
+                     
+                     hr(),
+                     tags$b("Choose the output datatype for the timeseries/timescan products."), 
+                     p("Those values represent the amount of space reserved for one pixel per band. 
+                        It applies only for the final timeseries/timescan products."),
+                     radioButtons("S1_re_ts_dtype", "",
+                                  c("Unsigned Integer (16 bit, recommended)" = "16_bit",
+                                    "Unsigned Integer (8 bit)" = "8_bit",
+                                    "Floating Point (32 bit)" = "32_bit")),
+                     hr(),
+                     withBusyIndicatorUI(
+                       actionButton("S1_re_ts_process", "Start processing")
+                     ),
+                     br(),
+                     br(),
+                     #"Output:",
+                     textOutput("processS1_RE-TS")
+            )       
+                     
+            )
+            # Title                     
+            
+            
           ), #close box
           
           #   #----------------------------------------------------------------------------------

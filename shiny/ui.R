@@ -72,7 +72,8 @@ ui = dashboardPage(
          menuSubItem("Data inventory", tabName = "s1_inv", icon = icon("search")),
          menuSubItem("Data download", tabName = "s1_dow", icon = icon("download")),
          menuSubItem("GRD to RTC processor", tabName = "s1_grd2rtc", icon = icon("cogs")),
-         menuSubItem("GRD to RTC time-series ", tabName = "s1_grd2rtc-ts", icon = icon("cogs"))
+         menuSubItem("GRD to RTC time-series ", tabName = "s1_grd2rtc-ts", icon = icon("cogs")),
+         menuSubItem("Time-series mosaics ", tabName = "s1_ts2mos", icon = icon("map-o"))
       ),
       hr(),
       menuItem("Data Viewer", tabName = "dataview", icon = icon("eye")),
@@ -116,6 +117,7 @@ ui = dashboardPage(
       source(file.path("ui","S1_dow_tab_ui.R"), local=TRUE)$value,
       source(file.path("ui","S1_grd2rtc_tab_ui.R"), local=TRUE)$value,
       source(file.path("ui","S1_grd2ts_tab_ui.R"), local=TRUE)$value,
+      source(file.path("ui","S1_ts2mos_tab_ui.R"), local=TRUE)$value,
       #-----------------------------------------------------------------------------
          
       #-----------------------------------------------------------------------------
