@@ -3,6 +3,7 @@ library(shinydashboard)
 library(shinyFiles)
 library(RSQLite)
 library(RColorBrewer)
+library(shinyjs)
 source("helpers.R")
 server <- function(input, output, session) {
   

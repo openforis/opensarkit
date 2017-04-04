@@ -87,7 +87,7 @@ elif [ "$#" != "3" ]; then
   echo -e " Year			Acquisition Year (2007, 2008, 2009, 2010 or 2015)"
   echo -e ""
 
-  #exit 1
+  exit 1
 else
 
   echo -e "-------------------------------------------------------------"
@@ -110,7 +110,7 @@ else
   mkdir -p ${ZIP_DIR}
 
   YEAR=$3
-  
+
   export TMP_DIR=${OUT_DIR}/.TMP${YEAR}/
   rm -rf ${TMP_DIR}
   mkdir -p ${TMP_DIR}

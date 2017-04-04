@@ -29,6 +29,7 @@ packages(random)
 packages(mapview)
 packages(raster)
 packages(shinyjs)
+source("helpers.R")
 #-----------------------------------------------------------------------------------
 
 

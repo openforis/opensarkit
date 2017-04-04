@@ -196,17 +196,88 @@ duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duratio
 #------------------------------------------------------------------
 
 SECONDS=0
-echo -ne " Installing dependencies from Ubuntu package list ..."
-apt-get install --yes --allow-unauthenticated gdal-bin libgdal-dev python-gdal saga libsaga-dev python-saga geotiff-bin libgeotiff-dev spatialite-bin spatialite-gui \
-libcunit1-dev libfftw3-dev libshp-dev libtiff5-dev libproj-dev flex bison libgsl0-dev gsl-bin libglade2-dev libgtk2.0-dev pkg-config \
-python-scipy python-h5py aria2 unrar parallel xml-twig-tools git libxinerama-dev libxrandr-dev libxcursor-dev swig r-base libv8-3.14-dev \
-# added lately (need to be added to init script)
-python-progressbar python-numpy >> ${OSK_HOME}/LOG/log_install 2>&1
+echo -ne " Installing GIS/Remote sensing packages ..."
+apt-get install --yes --allow-unauthenticated \
+											gdal-bin \
+											libgdal-dev \
+ 										  dans-gdal-scripts \
+											saga \
+											libsaga-dev \
+											otb-bin \
+										  libotb \
+ 											libotb-apps \
+											geotiff-bin \
+											libgeotiff-dev \
+											spatialite-bin \
+											spatialite-gui >> ${OSK_HOME}/LOG/log_install_gis 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-# python-pandas python-geopandas
-# imagej
-#apt-get install --yes --allow-unauthenticated imagej xvfb
-apt-get --yes install dans-gdal-scripts
+
+
+SECONDS=0
+echo -ne " Installing Ubuntu package dependencies "
+apt-get install --yes --allow-unauthenticated \
+											libcunit1-dev \
+											libfftw3-dev \
+											libshp-dev \
+											libtiff5-dev \
+											libproj-dev \
+											flex \
+											bison \
+											libgsl0-dev \
+											gsl-bin \
+											libglade2-dev \
+											libgtk2.0-dev \
+											pkg-config \
+											aria2 \
+											unrar \
+											parallel \
+											xml-twig-tools \
+											git \
+											libxinerama-dev \
+											libxrandr-dev \
+											libxcursor-dev \
+											swig \
+											r-base \
+											libv8-3.14-dev >> ${OSK_HOME}/LOG/log_install 2>&1
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+SECONDS=0
+echo -ne " Installing python 2.7 packages "
+apt-get install --yes --allow-unauthenticated \
+											python-gdal \
+											python-saga \
+											python-otb \
+											python-scipy \
+											python-h5py \
+											python-skimage \
+											python-statsmodels \
+											python-pandas \
+											python-geopandas \
+											python-progressbar \
+											python-opencv \
+											python-numpy >> ${OSK_HOME}/LOG/log_install 2>&1
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+echo ""
+echo "-------------------------------------"
+echo "--- Installing Orfeo ToolBox ---"
+echo "-------------------------------------"
+
+# install the latest Orfeo packaged version for use of ORFEO remote modules
+otb=OTB-contrib-5.10.1-Linux64
+wget https://www.orfeo-toolbox.org/packages/$otb.run
+chmod +x $otb.run
+mv $otb.run /usr/local/lib
+cd /usr/local/lib
+./$otb.run
+rm $otb.run
+ln -s $otb orfeo
+chmod o+rx orfeo/*.sh
+chmod o+rx orfeo/otbenv.profile
+cd -
+
+
+
 #------------------------------------------------------------------
 # 4 Download & Install non-repository Software and OSK
 #------------------------------------------------------------------
