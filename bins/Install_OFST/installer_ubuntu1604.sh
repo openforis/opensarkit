@@ -344,6 +344,7 @@ else
 	echo "OPENSARKIT=${OSK_HOME}/opensarkit" | tee -a /etc/environment
 	echo "OST_DB=${OSK_HOME}/Database/OFST_db.sqlite" | tee -a /etc/environment
 	echo 'SNAP_EXE=/usr/local/snap/bin/gpt' | tee -a /etc/environment
+	echo 'export PATH=$PATH:/usr/local/lib/orfeo/bin' | tee -a /etc/environment
 
 fi
 
