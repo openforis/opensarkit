@@ -226,8 +226,9 @@ tabItem(tabName = "s1_grd2rtc-ts",
                             tags$h4("Download and process a demo data set."),
                             br(),
                             p("Here you can download a directory that contains Sentinel-1 imagery acquired over a small area in the south of Taman Nasional Sebangau area in South Kalimantan, Indonesia. 
-                              This data will be placed in your home folder. In order to process, choose", tags$b("/home/username/S1_TS_demo/DATA"), "as the project directory. 
-                              The resultant time-series data can be found in", tags$b("/home/username/S1_TS_demo/DATA/003D/Timeseries"), "and", tags$b("/home/username/S1_TS_demo/DATA/003D/Timescan",".")),
+                              This data will be placed in your home folder. In order to process, choose", tags$b("/home/username/S1_timeseries_demo/Demo_Jena/DATA"), "as the project directory. 
+                              The resultant time-series data can be found in", tags$b("/home/username/S1_timeseries_demo/Demo_Jena/DATA/044A/Timeseries"), "and",
+                              tags$b("/home/username/S1_timeseries_demo/Demo_Jena/DATA/044A/MT_metrics",".")),
                             withBusyIndicatorUI(
                               actionButton("S1_ts_testdata_download", "Download")
                             ),
