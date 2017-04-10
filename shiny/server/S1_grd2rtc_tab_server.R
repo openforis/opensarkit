@@ -335,3 +335,22 @@ print_s1_g2r = eventReactive(input$s1_g2r_process, {
 output$processS1_G2R = renderText({
   print_s1_g2r()
 })
+
+
+print_s1_g2ts_test = eventReactive(input$S1_ts_testdata_download, {
+  
+  # wrapper for busy indicator
+  withBusyIndicatorServer("S1_ts_testdata_download", {
+
+    dir.create("~/S1_timeseries_demo/")
+    system2("wget","-O ~/S1_timeseries_demo/Demo_Jena.zip https://www.dropbox.com/s/edll1u6wrw8dcil/Demo_Jena.zip?dl=0")
+    unzip("~/S1_timeseries_demo/Demo_Jena.zip", exdir = "~/S1_timeseries_demo/")
+    file.remove("~/S1_timeseries_demo/Demo_Jena.zip")
+    print("Done!")
+    
+  })
+})
+
+output$download_Demo_Jena = renderText({
+  print_s1_g2ts_test()
+})

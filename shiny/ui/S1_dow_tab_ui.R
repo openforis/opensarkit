@@ -63,7 +63,6 @@ tabItem(tabName = "s1_dow",
             withBusyIndicatorUI(
              actionButton("S1_download", "Start downloading")
             ),
-            br(),
             textOutput("S1_down")
           ) # close box
         )

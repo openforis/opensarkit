@@ -281,6 +281,6 @@ if [ ${YEAR} -gt 2006 ];then
 	echo -ne " Cropping the FNF Map to the extent of the AOI ..." &&
 	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/FNF_map.vrt -co COMPRESS=LZW ${OUT_DIR}/${YEAR}/FNF/${YEAR}"_KC_FNF_map.tif" >> ${LOG_DIR}/log_process 2>&1
 	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-	rm -f ${TMP_DIR}/*_C_F02DAR*
+	#rm -f ${TMP_DIR}/*_C_F02DAR*
 fi
 #------------------------------------------------------------------------

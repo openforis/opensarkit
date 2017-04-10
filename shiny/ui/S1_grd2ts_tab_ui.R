@@ -86,8 +86,6 @@ tabItem(tabName = "s1_grd2rtc-ts",
             withBusyIndicatorUI(
               actionButton("s1_g2ts_process", "Start processing")
             ),
-            br(),
-            br(),
             #"Output:",
             textOutput("processS1_G2TS")
             ),
@@ -222,6 +220,19 @@ tabItem(tabName = "s1_grd2rtc-ts",
                    tabPanel("References",
                             br(),
                             tags$b("References")
+                   ),
+                   tabPanel("Demo",
+                            br(),
+                            tags$h4("Download and process a demo data set."),
+                            br(),
+                            p("Here you can download a directory that contains Sentinel-1 imagery acquired over a small area in the south of Taman Nasional Sebangau area in South Kalimantan, Indonesia. 
+                              This data will be placed in your home folder. In order to process, choose", tags$b("/home/username/S1_TS_demo/DATA"), "as the project directory. 
+                              The resultant time-series data can be found in", tags$b("/home/username/S1_TS_demo/DATA/003D/Timeseries"), "and", tags$b("/home/username/S1_TS_demo/DATA/003D/Timescan",".")),
+                            withBusyIndicatorUI(
+                              actionButton("S1_ts_testdata_download", "Download")
+                            ),
+                            br(),
+                            textOutput("download_Demo_Jena")
                    )
                             ) # close tab box
                    ) # close box
