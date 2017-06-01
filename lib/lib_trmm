@@ -1,0 +1,198 @@
+#! /bin/bash
+
+# The MIT License (MIT)
+# Copyright (c) 2016 Andreas Vollrath
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is furnished
+# to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+# OR THE USE OR OTHER DEALINGS IN THE SOFTWARE
+
+function trmm_download_s1() {
+
+if [ -z "$6" ]; then
+  echo " Missing arguments. Syntax:"
+  echo " trmm_download <acquisition date> <acquisition time> <out-folder> <cropline> <tmp_dir> <log-dir>"
+  return
+fi
+
+# adapted from https://disc.gsfc.nasa.gov/recipes/?q=recipes/How-to-Download-Data-Files-from-HTTP-Service-with-wget
+
+# HOW TO AUTHORIZE gesdisc
+#https://disc.gsfc.nasa.gov/registration/authorizing-gesdisc-data-access-in-earthdata_login
+
+  #read -r -p " Please type your NASA Earthdata username:" TRMM_UNAME
+  #read -s -p " Please type your NASA Earthdata password:" TRMM_PW
+echo ""
+
+# source other helpers
+source ${OPENSARKIT}/lib/helpers_source
+
+# set script variables
+TRMM_DATE=$1
+TRMM_TIME=$2
+TRMM_OUT=$(readlink -f $3)
+TRMM_AOI=$(readlink -f $4)
+TRMM_TMP=$(readlink -f $5)
+TRMM_LOG=$(readlink -f $6)
+
+# create a cookie file
+touch ~/.urs_cookies
+TRMM_AUTH="--load-cookies ~/.urs_cookies --save-cookies ~/.urs_cookies --keep-session-cookies  -r -c -nH -nd -np robots=off"
+
+## Download part
+# create a list of the last 10 days , including the acquisition date
+for i in `seq 0 10`; do
+  DATE_LOOP=$(date -u -d "0 ${TRMM_DATE} - $i days" '+%Y%m%d')
+  DOY=$(date -d ${DATE_LOOP} '+%j')
+  YEAR=$(date -d ${DATE_LOOP} '+%Y')
+  wget ${TRMM_AUTH} -A nc4 -P ${TRMM_TMP} "http://disc2.gesdisc.eosdis.nasa.gov/data//TRMM_RT/TRMM_3B42RT.7/${YEAR}/${DOY}/" >> ${TRMM_LOG}/download 2>&1
+done
+
+for file in $(ls -1 ${TRMM_TMP}/*nc4);do
+  TRMM_BASE=$(basename $file)
+  TRMM_OUTFILE=$(echo ${TRMM_BASE} | rev | cut -c 5- | rev)
+  gdal_translate -projwin $(ogr_extent ${TRMM_AOI}) -of VRT NETCDF:${file}:precipitation ${TRMM_TMP}/${TRMM_OUTFILE}.vrt
+  gdal_calc.py -A ${TRMM_TMP}/${TRMM_OUTFILE}.vrt --outfile=${TRMM_TMP}/${TRMM_OUTFILE}.nd.tif --calc="(A*(A>0))*10"
+done
+
+#rm -rf ${TRMM_TMP}/${TRMM_OUT}.nc4 ${TRMM_TMP}/${TRMM_OUT}.vrt
+
+gdalbuildvrt -separate -srcnodata 0 ${TRMM_TMP}/10days.vrt $(ls -1 ${TRMM_TMP}/*nd.tif | tr '\n' ' ')
+
+DATE_1=$(date -u -d "0 ${TRMM_DATE} - 1 days" '+%Y%m%d')
+DATE_2=$(date -u -d "0 ${TRMM_DATE} - 2 days" '+%Y%m%d')
+DATE_3=$(date -u -d "0 ${TRMM_DATE} - 3 days" '+%Y%m%d')
+gdalbuildvrt -separate -srcnodata 0 ${TRMM_TMP}/3days.vrt $(ls -1 ${TRMM_TMP}/*${TRMM_DATE}*nd.tif | tr '\n' ' ') $(ls -1 ${TRMM_TMP}/*${DATE_1}*nd.tif | tr '\n' ' ') $(ls -1 ${TRMM_TMP}/*${DATE_2}*nd.tif | tr '\n' ' ') $(ls -1 ${TRMM_TMP}/*${DATE_3}*nd.tif | tr '\n' ' ')
+
+# calculating sum of all days before
+ost_mt_metrics.py -i ${TRMM_TMP}/3days.vrt -o ${TRMM_OUT}/TRMM.${TRMM_DATE}.3days.sum -t 6
+ost_mt_metrics.py -i ${TRMM_TMP}/10days.vrt -o ${TRMM_OUT}/TRMM.${TRMM_DATE}.10days.sum -t 6
+
+rm -f ${TRMM_TMP}/time_list
+# getting the 2 nearest times:
+for i in `seq 1 3 22`;do
+  # get the acquistiondate in seconds
+  t1=$(date -u -d "${TRMM_DATE} ${TRMM_TIME}" +"%s")
+  # get the TRMM start time in seconds
+  t2=$(date -u -d "${TRMM_DATE} $i:30:00" +"%s")
+  # get the TRMM filename (i.e. 90 minutes more then startime)
+  TRMM_FILEDATE=$(date -u -d "0 ${TRMM_DATE} $i hours 30 minutes + 90 minutes" +"%Y%m%d%H")
+
+  # write time difference to file including time and filename time
+  if [[ $t1 -gt $t2 ]];then
+    echo "$(expr $t1 - $t2) ;${TRMM_DATE} $i:30:00;${TRMM_FILEDATE}" >> ${TRMM_TMP}/time_list
+  else
+    echo "$(expr $t2 - $t1) ;${TRMM_DATE} $i:30:00;${TRMM_FILEDATE}" >> ${TRMM_TMP}/time_list
+  fi
+
+done
+
+# getting the nearest TRMM acquistion to acquisiton date
+NEAREST_TIME=$(cat ${TRMM_TMP}/time_list | sort -g | awk NR==1 | awk -F ';' '{print $2}')
+NEAREST_FILE=$(cat ${TRMM_TMP}/time_list | sort -g | awk NR==1 | awk -F ';' '{print $3}')
+
+gdal_translate -ot 'Byte' -of JPEG -tr 0.01 0.01 -scale 0 250 0 255 -r cubicspline -a_nodata 0 ${TRMM_TMP}/3B42RT.${NEAREST_FILE}.7.nd.tif ${TRMM_OUT}/TRMM_${NEAREST_FILE}.jpg
+mv ${TRMM_TMP}/3B42RT.${NEAREST_FILE}.7.nd.tif ${TRMM_OUT}/TRMM.${NEAREST_FILE}.tif
+
+TRMM_BASE=$(basename ${TRMM_OUT}/TRMM_${NEAREST_FILE}.tif)
+TRMM_OUTFILE=$(echo ${TRMM_BASE} | rev | cut -c 5- | rev)
+
+ogr2ogr -nlt MULTILINESTRING -f "ESRI Shapefile" ${TRMM_TMP}/aoi_line.shp ${TRMM_AOI}
+gdal_rasterize -ts $(gdal_size ${TRMM_OUT}/TRMM_${NEAREST_FILE}.jpg) ${TRMM_TMP}/aoi_line.shp -l aoi_line -burn 1 ${TRMM_TMP}/aoi_line.tif
+ost_replace_values.py -i ${TRMM_TMP}/aoi_line.tif -o ${TRMM_TMP}/aoi_line.inv.tif -r 0 -n 255
+gdal_translate -ot 'Byte' -of JPEG ${TRMM_TMP}/aoi_line.inv.tif ${TRMM_TMP}/aoi_line.jpg
+convert -transparent white ${TRMM_TMP}/aoi_line.jpg  ${TRMM_TMP}/aoi_line.png
+
+# get image dimesnions
+WIDTH_TN=$(identify -format %w ${TRMM_OUT}/TRMM_${NEAREST_FILE}.jpg)
+HEIGHT_TN=$(identify -format %h ${TRMM_OUT}/TRMM_${NEAREST_FILE}.jpg)
+HEIGHT_LABEL=$(expr $HEIGHT_TN / 15)
+HEIGHT_GRADIENT=$(expr $WIDTH_TN / 20)
+# create a colour gradient
+#convert -size ${HEIGHT_GRADIENT}x${WIDTH_TN} gradient: -rotate 90 -interpolate Bicubic \( +size xc:snow xc:lightgreen xc:cyan xc:blue xc:navy xc:black xc:darkred +append \) -clut  ${TRMM_TMP}/gradient-levels.jpg
+convert -size ${HEIGHT_GRADIENT}x${WIDTH_TN} gradient: -rotate 90 -interpolate Bicubic \( +size xc:snow xc:lightgreen xc:cyan xc:blue xc:navy xc:black xc:darkred +append \) -clut  ${TRMM_TMP}/gradient-levels.jpg
+
+# apply colour table to file^
+convert ${TRMM_OUT}/TRMM_${NEAREST_FILE}.jpg ${TRMM_TMP}/gradient-levels.jpg -clut ${TRMM_OUT}/TRMM_${NEAREST_FILE}.jpg
+
+# overlay aoi boundaries to rainfall
+composite ${TRMM_TMP}/aoi_line.png ${TRMM_OUT}/TRMM_${NEAREST_FILE}.jpg ${TRMM_OUT}/TRMM_${NEAREST_FILE}.jpg
+
+# adding label
+convert -background '#0008' -fill white -gravity center -size ${WIDTH_TN}x${HEIGHT_LABEL} caption:"${NEAREST_TIME} UTC" \
+        ${TRMM_OUT}/TRMM_${NEAREST_FILE}.jpg +swap -gravity north -composite ${TRMM_OUT}/TRMM_${NEAREST_FILE}.jpg
+
+# create a list f files for the last day animation
+# take the midnight file that actually refers to the day before 22:30
+DAY0=$(date -u -d "0 ${TRMM_DATE} + 1 day" +"%Y%m%d")
+ls ${TRMM_TMP}/*${DAY0}*nd.tif > ${TRMM_TMP}/animation_list
+
+for file in  $(ls -1 ${TRMM_TMP}/*${TRMM_DATE}*nd.tif); do
+    echo ${file} >> ${TRMM_TMP}/animation_list
+done
+
+i=1
+for file in  $(cat ${TRMM_TMP}/animation_list); do
+
+    TRMM_BASE=$(basename $file)
+    TRMM_OUTFILE=$(echo ${TRMM_BASE} | rev | cut -c 5- | rev)
+    # creating a jpg from the TRMM data
+    #gdal_translate -ot 'Byte' -of JPEG -tr 0.01 0.01 -scale 0 250 0 255 -r cubicspline -a_nodata 0 $file ${TRMM_TMP}/${TRMM_OUTFILE}.8bit.jpg
+
+    # creating a boundary image from aoi
+    # if [[ $i -eq 1 ]];then
+    #   ogr2ogr -nlt MULTILINESTRING -f "ESRI Shapefile" ${TRMM_TMP}/aoi_line.shp ${TRMM_AOI}
+    #   gdal_rasterize -ts $(gdal_size ${TRMM_TMP}/${TRMM_OUTFILE}.8bit.jpg) ${TRMM_TMP}/aoi_line.shp -l aoi_line -burn 1 ${TRMM_TMP}/aoi_line.tif
+    #   ost_replace_values.py -i ${TRMM_TMP}/aoi_line.tif -o ${TRMM_TMP}/aoi_line.inv.tif -r 0 -n 255
+    #   gdal_translate -ot 'Byte' -of JPEG ${TRMM_TMP}/aoi_line.inv.tif ${TRMM_TMP}/aoi_line.jpg
+    #   convert -transparent white ${TRMM_TMP}/aoi_line.jpg  ${TRMM_TMP}/aoi_line.png
+    #
+    #   # get image dimesnions
+    #   WIDTH_TN=$(identify -format %w ${TRMM_TMP}/${TRMM_OUTFILE}.8bit.jpg)
+    #   HEIGHT_TN=$(identify -format %h ${TRMM_TMP}/${TRMM_OUTFILE}.8bit.jpg)
+    #   HEIGHT_LABEL=$(expr $HEIGHT_TN / 15)
+    #   HEIGHT_GRADIENT=$(expr $WIDTH_TN / 20)
+    #   # create a colour gradient
+    #   #convert -size ${HEIGHT_GRADIENT}x${WIDTH_TN} gradient: -rotate 90 -interpolate Bicubic \( +size xc:snow xc:lightgreen xc:cyan xc:blue xc:navy xc:black xc:darkred +append \) -clut  ${TRMM_TMP}/gradient-levels.jpg
+    #   convert -size ${HEIGHT_GRADIENT}x${WIDTH_TN} gradient: -rotate 90 -interpolate Bicubic \( +size xc:snow xc:lightgreen xc:cyan xc:blue xc:navy xc:black xc:darkred +append \) -clut  ${TRMM_TMP}/gradient-levels.jpg
+    # fi
+
+    # apply colour table to file^
+    #convert ${TRMM_TMP}/${TRMM_OUTFILE}.8bit.jpg ${TRMM_TMP}/gradient-levels.jpg -clut ${TRMM_TMP}/${TRMM_OUTFILE}.8bit.jpg
+
+    # overlay aoi boundaries to rainfall
+    #composite ${TRMM_TMP}/aoi_line.png ${TRMM_TMP}/${TRMM_OUTFILE}.8bit.jpg ${TRMM_TMP}/${TRMM_OUTFILE}.8bit.over.jpg
+
+    # add date and hour label
+    #LABEL_DATE=${TRMM_BASE:7:8}
+    #LABEL_HOUR=${TRMM_BASE:15:2}
+    #LABEL=$(date -u -d "0 ${LABEL_DATE} ${LABEL_HOUR} hours - 90 minutes" +"%Y%m%d %H:%M:%S UTC")
+    # adding label
+    #convert -background '#0008' -fill white -gravity center -size ${WIDTH_TN}x${HEIGHT_LABEL} caption:"${LABEL}" \
+    #        ${TRMM_TMP}/${TRMM_OUTFILE}.8bit.over.jpg +swap -gravity north -composite ${TRMM_TMP}/${TRMM_OUTFILE}.8bit.over.jpg
+
+    # add gradient label
+
+    # reset i so it does not do one time stuff every loop
+    i=0
+done
+
+#convert -delay 100 -loop 10 $(ls -1 ${TRMM_TMP}/*.8bit.over.jpg | sort -g) ${TRMM_OUT}/time_animation.gif
+# remove auth files
+rm -f ~/.urs_cookies
+
+
+}

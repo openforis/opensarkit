@@ -304,7 +304,7 @@ BINDIR=/usr/local/bin/
 for OST_BINS in `ls -1`;do
 
 	cd $OST_BINS
-	for exe in `ls -1 {oft*,poft*} 2>/dev/null`;do
+	for exe in `ls -1 {ost_*,post_*} 2>/dev/null`;do
 
 		exepath=`readlink -f $exe`
 		ln -s $exepath ${BINDIR}/
@@ -344,7 +344,7 @@ else
 	echo "OPENSARKIT=${OSK_HOME}/opensarkit" | tee -a /etc/environment
 	echo "OST_DB=${OSK_HOME}/Database/OFST_db.sqlite" | tee -a /etc/environment
 	echo 'SNAP_EXE=/usr/local/snap/bin/gpt' | tee -a /etc/environment
-	echo 'export PATH=$PATH:/usr/local/lib/orfeo/bin' | tee -a /etc/environment
+
 
 fi
 

@@ -33,20 +33,21 @@ if [ "$#" == "8" ]; then
 	echo -e " Search Sentinel-1 data on ASF server"
 	echo -e "-------------------------------------"
 
-	if [ -d $1 ];then
 
+	AOI=$(readlink -f $2)
+
+	if [ -d $1 ];then
 		cd $1
 	else
-
 		mkdir -p $1
 		cd $1
 	fi
 
-   	PROC_DIR=`pwd`
-   	TMP_DIR=${PROC_DIR}/.TMP
-		rm -rf ${TMP_DIR} > /dev/null
-   	mkdir -p ${TMP_DIR}
-	AOI=$2
+ 	PROC_DIR=`pwd`
+ 	TMP_DIR=${PROC_DIR}/.TMP
+	rm -rf ${TMP_DIR} > /dev/null
+ 	mkdir -p ${TMP_DIR}
+
 	START=$3
 	END=$4
 	MODE=$5
@@ -159,24 +160,74 @@ fi
 
 echo -ne " Generating search query ..."
 
+# create Project aoi file directory
+AOI_PATH=${PROC_DIR}/.AOI
+rm -rf ${AOI_PATH}
+mkdir -p ${AOI_PATH}
+
 if [ `echo $2 | grep shp` ]; then # AOI case
-	# check EPSG
-	AOI=`readlink -f $2`
-	aoi_valid_epsg ${AOI} ${TMP_DIR}/aoi_wgs84.shp ${TMP_DIR}
+
+	#AOI=`readlink -f $2`
+	#echo $AOI
+	AOI_DIR=`dirname ${AOI}`
+
+	# check number of layers/polygons
+	aoi_valid_poly ${AOI} ${TMP_DIR}/aoi_convex.shp ${TMP_DIR}
+
+	#check EPSG
+	if [ -e ${TMP_DIR}/aoi_convex.shp ];then
+		aoi_valid_epsg ${TMP_DIR}/aoi_convex.shp ${TMP_DIR}/aoi_wgs84.shp ${TMP_DIR}
+	else
+		aoi_valid_epsg ${AOI} ${TMP_DIR}/aoi_wgs84.shp ${TMP_DIR}
+	fi
 
 	if [ -e ${TMP_DIR}/aoi_wgs84.shp ];then
-		oft_convex_hull.py -i ${TMP_DIR}/aoi_wgs84.shp -o ${TMP_DIR}/aoi_convex.shp
-		cp ${TMP_DIR}/aoi_wgs84.prj ${TMP_DIR}/aoi_convex.prj
+		mv ${TMP_DIR}/aoi_wgs84* ${AOI_PATH}
+		AOI=${AOI_PATH}/aoi_wgs84.shp
+	elif [ -e ${TMP_DIR}/aoi_convex.shp ];then
+		mv ${TMP_DIR}/aoi_convex* ${AOI_PATH}
+		AOI=${AOI_PATH}/aoi_convex.shp
 	else
-		oft_convex_hull.py -i ${AOI} -o ${TMP_DIR}/aoi_convex.shp
-		AOI_PROJ_FILE=`echo ${AOI} | rev | cut -c 5- | rev`
-		cp ${AOI_PROJ_FILE}.prj ${TMP_DIR}/aoi_convex.prj
+		echo $AOI
+		BASE=`basename ${AOI} | rev | cut -c 5- | rev`
+		cp ${AOI_DIR}/${BASE}.shp ${AOI_PATH}/aoi.shp
+		cp ${AOI_DIR}/${BASE}.shx ${AOI_PATH}/aoi.shx
+		cp ${AOI_DIR}/${BASE}.dbf ${AOI_PATH}/aoi.dbf
+		cp ${AOI_DIR}/${BASE}.prj ${AOI_PATH}/aoi.prj
+		AOI=${AOI_PATH}/aoi.shp
 	fi
+
 else # country case
-	mkdir -p ${PROC_DIR}/AOI/
-	aoi_from_iso3 $2 ${PROC_DIR}/AOI
-	oft_convex_hull.py -i ${PROC_DIR}/AOI/$2.shp -o ${TMP_DIR}/aoi_convex.shp
+
+	aoi_from_iso3 $2 ${AOI_PATH}
+	AOI=${PROC_DIR}/.AOI/aoi_$2_buffer.shp
+
 fi
+
+
+oft_convex_hull.py -i ${AOI} -o ${TMP_DIR}/aoi_convex.shp
+AOI_PROJ_FILE=`echo ${AOI} | rev | cut -c 5- | rev`
+cp ${AOI_PROJ_FILE}.prj ${TMP_DIR}/aoi_convex.prj
+
+
+# if [ `echo $2 | grep shp` ]; then # AOI case
+# 	# check EPSG
+# 	AOI=`readlink -f $2`
+# 	aoi_valid_epsg ${AOI} ${TMP_DIR}/aoi_wgs84.shp ${TMP_DIR}
+#
+# 	if [ -e ${TMP_DIR}/aoi_wgs84.shp ];then
+# 		oft_convex_hull.py -i ${TMP_DIR}/aoi_wgs84.shp -o ${TMP_DIR}/aoi_convex.shp
+# 		cp ${TMP_DIR}/aoi_wgs84.prj ${TMP_DIR}/aoi_convex.prj
+# 	else
+# 		oft_convex_hull.py -i ${AOI} -o ${TMP_DIR}/aoi_convex.shp
+# 		AOI_PROJ_FILE=`echo ${AOI} | rev | cut -c 5- | rev`
+# 		cp ${AOI_PROJ_FILE}.prj ${TMP_DIR}/aoi_convex.prj
+# 	fi
+# else # country case
+# 	mkdir -p ${PROC_DIR}/AOI/
+# 	aoi_from_iso3 $2 ${PROC_DIR}/AOI
+# 	oft_convex_hull.py -i ${PROC_DIR}/AOI/$2.shp -o ${TMP_DIR}/aoi_convex.shp
+# fi
 
 ogr2ogr -f CSV ${TMP_DIR}/AOI_WKT.csv ${TMP_DIR}/aoi_convex.shp -lco GEOMETRY=AS_WKT
 AOI=`grep POLYGON ${TMP_DIR}/AOI_WKT.csv | sed 's|\"POLYGON ((||g' | awk -F "\)\)" $'{print $1}' 2>/dev/null | sed 's/\ /,/g'`
@@ -298,7 +349,7 @@ echo "</OGRVRTDataSource>" >> ${TMP_DIR}/wkt.vrt
 # convert to final shapefile
 SECONDS=0
 rm -rf "${INV}/S1_ASF_${MODE}_${LEVEL_2}_${POL_2}.shp"
-ogr2ogr -f "Esri Shapefile" "${INV}/S1_ASF_${MODE}_${LEVEL_2}_${POL_2}.shp" "${TMP_DIR}/wkt.vrt"
+ogr2ogr -f "Esri Shapefile" "${INV}/S1_ASF_${MODE}_${LEVEL_2}_${POL_2}.shp" "${TMP_DIR}/wkt.vrt" > /dev/null 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 rm -rf ${TMP_DIR}

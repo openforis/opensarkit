@@ -115,8 +115,8 @@ print_alos = eventReactive(input$alos_kc_process, {
         
         # print command
         ARG_DOWN= paste(DIR, AOI, YEAR, SPECKLE, FILE, "")
-        print(paste("poft-sar-ALOS-KC-full", ARG_DOWN))
-        system(paste("poft-sar-ALOS-KC-full", ARG_DOWN), intern=TRUE)
+        print(paste("post_ALOS_KC_full", ARG_DOWN))
+        system(paste("post_ALOS_KC_full", ARG_DOWN), intern=TRUE)
         kc_end_message="Finished processing"
         kc_end_js_string <- 'alert("SUCCESS");'
         kc_end_js_string <- sub("SUCCESS",kc_end_message,kc_end_js_string)

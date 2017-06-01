@@ -1,26 +1,26 @@
-#! /bin/bash 
+#! /bin/bash
 
 # The MIT License (MIT)
 # Copyright (c) 2016 Andreas Vollrath
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal 
-# in the Software without restriction, including without limitation the rights 
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is furnished
 # to do so, subject to the following conditions:
 
 # The above copyright notice and this permission notice shall be
 # included in all copies or substantial portions of the Software.
 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
 # INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
 # HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE 
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 # OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#-------------------------------------------------------------------------------------------	
+#-------------------------------------------------------------------------------------------
 # 	0.1 Check for right usage & set up basic Script Variables
 if [ "$#" != "7" ]; then
 
@@ -71,7 +71,7 @@ else
 
 
 	# set up initial script variables
-   	
+
 	if [ -d $1 ];then
 		AOI=`readlink -f $2`
 		cd $1
@@ -105,45 +105,56 @@ echo ""
 if [ `echo $2 | grep shp` ]; then # AOI case
 
 	AOI=`readlink -f $2`
-	AOI_PATH=`dirname ${AOI}`
+	AOI_DIR=`dirname ${AOI}`
+	AOI_PATH=${PROC_DIR}/.AOI
+	mkdir -p ${AOI_PATH}
 
-	# check numberof layers/polygons
-	aoi_valid_poly ${AOI} ${TMP_DIR}/aoi_convex.shp ${TMP_DIR} 
+	# check number of layers/polygons
+	aoi_valid_poly ${AOI} ${TMP_DIR}/aoi_convex.shp ${TMP_DIR}
 
 	#check EPSG
 	if [ -e ${TMP_DIR}/aoi_convex.shp ];then
-		aoi_valid_epsg ${TMP_DIR}/aoi_convex.shp ${TMP_DIR}/aoi_wgs84.shp ${TMP_DIR} 
-	else	
-		aoi_valid_epsg ${AOI} ${TMP_DIR}/aoi_wgs84.shp ${TMP_DIR} 
+		aoi_valid_epsg ${TMP_DIR}/aoi_convex.shp ${TMP_DIR}/aoi_wgs84.shp ${TMP_DIR}
+	else
+		aoi_valid_epsg ${AOI} ${TMP_DIR}/aoi_wgs84.shp ${TMP_DIR}
 	fi
+
 	if [ -e ${TMP_DIR}/aoi_wgs84.shp ];then
 		mv ${TMP_DIR}/aoi_wgs84* ${AOI_PATH}
 		AOI=${AOI_PATH}/aoi_wgs84.shp
 	elif [ -e ${TMP_DIR}/aoi_convex.shp ];then
 		mv ${TMP_DIR}/aoi_convex* ${AOI_PATH}
 		AOI=${AOI_PATH}/aoi_convex.shp
-	else 
-		AOI=${AOI}
+	else
+		BASE=`basename ${AOI} | rev | cut -c 5 | rev`
+		mv ${AOI_DIR}/${BASE}.shp ${AOI_PATH}/aoi.shp
+		mv ${AOI_DIR}/${BASE}.shx ${AOI_PATH}/aoi.shx
+		mv ${AOI_DIR}/${BASE}.dbf ${AOI_PATH}/aoi.dbf
+		mv ${AOI_DIR}/${BASE}.prj ${AOI_PATH}/aoi.prj
+		AOI=${AOI_PATH}/aoi.shp
 	fi
+
 else # country case
-	mkdir -p ${PROC_DIR}/AOI/
-	aoi_from_iso3 $2 ${PROC_DIR}/AOI
-	AOI=${PROC_DIR}/AOI/$2.shp
+
+
+	aoi_from_iso3 $2 ${AOI_PATH}
+	AOI=${PROC_DIR}/.AOI/aoi_$2_buffer.shp
+
 fi
 
 
-# get the corner coordinates from the AOI shapefile and build rectangle for data search  
+# get the corner coordinates from the AOI shapefile and build rectangle for data search
 SECONDS=0
-echo -ne " Create Query URL from search parameters ... " 
-LAYER=`ogrinfo $AOI | grep 1: | awk $'{print $2}'` 
-X_MIN=`ogrinfo $AOI $LAYER | grep Extent | awk -F '\(' $'{print $2}' | awk -F '\,'  $'{print $1}'` 
-X_MAX=`ogrinfo $AOI $LAYER | grep Extent | awk -F '\(' $'{print $3}' | awk -F '\,'  $'{print $1}'` 
-Y_MIN=`ogrinfo $AOI $LAYER | grep Extent | awk -F '\,' $'{print $2}' | awk -F '\)' $'{print $1}'` 
-Y_MAX=`ogrinfo $AOI $LAYER | grep Extent | awk -F '\,' $'{print $3}' | awk -F '\)' $'{print $1}'` 
-AOI="POLYGON(($X_MIN$Y_MIN, $X_MIN$Y_MAX, $X_MAX$Y_MAX, $X_MAX$Y_MIN, $X_MIN$Y_MIN ))" 
-#QUERY_URL="https://scihub.esa.int/dhus//search?q=producttype:${PRODUCT_TYPE}+AND+polarisationMode:${POLAR}+AND+( footprint:\"Intersects($AOI)\")+AND+${PERIOD}&rows=10000&start=0" 
-QUERY_URL="https://scihub.copernicus.eu/apihub/search?q=producttype:${PRODUCT_TYPE}+AND+polarisationMode:${POLAR}+AND+( footprint:\"Intersects($AOI)\")+AND+${PERIOD}&rows=10000&start=0" 
-duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" 
+echo -ne " Create Query URL from search parameters ... "
+LAYER=`ogrinfo $AOI | grep 1: | awk $'{print $2}'`
+X_MIN=`ogrinfo $AOI $LAYER | grep Extent | awk -F '\(' $'{print $2}' | awk -F '\,'  $'{print $1}'`
+X_MAX=`ogrinfo $AOI $LAYER | grep Extent | awk -F '\(' $'{print $3}' | awk -F '\,'  $'{print $1}'`
+Y_MIN=`ogrinfo $AOI $LAYER | grep Extent | awk -F '\,' $'{print $2}' | awk -F '\)' $'{print $1}'`
+Y_MAX=`ogrinfo $AOI $LAYER | grep Extent | awk -F '\,' $'{print $3}' | awk -F '\)' $'{print $1}'`
+AOI="POLYGON(($X_MIN$Y_MIN, $X_MIN$Y_MAX, $X_MAX$Y_MAX, $X_MAX$Y_MIN, $X_MIN$Y_MIN ))"
+#QUERY_URL="https://scihub.esa.int/dhus//search?q=producttype:${PRODUCT_TYPE}+AND+polarisationMode:${POLAR}+AND+( footprint:\"Intersects($AOI)\")+AND+${PERIOD}&rows=10000&start=0"
+QUERY_URL="https://scihub.copernicus.eu/apihub/search?q=producttype:${PRODUCT_TYPE}+AND+polarisationMode:${POLAR}+AND+( footprint:\"Intersects($AOI)\")+AND+${PERIOD}&rows=10000&start=0"
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 ## Alternative Version with actual footprint (seems not to work because only rectangluar searches available)
 #ogr2ogr -f CSV ${TMP_DIR}/tmp_AOI_WKT.csv $AOI -lco GEOMETRY=AS_WKT
@@ -156,14 +167,14 @@ echo -ne " Data inventory from scihub server ... " &&
 wget --no-check-certificate --user=${USERNAME} --password=${PW} -O ${TMP_DIR}/datalist "${QUERY_URL}" &> ${TMP_DIR}/log_inventory \
 & spinner $! && duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
-if grep --quiet "Authentication Failed" ${TMP_DIR}/log_inventory; then 
-	
+if grep --quiet "Authentication Failed" ${TMP_DIR}/log_inventory; then
+
         echo " Username/Password Authentication Failed." && exit 1
 	rm -rf ${TMP_DIR}
 fi
 
 if [ `wc -l ${TMP_DIR}/datalist | awk '{print $1}'` -eq 0 ];then
-	echo " Empty search result. Check your search criteria." && exit 1	
+	echo " Empty search result. Check your search criteria." && exit 1
 	rm -rf ${TMP_DIR}
 fi
 

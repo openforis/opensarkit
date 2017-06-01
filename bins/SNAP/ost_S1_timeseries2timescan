@@ -1,0 +1,67 @@
+#! /bin/bash
+
+# The MIT License (MIT)
+# Copyright (c) 2016 Andreas Vollrath
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is furnished
+# to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+# OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+#-------------------------------------------------------------------------------------------
+# 	0.1 Check for right usage & set up basic Script Variables
+if [ "$#" != "4" ]; then
+
+	echo -e "------------------------------------------------------------------"
+	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
+	echo -e " Create timescan layers from a timeseries stack "
+	echo -e "------------------------------------------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e "Software dependencies:"
+	echo -e "	- ESA Sentinel Application Platform SNAP"
+	echo -e "	- gdal-bin"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e " Usage: ost_S1_timeseries2timescan <input stack> <output directory> <file prefix> <processing option> "
+	echo -e ""
+	echo -e " input parameters:"
+	echo -e " input directory	(input) (i.e. DATA folder created by oft-sar-S1-ASF-download)"
+	echo -e " data prefix (output) name "
+	echo -e " processing option"
+	echo -e "			  Available choices:"
+	echo -e "			  1: Avg, Max, Min, SD, CoV"
+	echo -e "			  2: Percentiles (90th, 10th, Difference 90th-10th)"
+	echo -e ""
+	exit 1
+else
+	echo -e "------------------------------------------------------------------"
+	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
+	echo -e " Create timeseries stack and multi-temporal statistics from preprocessed single scenes"
+	echo -e "------------------------------------------------------------------"
+
+	# source OST libs
+	source ${OPENSARKIT}/lib/helpers_source
+
+	# set up initial script variables
+	TS_STACK=$(readlink -f $1)
+	OUT_DIR=$2
+	PREFIX=$3
+	TS_MODE=$4
+
+
+fi
+
+ost_mt_metrics.py -i ${TS_STACK} -o ${OUT_DIR}/${PREFIX} -t ${TS_MODE} -r yes

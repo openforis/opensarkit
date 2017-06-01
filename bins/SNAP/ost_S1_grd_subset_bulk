@@ -70,7 +70,7 @@ for LINE in `ls -1 ${PROC_DIR}`;do
 
 		for FILE in `ls -1 *zip`;do
 
-			oft-sar-S1-GRD-subset ${FILE} ${AOI} $3 $4
+			ost_S1_grd_subset ${FILE} ${AOI} $3 $4
 
 		done
 

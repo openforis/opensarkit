@@ -21,12 +21,12 @@
       <imgResamplingMethod>BILINEAR_INTERPOLATION</imgResamplingMethod>
       <pixelSpacingInMeter>30.0</pixelSpacingInMeter>
       <pixelSpacingInDegree>2.6949458523585647E-4</pixelSpacingInDegree>
-      <mapProjection>GEOGCS[&quot;WGS84(DD)&quot;, 
-  DATUM[&quot;WGS84&quot;, 
-    SPHEROID[&quot;WGS84&quot;, 6378137.0, 298.257223563]], 
-  PRIMEM[&quot;Greenwich&quot;, 0.0], 
-  UNIT[&quot;degree&quot;, 0.017453292519943295], 
-  AXIS[&quot;Geodetic longitude&quot;, EAST], 
+      <mapProjection>GEOGCS[&quot;WGS84(DD)&quot;,
+  DATUM[&quot;WGS84&quot;,
+    SPHEROID[&quot;WGS84&quot;, 6378137.0, 298.257223563]],
+  PRIMEM[&quot;Greenwich&quot;, 0.0],
+  UNIT[&quot;degree&quot;, 0.017453292519943295],
+  AXIS[&quot;Geodetic longitude&quot;, EAST],
   AXIS[&quot;Geodetic latitude&quot;, NORTH]]</mapProjection>
       <nodataValueAtSea>false</nodataValueAtSea>
       <saveDEM>false</saveDEM>

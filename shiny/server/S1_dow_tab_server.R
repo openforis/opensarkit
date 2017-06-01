@@ -94,8 +94,8 @@ print_S1_dow = eventReactive(input$S1_download, {
       
       # construct OST CL command
       ARG_DOWN=paste(DIR, INV_FILE, FILE)
-      print(paste("oft-sar-S1-ASF-download",ARG_DOWN),intern=FALSE)
-      system(paste("oft-sar-S1-ASF-download",ARG_DOWN),intern=FALSE)
+      print(paste("ost_S1_ASF_download",ARG_DOWN),intern=FALSE)
+      system(paste("ost_S1_ASF_download",ARG_DOWN),intern=FALSE)
       
       # delete the wget conf
       unlink(FILE, force = TRUE)

@@ -144,8 +144,8 @@ print_s1_inv = eventReactive(input$s1_inv_search, {
 
       # call OST command line and create inventory shapefile
       ARG_DOWN = paste(DIR, AOI, STARTDATE, ENDDATE, SMODE, PLEVEL, POLAR, "0")
-      print(paste("oft-sar-S1-ASF-inventory", ARG_DOWN), intern=FALSE)
-      system(paste("oft-sar-S1-ASF-inventory", ARG_DOWN), intern=FALSE)
+      print(paste("ost_S1_ASF_inventory", ARG_DOWN), intern=FALSE)
+      system(paste("ost_S1_ASF_inventory", ARG_DOWN), intern=FALSE)
     
       # Pop-up message for having finished data inventory
       s1_found_message="Found data"

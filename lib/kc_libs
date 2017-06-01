@@ -233,7 +233,7 @@ function kc_process () {
     #-------------------------------------------------------------------------------------
 	# check if 1x1 tile intersects with AOI
 
-   	DATA=$1
+  DATA=$1
 	AOI=$2
 	FILTER=$3
 	YEAR=$4
@@ -354,7 +354,7 @@ function kc_process () {
 
 		MIN=0  #	`gdal_min ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif"`
 		MAX=15 #`gdal_max ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif"`
-   		gdal_translate -scale ${MIN} ${MAX} 0 65535 -a_nodata 0 -ot UInt16 ${TMP_DIR}/${DATA_HH}.ratio.mask.tif ${TMP_DIR}/TILES/3_${DATA_HH}.ratio.tif >> ${LOG_DIR}/log_process 2>&1
+   	gdal_translate -scale ${MIN} ${MAX} 0 65535 -a_nodata 0 -ot UInt16 ${TMP_DIR}/${DATA_HH}.ratio.mask.tif ${TMP_DIR}/TILES/3_${DATA_HH}.ratio.tif >> ${LOG_DIR}/log_process 2>&1
 		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 		rm -f ${TMP_DIR}/${DATA_HH}*

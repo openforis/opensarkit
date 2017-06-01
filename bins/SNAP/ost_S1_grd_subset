@@ -85,11 +85,18 @@ X_MAX=`ogrinfo ${TMP_DIR}/AOI.shp $LAYER | grep Extent | awk -F '\(' $'{print $3
 Y_MIN=`ogrinfo ${TMP_DIR}/AOI.shp $LAYER | grep Extent | awk -F '\,' $'{print $2}' 2>/dev/null | awk -F '\)' $'{print $1}' 2>/dev/null`
 Y_MAX=`ogrinfo ${TMP_DIR}/AOI.shp $LAYER | grep Extent | awk -F '\,' $'{print $3}' 2>/dev/null | awk -F '\)' $'{print $1}' 2>/dev/null`
 
+#echo $X_MIN
+#echo $X_MAX
 # create a buffer
-X_MIN=`echo $X_MIN - 0.01 | bc`
-X_MAX=`echo $X_MAX + 0.01 | bc`
-Y_MIN=`echo $Y_MIN - 0.01 | bc`
-Y_MAX=`echo $Y_MAX + 0.01 | bc`
+XBUFF=`echo "($X_MAX - $X_MIN) / 20" | bc -l`
+#echo $XBUFF
+YBUFF=`echo "($Y_MAX - $Y_MIN)/ 20" | bc -l`
+X_MIN=`echo $X_MIN - $XBUFF | bc -l`
+#echo $X_MIN
+X_MAX=`echo $X_MAX + $XBUFF | bc -l`
+#echo $X_MAX
+Y_MIN=`echo $Y_MIN - $YBUFF | bc -l`
+Y_MAX=`echo $Y_MAX + $YBUFF | bc -l`
 AOI_AREA="POLYGON (($X_MIN $Y_MIN, $X_MIN $Y_MAX, $X_MAX $Y_MAX, $X_MAX $Y_MIN, $X_MIN $Y_MIN))"
 
 SECONDS=0

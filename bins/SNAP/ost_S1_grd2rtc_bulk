@@ -22,7 +22,7 @@
 
 #-------------------------------------------------------------------------------------------
 # 	0.1 Check for right usage & set up basic Script Variables
-if [ "$#" != "5" ]; then
+if [ "$#" != "4" ]; then
 
 	echo -e "------------------------------------------------------------------"
 	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
@@ -37,31 +37,24 @@ if [ "$#" != "5" ]; then
 	echo -e "	- gdal-bin"
 	echo -e "----------------------------------"
 	echo -e ""
-	echo -e " Usage: oft-sar-S1-GRD-bulk-preprocess <input directory> <ISO3/AOI> <output resolution> <MT-metrics> <output datatype>"
+	echo -e " Usage: oft-sar-S1-GRD-bulk-preprocess <input directory> <output resolution> <mode> <ts-processing> "
 	echo -e ""
 	echo -e " input parameters:"
 	echo -e " input directory (input) higher-level directory of the downloaded zip file (i.e. DATA folder created by oft-sar-S1-download)"
-	echo -e " ISO3/AOI (input)	 ISO3 country code or shapefile of your area of interest"
 	echo -e " output resolution 	 the output resolution"
 	echo -e "			   Available choices:"
 	echo -e "			    HI_RES (10m output) "
 	echo -e "			    MED_RES (30m output)"
-	echo -e " MT-metrics		 calculate muti-temporal metrics"
+	echo -e " mode		 RTC product output"
 	echo -e "			  Available choices:"
-	echo -e "			   0: does not calculate the MT-metrics "
-	echo -e "			   1: calculates the MT-metrics"
-	echo -e " datatype		 choose the output datatype (applies only to MT layers)"
+	echo -e "			   0: Single Image mode (calculates VV/VH ratio, applies a spatial Speckle Filter and puts images to dB scale) "
+	echo -e "			   1: TS preperation mode (needs to be selected if subsequent time-series/timescan processing is envisaged)"
+	echo -e " ts-processing		 apply the time-series/timescan processing"
 	echo -e "			  Available choices:"
-	echo -e "			   1: unsigned 8-bit integer (UInt8)"
-	echo -e "			   2: unsigned 16-bit integer (UInt16)"
-	echo -e "			   3: 32-bit float (Float32)"
-#	echo -e " filtering		do additional Multi-Directional Filtering (recommended for single time "
-#	echo -e "			  Available choices:"
-#	echo -e "			   0: No additional filter applied"
-#	echo -e "			   1: additional filter applied"
-#	echo -e " elevation		(input) filename to the digital elevation model"
-#	echo -e ""
-#	echo -e " NOTE: The DEM file should be provided in Geotiff-format as a 16Bit Integer data type with 0 as the no data value."
+	echo -e "			   0: no "
+	echo -e "			   1: yes (16 bit output, recommended)"
+	echo -e "			   2: yes (8 bit output)"
+	echo -e "			   3: yes (32 bit output)"
 	echo -e ""
 	exit 1
 else
@@ -77,21 +70,18 @@ else
 	#PROC_DIR=`pwd`
 	PROC_DIR=$(readlink -f $1)
 	TMP_DIR=${SAR_TMP:-$PROC_DIR/TMP}
-	#TMP_DIR=${PROC_DIR}/TMP
-	rm -rf $TMP_DIR
+	AOI="${PROC_DIR}/../.AOI/aoi*.shp"
+	rm -rf ${TMP_DIR}/*
+  mkdir -p ${TMP_DIR}
+	# get cl-options
+	RESOLUTION=$2
+	PROC_MODE=$3
+	TS_PROC=$4
 
-	if [ "`echo $2 | grep shp`" ]; then # AOI case
-		AOI=`readlink -f $2`
-		echo " Selected AOI file: ${AOI}"
-	else # country case
-		AOI=$2
+	if [[ ${TS_PROC} -gt 0 && ${PROC_MODE} -eq 0 ]];then
+		echo " WARNING: You are going to process the time-series/timescan products. Processing mode has therefore been set to TS mode preperation."
+		PROC_MODE=1
 	fi
-
-	RESOLUTION=$3
-	# MT_MODE Flag
-	MT_MODE=$4
-	DATATYPE=$5
-
 	# source libs
 	source ${OPENSARKIT}/lib/helpers_source
 
@@ -103,7 +93,6 @@ j=1
 # loop thorugh the tracks
 for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 
-
 	if [ ${NR_OF_TRACKS} -eq 1 ];then
 		echo " Info: Processing Track: `basename ${TRACK}`"
 	else
@@ -113,20 +102,18 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 	echo " Info: Entering Track: ${TRACK}"
 	cd ${TRACK}
 
-	NR_OF_ACQ=`ls -1 | wc -l`
+	NR_OF_ACQ=`ls -1 -d 20* | wc -l`
 	echo " Info: Found ${NR_OF_ACQ} acquisitions for this swath"
 
 	# loop through acquisition dates
-	for ACQ in `ls -1`;do
+	for ACQ in `ls -1 -d 20*-[0-9]*`;do
 
 		echo " Info: Entering ${ACQ}"
 		cd ${ACQ}
 
+		# check if already imported products are there
 		if ls ${PWD}/*imported_subset.dim > /dev/null 2>&1;then
 			SCRIPT_MODE=SUBSET
-			NR_FRAMES=`ls -1 -d ${PWD}/*dim 2>/dev/null | wc -l`
-		elif ls ${PWD}/*.dim  > /dev/null 2>&1 ;then
-			SCRIPT_MODE=DIM
 			NR_FRAMES=`ls -1 -d ${PWD}/*dim 2>/dev/null | wc -l`
 		elif ls ${PWD}/*zip > /dev/null 2>&1 ;then
 			SCRIPT_MODE=RAW
@@ -135,6 +122,11 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 			echo " ERROR: No valid files found in directory ${PWD}" #&& exit 1
 		fi
 
+		# create Log and Temp dirs
+		LOG_DIR=${PWD}/LOG
+		TMP_DIR_FRAME=${TMP_DIR}/${ACQ}
+		mkdir -p ${LOG_DIR}
+		mkdir -p ${TMP_DIR_FRAME}
 
 		if [ ${NR_FRAMES} -eq 1 ];then
 
@@ -143,32 +135,39 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 			FRAME=`ls -1 ${PWD}/*dim 2>/dev/null || ls -1 ${PWD}/*zip 2>/dev/null`
 			s1_info ${FRAME}
 
-			LOG_DIR=${PWD}/LOG
-			TMP_DIR_FRAME=${PWD}/TMP
-			mkdir -p ${LOG_DIR}
-			mkdir -p ${TMP_DIR_FRAME}
+			if [[ ${SCRIPT_MODE} == SUBSET && ${PROC_MODE} == 0 ]];then
 
-			if [[ ${SCRIPT_MODE} == SUBSET && ${MT_MODE} == 0 ]];then
-				s1_rtc_processing ${FRAME} ${PWD}/${ACQ}"_RTC" ${RESOLUTION} 1 1 ${TMP_DIR_FRAME} ${LOG_DIR}
-			elif [[ ${SCRIPT_MODE} == SUBSET && ${MT_MODE} == 1 ]];then
-				s1_rtc_processing ${FRAME} ${PWD}/${ACQ}"_RTC" ${RESOLUTION} 0 0 ${TMP_DIR_FRAME} ${LOG_DIR}
-			elif [[ ${SCRIPT_MODE} != SUBSET && ${MT_MODE} == 0 ]];then
+				SECONDS=0
+				echo -ne " Applying the Lee Sigma Speckle Filter ..."
+				bash ${SNAP_EXE} Speckle-Filter -Ssource=${FRAME} -t ${TMP_DIR_FRAME}/${ACQ}"_speckle" > /dev/null 2>&1
+				rm -rf ${TMP_DIR_FRAME}/${ACQ}_import.*
+				duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+				s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_speckle.dim" ${PWD}/${ACQ} ${RESOLUTION} 0 ${AOI} ${TMP_DIR_FRAME} ${LOG_DIR}
+
+			elif [[ ${SCRIPT_MODE} == SUBSET && ${PROC_MODE} == 1 ]];then
+
+				s1_rtc_processing ${FRAME} ${PWD}/${ACQ} ${RESOLUTION} 1 ${AOI} ${TMP_DIR_FRAME} ${LOG_DIR}
+
+			elif [[ ${SCRIPT_MODE} != SUBSET && ${PROC_MODE} == 0 ]];then
 				s1_frame_import ${FRAME} ${TMP_DIR_FRAME}/${ACQ}"_import" ${LOG_DIR}
-				s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ}"_RTC" ${RESOLUTION} 1 1 ${TMP_DIR_FRAME} ${LOG_DIR}
-			elif [[ ${MODE} != SUBSET && ${MT_MODE} == 1 ]];then
+
+				SECONDS=0
+				echo -ne " Applying the Lee Sigma Speckle Filter ..."
+				bash ${SNAP_EXE} Speckle-Filter -Ssource=${TMP_DIR_FRAME}/${ACQ}"_import.dim" -t ${TMP_DIR_FRAME}/${ACQ}"_speckle" > /dev/null 2>&1
+				rm -rf ${TMP_DIR_FRAME}/${ACQ}_import.*
+				duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+				s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_speckle.dim" ${PWD}/${ACQ} ${RESOLUTION} 0 ${AOI} ${TMP_DIR_FRAME} ${LOG_DIR}
+
+			elif [[ ${SCRIPT_MODE} != SUBSET && ${PROC_MODE} == 1 ]];then
 				s1_frame_import ${FRAME} ${TMP_DIR_FRAME}/${ACQ}"_import" ${LOG_DIR}
-				s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ}"_RTC" ${RESOLUTION} 0 0 ${TMP_DIR_FRAME} ${LOG_DIR}
+				s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ} ${RESOLUTION} 1 ${AOI} ${TMP_DIR_FRAME} ${LOG_DIR}
 			fi
-			rm -rf ${TMP_DIR_FRAME}
 
 		else
 
 			echo " Info: Found ${NR_FRAMES} scenes to assemble and process"
-
-			LOG_DIR=${PWD}/LOG
-			TMP_DIR_FRAME=${PWD}/TMP
-			mkdir -p ${LOG_DIR}
-			mkdir -p ${TMP_DIR_FRAME}
 
 			ls -1 -d ${PWD}/*dim 2>/dev/null || ls -1 -d ${PWD}/*zip 2>/dev/null > ${TMP_DIR_FRAME}/filelist
 
@@ -178,16 +177,25 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 			else
 
 				s1_swath_import ${TMP_DIR_FRAME}/filelist ${TMP_DIR_FRAME}/${ACQ}"_import" ${TMP_DIR_FRAME} ${LOG_DIR}
-				s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ}"_RTC" ${RESOLUTION} 0 0 ${TMP_DIR_FRAME} ${LOG_DIR}
 
-				if [ ${MT_MODE} == 0 ];then
-					s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ}"_RTC" ${RESOLUTION} 1 1 ${TMP_DIR_FRAME} ${LOG_DIR}
+				if [ ${PROC_MODE} == 0 ];then
+					SECONDS=0
+					echo -ne " Applying the Lee Sigma Speckle Filter ..."
+					bash ${SNAP_EXE} Speckle-Filter -Ssource=${TMP_DIR_FRAME}/${ACQ}"_import.dim" -t ${TMP_DIR_FRAME}/${ACQ}"_speckle"
+					rm -rf ${TMP_DIR_FRAME}/${ACQ}_import.*
+					duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+					s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_speckle.dim" ${PWD}/${ACQ} ${RESOLUTION} 0 ${AOI} ${TMP_DIR_FRAME} ${LOG_DIR}
+				else
+					s1_rtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ} ${RESOLUTION} 1 ${AOI} ${TMP_DIR_FRAME} ${LOG_DIR}
 				fi
 			fi
-			rm -rf ${TMP_DIR_FRAME}/
+
 		fi
 
-		cd ../
+		# clean up tmp folder
+	rm -rf ${TMP_DIR_FRAME}/
+	cd ../
 
 	done # finish acquisition date loop
 
@@ -197,10 +205,8 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 done # finish track loop
 
 # calculate MT-metrics
-if [ ${MT_MODE} == 1 ];then
-
-		oft-sar-S1-GRD-MT-metrics ${PROC_DIR} ${AOI} ${DATATYPE}
-
+if [[ ${TS_PROC} != 0 ]];then
+	ost_S1_rtc2ts ${PROC_DIR} ${TS_PROC} 1
 fi
 
 rm -rf ${TMP_DIR}

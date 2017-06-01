@@ -22,7 +22,7 @@ tabItem(tabName = "s1_inv",
              hr(),
              tags$b(" Project Directory:"),
              br(),
-             p("A new folder named \"Inventory\" will be created within your Project directory. 
+             p("A new folder named \"Inventory\" will be created within the selected project directory. 
                 This folder contains the OST inventory shapefile that is produced by this interface."),
              #br(),
              #div(style="display:inline-block",shinyDirButton('directory', 'Browse', 'Select a folder')),
@@ -33,7 +33,7 @@ tabItem(tabName = "s1_inv",
              verbatimTextOutput("S1_inv_project_dir"),
              hr(),
              tags$b("Area of Interest"),
-             p("This parameter will define the spatial extent of the processing. You can either choose the borders 
+             p("This parameter will define the spatial extent of the data inventory. You can either choose the borders 
                 of a country or a shapefile that bounds your area of interest. If you are working from remote, 
                 you can transfer a zipped archive containing a shapefile and its associated files 
                 from your local machine to the server by selecting the third option."),
@@ -71,7 +71,7 @@ tabItem(tabName = "s1_inv",
              
              hr(),
              tags$b("Date Range"),
-             p("Select a period for which data acquisitions will be searched."),
+             p("Select a period of time for which data inventory will be applied."),
              dateRangeInput("s1_inv_daterange",
                             "",
                              start = "2014-10-01",

@@ -1,0 +1,108 @@
+#! /bin/bash
+
+# The MIT License (MIT)
+# Copyright (c) 2016 Andreas Vollrath
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is furnished
+# to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+# OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+#-------------------------------------------------------------------------------------------
+# 	0.1 Check for right usage & set up basic Script Variables
+if [ "$#" != "4" ]; then
+
+	echo -e "------------------------------------------------------------------"
+	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
+	echo -e " Create timescan layers from a timeseries stack "
+	echo -e "------------------------------------------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e "Software dependencies:"
+	echo -e "	- ESA Sentinel Application Platform SNAP"
+	echo -e "	- gdal-bin"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e " Usage: ost_S1_timeseries2timescan_bulk <project directory> <processing option> "
+	echo -e ""
+	echo -e " input parameters:"
+	echo -e " input directory	(input) (i.e. DATA folder created by oft-sar-S1-ASF-download)"
+	echo -e " data prefix (output) name "
+	echo -e " processing option"
+	echo -e "			  Available choices:"
+	echo -e "			  1: Avg, Max, Min, SD, CoV"
+	echo -e "			  2: Percentiles (90th, 10th, Difference 90th-10th)"
+	echo -e ""
+	exit 1
+else
+	echo -e "------------------------------------------------------------------"
+	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
+	echo -e " Create timeseries stack and multi-temporal statistics from preprocessed single scenes"
+	echo -e "------------------------------------------------------------------"
+
+	# source OST libs
+	source ${OPENSARKIT}/lib/helpers_source
+
+	# set up initial script variables
+	TS_STACK=$(readlink -f $1)
+	TS_MODE=$2
+	
+
+
+fi
+
+cd ${PROC_DIR}
+NR_OF_TRACKS=`ls -1 -d ${PROC_DIR}/[0-9]* | wc -l`
+j=1
+# loop thorugh the tracks
+for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
+
+	if [ ${NR_OF_TRACKS} -eq 1 ];then
+		echo " Info: Processing Track: `basename ${TRACK}`"
+	else
+		echo " Info: Processing Track: `basename ${TRACK}` ($j/${NR_OF_TRACKS}) "
+	fi
+
+	echo " Info: Entering Track: ${TRACK}"
+	cd ${TRACK}
+
+	mkdir -p ${TRACK}/Timescan
+	ost_S1_timeseries2timescan ${TRACK}/Timeseries/timeseries.VV.vrt ${TRACK}/Timescan/ Gamma0.VV ${TS_MODE}
+	mv ${TRACK}/Timescan/Gamma0.VV.avg.tif ${TRACK}/Timescan/01_Gamma0.VV.avg.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/01_Gamma0.VV.avg.tif
+	mv ${TRACK}/Timescan/Gamma0.VV.max.tif ${TRACK}/Timescan/02_Gamma0.VV.max.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/02_Gamma0.VV.max.tif
+	mv ${TRACK}/Timescan/Gamma0.VV.min.tif ${TRACK}/Timescan/03_Gamma0.VV.min.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/03_Gamma0.VV.min.tif
+	mv ${TRACK}/Timescan/Gamma0.VV.std.tif ${TRACK}/Timescan/04_Gamma0.VV.std.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/04_Gamma0.VV.std.tif
+	mv ${TRACK}/Timescan/Gamma0.VV.cov.tif ${TRACK}/Timescan/05_Gamma0.VV.cov.tif
+
+	if [[ -e ${TRACK}/Timeseries/timeseries.VH.vrt ]];then
+		ost_S1_timeseries2timescan ${TRACK}/Timeseries/timeseries.VH.vrt ${TRACK}/Timescan/ Gamma0.VH ${TS_MODE}
+		mv ${TRACK}/Timescan/Gamma0.VH.avg.tif ${TRACK}/Timescan/06_Gamma0.VH.avg.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/06_Gamma0.VH.avg.tif
+		mv ${TRACK}/Timescan/Gamma0.VH.max.tif ${TRACK}/Timescan/07_Gamma0.VH.max.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/07_Gamma0.VH.max.tif
+		mv ${TRACK}/Timescan/Gamma0.VH.min.tif ${TRACK}/Timescan/08_Gamma0.VH.min.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/08_Gamma0.VH.min.tif
+		mv ${TRACK}/Timescan/Gamma0.VH.std.tif ${TRACK}/Timescan/09_Gamma0.VH.std.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/09_Gamma0.VH.std.tif
+		mv ${TRACK}/Timescan/Gamma0.VH.cov.tif ${TRACK}/Timescan/10_Gamma0.VH.cov.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/10_Gamma0.VH.cov.tif
+
+		gdalbuildvrt -separate -srcnodata 0 ${TRACK}/Timescan/Timescan.VVVH.vrt ${TRACK}/Timescan/01_Gamma0.VV.avg.tif ${TRACK}/Timescan/02_Gamma0.VV.max.tif \
+																			${TRACK}/Timescan/03_Gamma0.VV.min.tif ${TRACK}/Timescan/04_Gamma0.VV.std.tif ${TRACK}/Timescan/05_Gamma0.VV.cov.tif \
+																			${TRACK}/Timescan/06_Gamma0.VH.avg.tif ${TRACK}/Timescan/07_Gamma0.VH.max.tif ${TRACK}/Timescan/08_Gamma0.VH.min.tif \
+																			${TRACK}/Timescan/09_Gamma0.VH.std.tif ${TRACK}/Timescan/10_Gamma0.VH.cov.tif >> ${LOG_TS}/log_mt_stacking 2>&1
+	else
+
+		gdalbuildvrt -separate -srcnodata 0 ${TRACK}/Timescan/Timescan.VV.vrt ${TRACK}/Timescan/01_Gamma0.VV.avg.tif ${TRACK}/Timescan/02_Gamma0.VV.max.tif ${TRACK}/Timescan/03_Gamma0.VV.min.tif \
+																				${TRACK}/Timescan/04_Gamma0.VV.std.tif ${TRACK}/Timescan/05_Gamma0.VV.cov.tif  >> ${LOG_TS}/log_mt_stacking 2>&1
+	fi
+
+	cd ../
+done

@@ -1,7 +1,7 @@
 #! /bin/bash
 
 # The MIT License (MIT)
-# Copyright (c) 2016 Andreas Vollrath
+# written by Andreas Vollrath, 2017
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -37,8 +37,21 @@ function s1_frame_import() {
   echo ""
   SECONDS=0
   echo -ne " Importing S1 GRD data file, applying the precise orbit file and removing thermal noise ..." &&
-  #bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_AO_TNR_BRD_SPK.xml -x -Pinput=$1 -Poutput=$2 > $3/log_import 2>&1
-  bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_AO_TNR_BRD.xml -x -Pinput=$1 -Poutput=$2 > $3/log_import 2>&1
+  bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_AO_TNR.xml -x -Pinput=$1 -Poutput=$2 > $3/log_import 2>&1
+  duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+  SECONDS=0
+  echo -ne " Removing GRD Border Noise ..." &&
+  FILE_NAME=$2
+  cp ${FILE_NAME}.data/Intensity_VV.hdr ${FILE_NAME}.data/Intensity_VV.orig.hdr
+  ost_remove_border.py -i ${FILE_NAME}.data/Intensity_VV.img -o ${FILE_NAME}.data/Intensity_VV.img > $3/log_import 2>&1
+  mv ${FILE_NAME}.data/Intensity_VV.orig.hdr ${FILE_NAME}.data/Intensity_VV.hdr
+
+  if [[ -e ${FILE_NAME}.data/Intensity_VH.img ]];then
+    cp ${FILE_NAME}.data/Intensity_VH.hdr ${FILE_NAME}.data/Intensity_VH.orig.hdr
+    ost_remove_border.py -i ${FILE_NAME}.data/Intensity_VH.img -o ${FILE_NAME}.data/Intensity_VH.img > $3/log_import 2>&1
+    mv ${FILE_NAME}.data/Intensity_VH.orig.hdr ${FILE_NAME}.data/Intensity_VH.hdr
+  fi
   duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
   [ $? -ne 0 ] && return ${ERR_IMPORT}
 
@@ -69,10 +82,23 @@ function s1_swath_import() {
     echo ""
     SECONDS=0
     echo -ne " Importing S1 GRD data file, applying the precise orbit file and removing thermal noise ..." &&
-    #bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_AO_TNR_BRD_SPK.xml -x -Pinput=${LINE} -Poutput=$3/${BASE}-import > $4/log_import 2>&1
     bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_AO_TNR_BRD.xml -x -Pinput=${LINE} -Poutput=$3/${BASE}-import > $4/log_import 2>&1
     duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
     [ $? -ne 0 ] && return ${ERR_IMPORT}
+
+    SECONDS=0
+    echo -ne " Removing GRD Border Noise ..." &&
+    FILE_NAME="$3/${BASE}-import"
+    cp ${FILE_NAME}.data/Intensity_VV.hdr ${FILE_NAME}.data/Intensity_VV.orig.hdr
+    ost_remove_border.py -i ${FILE_NAME}.data/Intensity_VV.img -o ${FILE_NAME}.data/Intensity_VV.img > $3/log_import 2>&1
+    mv ${FILE_NAME}.data/Intensity_VV.orig.hdr ${FILE_NAME}.data/Intensity_VV.hdr
+
+    if [[ -e ${FILE_NAME}.data/Intensity_VH.img ]];then
+      cp ${FILE_NAME}.data/Intensity_VH.hdr ${FILE_NAME}.data/Intensity_VH.orig.hdr
+      ost_remove_border.py -i ${FILE_NAME}.data/Intensity_VH.img -o ${FILE_NAME}.data/Intensity_VH.img > $3/log_import 2>&1
+      mv ${FILE_NAME}.data/Intensity_VH.orig.hdr ${FILE_NAME}.data/Intensity_VH.hdr
+    fi
+    duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
     echo " Finished import of Frame: $j/${NR_OF_FRAMES}"
     j=`expr $j + 1`
   done
@@ -100,204 +126,316 @@ function s1_swath_import() {
 function s1_rtc_processing() {
   if [ -z "$7" ]; then
     echo " Missing arguments. Syntax:"
-    echo " s1_rtc_processing <input file> <output_file> <resolution> <ratio calculation> <db-scaling> <tmp_dir> <log_dir>"
+    echo " s1_rtc_processing <input file> <output_file> <resolution> <mode> <aoi> <tmp_dir> <log_dir>"
     return
   fi
 
+
   BASE=`echo $1 | rev | cut -c 5- | rev`
+  RTC_IN="$1"
+  RTC_OUT="$2"
+  RTC_RES="$3"
+  RTC_MODE="$4"
+  RTC_AOI="$5"
+  RTC_TMP="$6"
+  RTC_LOG="$7"
 
-  COLUMNS=`gdalinfo ${BASE}.data/Intensity_VV.img | grep "Size is" | awk '{print $3}' | sed s/,//g`
-  LINES=`gdalinfo ${BASE}.data/Intensity_VV.img | grep "Size is" | awk '{print $4}'`
-  NEW_WIDTH=`expr $COLUMNS - 1200`
-  NEW_HEIGHT=`expr $LINES - 1200`
+  # echo "RTC_IN: $RTC_IN $1"
+  # echo "RTC_OUT: $RTC_OUT $2"
+  # echo "RTC_RES: $RTC_RES $3"
+  # echo "RTC_MODE: $RTC_MODE $4"
+  # echo "RTC_AOI: $RTC_AOI $5"
+  # echo "RTC_TMP: $RTC_TMP $6"
+  # echo "RTC_LOG: $RTC_LOG $7"
 
-  if [ $3 == "MED_RES" ];then
+  #COLUMNS=`gdalinfo ${BASE}.data/Intensity_VV.img | grep "Size is" | awk '{print $3}' | sed s/,//g`
+  #LINES=`gdalinfo ${BASE}.data/Intensity_VV.img | grep "Size is" | awk '{print $4}'`
+  #NEW_WIDTH=`expr $COLUMNS - 1200`
+  #NEW_HEIGHT=`expr $LINES - 1200`
+
+  if [ ${RTC_RES} == "MED_RES" ];then
 
     SECONDS=0
-    echo " Removing GRD border noise by deleting the outer 600 rows, calibrating to beta0, "
-    echo -ne " applying the terrain flattening and multi-look by a factor of 3  ..." &&
-    bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_RB_CAL_TF_ML3.xml -x -Pinput=$1 -Pwidth=${NEW_WIDTH} -Pheight=${NEW_HEIGHT} -Poutput=$6/TF  > $7/log_cal_tf_ml 2>&1
+    echo " Calibrating to beta0, applying the terrain flattening and multi-look by a factor of 3  ..." &&
+    #  bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_RB_CAL_TF_ML3.xml -x -Pinput=${RTC_IN} -Pwidth=${NEW_WIDTH} -Pheight=${NEW_HEIGHT} -Poutput=${RTC_TMP}/TF  > ${RTC_LOG}/log_cal_tf_ml 2>&1
+    bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_CAL_TF_ML3.xml -x -Pinput=${RTC_IN} -Poutput=${RTC_TMP}/TF  > ${RTC_LOG}/log_cal_tf_ml 2>&1
     duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
     [ $? -ne 0 ] && return ${ERR_BRD_NOISE}
 
-    if [ -e $6/TF.data/Gamma0_VH.img ];then
+    SECONDS=0
+    echo -ne " Creating a layover/shadow mask ... " &&
+    bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_LayShaMask_ML3.xml -x -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_OUT}.LS_mask  > ${RTC_LOG}/log_cal_tf_ml 2>&1
+    duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
-      if [[ $4 == 1 && $5 == 1 ]];then # db scale + ratio
+    if [ -e ${RTC_TMP}/TF.data/Gamma0_VH.img ];then
+
+      if [[ ${RTC_MODE} == 0 ]];then # db scale + ratio
 
         SECONDS=0
         echo -ne " Applying the geometric terrain correction, calculate the VV/VH Band Ratio and transform backscatter to decibel scale  ..." &&
-        bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TC_DB_Ratio.xml -x -Pinput=$6/TF.dim -Poutput=$6/TC_DB -PoutputRatio=$6/Ratio > $7/log_tc_ratio 2>&1
+        bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TC_DB_Ratio.xml -x -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_TMP}/TC_DB -PoutputRatio=${RTC_TMP}/Ratio > ${RTC_LOG}/log_tc_ratio 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_TC}
-        rm -rf $6/TF.d*
+        rm -rf ${RTC_TMP}/TF.d*
 
         SECONDS=0
         echo -ne " Merging backscatter bands with ratio"
-        bash ${SNAP_EXE} BandMerge -x $6/TC_DB.dim $6/Ratio.dim -t $2 > $7/log_output 2>&1
+        bash ${SNAP_EXE} BandMerge -x ${RTC_TMP}/TC_DB.dim ${RTC_TMP}/Ratio.dim -t ${RTC_TMP}/RTC.dim > ${RTC_LOG}/log_output 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_BM}
-        rm -rf $6/TC_DB.d* $6/Ratio.d*
-
-        elif [[ $4 == 1 && $5 == 0 ]];then # ratio but no db scale
+        rm -rf ${RTC_TMP}/TC_DB.d* ${RTC_TMP}/Ratio.d*
 
         SECONDS=0
-        echo -ne " Applying the geometric terrain correction, and calculate the VV/VH Band Ratio  ..." &&
-        bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TC_Ratio.xml -x -Pinput=$6/TF.dim -Poutput=$6/TC -PoutputRatio=$6/Ratio > $7/log_ratio 2>&1
+        echo -ne " Creating final output file ..." &&
+        gdalbuildvrt -separate -srcnodata 0 ${RTC_TMP}/rgb.vrt ${RTC_TMP}/RTC.data/Gamma0_VV_db.img ${RTC_TMP}/RTC.data/Gamma0_VH_db.img ${RTC_TMP}/RTC.data/VV-VH_ratio.img >> ${RTC_LOG}/log_output 2>&1
+
+        gdal_calc.py --overwrite -A ${RTC_TMP}/RTC.data/Gamma0_VV_db.img --outfile=${RTC_TMP}/Gamma0.db.clean.tif --calc="A*(A>=-30)" --co="BIGTIFF=YES"
+        gdal_trace_outline ${RTC_TMP}/Gamma0.db.clean.tif -ndv 0 -no-donuts -out-cs ll -ogr-out ${RTC_TMP}/valid.shp >> ${RTC_LOG}/log_output 2>&1
+
+        # create intersect of image extent and AOI
+        ogr2ogr -F "ESRI Shapefile" ${RTC_TMP}/extent_buf.shp ${RTC_TMP}/valid.shp -dialect sqlite -sql "SELECT ST_buffer(geometry, -0.001) from valid"
+        EXTENT="${RTC_TMP}/extent_buf.shp"
+        CROPLINE=${RTC_TMP}/cropline.shp
+
+        if [[ -e ${RTC_AOI} ]];then
+          intersect_shp ${EXTENT} ${RTC_AOI} ${CROPLINE} >> ${LOG_MT}/log_mt_stacking 2>&1
+        else
+          CROPLINE=${EXTENT}
+        fi
+
+        gdalwarp -overwrite -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline -co "COMPRESS=LZW" -co "BIGTIFF=YES" ${RTC_TMP}/rgb.vrt ${RTC_TMP}/RTC_final.tif >> ${RTC_LOG}/log_output 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-        [ $? -ne 0 ] && return ${ERR_TC}
-        rm -rf $6/TF.d*
+        rm -rf ${RTC_TMP}/RTC.d* ${RTC_TMP}/rgb.vrt
 
         SECONDS=0
-        echo -ne " Merging backscatter bands with ratio"
-        bash ${SNAP_EXE} BandMerge -x $6/TC.dim $6/Ratio.dim -t $2 > $7/log_output 2>&1
+        echo -ne " Mask out layover/shadow areas ..." &&
+        gdal_edit.py -a_nodata 0 ${RTC_OUT}.LS_mask.data/layover_shadow_mask_VH.img
+        gdal_fillnodata.py -md 3 ${RTC_OUT}.LS_mask.data/layover_shadow_mask_VH.img ${RTC_TMP}/LS.map.max.nd.closed.tif >> ${RTC_LOG}/log_output 2>&1
+        rm -rf ${RTC_OUT}.LS_mask.d*
+        gdalwarp -overwrite -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline -co "BIGTIFF=YES" ${RTC_TMP}/LS.map.max.nd.closed.tif ${RTC_TMP}/LS.map.tif >> ${RTC_LOG}/log_output 2>&1
+        gdal_edit.py -unsetnodata ${RTC_TMP}/LS.map.tif # >> ${RTC_LOG}/log_m t_stacking 2>&1
+        gdal_calc.py --overwrite --type='Byte' -A ${RTC_TMP}/LS.map.tif --outfile=${RTC_OUT}.LS.map.tif --calc="1*(A==0)" --NoDataValue=0 --co='COMPRESS=LZW' --co="BIGTIFF=YES"  >> ${RTC_LOG}/log_output 2>&1
+        gdal_calc.py --overwrite -A ${RTC_OUT}.LS.map.tif -B ${RTC_TMP}/RTC_final.tif --allBands=B --outfile=${RTC_OUT}.RTC.tif --calc="A*B" --NoDataValue=0 --co='COMPRESS=LZW' --co="BIGTIFF=YES"  >> ${RTC_LOG}/log_output 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-        rm -rf $6/TC.d* $6/Ratio.d*
-
-        elif [[ $4 == 0 && $5 == 0 ]];then # neither db nor ratio calculation
 
         SECONDS=0
+        echo -ne " Create a kmz file for Google Earth Visualization ..." &&
+        gdal_contrast_stretch -ndv 0 -percentile-range 0.02 0.98 ${RTC_OUT}.RTC.tif ${RTC_TMP}/RTC.8bit.tif >> ${RTC_LOG}/log_output 2>&1
+        gdal_translate -of KMLSUPEROVERLAY ${RTC_TMP}/RTC.8bit.tif ${RTC_OUT}.RTC.kmz -co format=JPEG >> ${RTC_LOG}/log_output 2>&1
+        duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+      elif [[ ${RTC_MODE} == 1 ]];then # db scale + ratio
+
+        SECONDS=0 # no db-scaling
         echo -ne " Applying the geometric terrain correction ..." &&
-        bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TC.xml -x -Pinput=$6/TF.dim -Poutput=$2 > $7/log_tc 2>&1
+        bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TC.xml -x -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_OUT}.RTC > ${RTC_LOG}/log_tc 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_TC}
-        rm -rf $6/TF.d*
+        rm -rf ${RTC_TMP}/TF.d*
 
-        elif [[ $4 == 0 && $5 == 1 ]];then # db scaling but no ratio calculation
-
-        SECONDS=0
-        echo -ne " Applying the geometric terrain correction and transform backscatter to decibel scale ..." &&
-        bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_30_TC_DB.xml -x -Pinput=$6/TF.dim -Poutput=$2 > $7/log_tc_db 2>&1
-        duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-        [ $? -ne 0 ] && return ${ERR_TC}
-        rm -rf $6/TF.d*
-
-        SECONDS=0
-        echo -ne " Creating a georeferenced RGB thumbnail image ..." &&
-        RTC_FILE_VV=$(ls "$2".data/*VV*img)
-        RTC_BASE_VV=$(echo ${RTC_FILE} | rev | cut -c 5- | rev)
-        gdal_translate -a_nodata 0 -outsize 20% 20% ${RTC_FILE_VV} $6/TN.VV.tif
-
-        RTC_FILE_VH=$(ls "$2".data/*VH*img)
-        gdal_translate -a_nodata 0 -outsize 20% 20% ${RTC_FILE_VH} $6/TN.VH.tif
-
-        gdal_calc -A $6/TN.VV.tif -B $6/TN.VH.tif --NoDataValue=0 --calc="(A/B)" --outfile=$6/TN.ratio.tif
-        gdal_merge.py -separate -a_nodata 0 -srcnodata 0 -o ${RTC_BASE_VV}.TN.tif $6/TN.VV.tif $6/TN.VH.tif $6/TN.ratio.tif
-        duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
       fi
 
     else # SSV 30m
 
-      if [[ $5 == 1 ]];then # db scaling
+      if [[ ${RTC_MODE} == 0 ]];then # db scaling
 
         SECONDS=0
         echo -ne " Applying the geometric terrain correction and transform backscatter to decibel scale  ..." &&
-        bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SSV_30_TC_DB.xml -x -Pinput=$6/TF.dim -Poutput=$2 > $7/log_tc_db 2>&1
+        bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SSV_30_TC_DB.xml -x -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_TMP}/RTC > ${RTC_LOG}/log_tc_db 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_TC}
-        rm -rf $6/TF.d*
+        rm -rf ${RTC_TMP}/TF.d*
+
+        SECONDS=0
+        echo -ne " Creating final output file ..." &&
+        gdal_calc.py --overwrite -A ${RTC_TMP}/RTC.data/Gamma0_VV_db.img --outfile=${RTC_TMP}/Gamma0.db.clean.tif --calc="A*(A>=-30)" --co="BIGTIFF=YES"
+        gdal_trace_outline ${RTC_TMP}/Gamma0.db.clean.tif -ndv 0 -no-donuts -out-cs ll -ogr-out ${RTC_TMP}/valid.shp >> ${RTC_LOG}/log_output 2>&1
+
+        # create intersect of image extent and AOI
+        ogr2ogr -F "ESRI Shapefile" ${RTC_TMP}/extent_buf.shp ${RTC_TMP}/valid.shp -dialect sqlite -sql "SELECT ST_buffer(geometry, -0.001) from valid"
+        EXTENT=${RTC_TMP}/extent_buf.shp
+        CROPLINE=${RTC_TMP}/cropline.shp
+
+        if [[ -e ${RTC_AOI} ]];then
+          intersect_shp ${EXTENT} ${RTC_AOI} ${CROPLINE} >> ${LOG_MT}/log_mt_stacking 2>&1
+        else
+          CROPLINE=${EXTENT}
+        fi
+
+        gdalwarp -overwrite -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline -co "COMPRESS=LZW" -co "BIGTIFF=YES" ${RTC_TMP}/RTC.data/Gamma0_VV_db.img ${RTC_TMP}/RTC_final.tif >> ${RTC_LOG}/log_output 2>&1 >> ${RTC_LOG}/log_output 2>&1
+        duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+        rm -rf ${RTC_TMP}/RTC.d*
+
+        SECONDS=0
+        echo -ne " Mask out layover/shadow areas ..." &&
+        gdal_edit.py -a_nodata 0 ${RTC_OUT}.LS_mask.data/layover_shadow_mask_VV.img
+        gdal_fillnodata.py -md 3 ${RTC_OUT}.LS_mask.data/layover_shadow_mask_VV.img ${RTC_TMP}/LS.map.max.nd.closed.tif >> ${RTC_LOG}/log_output 2>&1
+        rm -rf ${RTC_OUT}.LS_mask.d*
+        gdalwarp -overwrite -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline -co "BIGTIFF=YES" ${RTC_TMP}/LS.map.max.nd.closed.tif ${RTC_TMP}/LS.map.tif >> ${RTC_LOG}/log_output 2>&1
+        gdal_edit.py -unsetnodata ${RTC_TMP}/LS.map.tif # >> ${RTC_LOG}/log_mt_stacking 2>&1
+        gdal_calc.py --overwrite --type='Byte' -A ${RTC_TMP}/LS.map.tif --outfile=${RTC_OUT}.LS.map.tif --calc="1*(A==0)" --NoDataValue=0 --co='COMPRESS=LZW' --co="BIGTIFF=YES"  >> ${RTC_LOG}/log_output 2>&1
+        gdal_calc.py --overwrite -A ${RTC_OUT}.LS.map.tif -B ${RTC_TMP}/RTC_final.tif --allBands=B --outfile=${RTC_OUT}.RTC.tif --calc="A*B" --NoDataValue=0 --co='COMPRESS=LZW' --co="BIGTIFF=YES"  >> ${RTC_LOG}/log_output 2>&1
+        duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+        SECONDS=0
+        echo -ne " Create a kmz file for Google Earth Visualization ..." &&
+        gdal_contrast_stretch -ndv 0 -percentile-range 0.02 0.98 ${RTC_OUT}.RTC.tif ${RTC_TMP}/RTC.8bit.tif >> ${RTC_LOG}/log_output 2>&1
+        gdal_translate -of KMLSUPEROVERLAY ${RTC_TMP}/RTC.8bit.tif ${RTC_OUT}.RTC.kmz -co format=JPEG >> ${RTC_LOG}/log_output 2>&1
+        duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
       else
 
         SECONDS=0 # no db-scaling
         echo -ne " Applying the geometric terrain correction ..." &&
-        bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SSV_30_TC.xml -x -Pinput=$6/TF.dim -Poutput=$2 > $7/log_tc 2>&1
+        bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SSV_30_TC.xml -x -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_OUT}.RTC > ${RTC_LOG}/log_tc 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-        [ $? -ne 0 ] && return ${ERR_TC}
-        rm -rf $6/TF.d*
+        [ $? -ne 0 ] && return  ${ERR_TC}
+        rm -rf ${RTC_TMP}/TF.d*
 
       fi
 
-      SECONDS=0
-      echo -ne " Creating a georeferenced thumbnail image ..." &&
-      RTC_FILE_VV=$(ls "$2".data/*VV*img)
-      RTC_BASE_VV=$(echo ${RTC_FILE} | rev | cut -c 5- | rev)
-      gdal_translate -a_nodata 0 -outsize 20% 20% ${RTC_FILE_VV} ${RTC_BASE_VV}.TN.VV.tif
-      duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-
     fi
 
-    elif [ $3 == "HI_RES" ];then
+  elif [ ${RTC_RES} == "HI_RES" ];then
 
     SECONDS=0
     echo " Removing GRD border noise by deleting the outer 600 rows, calibrating to beta0, "
     echo -ne " applying the terrain flattening ..." &&
-    bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_RB_CAL_TF_noML.xml -x -Pinput=$1 -Pwidth=${NEW_WIDTH} -Pheight=${NEW_HEIGHT} -Poutput=$6/TF > $7/log_cal_tf 2>&1
+    bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_RB_CAL_TF_noML.xml -x -Pinput=${RTC_IN} -Pwidth=${NEW_WIDTH} -Pheight=${NEW_HEIGHT} -Poutput=${RTC_TMP}/TF > ${RTC_LOG}/log_cal_tf 2>&1
     duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
     [ $? -ne 0 ] && return ${ERR_BRD_NOISE}
-    rm -rf $6/${BASE}-import.dim
+    rm -rf ${RTC_TMP}/${BASE}-import.dim
 
-    if [ -e $6/TF.data/Gamma0_VH.img ];then
+    SECONDS=0
+    echo -ne " Creating a layover/shadow mask ... " &&
+    bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_LayShaMask_noML.xml -x -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_OUT}.LS_mask  > ${RTC_LOG}/log_cal_tf_ml 2>&1
+    duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 
-      if [[ $4 == 1 && $5 == 1 ]];then # db scale + ratio
+    if [ -e ${RTC_TMP}/TF.data/Gamma0_VH.img ];then
+
+      if [[ ${RTC_MODE} == 0 ]];then # db scale + ratio
 
         SECONDS=0
-        echo -ne " applying the geometric terrain correction, calculate the VV/VH Band Ratio and transform backscatter to decibel scale  ..." &&
-        bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_10_TC_DB_Ratio.xml -x -Pinput=$6/TF.dim -Poutput=$6/TC_DB -PoutputRatio=$6/Ratio > $7/log_tc_db_ratio 2>&1
+        echo -ne " Applying the geometric terrain correction, calculate the VV/VH Band Ratio and transform backscatter to decibel scale  ..." &&
+        bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_10_TC_DB_Ratio.xml -x -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_TMP}/TC_DB -PoutputRatio=${RTC_TMP}/Ratio > ${RTC_LOG}/log_tc_ratio 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_TC}
-        rm -rf $6/TF.d*
+        rm -rf ${RTC_TMP}/TF.d*
 
         SECONDS=0
         echo -ne " Merging backscatter bands with ratio"
-        bash ${SNAP_EXE} BandMerge -x $6/TC_DB.dim $6/Ratio.dim -t $2  > $7/log_output 2>&1
+        bash ${SNAP_EXE} BandMerge -x ${RTC_TMP}/TC_DB.dim ${RTC_TMP}/Ratio.dim -t ${RTC_TMP}/RTC.dim > ${RTC_LOG}/log_output 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-        rm -rf $4/TC_DB.d* $6/Ratio.d*
-
-        elif [[ $4 == 1 && $5 == 0 ]];then # ratio but no db scale
+        [ $? -ne 0 ] && return ${ERR_BM}
+        rm -rf ${RTC_TMP}/TC_DB.d* ${RTC_TMP}/Ratio.d*
 
         SECONDS=0
-        echo -ne " Applying the geometric terrain correction, and calculate the VV/VH Band Ratio  ..." &&
-        bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_10_TC_Ratio.xml -x -Pinput=$6/TF.dim -Poutput=$6/TC -PoutputRatio=$6/Ratio > $7/log_tc_ratio 2>&1
+        echo -ne " Creating final output file ..." &&
+        gdalbuildvrt -separate -srcnodata 0 ${RTC_TMP}/rgb.vrt ${RTC_TMP}/RTC.data/Gamma0_VV_db.img ${RTC_TMP}/RTC.data/Gamma0_VH_db.img ${RTC_TMP}/RTC.data/VV-VH_ratio.img >> ${RTC_LOG}/log_output 2>&1
+        gdal_calc.py --overwrite -A ${RTC_TMP}/RTC.data/Gamma0_VV_db.img --outfile=${RTC_TMP}/Gamma0.db.clean.tif --calc="A*(A>=-30)" --co="BIGTIFF=YES"
+        gdal_trace_outline ${RTC_TMP}/Gamma0.db.clean.tif -ndv 0 -no-donuts -out-cs ll -ogr-out ${RTC_TMP}/valid.shp >> ${RTC_LOG}/log_output 2>&1
+
+        # create intersect of image extent and AOI
+        ogr2ogr -F "ESRI Shapefile" ${RTC_TMP}/extent_buf.shp ${RTC_TMP}/valid.shp -dialect sqlite -sql "SELECT ST_buffer(geometry, -0.001) from valid"
+        EXTENT="${RTC_TMP}/extent_buf.shp"
+        CROPLINE=${RTC_TMP}/cropline.shp
+
+        if [[ -e ${RTC_AOI} ]];then
+          intersect_shp ${EXTENT} ${RTC_AOI} ${CROPLINE} >> ${LOG_MT}/log_mt_stacking 2>&1
+        else
+          CROPLINE=${EXTENT}
+        fi
+
+        gdalwarp -overwrite -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline -co "COMPRESS=LZW" -co "BIGTIFF=YES" ${RTC_TMP}/rgb.vrt ${RTC_TMP}/RTC_final.tif >> ${RTC_LOG}/log_output 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-        [ $? -ne 0 ] && return ${ERR_TC}
-        rm -rf $6/TF.d*
+        rm -rf ${RTC_TMP}/RTC.d* ${RTC_TMP}/rgb.vrt
 
         SECONDS=0
-        echo -ne " Merging backscatter bands with ratio ..."
-        bash ${SNAP_EXE} BandMerge -x $6/TC.dim $6/Ratio.dim -t $2 > $7/log_output 2>&1
+        echo -ne " Mask out layover/shadow areas ..." &&
+        gdal_edit.py -a_nodata 0 ${RTC_OUT}.LS_mask.data/layover_shadow_mask_VH.img
+        gdal_fillnodata.py -md 3 ${RTC_OUT}.LS_mask.data/layover_shadow_mask_VH.img ${RTC_TMP}/LS.map.max.nd.closed.tif >> ${RTC_LOG}/log_output 2>&1
+        rm -rf ${RTC_OUT}.LS_mask.d*
+        gdalwarp -overwrite -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline -co "BIGTIFF=YES" ${RTC_TMP}/LS.map.max.nd.closed.tif ${RTC_TMP}/LS.map.tif >> ${RTC_LOG}/log_output 2>&1
+        gdal_edit.py -unsetnodata ${RTC_TMP}/LS.map.tif # >> ${RTC_LOG}/log_mt_stacking 2>&1
+        gdal_calc.py --overwrite --type='Byte' -A ${RTC_TMP}/LS.map.tif --outfile=${RTC_OUT}.LS.map.tif --calc="1*(A==0)" --NoDataValue=0 --co='COMPRESS=LZW' --co="BIGTIFF=YES"  >> ${RTC_LOG}/log_output 2>&1
+        gdal_calc.py --overwrite -A ${RTC_OUT}.LS.map.tif -B ${RTC_TMP}/RTC_final.tif --allBands=B --outfile=${RTC_OUT}.RTC.tif --calc="A*B" --NoDataValue=0 --co='COMPRESS=LZW'  --co="BIGTIFF=YES" >> ${RTC_LOG}/log_output 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-        rm -rf $6/TC.d* $4/Ratio.d*
-
-        elif [[ $4 == 0 && $5 == 0 ]];then #neither db nor ratio calculation
 
         SECONDS=0
-        echo -ne " Applying the geometric terrain correction ..." &&
-        bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_10_TC.xml -x -Pinput=$6/TF.dim -Poutput=$2 > $7/log_tc 2>&1
+        echo -ne " Create a kmz file for Google Earth Visualization ..." &&
+        gdal_contrast_stretch -ndv 0 -percentile-range 0.02 0.98 ${RTC_OUT}.RTC.tif ${RTC_TMP}/RTC.8bit.tif >> ${RTC_LOG}/log_output 2>&1
+        gdal_translate -of KMLSUPEROVERLAY ${RTC_TMP}/RTC.8bit.tif ${RTC_OUT}.RTC.kmz -co format=JPEG >> ${RTC_LOG}/log_output 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-        [ $? -ne 0 ] && return ${ERR_TC}
-        rm -rf $6/TF.d*
 
-        elif [[ $4 == 0 && $5 == 1 ]];then #do db scaling but no ratio calculation
+      elif [[ ${RTC_MODE} == 1 ]];then #neither db nor ratio calculation
 
-        SECONDS=0
-        echo -ne " Applying the geometric terrain correction and transform backscatter to decibel scale ..." &&
-        bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_10_TC_DB.xml -x -Pinput=$6/TF.dim -Poutput=$2 > $7/log_tc_db 2>&1
-        duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-        [ $? -ne 0 ] && return ${ERR_TC}
-        rm -rf $6/TF.d*
+          SECONDS=0
+          echo -ne " Applying the geometric terrain correction ..." &&
+          bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SDV_10_TC.xml -x -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_OUT}.RTC > ${RTC_LOG}/log_tc 2>&1
+          duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+          [ $? -ne 0 ] && return ${ERR_TC}
+          rm -rf ${RTC_TMP}/TF.d*
 
       fi
 
     else # SSV 10m case
 
-      if [[ $5 == 1 ]];then
+      if [[ ${RTC_MODE} == 0 ]];then
 
         SECONDS=0
-        echo -ne " Applying the geometric terrain correction and transform backscatter to decibel scale ..." &&
-        bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SSV_10_TC_DB.xml -x -Pinput=$6/TF.dim -Poutput=$2 > $7/log_tc_db 2>&1
+        echo -ne " Applying the geometric terrain correction and transform backscatter to decibel scale  ..." &&
+        bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SSV_10_TC_DB.xml  -x -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_TMP}/RTC > ${RTC_LOG}/log_tc_db 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_TC}
-        rm -rf $6/TF.d*
+        rm -rf ${RTC_TMP}/TF.d*
 
+        SECONDS=0
+        echo -ne " Creating final output file ..." &&
+        gdal_calc.py --overwrite -A ${RTC_TMP}/RTC.data/Gamma0_VV_db.img --outfile=${RTC_TMP}/Gamma0.db.clean.tif --calc="A*(A>=-30)" --co="BIGTIFF=YES"
+        gdal_trace_outline ${RTC_TMP}/Gamma0.db.clean.tif -ndv 0 -no-donuts -out-cs ll -ogr-out ${RTC_TMP}/valid.shp >> ${RTC_LOG}/log_output 2>&1
+
+        # create intersect of image extent and AOI
+        ogr2ogr -F "ESRI Shapefile" ${RTC_TMP}/extent_buf.shp ${RTC_TMP}/valid.shp -dialect sqlite -sql "SELECT ST_buffer(geometry, -0.001) from valid"
+        EXTENT=${RTC_TMP}/extent_buf.shp
+        CROPLINE=${RTC_TMP}/cropline.shp
+
+        if [[ -e ${RTC_AOI} ]];then
+          intersect_shp ${EXTENT} ${RTC_AOI} ${CROPLINE} >> ${LOG_MT}/log_mt_stacking 2>&1
+        else
+          CROPLINE=${EXTENT}
+        fi
+
+        gdalwarp -overwrite -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline -co "COMPRESS=LZW" -co "BIGTIFF=YES"  ${RTC_TMP}/RTC.data/Gamma0_VV_db.img ${RTC_TMP}/RTC_final.tif >> ${RTC_LOG}/log_output 2>&1 >> ${RTC_LOG}/log_output 2>&1
+        duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+        rm -rf ${RTC_TMP}/RTC.d*
+
+        SECONDS=0
+        echo -ne " Mask out layover/shadow areas ..." &&
+        gdal_edit.py -a_nodata 0 ${RTC_OUT}.LS_mask.data/layover_shadow_mask_VV.img
+        gdal_fillnodata.py -md 3 ${RTC_OUT}.LS_mask.data/layover_shadow_mask_VV.img ${RTC_TMP}/LS.map.max.nd.closed.tif >> ${RTC_LOG}/log_output 2>&1
+        rm -rf ${RTC_OUT}.LS_mask.d*
+        gdalwarp -overwrite -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline -co "BIGTIFF=YES" ${RTC_TMP}/LS.map.max.nd.closed.tif ${RTC_TMP}/LS.map.tif >> ${RTC_LOG}/log_output 2>&1
+
+        gdal_edit.py -unsetnodata ${RTC_TMP}/LS.map.tif # >> ${RTC_LOG}/log_mt_stacking 2>&1
+        gdal_calc.py --overwrite --type='Byte' -A ${RTC_TMP}/LS.map.tif --outfile=${RTC_OUT}.LS.map.tif --calc="1*(A==0)" --NoDataValue=0 --co='COMPRESS=LZW' --co="BIGTIFF=YES" >> ${RTC_LOG}/log_output 2>&1
+        gdal_calc.py --overwrite -A ${RTC_OUT}.LS.map.tif -B ${RTC_TMP}/RTC_final.tif --allBands=B --outfile=${RTC_OUT}.RTC.tif --calc="A*B" --NoDataValue=0 --co='COMPRESS=LZW' --co="BIGTIFF=YES" >> ${RTC_LOG}/log_output 2>&1
+        duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+        SECONDS=0
+        echo -ne " Create a kmz file for Google Earth Visualization ..." &&
+        gdal_contrast_stretch -ndv 0 -percentile-range 0.02 0.98 ${RTC_OUT}.RTC.tif ${RTC_TMP}/RTC.8bit.tif >> ${RTC_LOG}/log_kmz 2>&1
+        gdal_translate -of KMLSUPEROVERLAY ${RTC_TMP}/RTC.8bit.tif ${RTC_OUT}.RTC.kmz -co format=JPEG >> ${RTC_LOG}/log_kmz 2>&1
+        duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
       else
+
 
         SECONDS=0
         echo -ne " Applying the geometric terrain correction ..." &&
-        bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SSV_10_TC.xml -x -Pinput=$6/TF.dim -Poutput=$2 > $7/log_tc 2>&1
+        bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_SSV_10_TC.xml -x -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_OUT}.RTC > ${RTC_LOG}/log_tc 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_TC}
-        rm -rf $6/TF.d*
+        rm -rf ${RTC_TMP}/TF.d*
 
       fi
 
@@ -305,21 +443,22 @@ function s1_rtc_processing() {
   fi
 
   echo "------------------------------------------------------------------------------------------------------"
-  echo " Info: Succesfully processed file: `basename $1` to a radiometrically terrain corrected product. "
+  echo " Info: Succesfully processed file: `basename ${RTC_IN}` to a radiometrically terrain corrected product. "
   echo "------------------------------------------------------------------------------------------------------"
   echo ""
 
 }
 
-function s1_mt_metrics() {
+function s1_timeseries() {
   if [ -z "$7" ]; then
     echo " Missing arguments. Syntax:"
-    echo " s1_mt_metrics <file_list> <AOI> <output directory> <datatype> <pol mode> <tmpdir> <logfile>"
+    echo " s1_timeseries <file_list> <AOI> <output directory> <datatype> <pol mode> <tmpdir> <logfile>"
     return
   fi
 
   # source other helpers
   source ${OPENSARKIT}/lib/helpers_source
+  FILELIST=$1
   AOI_MT=$2
   OUT_STACK_MT=$3
   ODATATYPE=$4
@@ -338,7 +477,7 @@ function s1_mt_metrics() {
   [ $? -ne 0 ] && return ${ERR_STACKING}
 
   SECONDS=0
-  echo -ne " Exeuting multi-temporal Speckle-filtering to the VV polarized channels of the multi-temporal stack ... " &&
+  echo -ne " Executing multi-temporal Speckle-filtering to the VV polarized channels of the multi-temporal stack ... " &&
   bash $SNAP_EXE ${SNAP_GRAPHS}/S1_GRD_MT_Speckle.xml -x -Pinput=${TMP_MT}/mt_stack.coreg.dim -Ppol=VV -Pthreshold=5 -Poutput=${TMP_MT}/mt_stack.vv.speckle.dim >> ${LOG_MT}/log_mt_stacking 2>&1
   duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
   [ $? -ne 0 ] && return ${ERR_SPECKLE}
@@ -364,85 +503,46 @@ function s1_mt_metrics() {
   sed -i 's|<NO_DATA_VALUE_USED>true</NO_DATA_VALUE_USED>|<NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>|g' ${TMP_MT}/mt_stack.vv.db.speckle.dim
 
   SECONDS=0
-  echo -ne " Calculating the maximum values from the VV polarized channels of the multi-temporal stack ... " &&
-  bash ${SNAP_EXE} Stack-Averaging -x -SsourceProduct=${TMP_MT}/mt_stack.vv.db.speckle.dim -Pstatistic='Maximum' -t ${TMP_MT}/max.VV.dim >> ${LOG_MT}/log_mt_stacking 2>&1
-  duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-  [ $? -ne 0 ] && return ${ERR_SPECKLE}
-
-  SECONDS=0
-  echo -ne " Calculating the minimum values from the VV polarized channels of the multi-temporal stack ... " &&
-  bash ${SNAP_EXE} Stack-Averaging -x -SsourceProduct=${TMP_MT}/mt_stack.vv.db.speckle.dim -Pstatistic='Minimum' -t ${TMP_MT}/min.VV.dim >> ${LOG_MT}/log_mt_stacking 2>&1
-  duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-  [ $? -ne 0 ] && return ${ERR_SPECKLE}
-
-  SECONDS=0
-  echo -ne " Calculating the coefficient of variation from the VV polarized channels of the multi-temporal stack ... " &&
-  bash ${SNAP_EXE} Stack-Averaging -x -SsourceProduct=${TMP_MT}/mt_stack.vv.db.speckle.dim -Pstatistic='Coefficient of Variation' -t ${TMP_MT}/cof_var.VV.dim >> ${LOG_MT}/log_mt_stacking 2>&1
-  duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-  [ $? -ne 0 ] && return ${ERR_SPECKLE}
-
-  SECONDS=0
   echo -ne " Create the minimum extent mask  ..." &&
-  bash ${SNAP_EXE} ${SNAP_GRAPHS}/S1_GRD_MT_create_mask.xml -x -Pfilelist=${TMP_MT}/max.VV.dim,${TMP_MT}/min.VV.dim -Poutput=${TMP_MT}/mask >> ${LOG_MT}/log_mt_stacking 2>&1
-  gdal_trace_outline ${TMP_MT}/mask.data/mask.img -ndv 0 -no-donuts -out-cs ll -ogr-out ${TMP_MT}/extent.shp >> ${LOG_MT}/log_mt_stacking 2>&1
+  gdalbuildvrt -separate ${TMP_MT}/mask.vrt ${TMP_MT}/mt_stack.vv.db.speckle.data/*img >> ${LOG_MT}/log_mt_stacking 2>&1
+  gdal_edit.py -unsetnodata ${TMP_MT}/mask.vrt >> ${LOG_MT}/log_mt_stacking 2>&1
+  ost_mt_metrics.py -i ${TMP_MT}/mask.vrt -o ${TMP_MT}/mask -t 3 -r no >> ${LOG_MT}/log_mt_stacking 2>&1
+  gdal_calc.py --overwrite -A ${TMP_MT}/mask.max.tif -B ${TMP_MT}/mask.min.tif --calc="(A*B)/(A*B)" --outfile ${TMP_MT}/mask.final.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+  gdal_trace_outline ${TMP_MT}/mask.final.tif -ndv 0 -no-donuts -out-cs ll -ogr-out ${TMP_MT}/extent.shp >> ${LOG_MT}/log_mt_stacking 2>&1
   duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-  rm -rf ${TMP_MT}/mask.d* ${TMP_MT}/min.VV.d* ${TMP_MT}/max.VV.d*
 
   # create output folders.
-  mkdir -p ${OUT_STACK_MT}/MT_metrics
-  mkdir -p ${OUT_STACK_MT}/Timeseries
+  #mkdir -p ${OUT_STACK_MT}/Timescan
   mkdir -p ${OUT_STACK_MT}/Timeseries/Thumbnails
 
   # create intersect of image extent and AOI
-  EXTENT="${TMP_MT}/extent.shp"
+  ogr2ogr -F "ESRI Shapefile" ${TMP_MT}/extent_buf.shp ${TMP_MT}/extent.shp -dialect sqlite -sql "SELECT ST_buffer(geometry, -0.002) from extent "
+  EXTENT="${TMP_MT}/extent_buf.shp"
   CROPLINE=${OUT_STACK_MT}/cropline.shp
-  intersect_shp ${EXTENT} ${AOI_MT} ${CROPLINE} >> ${LOG_MT}/log_mt_stacking 2>&1
 
-  #-------------COV-------------------------------
-  if [ ${ODATATYPE} = "UInt16" ]; then
-
-    SECONDS=0
-    echo -ne " Scaling the Gamma0 VV coefficient of variation layer to 16 bit (0.000001 to 0.07) ..."
-    gdal_translate -ot "UInt16" -projwin $(ogr_extent ${CROPLINE}) -scale 0.000001 0.07 1 65536 ${TMP_MT}/cof_var.VV.data/Gamma0_VV.img ${TMP_MT}/Gamma0_VV_coef_of_var.16bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-    rm -rf ${TMP_MT}/cof_var.VV.d*
-
-    # replace all zeros to one to avoid outlier removal from rescaling
-    ost_replace_values.py -i ${TMP_MT}/Gamma0_VV_coef_of_var.16bit.tif -o ${TMP_MT}/Gamma0_VV_coef_of_var.16bit.ones.tif -r 0 -n 1 >> ${LOG_MT}/log_mt_stacking 2>&1
-    rm -f ${TMP_MT}/Gamma0_VV_coef_of_var.16bit.tif
-
-    # cut to the actual extent of interest coming from the intersect above
-    gdalwarp -overwrite -co "COMPRESS=LZW" -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${TMP_MT}/Gamma0_VV_coef_of_var.16bit.ones.tif ${OUT_STACK_MT}/MT_metrics/05_Gamma0.VV.cov.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-    rm -f ${TMP_MT}/Gamma0_VV_coef_of_var.16bit.ones.tif
-    duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-
-  elif [ ${ODATATYPE} = "UInt8" ]; then
-
-    SECONDS=0
-    echo -ne " Scaling the Gamma0 VV coefficient of variation layer to 8 bit (0.000001 to 0.07) ..."
-    gdal_translate -ot "Byte" -projwin $(ogr_extent ${CROPLINE}) -scale 0.000001 0.07 1 255 ${TMP_MT}/cof_var.VV.data/Gamma0_VV.img ${TMP_MT}/Gamma0_VV_coef_of_var.8bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-    rm -rf ${TMP_MT}/cof_var.VV.d*
-
-    # replace all zeros to one to avoid outlier removal from rescaling
-    ost_replace_values.py -i ${TMP_MT}/Gamma0_VV_coef_of_var.8bit.tif -o ${TMP_MT}/Gamma0_VV_coef_of_var.8bit.ones.tif -r 0 -n 1 >> ${LOG_MT}/log_mt_stacking 2>&1
-    rm -f ${TMP_MT}/Gamma0_VV_coef_of_var.8bit.tif
-
-    # cut to the actual extent of interest coming from the intersect above
-    gdalwarp -overwrite -co "COMPRESS=LZW" -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${TMP_MT}/Gamma0_VV_coef_of_var.8bit.ones.tif ${OUT_STACK_MT}/MT_metrics/05_Gamma0.VV.cov.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-    rm -f ${TMP_MT}/Gamma0_VV_coef_of_var.8bit.ones.tif
-    duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-
-  elif [ ${ODATATYPE} = "Float32" ]; then
-
-    echo -ne " Cropping the Gamma0 VV coefficient of variation layer to the minimum extent ..."
-    SECONDS=0
-    gdalwarp -overwrite -co "COMPRESS=LZW" -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${TMP_MT}/cof_var.VV.data/Gamma0_VV.img \
-             ${OUT_STACK_MT}/MT_metrics/05_Gamma0.VV.cov.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-    rm -rf ${TMP_MT}/cof_var.VV.d*
-    duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-
+  if [[ -e ${AOI_MT} ]];then
+    intersect_shp ${EXTENT} ${AOI_MT} ${CROPLINE} >> ${LOG_MT}/log_mt_stacking 2>&1
+  else
+    CROPLINE=${EXTENT}
   fi
-    #-------------COV-------------------------------
 
+  SECONDS=0
+  echo -ne " Creating the final layover shadow mask ..." &&
+  if [ ${POL_MODE_MT} == VV ];then
+    gdalbuildvrt -separate -srcnodata 0 ${TMP_MT}/ls_mask_stack.vrt $(echo ${FILELIST} | tr ',' ' ' | sed 's/.RTC.dim/.LS_mask.data\/layover_shadow_mask_VV.img/g') >> ${LOG_MT}/log_mt_stacking 2>&1
+  else
+    gdalbuildvrt -separate -srcnodata 0 ${TMP_MT}/ls_mask_stack.vrt $(echo ${FILELIST} | tr ',' ' ' | sed 's/.RTC.dim/.LS_mask.data\/layover_shadow_mask_VH.img/g') >> ${LOG_MT}/log_mt_stacking 2>&1
+  fi
+  ost_mt_metrics.py -i ${TMP_MT}/ls_mask_stack.vrt -o ${TMP_MT}/LS.map -t 4 -r no >> ${LOG_MT}/log_mt_stacking 2>&1
+  gdal_translate -a_nodata 0 ${TMP_MT}/LS.map.max.tif ${TMP_MT}/LS.map.max.nd.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+  gdal_fillnodata.py -md 3 ${TMP_MT}/LS.map.max.nd.tif ${TMP_MT}/LS.map.max.nd.closed.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+  gdalwarp -overwrite -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${TMP_MT}/LS.map.max.nd.closed.tif ${TMP_MT}/LS.map.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+  gdal_edit.py -unsetnodata ${TMP_MT}/LS.map.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+  gdal_calc.py --overwrite --type='Byte' -A ${TMP_MT}/LS.map.tif --outfile=${OUT_STACK_MT}/LS.map.tif --calc="1*(A==0)" --NoDataValue=0 --co='COMPRESS=LZW' >> ${LOG_MT}/log_mt_stacking 2>&1
+  rm -f ${TMP_MT}/LS.map*
+  duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+  # create a list with sorted dates fro timeseries creation
   for file in $(ls -1 ${TMP_MT}/mt_stack.vv.db.speckle.data/*img); do
 
       DATE=`basename $(echo $file) | awk -F "_" '{print $4}'`
@@ -456,7 +556,7 @@ function s1_mt_metrics() {
 
   i=1
   while read line; do
-      #DATE=`basename $(echo $file) | awk -F "_" '{print $4}'`
+
       DATE=$(echo $line | awk '{print $1}')
       file=$(echo $line | awk '{print $2}')
 
@@ -471,7 +571,9 @@ function s1_mt_metrics() {
       rm -f ${TMP_MT}/${DATE}.16bit.tif
 
       # cut to the actual extent of interest coming from the intersect above
-      gdalwarp -overwrite -co "COMPRESS=LZW" -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${TMP_MT}/${DATE}.16bit.ones.tif ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.16bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+      gdalwarp -overwrite -co "COMPRESS=LZW" -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${TMP_MT}/${DATE}.16bit.ones.tif ${TMP_MT}/${i}_${DATE}.VV.16bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+      gdal_calc.py --overwrite -A ${TMP_MT}/${i}_${DATE}.VV.16bit.tif -B ${OUT_STACK_MT}/LS.map.tif --calc="A*B" --outfile=${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.16bit.tif --NoDataValue=0 --co='COMPRESS=LZW' >> ${LOG_MT}/log_mt_stacking 2>&1
+      rm -f ${TMP_MT}/${DATE}.VV.16.bit.ones.tif ${TMP_MT}/${i}_${DATE}.VV.16bit.tif
       echo ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.16bit.tif >> ${TMP_MT}/ts_vrt_list.txt
       duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
       rm -f ${TMP_MT}/${DATE}.16bit.ones.tif
@@ -506,7 +608,9 @@ function s1_mt_metrics() {
       rm -f ${TMP_MT}/${DATE}.8bit.tif
 
       # cut to the actual extent of interest coming from the intersect above
-      gdalwarp -overwrite -co "COMPRESS=LZW" -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${TMP_MT}/${DATE}.8bit.ones.tif ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.8bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+      gdalwarp -overwrite -co "COMPRESS=LZW" -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${TMP_MT}/${DATE}.8bit.ones.tif ${TMP_MT}//${i}_${DATE}.VV.8bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+      gdal_calc.py --overwrite -A ${TMP_MT}/${i}_${DATE}.VV.8bit.tif -B ${OUT_STACK_MT}/LS.map.tif --calc="A*B" --outfile=${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.8bit.tif --NoDataValue=0 --co='COMPRESS=LZW' >> ${LOG_MT}/log_mt_stacking 2>&1
+      rm -f ${TMP_MT}/${DATE}.VV.8bit.ones.tif ${TMP_MT}/${i}_${DATE}.VV.8bit.tif
       # create a list of files fo later vrt creation
       echo ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.8bit.tif >> ${TMP_MT}/ts_vrt_list.txt
       duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
@@ -531,7 +635,9 @@ function s1_mt_metrics() {
 
       SECONDS=0
       echo -ne " Cropping ${DATE} to common extent and cut by AOI ..."
-      gdalwarp -overwrite -co "COMPRESS=LZW"  -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${file} ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+      gdalwarp -overwrite -co "COMPRESS=LZW"  -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${file} ${TMP_MT}/${i}_${DATE}.VV.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+      gdal_calc.py --overwrite -A ${TMP_MT}/${i}_${DATE}.VV.tif -B ${OUT_STACK_MT}/LS.map.tif --calc="A*B" --outfile=${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.tif --NoDataValue=0 --co='COMPRESS=LZW' >> ${LOG_MT}/log_mt_stacking 2>&1
+      rm -f ${TMP_MT}/${i}_${DATE}.VV.tif
       echo ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.tif >> ${TMP_MT}/ts_vrt_list.txt
       duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
@@ -556,7 +662,7 @@ function s1_mt_metrics() {
   done < ${TMP_MT}/tmp.date.filename.sorted
 
   # removing original snap files
-  rm -rf ${TMP_MT}/mt_stack.vv.db.speckle.d* ${TMP_MT}/tmp*
+  rm -rf ${TMP_MT}/tmp*  ${TMP_MT}/mt_stack.vv.db.speckle.d*
 
   # create a virtual raster
   gdalbuildvrt -separate -srcnodata 0 ${OUT_STACK_MT}/Timeseries/timeseries.VV.vrt $(cat ${TMP_MT}/ts_vrt_list.txt | tr "\n" " ")  >> ${LOG_MT}/log_mt_stacking 2>&1
@@ -571,27 +677,6 @@ function s1_mt_metrics() {
     cd ${REC_DIR}
     rm -f ${TMP_MT}/*.VV.TN.jpg
 
-    #SECONDS=0
-    #echo -ne " Calculating temporal percentiles ..."
-    #ost_mt_percentiles.py -i ${OUT_STACK_MT}/Timeseries/timeseries.VV.vrt -o ${OUT_STACK_MT}/MT_metrics/Gamma0.VV  >> ${LOG_MT}/log_mt_stacking 2>&1
-    #mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.p90.tif ${OUT_STACK_MT}/MT_metrics/01_Gamma0.VV.p90.tif
-    #mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.p10.tif ${OUT_STACK_MT}/MT_metrics/02_Gamma0.VV.p10.tif
-    #mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.pDiff.tif ${OUT_STACK_MT}/MT_metrics/03_Gamma0.VV.pDiff.tif
-    #gdalbuildvrt -separate -srcnodata 0 ${OUT_STACK_MT}/MT_metrics/Percentile.VV.vrt ${OUT_STACK_MT}/MT_metrics/01_Gamma0.VV.p90.tif ${OUT_STACK_MT}/MT_metrics/02_Gamma0.VV.p10.tif \
-  #                                      ${OUT_STACK_MT}/MT_metrics/03_Gamma0.VV.pDiff.tif  >> ${LOG_MT}/log_mt_stacking 2>&1
-  #  duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-
-    SECONDS=0
-    echo -ne " Calculating multi-temporal metrics ..."
-    ost_mt_metrics.py -i ${OUT_STACK_MT}/Timeseries/timeseries.VV.vrt -o ${OUT_STACK_MT}/MT_metrics/Gamma0.VV  >> ${LOG_MT}/log_mt_stacking 2>&1
-    mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.avg.tif ${OUT_STACK_MT}/MT_metrics/01_Gamma0.VV.avg.tif
-    mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.min.tif ${OUT_STACK_MT}/MT_metrics/02_Gamma0.VV.min.tif
-    mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.max.tif ${OUT_STACK_MT}/MT_metrics/03_Gamma0.VV.max.tif
-    mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.std.tif ${OUT_STACK_MT}/MT_metrics/04_Gamma0.VV.std.tif
-    #mv ${OUT_STACK_MT}/MT_metrics/05_Gamma0_VV_coef_of_var.16bit.tif ${OUT_STACK_MT}/MT_metrics/05_Gamma0.VV.cov.tif
-    gdalbuildvrt -separate -srcnodata 0 ${OUT_STACK_MT}/MT_metrics/Mt_metrics.VV.vrt ${OUT_STACK_MT}/MT_metrics/01_Gamma0.VV.avg.tif ${OUT_STACK_MT}/MT_metrics/02_Gamma0.VV.min.tif ${OUT_STACK_MT}/MT_metrics/03_Gamma0.VV.max.tif \
-                                        ${OUT_STACK_MT}/MT_metrics/04_Gamma0.VV.std.tif ${OUT_STACK_MT}/MT_metrics/05_Gamma0.VV.cov.tif  >> ${LOG_MT}/log_mt_stacking 2>&1
-    duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
   fi
 
   if [ ${POL_MODE_MT} == VH ];then
@@ -603,6 +688,7 @@ function s1_mt_metrics() {
     [ $? -ne 0 ] && return ${ERR_SPECKLE}
     rm -rf ${TMP_MT}/mt_stack.coreg.d*
 
+    # create a bandlist for the conversion to db-scale
     for MTs in `ls -1 ${TMP_MT}/mt_stack.vh.speckle.data/*img`;do
       basename ${MTs} | rev | cut -c 5- | rev >> ${TMP_MT}/tmp_list
     done
@@ -617,57 +703,7 @@ function s1_mt_metrics() {
     [ $? -ne 0 ] && return ${ERR_SPECKLE}
     rm -rf ${TMP_MT}/mt_stack.vh.speckle.d*
 
-    SECONDS=0
-    echo -ne " Calculating the Coefficient of Variation for the VH polarized channels of the multi-temporal stack ... " &&
-    bash ${SNAP_EXE} Stack-Averaging -x -SsourceProduct=${TMP_MT}/mt_stack.vh.db.speckle.dim -Pstatistic='Coefficient of Variation' -t ${TMP_MT}/cof_var.VH.dim >> ${LOG_MT}/log_mt_stacking 2>&1
-    duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-    [ $? -ne 0 ] && return ${ERR_SPECKLE}
-
-    #-------------COV-------------------------------
-
-    if [ ${ODATATYPE} = "UInt16" ]; then
-
-      SECONDS=0
-      echo " Scaling the Gamma0 VH coefficient of variation layer to 16 bit (0.000001 to 0.07) ..."
-      gdal_translate -ot "UInt16" -projwin $(ogr_extent ${CROPLINE}) -scale 0.000001 0.07 1 65536 ${TMP_MT}/cof_var.VH.data/Gamma0_VH.img ${TMP_MT}/Gamma0_VH_coef_of_var.16bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-      rm -rf ${TMP_MT}/cof_var.VH.d*
-
-      # replace all zeros to one to avoid outlier removal from rescaling
-      ost_replace_values.py -i ${TMP_MT}/Gamma0_VH_coef_of_var.16bit.tif -o ${TMP_MT}/Gamma0_VH_coef_of_var.16bit.ones.tif -r 0 -n 1 >> ${LOG_MT}/log_mt_stacking 2>&1
-      rm -f ${TMP_MT}/Gamma0_VH_coef_of_var.16bit.tif
-
-      # cut to the actual extent of interest coming from the intersect above
-      gdalwarp -overwrite -co "COMPRESS=LZW" -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${TMP_MT}/Gamma0_VH_coef_of_var.16bit.ones.tif ${OUT_STACK_MT}/MT_metrics/10_Gamma0.VH.cov.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-      rm -f ${TMP_MT}/Gamma0_VH_coef_of_var.16bit.ones.tif
-      duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-
-    elif [ ${ODATATYPE} = "UInt8" ]; then
-
-      SECONDS=0
-      echo " Scaling the Gamma0 VH coefficient of variation layer to 8 bit (0.000001 to 0.07) ..."
-      gdal_translate -ot "Byte" -projwin $(ogr_extent ${CROPLINE}) -scale 0.000001 0.07 1 255 ${TMP_MT}/cof_var.VH.data/Gamma0_VH.img ${TMP_MT}/Gamma0_VH_coef_of_var.8bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-      rm -rf ${TMP_MT}/cof_var.VH.d*
-
-      # replace all zeros to one to avoid outlier removal from rescaling
-      ost_replace_values.py -i ${TMP_MT}/Gamma0_VH_coef_of_var.8bit.tif -o ${TMP_MT}/Gamma0_VH_coef_of_var.8bit.ones.tif -r 0 -n 1 >> ${LOG_MT}/log_mt_stacking 2>&1
-      rm -f ${TMP_MT}/Gamma0_VH_coef_of_var.8bit.tif
-
-      # cut to the actual extent of interest coming from the intersect above
-      gdalwarp -overwrite -co "COMPRESS=LZW" -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${TMP_MT}/Gamma0_VH_coef_of_var.8bit.ones.tif ${OUT_STACK_MT}/MT_metrics/10_Gamma0.VH.cov.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-      rm -f ${TMP_MT}/Gamma0_VH_coef_of_var.8bit.ones.tif
-      duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-
-    elif [ ${ODATATYPE} = "Float32" ]; then
-
-      gdalwarp -overwrite -co "COMPRESS=LZW" -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${TMP_MT}/cof_var.VH.data/Gamma0_VH.img ${OUT_STACK_MT}/MT_metrics/10_Gamma0.VH.cov.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-      rm -rf ${TMP_MT}/cof_var.VH.d*
-      duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-
-    fi
-
-      #-------------COV-------------------------------
-
-
+    # create a list for the timeseries, sorted by date
     for file in $(ls -1 ${TMP_MT}/mt_stack.vh.db.speckle.data/*img); do
 
         DATE=`basename $(echo $file) | awk -F "_" '{print $4}'`
@@ -696,19 +732,20 @@ function s1_mt_metrics() {
         rm -f ${TMP_MT}/${DATE}.VH.16bit.tif
 
         # cut to the actual extent of interest coming from the intersect above
-        gdalwarp -overwrite -co "COMPRESS=LZW" -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${TMP_MT}/${DATE}.VH.16bit.ones.tif \
-                 ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.16bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-        rm -f ${TMP_MT}/${DATE}.VH.16bit.ones.tif
+        gdalwarp -overwrite -co "COMPRESS=LZW" -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${TMP_MT}/${DATE}.VH.16bit.ones.tif ${TMP_MT}/${i}_${DATE}.VH.16bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+        gdal_calc.py --overwrite -A ${TMP_MT}/${i}_${DATE}.VH.16bit.tif -B ${OUT_STACK_MT}/LS.map.tif --calc="A*B" --outfile=${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.16bit.tif --NoDataValue=0 --co='COMPRESS=LZW' >> ${LOG_MT}/log_mt_stacking 2>&1
+        rm -f ${TMP_MT}/${DATE}.VH.16bit.ones.tif ${TMP_MT}/${i}_${DATE}.VH.16bit.tif
         echo ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.16bit.tif >> ${TMP_MT}/ts_vrt_list.VH.txt
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
         echo -ne " Creating a thumbnail file for the acquisition of ${DATE} ..."
-        gdal_contrast_stretch -ndv 0 -percentile-range 0.02 0.98 ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.16bit.tif ${TMP_MT}/${i}_${DATE}.VV.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-        gdal_contrast_stretch -ndv 0 -percentile-range 0.02 0.98 ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.16bit.tif ${TMP_MT}/${i}_${DATE}.VH.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-        gdal_calc.py -A ${TMP_MT}/${i}_${DATE}.VV.TN.tif -B ${TMP_MT}/${i}_${DATE}.VH.TN.tif --calc="A-B" --type=Byte --outfile=${TMP_MT}/${i}_${DATE}.VVVH.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+        gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.16bit.tif ${TMP_MT}/${i}_${DATE}.VV.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+        gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.16bit.tif ${TMP_MT}/${i}_${DATE}.VH.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+        gdal_calc.py --overwrite -A ${TMP_MT}/${i}_${DATE}.VV.TN.tif -B ${TMP_MT}/${i}_${DATE}.VH.TN.tif --calc="A.astype(float)/B.astype(float)" --type=Float32 --outfile=${TMP_MT}/${i}_${DATE}.VVVH.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+        gdal_contrast_stretch -ndv 0 -percentile-range 0.02 0.98 ${TMP_MT}/${i}_${DATE}.VVVH.TN.tif ${TMP_MT}/${i}_${DATE}.VVVH.TN.8bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
 
-        gdal_merge.py -separate -co "COMPRESS=LZW" -n 0 -o ${TMP_MT}/${i}_${DATE}.RGB.TN.tif \
-                      ${TMP_MT}/${i}_${DATE}.VV.TN.tif ${TMP_MT}/${i}_${DATE}.VH.TN.tif ${TMP_MT}/${i}_${DATE}.VVVH.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+        gdal_merge.py -separate -co "COMPRESS=LZW" -a_nodata 0 -o ${TMP_MT}/${i}_${DATE}.RGB.TN.tif \
+                      ${TMP_MT}/${i}_${DATE}.VV.TN.tif ${TMP_MT}/${i}_${DATE}.VH.TN.tif ${TMP_MT}/${i}_${DATE}.VVVH.TN.8bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
         # create jpg
         gdal_translate -of JPEG -outsize 20% 20% -a_nodata 0 ${TMP_MT}/${i}_${DATE}.RGB.TN.tif ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg >> ${LOG_MT}/log_mt_stacking 2>&1
 
@@ -734,18 +771,20 @@ function s1_mt_metrics() {
         rm -f ${TMP_MT}/${DATE}.8bit.tif
 
         # cut to the actual extent of interest coming from the intersect above
-        gdalwarp -overwrite -co "COMPRESS=LZW" -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${TMP_MT}/${DATE}.VH.8bit.ones.tif ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.8bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-        rm -f ${TMP_MT}/${DATE}.VH.8bit.ones.tif
+        gdalwarp -overwrite -co "COMPRESS=LZW" -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${TMP_MT}/${DATE}.VH.8bit.ones.tif ${TMP_MT}/${i}_${DATE}.VH.8bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+        gdal_calc.py --overwrite -A ${TMP_MT}/${i}_${DATE}.VH.8bit.tif -B ${OUT_STACK_MT}/LS.map.tif --calc="A*B" --outfile=${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.8bit.tif --NoDataValue=0 --co='COMPRESS=LZW' >> ${LOG_MT}/log_mt_stacking 2>&1
+        rm -f ${TMP_MT}/${DATE}.VH.8bit.ones.tif ${TMP_MT}/${i}_${DATE}.VH.8bit.tif
         echo ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.8bit.tif >> ${TMP_MT}/ts_vrt_list.VH.txt
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
         echo -ne " Creating a thumbnail file for the acquisition of ${DATE} ..."
-        gdal_contrast_stretch -ndv 0 -percentile-range 0.02 0.98 ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.8bit.tif ${TMP_MT}/${i}_${DATE}.VV.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-        gdal_contrast_stretch -ndv 0 -percentile-range 0.02 0.98 ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.8bit.tif ${TMP_MT}/${i}_${DATE}.VH.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-        gdal_calc.py -A ${TMP_MT}/${i}_${DATE}.VV.TN.tif -B ${TMP_MT}/${i}_${DATE}.VH.TN.tif --calc="A-B" --type=Byte --outfile=${TMP_MT}/${i}_${DATE}.VVVH.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+        gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.8bit.tif ${TMP_MT}/${i}_${DATE}.VV.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+        gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.8bit.tif ${TMP_MT}/${i}_${DATE}.VH.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+        gdal_calc.py --overwrite -A ${TMP_MT}/${i}_${DATE}.VV.TN.tif -B ${TMP_MT}/${i}_${DATE}.VH.TN.tif --calc="A.astype(float)/B.astype(float)" --type=Float32 --outfile=${TMP_MT}/${i}_${DATE}.VVVH.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+        gdal_contrast_stretch -ndv 0 -percentile-range 0.02 0.98 ${TMP_MT}/${i}_${DATE}.VVVH.TN.tif ${TMP_MT}/${i}_${DATE}.VVVH.TN.8bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
 
         gdal_merge.py -separate -co "COMPRESS=LZW" -a_nodata 0 -o ${TMP_MT}/${i}_${DATE}.RGB.TN.tif \
-                      ${TMP_MT}/${i}_${DATE}.VV.TN.tif ${TMP_MT}/${i}_${DATE}.VH.TN.tif ${TMP_MT}/${i}_${DATE}.VVVH.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+                      ${TMP_MT}/${i}_${DATE}.VV.TN.tif ${TMP_MT}/${i}_${DATE}.VH.TN.tif ${TMP_MT}/${i}_${DATE}.VVVH.TN.8bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
         # create jpg
         gdal_translate -of JPEG -outsize 20% 20% -a_nodata 0 ${TMP_MT}/${i}_${DATE}.RGB.TN.tif ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg >> ${LOG_MT}/log_mt_stacking 2>&1
 
@@ -753,6 +792,7 @@ function s1_mt_metrics() {
         WIDTH_TN=$(identify -format %w ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg)
         HEIGHT_TN=$(identify -format %h ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg)
         HEIGHT_LABEL=$(expr $HEIGHT_TN / 15)
+
         # add annotation with date
         convert -background '#0008' -fill white -gravity center -size ${WIDTH_TN}x${HEIGHT_LABEL} caption:"${DATE}" \
                 ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg +swap -gravity north -composite ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg
@@ -771,19 +811,23 @@ function s1_mt_metrics() {
 
         # create jpgs for gif animation
         echo -ne " Creating a thumbnail file for the acquisition of ${DATE} ..."
-        gdal_contrast_stretch -ndv 0 -percentile-range 0.02 0.98 ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.tif ${TMP_MT}/${i}_${DATE}.VV.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-        gdal_contrast_stretch -ndv 0 -percentile-range 0.02 0.98 ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.tif ${TMP_MT}/${i}_${DATE}.VH.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-        gdal_calc.py -A ${TMP_MT}/${i}_${DATE}.VV.TN.tif -B ${TMP_MT}/${i}_${DATE}.VH.TN.tif --calc="A-B" --type=Byte --outfile=${TMP_MT}/${i}_${DATE}.VVVH.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+        gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.tif ${TMP_MT}/${i}_${DATE}.VV.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+        gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.tif ${TMP_MT}/${i}_${DATE}.VH.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+        gdal_calc.py --overwrite -A ${TMP_MT}/${i}_${DATE}.VV.TN.tif -B ${TMP_MT}/${i}_${DATE}.VH.TN.tif --calc="A/B" --type=Float32 --outfile=${TMP_MT}/${i}_${DATE}.VVVH.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+        gdal_contrast_stretch -ndv 0 -percentile-range 0.02 0.98 ${TMP_MT}/${i}_${DATE}.VVVH.TN.tif ${TMP_MT}/${i}_${DATE}.VVVH.TN.8bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
 
         gdal_merge.py -separate -co "COMPRESS=LZW" -a_nodata 0 -o ${TMP_MT}/${i}_${DATE}.RGB.TN.tif \
-                      ${TMP_MT}/${i}_${DATE}.VV.TN.tif ${TMP_MT}/${i}_${DATE}.VH.TN.tif ${TMP_MT}/${i}_${DATE}.VVVH.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+                      ${TMP_MT}/${i}_${DATE}.VV.TN.tif ${TMP_MT}/${i}_${DATE}.VH.TN.tif ${TMP_MT}/${i}_${DATE}.VVVH.TN.8bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
         # create jpg
         gdal_translate -of JPEG -outsize 20% 20% -a_nodata 0 ${TMP_MT}/${i}_${DATE}.RGB.TN.tif ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg >> ${LOG_MT}/log_mt_stacking 2>&1
+        duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
+        echo -ne " Creating a gif animation file for the time-series stack ..."
         # get width of jpeg
         WIDTH_TN=$(identify -format %w ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg)
         HEIGHT_TN=$(identify -format %h ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg)
         HEIGHT_LABEL=$(expr $HEIGHT_TN / 15)
+
         # add annotation with date
         convert -background '#0008' -fill white -gravity center -size ${WIDTH_TN}x${HEIGHT_LABEL} caption:"${DATE}" \
                 ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg +swap -gravity north -composite ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg
@@ -810,49 +854,6 @@ function s1_mt_metrics() {
     gdalbuildvrt -separate -srcnodata 0 ${OUT_STACK_MT}/Timeseries/timeseries.VH.vrt $(cat ${TMP_MT}/ts_vrt_list.VH.txt | tr "\n" " ")  >> ${LOG_MT}/log_mt_stacking 2>&1
     rm -f ${TMP_MT}/ts_vrt_list.txt
 
-    #SECONDS=0
-    #echo -ne " Calculating temporal percentiles for VV polarization ..."
-    #ost_mt_percentiles.py -i ${OUT_STACK_MT}/Timeseries/timeseries.VV.vrt -o ${OUT_STACK_MT}/MT_metrics/Gamma0.VV  >> ${LOG_MT}/log_mt_stacking 2>&1
-    #mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.p90.tif ${OUT_STACK_MT}/MT_metrics/01_Gamma0.VV.p90.tif
-    #mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.p10.tif ${OUT_STACK_MT}/MT_metrics/02_Gamma0.VV.p10.tif
-    #mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.pDiff.tif ${OUT_STACK_MT}/MT_metrics/03_Gamma0.VV.pDiff.tif
-    #duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-
-    #SECONDS=0
-    #echo -ne " Calculating temporal percentiles for VH polarization ..."
-    #ost_mt_percentiles.py -i ${OUT_STACK_MT}/Timeseries/timeseries.VH.vrt -o ${OUT_STACK_MT}/MT_metrics/Gamma0.VH  >> ${LOG_MT}/log_mt_stacking 2>&1
-    #mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VH.p90.tif ${OUT_STACK_MT}/MT_metrics/04_Gamma0.VH.p90.tif
-    #mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VH.p10.tif ${OUT_STACK_MT}/MT_metrics/05_Gamma0.VH.p10.tif
-    #mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VH.pDiff.tif ${OUT_STACK_MT}/MT_metrics/06_Gamma0.VH.pDiff.tif
-    #duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-
-    #gdalbuildvrt -separate -srcnodata 0 ${OUT_STACK_MT}/MT_metrics/Percentile.VVVH.vrt ${OUT_STACK_MT}/MT_metrics/01_Gamma0.VV.p90.tif ${OUT_STACK_MT}/MT_metrics/02_Gamma0.VV.p10.tif \
-    #                                      ${OUT_STACK_MT}/MT_metrics/03_Gamma0.VV.pDiff.tif  ${OUT_STACK_MT}/MT_metrics/04_Gamma0.VH.p90.tif ${OUT_STACK_MT}/MT_metrics/05_Gamma0.VH.p10.tif \
-    #                                      ${OUT_STACK_MT}/MT_metrics/06_Gamma0.VH.pDiff.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-
-    SECONDS=0
-    echo -ne " Calculating multi-temporal metrics for the VV polarization ..."
-    ost_mt_metrics.py -i ${OUT_STACK_MT}/Timeseries/timeseries.VV.vrt -o ${OUT_STACK_MT}/MT_metrics/Gamma0.VV  >> ${LOG_MT}/log_mt_stacking 2>&1
-    mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.avg.tif ${OUT_STACK_MT}/MT_metrics/01_Gamma0.VV.avg.tif
-    mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.max.tif ${OUT_STACK_MT}/MT_metrics/02_Gamma0.VV.max.tif
-    mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.min.tif ${OUT_STACK_MT}/MT_metrics/03_Gamma0.VV.min.tif
-    mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VV.std.tif ${OUT_STACK_MT}/MT_metrics/04_Gamma0.VV.std.tif
-    #mv ${OUT_STACK_MT}/MT_metrics/05_Gamma0_VV_coef_of_var.16bit.tif ${OUT_STACK_MT}/MT_metrics/05_Gamma0.VV.cov.tif
-    duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-
-    SECONDS=0
-    echo -ne " Calculating multi-temporal metrics for the VH polarization ..."
-    ost_mt_metrics.py -i ${OUT_STACK_MT}/Timeseries/timeseries.VH.vrt -o ${OUT_STACK_MT}/MT_metrics/Gamma0.VH  >> ${LOG_MT}/log_mt_stacking 2>&1
-    mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VH.avg.tif ${OUT_STACK_MT}/MT_metrics/06_Gamma0.VH.avg.tif
-    mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VH.max.tif ${OUT_STACK_MT}/MT_metrics/07_Gamma0.VH.max.tif
-    mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VH.min.tif ${OUT_STACK_MT}/MT_metrics/08_Gamma0.VH.min.tif
-    mv ${OUT_STACK_MT}/MT_metrics/Gamma0.VH.std.tif ${OUT_STACK_MT}/MT_metrics/09_Gamma0.VH.std.tif
-    duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-
-    gdalbuildvrt -separate -srcnodata 0 ${OUT_STACK_MT}/MT_metrics/Mt_metrics.VVVH.vrt ${OUT_STACK_MT}/MT_metrics/01_Gamma0.VV.avg.tif ${OUT_STACK_MT}/MT_metrics/02_Gamma0.VV.max.tif \
-                                        ${OUT_STACK_MT}/MT_metrics/03_Gamma0.VV.min.tif ${OUT_STACK_MT}/MT_metrics/04_Gamma0.VV.std.tif ${OUT_STACK_MT}/MT_metrics/05_Gamma0.VV.cov.tif \
-                                        ${OUT_STACK_MT}/MT_metrics/06_Gamma0.VH.avg.tif ${OUT_STACK_MT}/MT_metrics/07_Gamma0.VH.max.tif ${OUT_STACK_MT}/MT_metrics/08_Gamma0.VH.min.tif \
-                                        ${OUT_STACK_MT}/MT_metrics/09_Gamma0.VH.std.tif ${OUT_STACK_MT}/MT_metrics/10_Gamma0.VH.cov.tif >> ${LOG_MT}/log_mt_stacking 2>&1
   fi
 
   echo "------------------------------------------------------------------------------------------------------"
@@ -861,50 +862,31 @@ function s1_mt_metrics() {
 
 }
 
-function s1_rename_mt_stack() {
-  if [ -z "$1" ]; then
+
+function s1_timescan() {
+  if [ -z "$7" ]; then
     echo " Missing arguments. Syntax:"
-    echo " s1_rename_mt_stack <stack basename> "
+    echo " s1_timescan <inputfile> <output directory> <file prefix>"
     return
   fi
 
-  STACK_DIM=`readlink -f $1.dim`
-  STACK_DATA=`readlink -f $1.data`
+  # source other helpers
+  source ${OPENSARKIT}/lib/helpers_source
 
-  sed -i 's|Gamma0_VV_2|Gamma0_VV_max|g' ${STACK_DIM}
-  sed -i 's|Gamma0_VV_3|Gamma0_VV_min|g' ${STACK_DIM}
-  sed -i 's|Gamma0_VV_4|Gamma0_VV_stddev|g' ${STACK_DIM}
-  sed -i 's|Gamma0_VV_5|Gamma0_VV_coef_of_var|g' ${STACK_DIM}
-  sed -i 's|\<Gamma0_VV\>|Gamma0_VV_mean|g' ${STACK_DIM}
+  TS_STACK=$(readlink -f $1)
+  OUT_DIR=$(readlink -f $2)
+  PREFIX=$3
 
-  mv ${STACK_DATA}/Gamma0_VV.img ${STACK_DATA}/Gamma0_VV_mean.img
-  mv ${STACK_DATA}/Gamma0_VV.hdr ${STACK_DATA}/Gamma0_VV_mean.hdr
-  mv ${STACK_DATA}/Gamma0_VV_2.img ${STACK_DATA}/Gamma0_VV_max.img
-  mv ${STACK_DATA}/Gamma0_VV_2.hdr ${STACK_DATA}/Gamma0_VV_max.hdr
-  mv ${STACK_DATA}/Gamma0_VV_3.img ${STACK_DATA}/Gamma0_VV_min.img
-  mv ${STACK_DATA}/Gamma0_VV_3.hdr ${STACK_DATA}/Gamma0_VV_min.hdr
-  mv ${STACK_DATA}/Gamma0_VV_4.img ${STACK_DATA}/Gamma0_VV_stddev.img
-  mv ${STACK_DATA}/Gamma0_VV_4.hdr ${STACK_DATA}/Gamma0_VV_stddev.hdr
-  mv ${STACK_DATA}/Gamma0_VV_5.img ${STACK_DATA}/Gamma0_VV_coef_of_var.img
-  mv ${STACK_DATA}/Gamma0_VV_5.hdr ${STACK_DATA}/Gamma0_VV_coef_of_var.hdr
+  mkdir -p ${OUT_DIR}
 
-  if echo ${STACK_DIM} | grep -q sdv ;then
+  SECONDS=0
+  echo -ne " Calculating multi-temporal metrics for the VV polarization ..."
+  ost_mt_metrics.py -i ${OUT_STACK_MT}/Timeseries/timeseries.VV.vrt -o ${OUT_DIR}/Gamma0.VV -t 1 >> ${LOG_MT}/log_mt_stacking 2>&1
+  mv ${OUT_DIR}/Gamma0.VV.avg.tif ${OUT_DIR}/01_Gamma0.VV.avg.tif && gdal_edit.py -a_nodata 0 ${OUT_DIR}/01_Gamma0.VV.avg.tif
+  mv ${OUT_DIR}/Gamma0.VV.max.tif ${OUT_DIR}/02_Gamma0.VV.max.tif && gdal_edit.py -a_nodata 0 ${OUT_DIR}/02_Gamma0.VV.max.tif
+  mv ${OUT_DIR}/Gamma0.VV.min.tif ${OUT_DIR}/03_Gamma0.VV.min.tif && gdal_edit.py -a_nodata 0 ${OUT_DIR}/03_Gamma0.VV.min.tif
+  mv ${OUT_DIR}/Gamma0.VV.std.tif ${OUT_DIR}/04_Gamma0.VV.std.tif && gdal_edit.py -a_nodata 0 ${OUT_DIR}/04_Gamma0.VV.std.tif
+  mv ${OUT_DIR}/Gamma0.VV.cov.tif ${OUT_DIR}/05_Gamma0.VV.cov.tif && gdal_edit.py -a_nodata 0 ${OUT_DIR}/05_Gamma0.VV.cov.tif
+  duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
-    sed -i 's|Gamma0_VH_2|Gamma0_VH_max|g' ${STACK_DIM}
-    sed -i 's|Gamma0_VH_3|Gamma0_VH_min|g' ${STACK_DIM}
-    sed -i 's|Gamma0_VH_4|Gamma0_VH_stddev|g' ${STACK_DIM}
-    sed -i 's|Gamma0_VH_5|Gamma0_VH_coef_of_var|g' ${STACK_DIM}
-    sed -i 's|\<Gamma0_VH\>|Gamma0_VH_mean|g' ${STACK_DIM}
-
-    mv ${STACK_DATA}/Gamma0_VH.img ${STACK_DATA}/Gamma0_VH_mean.img
-    mv ${STACK_DATA}/Gamma0_VH.hdr ${STACK_DATA}/Gamma0_VH_mean.hdr
-    mv ${STACK_DATA}/Gamma0_VH_2.img ${STACK_DATA}/Gamma0_VH_max.img
-    mv ${STACK_DATA}/Gamma0_VH_2.hdr ${STACK_DATA}/Gamma0_VH_max.hdr
-    mv ${STACK_DATA}/Gamma0_VH_3.img ${STACK_DATA}/Gamma0_VH_min.img
-    mv ${STACK_DATA}/Gamma0_VH_3.hdr ${STACK_DATA}/Gamma0_VH_min.hdr
-    mv ${STACK_DATA}/Gamma0_VH_4.img ${STACK_DATA}/Gamma0_VH_stddev.img
-    mv ${STACK_DATA}/Gamma0_VH_4.hdr ${STACK_DATA}/Gamma0_VH_stddev.hdr
-    mv ${STACK_DATA}/Gamma0_VH_5.img ${STACK_DATA}/Gamma0_VH_coef_of_var.img
-    mv ${STACK_DATA}/Gamma0_VH_5.hdr ${STACK_DATA}/Gamma0_VH_coef_of_var.hdr
-  fi
 }

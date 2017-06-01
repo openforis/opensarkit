@@ -2,10 +2,10 @@
 # Functions for Original File choice
 
 # Choose a S1 zip file
-output$s1_g2r_zip_filepath = renderPrint({
+output$s1_g2r_zip = renderPrint({
   
   volumes = c('User directory'=Sys.getenv("HOME"))
-  shinyFileChoose(input, 's1_g2r_zip', roots=volumes, filetypes=c('zip'))
+  shinyFileChoose(input, 's1_g2r_zip', roots=volumes, filetypes=c('zip','dim'))
   
   validate (
     need(input$s1_g2r_zip != "","No file selected"),
@@ -18,7 +18,7 @@ output$s1_g2r_zip_filepath = renderPrint({
 })
 
 # output folder 
-output$s1_g2r_outfolder = renderPrint({
+output$s1_g2r_outdir = renderPrint({
   
   # root directory for file selection
   volumes = c('User directory'=Sys.getenv("HOME"))
@@ -34,10 +34,24 @@ output$s1_g2r_outfolder = renderPrint({
 })
 #---------------------------------------------------------------------------
 
+#---------------------------------------------------------------------------
+# Warning messages
+memtotal = as.numeric(system("awk '/MemTotal/ {print $2}' /proc/meminfo",intern=TRUE))
+if (memtotal < 15000000) {
+  if ( nchar(Sys.getenv('SEPAL')) > 0){
+    output$RAMwarning <- renderText({"WARNING: You do NOT have enough RAM on your machine for running this processing. Please go to the Terminal,
+                                      manually start an instance with at least 16 GB of RAM and restart the SAR toolkit in the processing menu. "})
+  } else {
+    output$RAMwarning <- renderText({"WARNING: You do NOT have enough RAM on your machine for running this processing. Make sure your PC has at least 16 GB of RAM."})
+  }
+} else {
+  output$RAMwarning <- renderText({""})
+}
+#---------------------------------------------------------------------------
 
 #---------------------------------------------------------------------------
 # Folder processing
-output$s1_g2r_inputfolder = renderPrint({
+output$s1_g2r_inputdir = renderPrint({
   
   # root directory for file selection
   volumes = c('User directory'=Sys.getenv("HOME"))
@@ -52,58 +66,6 @@ output$s1_g2r_inputfolder = renderPrint({
   cat(df) #}
 })
 #---------------------------------------------------------------------------
-
-#---------------------------------------------------------------------------
-# Inventory file
-output$s1_g2r_shp_filepath = renderPrint({
-  
-  volumes = c('User directory'=Sys.getenv("HOME"))
-  shinyFileChoose(input, 's1_g2r_shp', roots=volumes, filetypes=c('shp'))
-  
-  validate (
-    need(input$s1_g2r_shp != "","No file selected"),
-    errorClass = "missing-shapefile"
-  )
-  df = parseFilePaths(volumes, input$s1_g2r_shp)
-  s1_g2r_shp_file_path = as.character(df[,"datapath"])
-  cat(s1_g2r_shp_file_path)
-})
-
-# output folder 
-output$s1_g2r_outfolder2 = renderPrint({
-  
-  # root directory for file selection
-  volumes = c('User directory'=Sys.getenv("HOME"))
-  shinyDirChoose(input, 's1_g2r_outdir2', roots=volumes)
-  
-  validate (
-    need(input$s1_g2r_outdir2 != "","No folder selected"),
-    errorClass = "missing-folder"
-  )
-  
-  df = parseDirPath(volumes, input$s1_g2r_outdir2)
-  cat(df) #}
-})
-
-#---------------------------------------------------------------------------
-# Zip file
-# output folder 
-output$s1_g2r_outfolder3 = renderPrint({
-  
-  # root directory for file selection
-  volumes = c('User directory'=Sys.getenv("HOME"))
-  shinyDirChoose(input, 's1_g2r_outdir3', roots=volumes)
-  
-  validate (
-    need(input$s1_g2r_outdir3 != "","No folder selected"),
-    errorClass = "missing-folder"
-  )
-  
-  df = parseDirPath(volumes, input$s1_g2r_outdir3)
-  cat(df) #}
-})
-#---------------------------------------------------------------------------
-
 
 #---------------------------------------------------------------------------
 # Processing functions
@@ -133,12 +95,12 @@ print_s1_g2r = eventReactive(input$s1_g2r_process, {
         INFILE = as.character(df[,"datapath"])
         OUTDIR = parseDirPath(volumes, input$s1_g2r_outdir)
     
-        if (input$s1_g2r_res == "med_res"){
-          MODE = "MED_RES" 
+        if (input$s1_g2r_res_file == "med_res"){
+          RESOLUTION = "MED_RES" 
         } 
     
-        else if (input$s1_inv_pol == "full_res"){
-          MODE = "HI_RES" 
+        else if (input$s1_g2r_res_file == "full_res"){
+          RESOLUTION = "HI_RES" 
         }
     
         s1_g2r_message="Processing started (This will take a while.)"
@@ -146,9 +108,9 @@ print_s1_g2r = eventReactive(input$s1_g2r_process, {
         js_string_s1_g2r <- sub("Processing",s1_g2r_message,js_string_s1_g2r)
         session$sendCustomMessage(type='jsCode', list(value = js_string_s1_g2r))
       
-        ARG_PROC=paste(INFILE, OUTDIR, MODE)
-        print(paste("oft-sar-S1-GRD-single-preprocess", ARG_PROC))
-        system(paste("oft-sar-S1-GRD-single-preprocess", ARG_PROC))
+        ARG_PROC=paste(INFILE, OUTDIR, RESOLUTION)
+        print(paste("ost_S1_grd2rtc", ARG_PROC))
+        system(paste("ost_S1_grd2rtc", ARG_PROC))
       
         s1_g2r_fin_message="Processing finished"
         js_string_s1_g2r_fin <- 'alert("Processing");'
@@ -166,25 +128,34 @@ print_s1_g2r = eventReactive(input$s1_g2r_process, {
   
       else {
         volumes = c('User directory'=Sys.getenv("HOME"))
-        OUTDIR = parseDirPath(volumes, input$s1_g2r_inputdir)
+        PROCDIR = parseDirPath(volumes, input$s1_g2r_inputdir)
     
-        if (input$s1_g2r_res == "med_res"){
-          MODE = "MED_RES" 
+        if (input$s1_g2r_res_folder == "med_res"){
+          RESOLUTION = "MED_RES" 
         } 
     
-        else if (input$s1_inv_pol == "full_res"){
-          MODE = "HI_RES" 
+        else if (input$s1_g2r_res_folder == "full_res"){
+          RESOLUTION = "HI_RES" 
         }
     
-        ARG_PROC=paste(OUTDIR, MODE, "0","> ~/log_processing")
-        print(paste("oft-sar-S1-GRD-MT-bulk-preprocess", ARG_PROC))
-    
-
+        if (input$s1_g2r_mode == "0"){
+          MODE = "0" 
+          TS_PROC = "0"
+        } 
+        
+        else if (input$s1_g2r_mode == "1"){
+          MODE = "1"
+          TS_PROC = input$s1_g2r_ts 
+        }
+        
         s1_g2r_message="Processing started (This can take a considerable amount of time, dependent on the number of images to be processed)"
         js_string_s1_g2r <- 'alert("Processing");'
         js_string_s1_g2r <- sub("Processing",s1_g2r_message,js_string_s1_g2r)
         session$sendCustomMessage(type='jsCode', list(value = js_string_s1_g2r))
-        system(paste("oft-sar-S1-GRD-MT-bulk-preprocess", ARG_PROC),intern=TRUE)
+        
+        ARG_PROC=paste(PROCDIR, RESOLUTION, MODE, TS_PROC)
+        print(paste("ost_S1_grd2rtc_bulk", ARG_PROC))
+        system(paste("ost_S1_grd2rtc_bulk", ARG_PROC),intern=TRUE)
     
         s1_g2r_fin_message="Processing finished"
         js_string_s1_g2r_fin <- 'alert("Processing");'
@@ -194,141 +165,6 @@ print_s1_g2r = eventReactive(input$s1_g2r_process, {
   
     } 
     
-    else if (input$s1_g2r_input_type == "inventory"){
-  
-      if(is.null(input$s1_g2r_shp)){
-        stop("Choose an OST inventory shapefile")
-      } 
-  
-      else if(is.null(input$s1_g2r_outdir2)){
-        stop("Choose an output folder")
-      }
-
-      else {
-    
-        # download
-        df = parseFilePaths(volumes, input$s1_g2r_shp)
-        INFILE = as.character(df[,"datapath"])
-    
-        volumes = c('User directory'=Sys.getenv("HOME"))
-        OUTDIR = parseDirPath(volumes, input$s1_g2r_outdir2)
-    
-        # handling username and password data
-        UNAME = paste("http_user=",input$s1_asf_uname3, sep = "")
-        PW = paste("http_password=",input$s1_asf_piwo3,sep="")
-        HOME_DIR = Sys.getenv("HOME")
-        FILE = file.path(HOME_DIR,"wget.conf")
-        write(UNAME, FILE)
-        write(PW, FILE, append = TRUE)
-        rm(UNAME)
-        rm(PW)
-        system(paste("chmod 600",FILE), intern=TRUE)
-    
-        s1_g2r_message="Download of scenes started (This can take some time.)"
-        js_string_s1_g2r <- 'alert("Download");'
-        js_string_s1_g2r <- sub("Download",s1_g2r_message,js_string_s1_g2r)
-        session$sendCustomMessage(type='jsCode', list(value = js_string_s1_g2r))
-        ARG_DOWN=paste(OUTDIR, INFILE, FILE)
-        print(paste("oft-sar-S1-ASF-download", ARG_DOWN))
-        system(paste("oft-sar-S1-ASF-download", ARG_DOWN),intern=TRUE)
-        unlink(FILE)
-    
-        # processing
-        if (input$s1_g2r_res == "med_res"){
-          MODE = "MED_RES" 
-        } 
-        else if (input$s1_inv_pol == "full_res"){
-          MODE = "HI_RES" 
-        }
-    
-        s1_g2r_message2="Download finished. Start to process the imagery. Stay patient!"
-        js_string_s1_g2r2 <- 'alert("Processing");'
-        js_string_s1_g2r2 <- sub("Processing",s1_g2r_message2,js_string_s1_g2r2)
-        session$sendCustomMessage(type='jsCode', list(value = js_string_s1_g2r2))
-      
-        OUTDIR_DATA = paste(OUTDIR,"/DATA",sep="")
-        ARG_PROC=paste(OUTDIR_DATA, MODE, "0")
-        print(paste("oft-sar-S1-GRD-MT-bulk-preprocess", ARG_PROC))
-        system(paste("oft-sar-S1-GRD-MT-bulk-preprocess", ARG_PROC),intern=TRUE)
-        
-        s1_g2r_fin_message="Processing finished"
-        js_string_s1_g2r_fin <- 'alert("Processing");'
-        js_string_s1_g2r_fin <- sub("Processing",s1_g2r_fin_message,js_string_s1_g2r_fin)
-        session$sendCustomMessage(type='jsCode', list(value = js_string_s1_g2r_fin))
-      }
-      
-    } else if (input$s1_g2r_input_type == "zipfile"){
-  
-        if(is.null(input$S1_grd2rtc_zipfile_path)){
-          stop("Choose a zipfile that contains an OST inventory shapefile")
-        } 
-  
-      else if(is.null(input$s1_g2r_outdir3)){
-        stop("Choose an output folder")
-      }
-  
-      else {
-    
-        volumes = c('User directory'=Sys.getenv("HOME"))
-        OUTDIR = parseDirPath(volumes, input$s1_g2r_outdir3)
-    
-        df = input$S1_grd2rtc_zipfile_path
-        ARCHIVE = df$datapath
-        OUT_ARCHIVE = paste(OUTDIR, "/Inventory_upload", sep = "")
-        dir.create(OUT_ARCHIVE)
-        unzip(ARCHIVE, junkpaths = TRUE, exdir = OUT_ARCHIVE)
-        OST_inv=list.files(OUT_ARCHIVE, pattern = "*.shp")
-        INFILE = paste(OUT_ARCHIVE,"/",OST_inv,sep = "")
-    
-        # handling username and password data
-        UNAME = paste("http_user=",input$s1_asf_uname4, sep = "")
-        PW = paste("http_password=",input$s1_asf_piwo4,sep="")
-        HOME_DIR = Sys.getenv("HOME")
-        FILE = file.path(HOME_DIR,"wget.conf")
-        print(FILE)
-        write(UNAME, FILE)
-        write(PW, FILE, append = TRUE)
-        rm(UNAME)
-        rm(PW)
-        system("echo $USER", intern=FALSE)
-        system(paste("chmod 600",FILE), intern=TRUE)
-    
-        s1_g2r_message="Download of scenes started (This can take some time.)"
-        js_string_s1_g2r <- 'alert("Download");'
-        js_string_s1_g2r <- sub("Download",s1_g2r_message,js_string_s1_g2r)
-        session$sendCustomMessage(type='jsCode', list(value = js_string_s1_g2r))
-    
-        ARG_DOWN=paste(OUTDIR, INFILE, FILE)
-        print(paste("oft-sar-S1-ASF-download", ARG_DOWN))
-        system(paste("oft-sar-S1-ASF-download", ARG_DOWN),intern=TRUE)
-        unlink(FILE)
-        
-        # processing
-        if (input$s1_g2r_res == "med_res"){
-          MODE = "MED_RES" 
-        } 
-        
-        else if (input$s1_inv_pol == "full_res"){
-          MODE = "HI_RES" 
-        }
-    
-        s1_g2r_message2="Download finished. Start to process the imagery. Stay patient!"
-        js_string_s1_g2r2 <- 'alert("Processing");'
-        js_string_s1_g2r2 <- sub("Processing",s1_g2r_message2,js_string_s1_g2r2)
-        session$sendCustomMessage(type='jsCode', list(value = js_string_s1_g2r2))
-    
-        OUTDIR_DATA = paste(OUTDIR,"/DATA",sep="")
-        ARG_PROC=paste(OUTDIR_DATA, MODE, "0")
-        print(paste("oft-sar-S1-GRD-MT-bulk-preprocess", ARG_PROC))
-        system(paste("oft-sar-S1-GRD-MT-bulk-preprocess", ARG_PROC),intern=TRUE)
-    
-        s1_g2r_fin_message="Processing finished"
-        js_string_s1_g2r_fin <- 'alert("Processing");'
-        js_string_s1_g2r_fin <- sub("Processing",s1_g2r_fin_message,js_string_s1_g2r_fin)
-        session$sendCustomMessage(type='jsCode', list(value = js_string_s1_g2r_fin))
-      
-      }
-    }
   })
 })
 

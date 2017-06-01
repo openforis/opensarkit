@@ -1,0 +1,69 @@
+<graph id="Graph">
+  <version>1.0</version>
+  <node id="Read">
+    <operator>Read</operator>
+    <sources/>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <file>${input}</file>
+    </parameters>
+  </node>
+  <node id="Calibration">
+    <operator>Calibration</operator>
+    <sources>
+      <sourceProduct refid="Read"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <sourceBands/>
+      <auxFile>Latest Auxiliary File</auxFile>
+      <externalAuxFile/>
+      <outputImageInComplex>false</outputImageInComplex>
+      <outputImageScaleInDb>false</outputImageScaleInDb>
+      <createGammaBand>false</createGammaBand>
+      <createBetaBand>false</createBetaBand>
+      <selectedPolarisations/>
+      <outputSigmaBand>false</outputSigmaBand>
+      <outputGammaBand>false</outputGammaBand>
+      <outputBetaBand>true</outputBetaBand>
+    </parameters>
+  </node>
+  <node id="Terrain-Flattening">
+    <operator>Terrain-Flattening</operator>
+    <sources>
+      <sourceProduct refid="Calibration"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <sourceBands/>
+      <demName>SRTM 3Sec</demName>
+      <demResamplingMethod>BICUBIC_INTERPOLATION</demResamplingMethod>
+      <externalDEMFile/>
+      <externalDEMNoDataValue>0.0</externalDEMNoDataValue>
+      <outputSimulatedImage>false</outputSimulatedImage>
+      <reGridMethod>false</reGridMethod>
+    </parameters>
+  </node>
+  <node id="Write">
+    <operator>Write</operator>
+    <sources>
+      <sourceProduct refid="Terrain-Flattening"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <file>${output}</file>
+      <formatName>BEAM-DIMAP</formatName>
+    </parameters>
+  </node>
+  <applicationData id="Presentation">
+    <Description/>
+    <node id="Calibration">
+      <displayPosition x="176.0" y="103.0"/>
+    </node>
+    <node id="Read">
+            <displayPosition x="34.0" y="27.0"/>
+    </node>
+    <node id="Terrain-Flattening">
+      <displayPosition x="297.0" y="142.0"/>
+    </node>
+    <node id="Write">
+            <displayPosition x="455.0" y="136.0"/>
+    </node>
+  </applicationData>
+</graph>
