@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 # ALOS K&C Tab
-tabItem(tabName = "alos_kc",
+tabItem(tabName = "alos_kc_pro",
         fluidRow(
            # Include the line below in ui.R so you can send messages
            tags$head(tags$script(HTML('Shiny.addCustomMessageHandler("jsCode",function(message) {eval(message.value);});'))),
@@ -14,30 +14,33 @@ tabItem(tabName = "alos_kc",
               
               # Title                     
               title = "Processing Panel", status = "success", solidHeader= TRUE,
-              tags$h4("ALOS mosaics preparation (JAXA's Kyoto & Carbon initiative)"),
+              tags$h4("ALOS K&C mosaic preparation"),
+              if ( nchar(Sys.getenv('SEPAL')) > 0){
+                span(p("Warning! Make sure you have enough free space. During the processing, a lot of intermediate files have to be created,
+                        which, dependent on your AOI, may take up a considerable amount of disk space. For country wide processing make sure to have at least 100 GB of free disk space available. 
+                        For countries of the size of the Democratic Republic of Congo, Ethiopia or Bolivia, even 200 GB and more might be necessary."), style='color:red')
+              },
               hr(),
-              tags$b("1) Project directory"),br(),
-              p("Note: Within this directory the processing chain will store all data (i.e. downloaded archives, processed mosaics and auxiliary information.)"),
-              #div(style="display:inline-block",shinyDirButton('directory', 'Browse', 'Select a folder')),
-              #div(style="display:inline-block",verbatimTextOutput("project_dir")),
-              shinyDirButton('directory', 'Browse', 'Select a folder'),
-              br(),
-              br(),
-              verbatimTextOutput("KC_project_dir"),
+              tags$b("Project directory"),
+              p("The hereby selected directory defines the greater project folder. It should refer to the same folder which was
+                 chosen for the download of the data tiles."),
+              shinyDirButton('kc_pro_directory', 'Browse', 'Select a folder'),
+              br(),br(),
+              verbatimTextOutput("kc_pro_project_dir"),
               hr(),
-              tags$b("2) Area of Interest"),br(),
-              p("Note: This parameter will define the spatial extent of the processing. 
-                 You can either choose the borders of a country or a shapefile that bounds your area of interest."),
+              tags$b("Area of Interest"),
+              p("This parameter will define the spatial extent of the processing routine. All final products will be clipped by this file. 
+                 In order to assure successful processing use the same file as for the earlier download routine. "),
               # AOI choice
-              radioButtons("ALOS_AOI", "",
+              radioButtons("KC_pro_AOI", "",
                            c("Country" = "country",
                              "Shapefile (on Server/local)" = "AOI_shape_local",
                              "Shapefile (upload zipped archive)" = "AOI_zip_upload")),
               
               conditionalPanel(
-                 "input.ALOS_AOI == 'country'",
+                 "input.KC_pro_AOI == 'country'",
                  selectInput(
-                    inputId = 'countryname', 
+                    inputId = 'kc_pro_countryname', 
                     label= '', 
                     choices = dbGetQuery(
                        dbConnect(SQLite(),dbname=Sys.getenv("OST_DB")),
@@ -46,23 +49,25 @@ tabItem(tabName = "alos_kc",
               ),
               
               conditionalPanel(
-                 "input.ALOS_AOI == 'AOI_shape_local'",
+                 "input.KC_pro_AOI == 'AOI_shape_local'",
                  #div(style="display:inline-block",shinyFilesButton("shapefile","Choose file","Choose one or more files",FALSE)),
                  #div(style="display:inline-block",textOutput("filepath"))
-                 shinyFilesButton("shapefile","Choose file","Choose one or more files",FALSE),
+                 shinyFilesButton("kc_pro_shapefile","Browse","Select a shapefile",FALSE),
                  br(),
                  br(),
-                 verbatimTextOutput("KC_filepath")
+                 verbatimTextOutput("kc_pro_filepath")
               ),
               
               conditionalPanel(
-                 "input.ALOS_AOI == 'AOI_zip_upload'",
-                 fileInput('zipfile_path', label = 'Browse',accept = c(".zip"))
+                 "input.KC_pro_AOI == 'AOI_zip_upload'",
+                 fileInput('kc_pro_zipfile_path', label = 'Browse',accept = c(".zip"))
               ),
               
               hr(),
               
-              selectInput("year","3) Year",c(
+              tags$b("Year"),
+              p("Select the year for which the downloaded data should be processed. Make sure to have downloaded the corresponding tiles first."),
+              selectInput("kc_pro_year","",c(
                  "1996" = "1996",
                  "2007" = "2007",
                  "2008" = "2008",
@@ -71,33 +76,21 @@ tabItem(tabName = "alos_kc",
                  "2015" = "2015",
                  "2016" = "2016")),                   
               hr(),
-              radioButtons("ALOS_KC_speckle", "4) Additional speckle filtering",
+              
+              tags$b("Speckle-Filtering"),
+              p("As all SAR imagery, also the ALOS K&C mosaics are affected by Speckle noise. In order to reduce this Speckle noise, 
+                 a filtering procedure can be optionally be applied."),
+              radioButtons("kc_pro_speckle", "",
                            c("Yes (recommended)" = "Yes",
                              "No" = "No")),
-              
               hr(),
               
-              tags$b("5) Provide your ALOS K&C username and password."),
-              p("If you are not in possess of a user account you can create one ",
-                 a(href = "http://www.eorc.jaxa.jp/ALOS/en/palsar_fnf/registration.htm", "here",".")),
-              
-              textInput(inputId = "uname",
-                        label = "Username", 
-                        value = "Type in your username" 
-              ),
-              
-              passwordInput(inputId = "piwo",
-                            label = "Password",
-                            value = "Type in your password"),
-              hr(),
-              #div(style="display:inline-block",actionButton("alos_kc_process", "Start processing")),
-              #div(style="display:inline-block",actionButton("alos_kc_abort", "Abort processing")),
               withBusyIndicatorUI(
-                actionButton("alos_kc_process", "Start processing")
+                actionButton("kc_process", "Start processing")
               ),
               br(),
               #"Output:",
-              textOutput("processALOS")
+              textOutput("process_KC")
            ), # close box
            #----------------------------------------------------------------------------------
            
@@ -109,43 +102,9 @@ tabItem(tabName = "alos_kc",
               
               tabBox(width = 700,
                      
-                     tabPanel("General Info",
-                              tags$h4("ALOS Kyoto & Carbon initiative"),
-                              p("The global 25m resolution PALSAR/PALSAR-2 mosaic is a seamless global SAR
-                                 image created by mosaicking SAR images of backscattering coefficient measured
-                                 by PALSAR/PALSAR-2, where all the path within 10x10 degrees in latitude and
-                                 longitude are path processed and mosaicked for the sake of processing efficiency.
-                                 Correction of geometric distortion specific to SAR (ortho-rectification) and 
-                                 topographic effects on image intensity (slope correction) are applied to make forest
-                                 classification easy. The size of one pixel is approximately 25 meter by 25 meter.
-                                 The temporal interval of the mosaic is generally 1 year."),
-                              p("JAXA distributes the data in 5 by 5 degree tiles. This includes not only the 
-                                 backscatter data, but also additional information such as acquistion date, the local incidence angle, 
-                                 and a forest/non-forest classification. The processing chain will automatically download the tiles
-                                 that correspond to the selected Area of Interest, mosaic them and crop the data to a buffered extent 
-                                 of the area. If chosen, an additional speckle filter (Refined Lee) is applied for the backscatter data."),
-                              img(src = "shimada_alos_global.png", width = "100%", height = "100%"),
-                              tags$b("Figure 1: 2007 - 2010 global mosaics of ALOS Kyoto & Carbon initiative (Shimada et al. 2014)"),br(),
-                              p("Global 25m resolution PALSAR-2/PALSAR mosaic and forest/non-forest map
-                                 are free and open datasets generated by applying JAXAs sophisticated processing
-                                 and analysis method/technique to a lot of images obtained with Japanese L-band
-                                 Synthetic Aperture Radars (PALSAR and PALSAR-2) on Advanced Land Observing 
-                                 Satellite (ALOS) and Advanced Land Observing Satellite-2 (ALOS-2)."),
-                              p("The global forest/non-forest map (FNF) is generated by classifying the SAR image
-                                 (backscattering coefficient) in the global 25m resolution PALSAR-2/PALSAR
-                                 mosaic so that strong and low backscatter pixels are assigned as forest (colored in
-                                 green) and non-forest (colored in yellow), respectively. Here, the forest is defined
-                                 as the natural forest with the area larger than 0.5ha and forest cover over 90%, as
-                                 same to the FAO definition. Since the radar backscatter from the forest depends
-                                 on the region (climate zone), the classification of 2 Forest/Non-forest is conducted
-                                 by using the region dependent threshold of backscatter. The classification accu-
-                                 racy is checked by using in-situ photos and high-resolution optical satellite images."),
-                              img(src = "shimada_fnf_global.png", width = "100%", height = "100%"),
-                              tags$b("Figure 2: 2007 - 2010 global forest/non-forest maps of the ALOS Kyoto & Carbon initiative (Shimada et al. 2014)"),br()
-                              ),
-                     
-                     tabPanel("Processing",
-                              tags$h4("Processing workflow"),
+                     tabPanel("Workflow",
+                              tags$h4("Detailed description of the processing workflow in OST"),
+                              hr(),
                               p("The actual workflow of the ALOS Palsar Kyoto & Carbon mosaic processing chain consists 
                                  of 2 main parts, one for the data download, and one for the subsequent processing. The
                                  only input which needs to be given is either a polygon shapefile, bounding the
@@ -168,7 +127,7 @@ tabItem(tabName = "alos_kc",
                                  created and contains subfolders for the auxiliary data (AUX), the forest/non-forest map (FNF) and the backscatter mosaics (MOS).
                                  The latter contains the actual data files for further classification tasks. Both polarizations, the HH/HV backscatter ratio and the RFDI 
                                  layer can be found here. An additional Virtual Raster file (RGB_YEAR.vrt) can be loaded into a GIS for RGB visualization purposes.")
-                              ),
+                     ),
                      
                      tabPanel("References",
                               tags$h4("References"),

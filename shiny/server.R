@@ -9,7 +9,9 @@ server <- function(input, output, session) {
   
    #------------------------------------------------------------------------------------------------
    # Source Alos K&C
-   source(file.path("server","ALOS_KC_tab_server.R"), local=TRUE)$value
+   source(file.path("server","ALOS_KC_dow_server.R"), local=TRUE)$value
+   source(file.path("server","ALOS_KC_pro_server.R"), local=TRUE)$value
+   source(file.path("server","ALOS_KC_fnf_server.R"), local=TRUE)$value
    #source(file.path("server","ALOS_ASF_inv_tab_server.R"), local=TRUE)$value
    #source(file.path("server","ALOS_ASF_grd2rtc_tab_server.R"), local=TRUE)$value
    #------------------------------------------------------------------------------------------------
@@ -65,9 +67,19 @@ server <- function(input, output, session) {
    updateTabItems(session, "menus", "SARrefs")
    })
     
-   # ALOS K&C
-   observeEvent(input$link_to_tabpanel_alos_kc, {
-   updateTabItems(session, "menus", "alos_kc")
+   # ALOS K&C download
+   observeEvent(input$link_to_tabpanel_alos_kc_dow, {
+   updateTabItems(session, "menus", "alos_kc_dow")
+   })
+   
+   # ALOS K&C processing
+   observeEvent(input$link_to_tabpanel_alos_kc_pro, {
+     updateTabItems(session, "menus", "alos_kc_pro")
+   })
+   
+   # ALOS K&C FNF
+   observeEvent(input$link_to_tabpanel_alos_kc_pro, {
+     updateTabItems(session, "menus", "alos_kc_fnf")
    })
    
    # ALOS ASF inventory

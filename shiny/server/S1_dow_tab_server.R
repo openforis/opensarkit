@@ -87,7 +87,7 @@ print_S1_dow = eventReactive(input$S1_download, {
       system(paste("chmod 600",FILE), intern=TRUE)
     
       # message for starting downloading
-      s1_dow_start_message="Started downloading (this will take a few hours)"
+      s1_dow_start_message="Started downloading (this can take some time)"
       s1_dow_js_string <- 'alert("Attention");'
       s1_dow_js_string <- sub("Attention",s1_dow_start_message,s1_dow_js_string)
       session$sendCustomMessage(type='jsCode', list(value = s1_dow_js_string))

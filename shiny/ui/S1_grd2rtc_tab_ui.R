@@ -242,7 +242,8 @@ tabItem(tabName = "s1_grd2rtc",
                                contain 3-bands (VV, VH, VV/VH) and can be visualised as RGB. This processor will automatically apply the Layover/Shadow mask, that is also retained as 
                                output file. For quick visualisation, an additional KMZ file with reduced resolution is created."),
                             p("The time-series preparation mode, instead, creates the data in the BEAM-DIMAP format. This format contains all the necessary acquisition metadata
-                               that is necessary for later time-series production. A Layover/Shadow mask is created, but not applied. Data can be opened in the SNAP toolbox.")
+                               that is necessary for later time-series production. A Layover/Shadow mask is created, but not applied (will be applied during time-series stack generation).
+                               Therefore the data can be opened in the SNAP toolbox.")
                    ),
                    tabPanel("Demo",
                             br(),

@@ -202,17 +202,22 @@ tabItem(tabName = "s1_rtc2ts",
                                whole set of imagery."),
                             hr(),
                             tags$b("5.) Scaling to integer value (optional)"),
-                            p("In order to reduce disk space, values of each polarization are linearly stretched between -25 and 5 dB. This partially reduces the radiometric resolution."),
+                            p("In order to reduce disk space, values of each polarization are linearly stretched between -25 and 5 dB. This partially reduces the radiometric resolution.
+                               "),
                             hr(),
                             tags$b("6.) Mask out Layover/Shadow areas"),
                             p("The layover/shadow masks are combined for all images, assuring that at no point in time an area affected by layover/shadow is present. Respective data points
                                exhibit 0 as no data value."),
                             hr(),
                             tags$b("7.) Time-series - output"),
-                            p(""),
+                            p("The time-series processor generates a single file per date, track and polarisation in GeoTiff format, which can be found in a newly created \"Timeseries\" folder.
+                               A prefix number is added, which reflects the cronical order of the acquisition. In order to open the whole time-series stack, a VRT file is present 
+                               for each polarisation (e.g. timeseries.VV.vrt). "),
+                            p("Inside the \"Timeseries\" folder a file named \"time_animation.gif\" allows for a quick quality assessment of the data. The file is generated using the Thumbnail files. 
+                               Those are located within the same folder, produced at 20% of the original image size."),
                             hr(),
                             tags$b("8.) Timescan calculation and output"),
-                            p(""),
+                            p("The timescan approach aggregates the time-series data by calculating basic descriptive statistics in the temporal domain. "),
                             hr()
                             ),
                    tabPanel("Demo",

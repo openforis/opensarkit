@@ -64,27 +64,29 @@ ui = dashboardPage(
          menuSubItem("SAR references", tabName = "SARrefs", icon = icon("book"))
       ),
       hr(),
-      menuItem("ALOS Functionality", tabName = "alos_funct", icon = icon("option-vertical", lib = "glyphicon"),
-         menuSubItem("ALOS K&C Mosaics", tabName = "alos_kc", icon = icon("th")),
-         menuSubItem("Data inventory (ASF server)", tabName = "alos_inv", icon = icon("search")),
-         menuSubItem("GRD to RTC processor", tabName = "alos_pro", icon = icon("cogs"))
+      menuItem("ALOS K&C initiative", tabName = "alos_funct", icon = icon("option-vertical", lib = "glyphicon"),
+         menuSubItem("Backscatter download", tabName = "alos_kc_dow", icon = icon("download")),
+         menuSubItem("Backscatter processing", tabName = "alos_kc_pro", icon = icon("th")),
+         menuSubItem("FNF map download", tabName = "alos_kc_fnf", icon = icon("th")) #,
+         #menuSubItem("Data inventory (ASF server)", tabName = "alos_inv", icon = icon("search")),
+         #menuSubItem("GRD to RTC processor", tabName = "alos_pro", icon = icon("cogs"))
       ),
       hr(),
-      menuItem("Sentinel-1 Functionality", tabName = "s1_funct", icon = icon("option-vertical", lib = "glyphicon"),
+      menuItem("Sentinel-1", tabName = "s1_funct", icon = icon("option-vertical", lib = "glyphicon"),
          menuSubItem("Data inventory", tabName = "s1_inv", icon = icon("search")),
          menuSubItem("Data download", tabName = "s1_dow", icon = icon("download")),
          menuSubItem("GRD to RTC processor", tabName = "s1_grd2rtc", icon = icon("cogs")),
          menuSubItem("Time-series/Timescan processor ", tabName = "s1_rtc2ts", icon = icon("cogs")),
-         menuSubItem("Time-series mosaics ", tabName = "s1_ts2mos", icon = icon("map-o"))
+         menuSubItem("Time-series/Timescan mosaics ", tabName = "s1_ts2mos", icon = icon("map-o"))
       ),
       hr(),
-      menuItem("Data Viewer", tabName = "dataview", icon = icon("eye")),
-      hr(),
-      menuItem("Update", tabName = "update_ost", icon = icon("arrow-circle-o-up")),
+      #menuItem("Data Viewer", tabName = "dataview", icon = icon("eye")),
+      #hr(),
+      #menuItem("Update", tabName = "update_ost", icon = icon("arrow-circle-o-up")),
       menuItem("Source code", icon = icon("file-code-o"),href = "https://github.com/openforis/opensarkit"),
-      menuItem("Bug reports", icon = icon("bug"),href = "https://github.com/openforis/opensarkit/issues"),
-      hr(),
-      menuItem("Stop Server", tabName = "stop_server", icon = icon("off", lib = "glyphicon"))
+      menuItem("Bug reports", icon = icon("bug"),href = "https://github.com/openforis/opensarkit/issues") #,
+      #hr(),
+      #menuItem("Stop Server", tabName = "stop_server", icon = icon("off", lib = "glyphicon"))
           
           ) # close sidebarMenu
       ), # close dashboardSidebar
@@ -108,9 +110,11 @@ ui = dashboardPage(
       
       #-----------------------------------------------------------------------------
       # ALOS K&C Tab
-      source(file.path("ui","ALOS_KC_tab_ui.R"), local=TRUE)$value,
-      source(file.path("ui","ALOS_ASF_inv_tab_ui.R"), local=TRUE)$value,
-      source(file.path("ui","ALOS_ASF_grd2rtc_tab_ui.R"), local=TRUE)$value,
+      source(file.path("ui","ALOS_KC_dow_ui.R"), local=TRUE)$value,
+      source(file.path("ui","ALOS_KC_pro_ui.R"), local=TRUE)$value,
+      source(file.path("ui","ALOS_KC_fnf_ui.R"), local=TRUE)$value,
+      #source(file.path("ui","ALOS_ASF_inv_tab_ui.R"), local=TRUE)$value,
+      #source(file.path("ui","ALOS_ASF_grd2rtc_tab_ui.R"), local=TRUE)$value,
       #-----------------------------------------------------------------------------
       
       #-----------------------------------------------------------------------------
@@ -119,34 +123,34 @@ ui = dashboardPage(
       source(file.path("ui","S1_dow_tab_ui.R"), local=TRUE)$value,
       source(file.path("ui","S1_grd2rtc_tab_ui.R"), local=TRUE)$value,
       source(file.path("ui","S1_rtc2ts_tab_ui.R"), local=TRUE)$value,
-      source(file.path("ui","S1_ts2mos_tab_ui.R"), local=TRUE)$value,
+      source(file.path("ui","S1_ts2mos_tab_ui.R"), local=TRUE)$value #,
       #-----------------------------------------------------------------------------
          
       #-----------------------------------------------------------------------------
       # DataViewer Tab
-      tabItem(tabName = "dataview",
-             fluidRow(
+      #tabItem(tabName = "dataview",
+      #       fluidRow(
                #mainPanel(
                #leafletOutput("mapplot", width = "100%"),
                #mapview:::plainViewOutput("test")
-               )#)
-             ),
+      #         )#)
+      #      ),
       #-----------------------------------------------------------------------------
       
       #-----------------------------------------------------------------------------
       # Stop server tab
-      tabItem(tabName = "stop_server",
-              fluidRow(
-                 box(
-                    title = "Stop the Shiny Server", status = "danger", solidHeader= TRUE,
-                       "This will shutdown your shiny server and all running processes.",br(),
-                       "If you have running processes, just close the browser's tab.",
-                       br(),
-                       br(),
-                       actionButton("stop_server","Stop Server")
-                    ) # close box
-                 ) # close fluidRow
-         ) # close tabItem
+      #tabItem(tabName = "stop_server",
+      #        fluidRow(
+      #           box(
+      #              title = "Stop the Shiny Server", status = "danger", solidHeader= TRUE,
+      #                 "This will shutdown your shiny server and all running processes.",br(),
+      #                 "If you have running processes, just close the browser's tab.",
+      #                 br(),
+      #                 br(),
+      #                 actionButton("stop_server","Stop Server")
+      #              ) # close box
+      #           ) # close fluidRow
+      #   ) # close tabItem
          #-----------------------------------------------------------------------------
 
       ) # close tabItemS

@@ -66,7 +66,7 @@ else
 	rm -rf ${TMP_DIR}
 	mkdir -p ${TMP_DIR}
 
-	if ls ${PROC_DIR}/../.AOI/aoi*.shp; then
+	if ls ${PROC_DIR}/../.AOI/aoi*.shp 2>&1; then
 		AOI=$(ls -1 ${PROC_DIR}/../.AOI/aoi*.shp | awk NR==1)
 	else
 		AOI="dummyfoo"

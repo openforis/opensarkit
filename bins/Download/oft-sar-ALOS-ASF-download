@@ -114,6 +114,9 @@ while read line; do
 		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 #		aria2c --load-cookies="${TMP_DIR}/cookies.txt" --dir=${PROC_DIR}/${MODE}/${ACQ_DATE}-${TRACK} --continue=true "${line}" > ${TMP_DIR}/tmp_error \
 
+		# check zip integrity
+	  if [][ $i == 3 ]],then
+			if 7z t ${PROC_DIR}/${MODE}/${ACQ_DATE}-${TRACK}/${SCENE} | grep "Everything is Ok" > /dev/null ;then echo Ok;fi
 	done
 
 	COUNT=`expr ${COUNT} + 1`

@@ -230,6 +230,7 @@ apt-get install --yes --allow-unauthenticated \
 											pkg-config \
 											aria2 \
 											unrar \
+											p7zip-full \
 											parallel \
 											xml-twig-tools \
 											git \
@@ -264,7 +265,8 @@ echo "--- Installing Orfeo ToolBox ---"
 echo "-------------------------------------"
 
 # install the latest Orfeo packaged version for use of ORFEO remote modules
-otb=OTB-contrib-5.10.1-Linux64
+#otb=OTB-contrib-5.10.1-Linux64
+otb=OTB-contrib-6.0.0-Linux64
 wget https://www.orfeo-toolbox.org/packages/$otb.run
 chmod +x $otb.run
 mv $otb.run /usr/local/lib

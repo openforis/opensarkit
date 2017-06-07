@@ -1,0 +1,13 @@
+#!/bin/bash
+
+TOT_MEM=`free -m | awk 'NR==2' | awk '{print $2}'`
+HEAP_MEM=`expr $TOT_MEM / 2`
+
+echo $HEAP_MEM
+
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. java \
+ -Djava.awt.headless=true\
+ -Dsnap.mainClass=org.esa.snap.core.gpf.main.GPT\
+ -Dsnap.home=/usr/local/snap\
+ -Xmx${HEAP_MEM}m\
+ -jar /usr/local/snap/snap/modules/ext/org.esa.snap.snap-core/org-esa-snap/snap-runtime.jar
