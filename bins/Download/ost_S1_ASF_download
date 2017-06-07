@@ -99,7 +99,6 @@ ogrinfo $2 -al | grep Product_ID | sed 's/  Product_ID (String) = //g' | tail -n
 ogrinfo $2 -al | grep Track | sed 's/  Track (Integer) = //g' | tail -n +2 > ${TMP_DIR}/tmp_track_list &&
 ogrinfo $2 -al | grep Orbit_Dir | sed 's/  Orbit_Dir (String) = //g' | tail -n +2 | cut -c -1 > ${TMP_DIR}/tmp_orb_dir_list &&
 ogrinfo $2 -al | grep Date | sed 's/  Date (Integer) = //g'| tail -n +2 > ${TMP_DIR}/tmp_date_list
-ogrinfo $2 -al | grep Scene_Id | sed 's/  Date (Integer) = //g'| tail -n +2 > ${TMP_DIR}/tmp_date_list
 ogrinfo $2 -al | grep Scene_ID | sed 's/  Scene_ID (String) = //g' | tail -n +2 > ${TMP_DIR}/scene_id
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 echo ""
@@ -142,7 +141,7 @@ while read line; do
 
 				SECONDS=0
 				echo -ne " Check for Zip archive file integrity..."
-				if 7z t ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/${SCENE}.zip | grep "Everything is Ok" > /dev/null;then 
+				if 7z t ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/${SCENE}.zip | grep "Everything is Ok" > /dev/null;then
 					duration=$SECONDS && echo -e " passed ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 				else
 					i=3
