@@ -1,4 +1,4 @@
-# Open SAR Toolkit (OST)
+# Open SAR Toolkit (OST) - automated processing routines for wide-area land applications
 
 ## Objective 
 
