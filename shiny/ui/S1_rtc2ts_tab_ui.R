@@ -37,7 +37,7 @@ tabItem(tabName = "s1_rtc2ts",
             hr(),
             tags$b("Select the desired multi-temporal product:"), 
             p("The time-series processor creates a co-registered, multi-temporal speckle-filtered stack of of all available overlapping scenes per track and polarisation, 
-               clipped to the same extent. Timescan data aggregates the time-series data by calculating basic 
+               Allclipped to the same extent. Timescan data aggregates the time-series data by calculating basic 
                descriptive statistics for each polarization in the temporal domain."),
             radioButtons("s1_rtc2ts_mode", "",
                          c("Time-series & Timescan" = "1",

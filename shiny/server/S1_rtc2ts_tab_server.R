@@ -101,7 +101,7 @@ print_s1_rtc2ts = eventReactive(input$s1_rtc2ts_process, {
 
 output$processS1_RTC2TS = renderText({
   print_s1_rtc2ts()
-  print(print_s1_rtc2ts())
+#  print(print_s1_rtc2ts())
   })
 
 #---------------------------

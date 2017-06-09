@@ -60,9 +60,9 @@ tabItem(tabName = "s1_grd2rtc",
             
              conditionalPanel(
               "input.s1_g2r_input_type == 'folder'",
-              tags$b("Select the DATA folder inside your project directory:"),
-              br(),
-              br(),
+              tags$b("Project directory:"),
+              p("The path should point to the", tags$b(" DATA directory "), 
+                "created by routine of the data download submenu, within your project folder, i.e. \"/path/to/project/DATA\""),
               shinyDirButton("s1_g2r_inputdir","Browse","Browse",FALSE),
               br(),
               br(),
