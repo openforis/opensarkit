@@ -287,7 +287,7 @@ cd ${OSK_HOME}/opensarkit/bins
 
 BINDIR=/usr/local/bin/
 
-for OST_BINS in `ls -1 -d`;do
+for OST_BINS in `ls -1 -d */`;do
 
 	cd $OST_BINS
 	for exe in `ls -1 {ost_*,post_*} 2>/dev/null`;do
