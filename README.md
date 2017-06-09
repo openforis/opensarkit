@@ -18,6 +18,6 @@ It can be downlaoded and executed as sudo user (you need an admin password) on t
 wget https://raw.githubusercontent.com/openforis/opensarkit/master/bins/Install_OFST/installer_ubuntu1604.sh
 sudo bash installer_ubuntu1604.sh
 ```
-While most of the fucntionality runs on older machines (i.e. 4GB RAM and more), Setninel-1 processing is quite resource intensive and needs at least 16 GB of RAM. 
+While most of the fucntionality runs on older machines (i.e. 4GB RAM and more), Sentinel-1 processing is quite resource intensive and needs at least 16 GB of RAM. 
 
 
