@@ -68,23 +68,6 @@ else
 	exit 1
 fi
 
-
-spinner()
-{
-    local pid=$1
-    local delay=0.75
-    local spinstr='|\-/'
-    while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
-        local temp=${spinstr#?}
-        printf " [%c]  " "$spinstr"
-        local spinstr=$temp${spinstr%"$temp"}
-        sleep $delay
-        printf "\b\b\b\b\b\b"
-    done
-    printf "    \b\b\b\b"
-}
-
-
 # Licenses
 echo " The MIT License (MIT)"
 echo " Copyright (c) 2016 Andreas Vollrath"
@@ -203,9 +186,9 @@ apt-get install --yes --allow-unauthenticated \
  										  dans-gdal-scripts \
 											saga \
 											libsaga-dev \
-											otb-bin \
-										  libotb \
- 											libotb-apps \
+										#	otb-bin \
+										# libotb \
+ 										#	libotb-apps \
 											geotiff-bin \
 											libgeotiff-dev \
 											spatialite-bin \
@@ -234,6 +217,7 @@ apt-get install --yes --allow-unauthenticated \
 											parallel \
 											xml-twig-tools \
 											git \
+											libudunits2-dev \
 											libxinerama-dev \
 											libxrandr-dev \
 											libxcursor-dev \
@@ -247,7 +231,7 @@ echo -ne " Installing python 2.7 packages "
 apt-get install --yes --allow-unauthenticated \
 											python-gdal \
 											python-saga \
-											python-otb \
+										#	python-otb \
 											python-scipy \
 											python-h5py \
 											python-skimage \
@@ -277,8 +261,8 @@ ln -s $otb orfeo
 chmod o+rx orfeo/*.sh
 chmod o+rx orfeo/otbenv.profile
 cd -
-
-
+echo "export PYTHONPATH=/usr/local/lib/OTB-contrib-6.0.0-Linux64/lib/python" >> /etc/environment
+echo "export PATH=${PATH}:/usr/local/lib/orfeo/bin" >> /etc/environment
 
 #------------------------------------------------------------------
 # 4 Download & Install non-repository Software and OSK
@@ -292,7 +276,7 @@ cd ${OSK_HOME}
 
 # get OpenSARKit from github
 SECONDS=0
-echo -ne " Getting the Open Foris SAR Toolkit ..." &&
+echo -ne " Getting the Open SAR Toolkit ..." &&
 git clone $OSK_GIT_URL >> ${OSK_HOME}/LOG/log_install 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
@@ -303,7 +287,7 @@ cd ${OSK_HOME}/opensarkit/bins
 
 BINDIR=/usr/local/bin/
 
-for OST_BINS in `ls -1`;do
+for OST_BINS in `ls -1 -d`;do
 
 	cd $OST_BINS
 	for exe in `ls -1 {ost_*,post_*} 2>/dev/null`;do
@@ -370,7 +354,7 @@ mkdir -p ${OSK_HOME}/Database
 cd ${OSK_HOME}/Database
 
 SECONDS=0
-echo -ne " Downloading the OFST database ..." &&
+echo -ne " Downloading the OST database ..." &&
 wget https://www.dropbox.com/s/qvujm3l0ba0frch/OFST_db.sqlite?dl=0  >> ${OSK_HOME}/LOG/log_install 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 mv OFST_db.sqlite?dl=0 OFST_db.sqlite
@@ -392,7 +376,7 @@ echo -ne " Creating a start up icon on the Desktop ..."
 
 echo "[Desktop Entry]" > ${HOME}/Desktop/OST.desktop
 echo "Version=1.0" >> ${HOME}/Desktop/OST.desktop
-echo "Name=Open Foris SAR Toolkit" >> ${HOME}/Desktop/OST.desktop
+echo "Name=Open SAR Toolkit" >> ${HOME}/Desktop/OST.desktop
 echo "Comment=" >> ${HOME}/Desktop/OST.desktop
 echo 'Exec=bash -c "R CMD BATCH ${OPENSARKIT}/shiny/ost.R;$SHELL"' >> ${HOME}/Desktop/OST.desktop
 echo "Icon=${OPENSARKIT}/OST_icon_trans.png" >> ${HOME}/Desktop/OST.desktop
@@ -413,7 +397,7 @@ cp ${HOME}/Desktop/OST.desktop /usr/share/applications/OST.desktop
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 echo "---------------------------------------------------------------------------------------------------------------------------"
-echo " Installation of OFST succesfully completed"
-echo " In order to be able to launch the scripts immediately on the command line, type: source /etc/profile.d/OpenSARKit.sh "
+echo " Installation of OST succesfully completed"
+echo " In order to be able to launch the scripts immediately on the command line, type: source /etc/environment "
 echo " Otherwise restart your computer"
 echo "---------------------------------------------------------------------------------------------------------------------------"
