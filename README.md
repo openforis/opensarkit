@@ -21,3 +21,22 @@ sudo bash installer_ubuntu1604.sh
 After the installation successfully finished, restart the computer and launch OST via the newly desktop icon present. 
 
 While most of the fucntionality runs on older machines (i.e. 4GB RAM and more), Sentinel-1 processing is quite resource intensive and needs at least 16 GB of RAM. 
+
+## Examples
+
+### Ecuador Timescan Composite
+
+Year: 2016
+
+Sensor: Sentinel-1 C-Band SAR.
+
+Acquistions: 6 acqusitions per swath (4 swaths)
+
+Output resolution: 30m
+
+RGB composite: 
+  - Red: VV-maximum
+  - Green: VV-minimum
+  - Blue: VV-Standard deviation
+
+![alt text](https://github.com/openforis/opensarkit/raw/master/shiny/www/ecuador_VV_max_min_std.png)
