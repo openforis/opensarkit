@@ -16,3 +16,7 @@ spinner()
 }
 
 
+function check_tar()  {
+	gunzip -c $1 2>&1 | tar t >> /dev/null 2>&1
+  echo $?
+}

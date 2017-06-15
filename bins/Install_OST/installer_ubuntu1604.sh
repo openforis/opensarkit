@@ -209,6 +209,7 @@ apt-get install --yes --allow-unauthenticated \
 											libgsl0-dev \
 											gsl-bin \
 											libglade2-dev \
+											libgmp-dev \
 											libgtk2.0-dev \
 											pkg-config \
 											aria2 \
@@ -370,6 +371,7 @@ echo -ne " Installing R packages for shiny app ..." &&
 /usr/bin/R -e "install.packages('random', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1
 /usr/bin/R -e "install.packages('raster', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1
 /usr/bin/R -e "install.packages('mapview', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1
+/usr/bin/R -e "install.packages('rknn', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 echo -ne " Creating a start up icon on the Desktop ..."

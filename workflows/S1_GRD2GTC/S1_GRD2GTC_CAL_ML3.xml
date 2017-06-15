@@ -7,26 +7,10 @@
       <file>${input}</file>
     </parameters>
   </node>
-  <node id="Subset">
-    <operator>Subset</operator>
-    <sources>
-      <sourceProduct refid="Read"/>
-    </sources>
-    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <sourceBands/>
-      <region>600,600,${width},${height}</region>
-      <geoRegion/>
-      <subSamplingX>1</subSamplingX>
-      <subSamplingY>1</subSamplingY>
-      <fullSwath>false</fullSwath>
-      <tiePointGridNames/>
-      <copyMetadata>true</copyMetadata>
-    </parameters>
-  </node>
   <node id="Calibration">
     <operator>Calibration</operator>
     <sources>
-      <sourceProduct refid="Subset"/>
+      <sourceProduct refid="Read"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
       <sourceBands/>
@@ -37,30 +21,15 @@
       <createGammaBand>false</createGammaBand>
       <createBetaBand>false</createBetaBand>
       <selectedPolarisations/>
-      <outputSigmaBand>false</outputSigmaBand>
+      <outputSigmaBand>true</outputSigmaBand>
       <outputGammaBand>false</outputGammaBand>
-      <outputBetaBand>true</outputBetaBand>
-    </parameters>
-  </node>
-  <node id="Terrain-Flattening">
-    <operator>Terrain-Flattening</operator>
-    <sources>
-      <sourceProduct refid="Calibration"/>
-    </sources>
-    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <sourceBands/>
-      <demName>SRTM 3Sec</demName>
-      <demResamplingMethod>BICUBIC_INTERPOLATION</demResamplingMethod>
-      <externalDEMFile/>
-      <externalDEMNoDataValue>0.0</externalDEMNoDataValue>
-      <outputSimulatedImage>false</outputSimulatedImage>
-      <reGridMethod>false</reGridMethod>
+      <outputBetaBand>false</outputBetaBand>
     </parameters>
   </node>
   <node id="Multilook">
     <operator>Multilook</operator>
     <sources>
-      <sourceProduct refid="Terrain-Flattening"/>
+      <sourceProduct refid="Calibration"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
       <sourceBands/>
@@ -85,14 +54,8 @@
     <node id="Calibration">
       <displayPosition x="157.0" y="87.0"/>
     </node>
-    <node id="Subset">
-      <displayPosition x="83.0" y="46.0"/>
-    </node>
     <node id="Read">
       <displayPosition x="12.0" y="10.0"/>
-    </node>
-    <node id="Terrain-Flattening">
-      <displayPosition x="212.0" y="131.0"/>
     </node>
     <node id="Multilook">
       <displayPosition x="321.0" y="177.0"/>

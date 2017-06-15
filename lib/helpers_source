@@ -40,7 +40,12 @@ export GDAL_BIN=${OPENSARKIT}/lib/GDAL
 
 export PATH=$PATH:$PYTHON_BIN:$GDAL_BIN
 
-export SNAP_GRAPHS=${OPENSARKIT}/workflows/SNAP
+# workflow graphs folders to variables
+export S1_GRD_import_GRAPHS=${OPENSARKIT}/workflows/S1_GRD_import
+export S1_GRD2GTC_GRAPHS=${OPENSARKIT}/workflows/S1_GRD2GTC
+export S1_GRD2RTC_GRAPHS=${OPENSARKIT}/workflows/S1_GRD2RTC
+export S1_RTC2TS_GRAPHS=${OPENSARKIT}/workflows/S1_RTC2TS
 
+export SNAP_GRAPHS=${OPENSARKIT}/workflows/SNAP
 
 #source $OPENSARKIT/lib/saga_helpers

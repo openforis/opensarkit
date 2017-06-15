@@ -96,34 +96,81 @@ source ${OPENSARKIT}/lib/helpers_source
 	fi
 
 	if [ ${YEAR} -gt 2010 ];then
-		SECONDS=0
-		echo -ne " Downloading backscatter data tile $i/${NR_OF_TILES} (${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz) ..." &&
-		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS-2/ext1/PALSAR-2_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS_F02DAR.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz
-		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
-		#SECONDS=0
-		#echo -ne " Downloading forest/non-forest data tile $i/${NR_OF_TILES} (${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz) ..." &&
-		#wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS-2/ext1/PALSAR-2_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF_F02DAR.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz
-		#duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    i=1
+    for(( i=1; i<=2; i++ ));do
+      i=3
+      SECONDS=0
+		  echo -ne " Downloading backscatter data tile $i/${NR_OF_TILES} (${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz) ..." &&
+		  wget -c -q ftp://ftp.eorc.jaxa.jp/pub/ALOS-2/ext1/PALSAR-2_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS_F02DAR.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz
+      if [ $? -ne 0 ]; then
+        i=1 && echo -e " failed, having another try."
+      else
+        duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+        SECONDS=0
+        echo -ne " Check for tar file integrity..."
+        check_tar ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz > ${TMP_DIR}/check_integrity_${ROW}${COL}
+        if [[ $(cat  ${TMP_DIR}/check_integrity_${ROW}${COL} | grep -v 0 | wc -l) -gt 0 ]];then
+          i=1
+        else
+          i=3
+        fi
+        duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+      fi
+      done
 
 	elif [ ${YEAR} -lt 2000 ];then
 
-		SECONDS=0
-		echo -ne " Downloading backscatter data tile $i/${NR_OF_TILES} (${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz) ..." &&
-		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS-2/JERS-1_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz
-		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    i=1
+  	for(( i=1; i<=2; i++ ));do
+		  i=3
+	    SECONDS=0
+      echo -ne " Downloading backscatter data tile $i/${NR_OF_TILES} (${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz) ..." &&
+      wget -c -q ftp://ftp.eorc.jaxa.jp/pub/ALOS-2/JERS-1_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz
+      if [ $? -ne 0 ]; then
+  			i=1 && echo -e " failed, having another try."
+  		else
+        duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+        SECONDS=0
+        echo -ne " Check for tar file integrity..."
+        check_tar ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz > ${TMP_DIR}/check_integrity_${ROW}${COL}
+        if [[ $(cat  ${TMP_DIR}/check_integrity_${ROW}${COL} | grep -v 0 | wc -l) -gt 0 ]];then
+          i=1
+        else
+          i=3
+        fi
+      fi
+      duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    done
 
 	else
 
-		SECONDS=0
-		echo -ne " Downloading backscatter data tile $i/${NR_OF_TILES} (${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz) ... " &&
-		wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz
-		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    i=1
+    for(( i=1; i<=2; i++ ));do
+      i=3
+		  SECONDS=0
+		  echo -ne " Downloading backscatter data tile $i/${NR_OF_TILES} (${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz) ... " &&
+		  wget -c -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz
+      if [ $? -ne 0 ]; then
+  			i=1 && echo -e " failed, having another try."
+  		else
+        duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
-		#SECONDS=0
-		#echo -ne " Downloading forest/non-forest data tile $i/${NR_OF_TILES} (${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz) ..." &&
-		#wget -q ftp://ftp.eorc.jaxa.jp/pub/ALOS/ext1/PALSAR_MSC/25m_MSC/${YEAR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz -O ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"FNF.tar.gz
-		#duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+        SECONDS=0
+        echo -ne " Check for tar file integrity..."
+        check_tar ${ZIP_DIR}/${ROW}${COL}"_"${YEAR_SHORT}"_"MOS.tar.gz > ${TMP_DIR}/check_integrity_${ROW}${COL}
+        if [[ $(cat  ${TMP_DIR}/check_integrity_${ROW}${COL} | grep -v 0 | wc -l) -gt 0 ]];then
+          i=1
+        else
+          i=3
+        fi
+      fi
+      duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+    done
+
+
 	fi
 }
 

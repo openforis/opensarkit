@@ -44,11 +44,11 @@ print_kc_pro = eventReactive(input$kc_process, {
         stop("Choose a project folder")
       } 
    
-      else if ((input$ALOS_AOI == "AOI_shape_local")&(is.null(input$kc_pro_shapefile))){
+      else if ((input$KC_pro_AOI == "AOI_shape_local")&(is.null(input$kc_pro_shapefile))){
         stop("Select a shapefile")
       }
    
-      else if ((input$ALOS_AOI == "AOI_zip_upload")&(is.null(input$kc_pro_zipfile_path))){
+      else if ((input$KC_pro_AOI == "AOI_zip_upload")&(is.null(input$kc_pro_zipfile_path))){
         stop("Select a Zipfile that contains an AOI shapefile")
       }
    
@@ -97,20 +97,36 @@ print_kc_pro = eventReactive(input$kc_process, {
           SPECKLE = "0" 
         }
    
-        kc_dow_start_message="Started processing (this will take a few hours)"
-        kc_dow_start_js_string <- 'alert("Attention");'
-        kc_dow_start_js_string <- sub("Attention",kc_dow_start_message,kc_dow_start_js_string)
-        session$sendCustomMessage(type='jsCode', list(value = kc_dow_start_js_string))
+        kc_pro_start_message="Started processing (this will take a few hours)"
+        kc_pro_start_js_string <- 'alert("Attention");'
+        kc_pro_start_js_string <- sub("Attention",kc_pro_start_message,kc_pro_start_js_string)
+        session$sendCustomMessage(type='jsCode', list(value = kc_pro_start_js_string))
         
         # print command
-        ARG_PRO= paste(DIR, AOI, YEAR, SPECKLE, FILE, "")
+        ARG_PRO= paste(DIR, AOI, YEAR, SPECKLE, "")
         print(paste("post_ALOS_KC_process", ARG_PRO))
-        system(paste("post_ALOS_KC_process", ARG_PRO), intern=TRUE)
-        kc_dow_end_message="Finished processing"
-        kc_dow_end_js_string <- 'alert("SUCCESS");'
-        kc_dow_end_js_string <- sub("SUCCESS",kc_dow_end_message,kc_dow_end_js_string)
-        session$sendCustomMessage(type='jsCode', list(value = kc_dow_end_js_string))
-   }
+        status = system(paste("post_ALOS_KC_process", ARG_PRO), wait=TRUE)
+        
+        if (status == 11 ){
+          kc_pro_end_message="Your downloaded data tiles seem to be corrupted. Delete the files and re-download them."
+          kc_pro_end_js_string <- 'alert("SUCCESS");'
+          kc_pro_end_js_string <- sub("SUCCESS",kc_pro_end_message,kc_pro_end_js_string)
+          session$sendCustomMessage(type='jsCode', list(value = kc_pro_end_js_string))  
+        }
+        
+        else if (status == 111 ){
+          kc_pro_end_message="Something went terribly wrong, and your final output files have not been created. Most likely you ran into storage issues (i.e. no space left on device)."
+          kc_pro_end_js_string <- 'alert("SUCCESS");'
+          kc_pro_end_js_string <- sub("SUCCESS",kc_pro_end_message,kc_pro_end_js_string)
+          session$sendCustomMessage(type='jsCode', list(value = kc_pro_end_js_string))  
+        }
+        else if ( status == 0 ){
+          kc_pro_end_message="Finished processing"
+          kc_pro_end_js_string <- 'alert("SUCCESS");'
+          kc_pro_end_js_string <- sub("SUCCESS",kc_pro_end_message,kc_pro_end_js_string)
+          session$sendCustomMessage(type='jsCode', list(value = kc_pro_end_js_string))
+        }
+      }
    })
 })
 

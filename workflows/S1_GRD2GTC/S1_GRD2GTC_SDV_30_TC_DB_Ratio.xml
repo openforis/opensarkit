@@ -1,0 +1,118 @@
+<graph id="Graph">
+  <version>1.0</version>
+  <node id="Read">
+    <operator>Read</operator>
+    <sources/>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <file>${input}</file>
+    </parameters>
+  </node>
+  <node id="Terrain-Correction">
+    <operator>Terrain-Correction</operator>
+    <sources>
+      <sourceProduct refid="Read"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <sourceBands/>
+      <demName>SRTM 3Sec</demName>
+      <externalDEMFile/>
+      <externalDEMNoDataValue>0.0</externalDEMNoDataValue>
+      <demResamplingMethod>BILINEAR_INTERPOLATION</demResamplingMethod>
+      <imgResamplingMethod>BILINEAR_INTERPOLATION</imgResamplingMethod>
+      <pixelSpacingInMeter>30.0</pixelSpacingInMeter>
+      <pixelSpacingInDegree>2.6949458523585647E-4</pixelSpacingInDegree>
+      <mapProjection>GEOGCS[&quot;WGS84(DD)&quot;,
+  DATUM[&quot;WGS84&quot;,
+    SPHEROID[&quot;WGS84&quot;, 6378137.0, 298.257223563]],
+  PRIMEM[&quot;Greenwich&quot;, 0.0],
+  UNIT[&quot;degree&quot;, 0.017453292519943295],
+  AXIS[&quot;Geodetic longitude&quot;, EAST],
+  AXIS[&quot;Geodetic latitude&quot;, NORTH]]</mapProjection>
+      <nodataValueAtSea>false</nodataValueAtSea>
+      <saveDEM>false</saveDEM>
+      <saveLatLon>false</saveLatLon>
+      <saveIncidenceAngleFromEllipsoid>false</saveIncidenceAngleFromEllipsoid>
+      <saveLocalIncidenceAngle>false</saveLocalIncidenceAngle>
+      <saveProjectedLocalIncidenceAngle>false</saveProjectedLocalIncidenceAngle>
+      <saveSelectedSourceBand>true</saveSelectedSourceBand>
+      <outputComplex>false</outputComplex>
+      <applyRadiometricNormalization>false</applyRadiometricNormalization>
+      <saveSigmaNought>false</saveSigmaNought>
+      <saveGammaNought>false</saveGammaNought>
+      <saveBetaNought>false</saveBetaNought>
+      <incidenceAngleForSigma0>Use projected local incidence angle from DEM</incidenceAngleForSigma0>
+      <incidenceAngleForGamma0>Use projected local incidence angle from DEM</incidenceAngleForGamma0>
+      <auxFile>Latest Auxiliary File</auxFile>
+      <externalAuxFile/>
+    </parameters>
+  </node>
+  <node id="LinearToFromdB">
+    <operator>LinearToFromdB</operator>
+    <sources>
+      <sourceProduct refid="Terrain-Correction"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <sourceBands>Sigma0_VH,Sigma0_VV</sourceBands>
+    </parameters>
+  </node>
+  <node id="Write(2)">
+    <operator>Write</operator>
+    <sources>
+      <sourceProduct refid="BandMaths"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <file>${outputRatio}</file>
+      <formatName>BEAM-DIMAP</formatName>
+    </parameters>
+  </node>
+  <node id="BandMaths">
+    <operator>BandMaths</operator>
+    <sources>
+      <sourceProduct refid="Terrain-Correction"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <targetBands>
+        <targetBand>
+          <name>VV-VH_ratio</name>
+          <type>float32</type>
+          <expression>Sigma0_VV / Sigma0_VH</expression>
+          <description/>
+          <unit/>
+          <noDataValue>0.0</noDataValue>
+        </targetBand>
+      </targetBands>
+      <variables/>
+    </parameters>
+  </node>
+  <node id="Write">
+    <operator>Write</operator>
+    <sources>
+      <sourceProduct refid="LinearToFromdB"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <file>${output}</file>
+      <formatName>BEAM-DIMAP</formatName>
+    </parameters>
+  </node>
+  <applicationData id="Presentation">
+    <Description/>
+    <node id="Read">
+            <displayPosition x="30.0" y="77.0"/>
+    </node>
+    <node id="Terrain-Correction">
+      <displayPosition x="147.0" y="78.0"/>
+    </node>
+    <node id="LinearToFromdB">
+      <displayPosition x="337.0" y="79.0"/>
+    </node>
+    <node id="Write(2)">
+      <displayPosition x="457.0" y="188.0"/>
+    </node>
+    <node id="BandMaths">
+      <displayPosition x="293.0" y="183.0"/>
+    </node>
+    <node id="Write">
+            <displayPosition x="456.0" y="135.0"/>
+    </node>
+  </applicationData>
+</graph>

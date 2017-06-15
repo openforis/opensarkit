@@ -1,0 +1,62 @@
+#! /bin/bash
+
+# The MIT License (MIT)
+# Copyright (c) 2016 Andreas Vollrath
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is furnished
+# to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+# OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+#-------------------------------------------------------------------------------------------
+# 	0.1 Check for right usage & set up basic Script Variables
+if [ "$#" != "2" ]; then
+
+	echo -e "------------------------------------------------------------------"
+	echo -e " Open SAR Toolkit, version ${OSK_VERSION}"
+	echo -e " Refine the image selection from an OST inventory shapefile"
+	echo -e "------------------------------------------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e "Software dependencies:"
+	echo -e "	- ESA Sentinel Application Platform SNAP"
+	echo -e "	- gdal-bin"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e " Usage: ost_S1_ASF_sort4ts <input file> <AOI/ISO3> <output file> "
+	echo -e ""
+	echo -e " input parameters:"
+	echo -e " input file 	 OST inventory shapefile created by ost_S1_ASF_inventory"
+	echo -e " output file		 OST inventory shapfile"
+	echo -e ""
+	exit 1
+else
+	echo -e "------------------------------------------------------------------"
+	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
+	echo -e " Refine the image selection from an OST inventory shapefile"
+	echo -e "------------------------------------------------------------------"
+
+	# set up initial script variables
+	OST_INV_IN=$(readlink -f $1)
+	AOI=$(readlink -f $2)
+	OST_INV_OUT=$(readlink -f $2)
+
+	PROC_DIR=`dirname $OST_INV_IN`
+  TMP_DIR=${SAR_TMP:-$PROC_DIR/TMP}
+	mkdir -p ${TMP_DIR}
+	# source libs
+	source ${OPENSARKIT}/lib/helpers_source
+
+fi

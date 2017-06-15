@@ -1,0 +1,108 @@
+<graph id="Graph">
+  <version>1.0</version>
+  <node id="Read">
+    <operator>Read</operator>
+    <sources/>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <file>/home/avollrath/Projects/BidiBidi/2016/DATA/102A/20160111-102A/test_sigma.dim</file>
+    </parameters>
+  </node>
+  <node id="Back-Geocoding">
+    <operator>Back-Geocoding</operator>
+    <sources>
+      <sourceProduct refid="Read"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <demName>SRTM 3Sec</demName>
+      <demResamplingMethod>BICUBIC_INTERPOLATION</demResamplingMethod>
+      <externalDEMFile/>
+      <externalDEMNoDataValue>0.0</externalDEMNoDataValue>
+      <resamplingType>BISINC_5_POINT_INTERPOLATION</resamplingType>
+      <maskOutAreaWithoutElevation>true</maskOutAreaWithoutElevation>
+      <outputRangeAzimuthOffset>false</outputRangeAzimuthOffset>
+      <outputDerampDemodPhase>false</outputDerampDemodPhase>
+      <disableReramp>false</disableReramp>
+    </parameters>
+  </node>
+  <node id="Enhanced-Spectral-Diversity">
+    <operator>Enhanced-Spectral-Diversity</operator>
+    <sources>
+      <sourceProduct refid="Back-Geocoding"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <fineWinWidthStr>512</fineWinWidthStr>
+      <fineWinHeightStr>512</fineWinHeightStr>
+      <fineWinAccAzimuth>16</fineWinAccAzimuth>
+      <fineWinAccRange>16</fineWinAccRange>
+      <fineWinOversampling>128</fineWinOversampling>
+      <xCorrThreshold>0.1</xCorrThreshold>
+      <cohThreshold>0.15</cohThreshold>
+      <numBlocksPerOverlap>10</numBlocksPerOverlap>
+      <useSuppliedShifts>false</useSuppliedShifts>
+      <overallAzimuthShift>0.0</overallAzimuthShift>
+      <overallRangeShift>0.0</overallRangeShift>
+    </parameters>
+  </node>
+  <node id="Interferogram">
+    <operator>Interferogram</operator>
+    <sources>
+      <sourceProduct refid="Enhanced-Spectral-Diversity"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <subtractFlatEarthPhase>true</subtractFlatEarthPhase>
+      <srpPolynomialDegree>5</srpPolynomialDegree>
+      <srpNumberPoints>501</srpNumberPoints>
+      <orbitDegree>3</orbitDegree>
+      <includeCoherence>true</includeCoherence>
+      <cohWinAz>10</cohWinAz>
+      <cohWinRg>10</cohWinRg>
+      <squarePixel>true</squarePixel>
+    </parameters>
+  </node>
+  <node id="TopoPhaseRemoval">
+    <operator>TopoPhaseRemoval</operator>
+    <sources>
+      <sourceProduct refid="Interferogram"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <orbitDegree>3</orbitDegree>
+      <demName>SRTM 3Sec</demName>
+      <externalDEMFile/>
+      <externalDEMNoDataValue>0.0</externalDEMNoDataValue>
+      <tileExtensionPercent>100</tileExtensionPercent>
+      <outputTopoPhaseBand>false</outputTopoPhaseBand>
+      <outputElevationBand>false</outputElevationBand>
+    </parameters>
+  </node>
+  <node id="Write">
+    <operator>Write</operator>
+    <sources>
+      <sourceProduct refid="TopoPhaseRemoval"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <file>/home/avollrath/target.dim</file>
+      <formatName>BEAM-DIMAP</formatName>
+    </parameters>
+  </node>
+  <applicationData id="Presentation">
+    <Description/>
+    <node id="Read">
+      <displayPosition x="9.0" y="12.0"/>
+    </node>
+    <node id="Back-Geocoding">
+      <displayPosition x="70.0" y="56.0"/>
+    </node>
+    <node id="Enhanced-Spectral-Diversity">
+      <displayPosition x="159.0" y="96.0"/>
+    </node>
+    <node id="Interferogram">
+      <displayPosition x="341.0" y="141.0"/>
+    </node>
+    <node id="TopoPhaseRemoval">
+      <displayPosition x="416.0" y="192.0"/>
+    </node>
+    <node id="Write">
+      <displayPosition x="536.0" y="251.0"/>
+    </node>
+  </applicationData>
+</graph>

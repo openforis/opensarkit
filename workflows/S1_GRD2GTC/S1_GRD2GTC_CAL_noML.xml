@@ -7,26 +7,10 @@
       <file>${input}</file>
     </parameters>
   </node>
-  <node id="Subset">
-    <operator>Subset</operator>
-    <sources>
-      <sourceProduct refid="Read"/>
-    </sources>
-    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <sourceBands/>
-      <region>600,600,${width},${height}</region>
-      <geoRegion/>
-      <subSamplingX>1</subSamplingX>
-      <subSamplingY>1</subSamplingY>
-      <fullSwath>false</fullSwath>
-      <tiePointGridNames/>
-      <copyMetadata>true</copyMetadata>
-    </parameters>
-  </node>
   <node id="Calibration">
     <operator>Calibration</operator>
     <sources>
-      <sourceProduct refid="Subset"/>
+      <sourceProduct refid="Read"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
       <sourceBands/>
@@ -42,25 +26,10 @@
       <outputBetaBand>true</outputBetaBand>
     </parameters>
   </node>
-  <node id="Terrain-Flattening">
-    <operator>Terrain-Flattening</operator>
-    <sources>
-      <sourceProduct refid="Calibration"/>
-    </sources>
-    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <sourceBands/>
-      <demName>SRTM 3Sec</demName>
-      <demResamplingMethod>BICUBIC_INTERPOLATION</demResamplingMethod>
-      <externalDEMFile/>
-      <externalDEMNoDataValue>0.0</externalDEMNoDataValue>
-      <outputSimulatedImage>false</outputSimulatedImage>
-      <reGridMethod>false</reGridMethod>
-    </parameters>
-  </node>
   <node id="Write">
     <operator>Write</operator>
     <sources>
-      <sourceProduct refid="Terrain-Flattening"/>
+      <sourceProduct refid="Calibration"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
       <file>${output}</file>
@@ -72,14 +41,8 @@
     <node id="Calibration">
       <displayPosition x="176.0" y="103.0"/>
     </node>
-    <node id="Subset">
-      <displayPosition x="107.0" y="68.0"/>
-    </node>
     <node id="Read">
             <displayPosition x="34.0" y="27.0"/>
-    </node>
-    <node id="Terrain-Flattening">
-      <displayPosition x="297.0" y="142.0"/>
     </node>
     <node id="Write">
             <displayPosition x="455.0" y="136.0"/>
