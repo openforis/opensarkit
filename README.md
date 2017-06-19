@@ -15,7 +15,7 @@ For the moment, supported data sets are the ALOS Kyoto & Carbon mosaics and Sent
 OST is developed and tested on Ubuntu 16.04. An installer is available. 
 It can be downlaoded and executed as sudo user (you need an admin password) on the command line by typing:
 ```
-wget https://raw.githubusercontent.com/openforis/opensarkit/master/bins/Install_OFST/installer_ubuntu1604.sh
+wget https://raw.githubusercontent.com/openforis/opensarkit/master/bins/Install_OST/installer_ubuntu1604.sh
 sudo bash installer_ubuntu1604.sh
 ```
 After the installation successfully finished, restart the computer and launch OST via the newly desktop icon present. 
