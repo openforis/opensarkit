@@ -213,6 +213,7 @@ apt-get install --yes --allow-unauthenticated \
 											libgtk2.0-dev \
 											pkg-config \
 											aria2 \
+											curl \
 											unrar \
 											p7zip-full \
 											parallel \
