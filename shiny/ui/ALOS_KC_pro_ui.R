@@ -98,9 +98,9 @@ tabItem(tabName = "alos_kc_pro",
               #----------------------------------------------------------------------------------
               # action buttons
               div(style="display: inline-block;vertical-align:top; width: 135px;",withBusyIndicatorUI(
-                actionButton("kc_pro_pro_btn", "Start download"))),
+                actionButton("kc_pro_pro_btn", "Start processing"))),
               div(style="display: inline-block;vertical-align:top; width: 125px;", withBusyIndicatorUI(
-                actionButton("kc_pro_abort_btn", "Abort download")
+                actionButton("kc_pro_abort_btn", "Abort processing")
               )),
               #"Output:",
               textOutput("process_KC")
