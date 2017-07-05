@@ -113,8 +113,8 @@ duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duratio
 NR_OF_TILES=$(ls -1 *_${YEAR_SHORT}_*tar.gz | wc -l)
 
 # check if ramdisk can be used
-set_tmp_KC ${NR_OF_TILES} | tee -a ${OUT_DIR}/.kc_pro_progress
-
+set_tmp_KC ${NR_OF_TILES} >> ${OUT_DIR}/.kc_pro_progress
+set_tmp_KC ${NR_OF_TILES}
 #------------------------------------------------------------------------
 
 #----------------------------------------------------------------------
