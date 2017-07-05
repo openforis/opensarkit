@@ -68,111 +68,315 @@ output$s1_g2r_inputdir = renderPrint({
 #---------------------------------------------------------------------------
 
 #---------------------------------------------------------------------------
-# Processing functions
-print_s1_g2r = eventReactive(input$s1_g2r_process, {
-  
-  # wrapper for busy indicator
-  withBusyIndicatorServer("s1_g2r_process", {
-  
-    # original file choice
-    if (input$s1_g2r_input_type == "file"){
+# reactive values and observe events
+# we create some values for reactive behaviour
+s1_g2r_values <- reactiveValues(s1_g2r_pro = 0, s1_g2r_abort = 0, s1_g2r_log = 0)
 
-      # empty input file message
-      if(is.null(input$s1_g2r_zip)){
-        stop("Choose a Sentinel-1 zip file")
-      } 
+# we create the reactive behaviour
+observeEvent(input$s1_g2r_pro_btn, {
+  s1_g2r_values$s1_g2r_pro = 1
+  s1_g2r_values$s1_g2r_abort = 0
+  s1_g2r_values$s1_g2r_log = 1
+})
+
+observeEvent(input$s1_g2r_abort_btn, {
+  s1_g2r_values$s1_g2r_pro = 0
+  s1_g2r_values$s1_g2r_abort = 1
+})
+
+#observeEvent(input$s1_g2r_log_btn, {
+#  s1_g2r_values$s1_g2r_log = 1
+#})
+#---------------------------------------------------------------------------
+
+#---------------------------------------------------------------------------
+# a function that returns the currrent state based on pid and exit file
+s1_g2r_get_state = function() {
+  
+  if(!exists("s1_g2r_args"))
+    return("INITIAL")
+  else {
+    # get the pid
+    if (input$s1_g2r_input_type == "s1_g2r_file")
+      s1_g2r_pid_cmd=paste("-ef | grep \"sh -c ( ost_S1_grd2rtc", s1_g2r_args, "\" | grep -v grep | awk '{print $2}'")
+  
+    if (input$s1_g2r_input_type == "s1_g2r_folder")
+      s1_g2r_pid_cmd=paste("-ef | grep \"sh -c ( ost_S1_grd2rtc_bulk", s1_g2r_args, "\" | grep -v grep | awk '{print $2}'")
+  
+    s1_g2r_pid = as.integer(system2("ps", args = s1_g2r_pid_cmd, stdout = TRUE))
+  }
+
+  if (length(s1_g2r_pid) > 0)
+    return("RUNNING")
+  
+  if (file.exists(s1_g2r_exitfile))
+    return("TERMINATED")
+  
+  return("INITIAL")
+} 
+#---------------------------------------------------------------------------
+
+#---------------------------------------------------------------------------
+# get the input arguments from the GUI
+s1_g2r_get_args = function(){
+  
+  # original file choice
+  if (input$s1_g2r_input_type == "s1_g2r_file"){
     
-      # empty output directy message
-      else if(is.null(input$s1_g2r_outdir)){
-        stop("Choose an output folder")
+    # empty input file message
+    if(is.null(input$s1_g2r_zip)){
+      s1_g2r_dir_message=" No Sentinel-1 product selected"
+      s1_g2r_js_string <- 'alert("Attention");'
+      s1_g2r_js_string <- sub("Attention",s1_g2r_dir_message,s1_g2r_js_string)
+      session$sendCustomMessage(type='jsCode', list(value = s1_g2r_js_string))
+      s1_g2r_values$s1_g2r_pro = 0
+      s1_g2r_values$s1_g2r_log = 0
+      return("INPUT_FAIL")
+    } 
+    
+    # empty output directy message
+    else if(is.null(input$s1_g2r_outdir)){
+      s1_g2r_dir_message=" No output folder selected"
+      s1_g2r_js_string <- 'alert("Attention");'
+      s1_g2r_js_string <- sub("Attention",s1_g2r_dir_message,s1_g2r_js_string)
+      session$sendCustomMessage(type='jsCode', list(value = s1_g2r_js_string))
+      s1_g2r_values$s1_g2r_pro = 0
+      s1_g2r_values$s1_g2r_log = 0
+      return("INPUT_FAIL")
+    }
+    
+    # processing
+    else {
+      
+      volumes = c('User directory'=Sys.getenv("HOME"))
+      s1_g2r_df = parseFilePaths(volumes, input$s1_g2r_zip)
+      s1_g2r_infile = as.character(s1_g2r_df[,"datapath"])
+      s1_g2r_outdir = parseDirPath(volumes, input$s1_g2r_outdir)
+      
+      if (input$s1_g2r_res_file == "med_res"){
+        s1_g2r_resolution = "MED_RES" 
+      } 
+      
+      else if (input$s1_g2r_res_file == "full_res"){
+        s1_g2r_resolution = "HI_RES" 
       }
   
-      # processing
-      else {
+      # single file arguments     
+      s1_g2r_args <<- paste(s1_g2r_infile, s1_g2r_outdir, s1_g2r_resolution)
+      
+      # get the dir of the outfile
+      s1_g2r_dir <<- dirname(s1_g2r_infile)
+      
+      # create a exitfile path and export as global variable
+      s1_g2r_exitfile <<- paste(s1_g2r_dir, "/.exitfile", sep="")
+      
+      s1_g2r_tmp <<- paste(s1_g2r_dir, "/TMP")
+      
+      # return new state
+      return("NOT_STARTED")
+    } 
     
-        volumes = c('User directory'=Sys.getenv("HOME"))
-        df = parseFilePaths(volumes, input$s1_g2r_zip)
-        INFILE = as.character(df[,"datapath"])
-        OUTDIR = parseDirPath(volumes, input$s1_g2r_outdir)
+  } 
+  
+  else if (input$s1_g2r_input_type == "s1_g2r_folder"){
     
-        if (input$s1_g2r_res_file == "med_res"){
-          RESOLUTION = "MED_RES" 
-        } 
+    if (is.null(input$s1_g2r_inputdir)){
+      s1_g2r_dir_message=" No project directory selected"
+      s1_g2r_js_string <- 'alert("Attention");'
+      s1_g2r_js_string <- sub("Attention",s1_g2r_dir_message,s1_g2r_js_string)
+      session$sendCustomMessage(type='jsCode', list(value = s1_g2r_js_string))
+      s1_g2r_values$s1_g2r_pro = 0
+      s1_g2r_values$s1_g2r_log = 0
+      return("INPUT_FAIL")
+      
+    }
     
-        else if (input$s1_g2r_res_file == "full_res"){
-          RESOLUTION = "HI_RES" 
-        }
+    else {
+      volumes = c('User directory'=Sys.getenv("HOME"))
+      s1_g2r_dir <<- parseDirPath(volumes, input$s1_g2r_inputdir)
+      
+      if (input$s1_g2r_res_folder == "med_res"){
+        s1_g2r_resolution = "MED_RES" 
+      } 
+      
+      else if (input$s1_g2r_res_folder == "full_res"){
+        s1_g2r_resolution = "HI_RES" 
+      }
+      
+      if (input$s1_g2r_mode == "0"){
+        MODE = "0" 
+        TS_PROC = "0"
+      } 
+      
+      else if (input$s1_g2r_mode == "1"){
+        MODE = "1"
+        TS_PROC = input$s1_g2r_ts 
+      }
+ 
+      # set arguments as global variable
+      s1_g2r_args <<- paste(s1_g2r_dir, s1_g2r_resolution, MODE, TS_PROC)     
+      
+      # create a exitfile path and export as global variable
+      s1_g2r_exitfile <<- paste(s1_g2r_dir, "/.exitfile", sep="")
+      
+      # return new state
+      return("NOT_STARTED")
+    }
+  }
+}
+
+#---------------------------------------------------------------------------
+# start function that triggers the processing 
+s1_g2r_start = function() {
     
-        s1_g2r_message="Processing started (This will take a while.)"
+    # wrapper for busy indicator
+    withBusyIndicatorServer("s1_g2r_pro_btn", {
+      
+      if (input$s1_g2r_input_type == "s1_g2r_file"){
+        s1_g2r_message="Processing started (This can take a moment)"
         js_string_s1_g2r <- 'alert("Processing");'
         js_string_s1_g2r <- sub("Processing",s1_g2r_message,js_string_s1_g2r)
         session$sendCustomMessage(type='jsCode', list(value = js_string_s1_g2r))
-      
-        ARG_PROC=paste(INFILE, OUTDIR, RESOLUTION)
-        print(paste("ost_S1_grd2rtc", ARG_PROC))
-        system(paste("ost_S1_grd2rtc", ARG_PROC))
-      
-        s1_g2r_fin_message="Processing finished"
-        js_string_s1_g2r_fin <- 'alert("Processing");'
-        js_string_s1_g2r_fin <- sub("Processing",s1_g2r_fin_message,js_string_s1_g2r_fin)
-        session$sendCustomMessage(type='jsCode', list(value = js_string_s1_g2r_fin))
-      } 
-    
-    } 
-    
-    else if (input$s1_g2r_input_type == "folder"){
-
-      if (is.null(input$s1_g2r_inputdir)){
-        stop("Choose a folder")
+        
+        # run processing
+        #print(paste("ost_S1_grd2rtc", s1_g2r_args))
+        cmd_args = paste("-c \"( ost_S1_grd2rtc", s1_g2r_args, "; echo $? >", s1_g2r_exitfile, ")\"")
+        print(cmd_args)
+        system2("/bin/bash", args = cmd_args, wait = FALSE)
+        #system(paste("( ost_S1_grd2rtc", s1_g2r_args, "; echo $? >", s1_g2r_exitfile, ")"), wait = FALSE, intern=FALSE)
+        
+        return("RUNNING")
       }
-  
-      else {
-        volumes = c('User directory'=Sys.getenv("HOME"))
-        PROCDIR = parseDirPath(volumes, input$s1_g2r_inputdir)
-    
-        if (input$s1_g2r_res_folder == "med_res"){
-          RESOLUTION = "MED_RES" 
-        } 
-    
-        else if (input$s1_g2r_res_folder == "full_res"){
-          RESOLUTION = "HI_RES" 
-        }
-    
-        if (input$s1_g2r_mode == "0"){
-          MODE = "0" 
-          TS_PROC = "0"
-        } 
-        
-        else if (input$s1_g2r_mode == "1"){
-          MODE = "1"
-          TS_PROC = input$s1_g2r_ts 
-        }
-        
+      
+      if (input$s1_g2r_input_type == "s1_g2r_folder"){
         s1_g2r_message="Processing started (This can take a considerable amount of time, dependent on the number of images to be processed)"
         js_string_s1_g2r <- 'alert("Processing");'
         js_string_s1_g2r <- sub("Processing",s1_g2r_message,js_string_s1_g2r)
         session$sendCustomMessage(type='jsCode', list(value = js_string_s1_g2r))
-        
-        ARG_PROC=paste(PROCDIR, RESOLUTION, MODE, TS_PROC)
-        print(paste("ost_S1_grd2rtc_bulk", ARG_PROC))
-        system(paste("ost_S1_grd2rtc_bulk", ARG_PROC),intern=TRUE)
-    
-        s1_g2r_fin_message="Processing finished"
-        js_string_s1_g2r_fin <- 'alert("Processing");'
-        js_string_s1_g2r_fin <- sub("Processing",s1_g2r_fin_message,js_string_s1_g2r_fin)
-        session$sendCustomMessage(type='jsCode', list(value = js_string_s1_g2r_fin))
-      } 
   
-    } 
-    
-  })
-})
+        # run processing
+        print(paste("ost_S1_grd2rtc_bulk", s1_g2r_args))
+        cmd_args = paste("-c (ost_S1_grd2rtc_bulk", s1_g2r_args, "; echo $? >", s1_g2r_exitfile, ")")
+        print(cmd_args)
+        #system2("/bin/bash", args = cmd_args, wait = FALSE)
+        system(paste("( ost_S1_grd2rtc_bulk", s1_g2r_args, "; echo $? >", s1_g2r_exitfile, ")"), wait = FALSE, intern=FALSE)
+        
+        return("RUNNING")
+      }
+    })
+}
 
+#---------------------------------------------------------------------------
+# Termination Function (what to do when script stopped)
+s1_g2r_term = function() {
+  
+  # get the exit state of the script
+  s1_g2r_status = readLines(s1_g2r_exitfile)
+  
+  # we want to remove the exit file for the next run
+  unlink(s1_g2r_exitfile, force = TRUE)
+  
+  # message when all downloads finished/failed
+  if ( s1_g2r_status != 0 ){
+    s1_g2r_end_message="Processing failed. Check the Progress Monitor."
+    s1_g2r_js_string <- 'alert("SUCCESS");'
+    s1_g2r_js_string <- sub("SUCCESS",s1_g2r_end_message,s1_g2r_js_string)
+    session$sendCustomMessage(type='jsCode', list(value = s1_g2r_js_string))
+  }
+  
+  else {
+    # Pop-up message for having finished data inventory
+    s1_g2r_fin_message="Processing finished"
+    js_string_s1_g2r_fin <- 'alert("Processing");'
+    js_string_s1_g2r_fin <- sub("Processing",s1_g2r_fin_message,js_string_s1_g2r_fin)
+    session$sendCustomMessage(type='jsCode', list(value = js_string_s1_g2r_fin))
+  }
+ 
+   # reset button to 0 for enable re-start
+  s1_g2r_values$s1_g2r_pro = 0
+}  
+#---------------------------------------------------------------------------
+
+
+#---------------------------------------------------------------------------
+# main function triggering processing and controlling state
 output$processS1_G2R = renderText({
-  print_s1_g2r()
+  
+  # trigger processing when action button clicked
+  if(s1_g2r_values$s1_g2r_pro) {
+    
+    #run the state function
+    s1_g2r_state = s1_g2r_get_state() # Can be NOT_STARTED, RUNNING, TERMINATED
+    
+    if (s1_g2r_state == "INITIAL"){
+      s1_g2r_state = s1_g2r_get_args()
+      unlink(paste(s1_g2r_dir, "/.s1_g2r_progress"))
+      s1_g2r_values$s1_g2r_log = 0
+      }
+    
+    if (s1_g2r_state == "NOT_STARTED"){
+      s1_g2r_state = s1_g2r_start()
+      Sys.sleep(2)
+      s1_g2r_values$s1_g2r_log = 1
+    }
+    
+    if (s1_g2r_state == "RUNNING")
+      invalidateLater(2000, session = getDefaultReactiveDomain())
+    
+    if (s1_g2r_state == "TERMINATED")
+      s1_g2r_term()
+    
+    print("")
+  } # close value process    
+  
+  if(s1_g2r_values$s1_g2r_abort) {
+    
+    # delete the exit file
+    unlink(s1_g2r_exitfile)
+    
+    if (input$s1_g2r_input_type == "s1_g2r_file"){
+      print(paste("ost_cancel_proc \"sh -c ( ost_S1_grd2rtc", s1_g2r_args, "\"", paste(s1_g2r_dir, "/TMP", sep = "")))
+      system(paste("ost_cancel_proc \"sh -c ( ost_S1_grd2rtc", s1_g2r_args, "\"", paste(s1_g2r_dir, "/TMP", sep = "")))
+    }
+    
+    if (input$s1_g2r_input_type == "s1_g2r_folder"){
+      print(paste("ost_cancel_proc \"sh -c ( ost_S1_grd2rtc_bulk", s1_g2r_args, "\"", paste(s1_g2r_dir, "/TMP", sep = "")))
+      system(paste("ost_cancel_proc \"sh -c ( ost_S1_grd2rtc_bulk", s1_g2r_args, "\"", paste(s1_g2r_dir, "/TMP", sep = "")))
+    }
+    
+    s1_g2r_dir_message="User interruption"
+    s1_g2r_js_string <- 'alert("Attention");'
+    s1_g2r_js_string <- sub("Attention",s1_g2r_dir_message,s1_g2r_js_string)
+    session$sendCustomMessage(type='jsCode', list(value = s1_g2r_js_string))
+    print("")
+  }
+  
+}) # close render function
+
+#---------------------------------------------------------------------------
+# Progress monitor function
+output$s1_g2r_progress = renderText({
+  
+  if(s1_g2r_values$s1_g2r_log) {
+    
+    s1_g2r_progress_file=file.path(s1_g2r_dir, "/.s1_g2r_progress")
+    
+    if(file.exists(s1_g2r_progress_file)){
+      NLI = as.integer(system2("wc", args = c("-l", s1_g2r_progress_file," | awk '{print $1}'"), stdout = TRUE))
+      NLI = NLI + 1 
+      invalidateLater(2000)
+      paste(readLines(s1_g2r_progress_file, n = NLI, warn = FALSE), collapse = "\n")
+    }
+    else{
+      print("No process seems to be running")
+    }
+  }  
 })
+#---------------------------------------------------------------------------
 
 
+#---------------------------------------------------------------------------
+# Demo section
 print_s1_g2ts_test = eventReactive(input$S1_ts_testdata_download, {
   
   # wrapper for busy indicator
@@ -190,3 +394,4 @@ print_s1_g2ts_test = eventReactive(input$S1_ts_testdata_download, {
 output$download_Demo_Jena = renderText({
   print_s1_g2ts_test()
 })
+#---------------------------------------------------------------------------

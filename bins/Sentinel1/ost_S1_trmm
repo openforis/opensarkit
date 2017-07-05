@@ -25,7 +25,7 @@
 if [ "$#" != "1" ]; then
 
 	echo -e "------------------------------------------------------------------"
-	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
+	echo -e " Open SAR Toolkit, version ${OSK_VERSION}"
 	echo -e " Create TRMM precipitation maps for Sentinel-1 acquisitions"
 	echo -e "------------------------------------------------------------------"
 	echo -e ""
@@ -43,7 +43,7 @@ if [ "$#" != "1" ]; then
 	exit 1
 else
 	echo -e "------------------------------------------------------------------"
-	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
+	echo -e " Open SAR Toolkit, version ${OSK_VERSION}"
 	echo -e " Create TRMM precipitation maps for Sentinel-1 acquisitions"
 	echo -e "------------------------------------------------------------------"
 

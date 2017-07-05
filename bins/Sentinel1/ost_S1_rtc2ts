@@ -20,20 +20,17 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 # OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+# source OST libs
+source ${OPENSARKIT}/lib/helpers_source
+
 #-------------------------------------------------------------------------------------------
 # 	0.1 Check for right usage & set up basic Script Variables
 if [ "$#" != "3" ]; then
 
-	echo -e "------------------------------------------------------------------"
-	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
-	echo -e " Create timeseries stack and multi-temporal statistics from preprocessed single scenes"
-	echo -e "------------------------------------------------------------------"
-	echo -e ""
-	echo -e "----------------------------------"
-	echo -e "Software dependencies:"
-	echo -e "	- ESA Sentinel Application Platform SNAP"
-	echo -e "	- gdal-bin"
-	echo -e "----------------------------------"
+	echo -e "------------------------------------------------------------------------"
+	echo -e " Open SAR Toolkit, version ${OST_VERSION}"
+	echo -e " Create timeseries stack and multi-temporal statistics from RTC products"
+	echo -e "------------------------------------------------------------------------"
 	echo -e ""
 	echo -e " Usage: ost_S1_rtc2timeseries <input directory> <datatype> <processing option>"
 	echo -e ""
@@ -51,14 +48,8 @@ if [ "$#" != "3" ]; then
 	echo -e "			  3: Timescan only"
 	echo -e ""
 	exit 1
-else
-	echo -e "------------------------------------------------------------------"
-	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
-	echo -e " Create timeseries stack and multi-temporal statistics from preprocessed single scenes"
-	echo -e "------------------------------------------------------------------"
 
-	# source OST libs
-	source ${OPENSARKIT}/lib/helpers_source
+else
 
 	# set up initial script variables
 	PROC_DIR=$(readlink -f $1)
@@ -66,7 +57,12 @@ else
 	rm -rf ${TMP_DIR}
 	mkdir -p ${TMP_DIR}
 
-	if ls ${PROC_DIR}/../.AOI/aoi*.shp 2>&1; then
+	echo -e "------------------------------------------------------------------------" | tee ${PROC_DIR}/.s1_rtc2ts_progress
+	echo -e " Open SAR Toolkit, version ${OST_VERSION}" | tee -a ${PROC_DIR}/.s1_rtc2ts_progress
+	echo -e " Create timeseries stack and multi-temporal statistics from RTC products" | tee -a ${PROC_DIR}/.s1_rtc2ts_progress
+	echo -e "------------------------------------------------------------------------" | tee -a ${PROC_DIR}/.s1_rtc2ts_progress
+
+	if ls ${PROC_DIR}/../.AOI/aoi*.shp > ${TMP_DIR}/foo 2>&1; then
 		AOI=$(ls -1 ${PROC_DIR}/../.AOI/aoi*.shp | awk NR==1)
 	else
 		AOI="dummyfoo"
@@ -90,16 +86,16 @@ j=1
 for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 
 	if [ ${NR_OF_TRACKS} -eq 1 ];then
-		echo " Info: Processing Track: `basename ${TRACK}`"
+		echo " Info: Processing Track: `basename ${TRACK}`" | tee -a ${PROC_DIR}/.s1_rtc2ts_progress
 	else
-		echo " Info: Processing Track: `basename ${TRACK}` ($j/${NR_OF_TRACKS}) "
+		echo " Info: Processing Track: `basename ${TRACK}` ($j/${NR_OF_TRACKS}) " | tee -a ${PROC_DIR}/.s1_rtc2ts_progress
 	fi
 
-	echo " Info: Entering Track: ${TRACK}"
+	echo " Info: Entering Track: ${TRACK}" | tee -a ${PROC_DIR}/.s1_rtc2ts_progress
 	cd ${TRACK}
 
 	NR_OF_ACQ=`ls -1 -d 20* | wc -l`
-	echo " Info: Found ${NR_OF_ACQ} acquisitions for this swath"
+	echo " Info: Found ${NR_OF_ACQ} acquisitions for this swath" | tee -a ${PROC_DIR}/.s1_rtc2ts_progress
 
 	STACK=${PWD}
 	LOG_DIR=${PWD}/LOG
@@ -107,9 +103,9 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 	mkdir -p ${LOG_DIR}
 	mkdir -p ${TMP_DIR_TRACK}
 
-	FILELIST=$(ls -1 ${PWD}/*/*.RTC.dim | tr '\n' ',' | rev | cut -c 2- | rev)
-	if [[ `ls -1 ${PWD}/*/*.RTC.data/*VH*img 2>/dev/null | wc -l` -eq ${NR_OF_ACQ} ]];then
-		s1_timeseries ${FILELIST} ${AOI} ${STACK} ${ODATATYPE} VH ${TMP_DIR_TRACK} ${LOG_DIR}
+	FILELIST=$(ls -1 ${PWD}/*/*.*TC.dim | tr '\n' ',' | rev | cut -c 2- | rev)
+	if [[ `ls -1 ${PWD}/*/*.*TC.data/*VH*img 2>/dev/null | wc -l` -eq ${NR_OF_ACQ} ]];then
+		s1_timeseries ${FILELIST} ${AOI} ${STACK} ${ODATATYPE} VH ${TMP_DIR_TRACK} ${LOG_DIR} | tee -a ${PROC_DIR}/.s1_rtc2ts_progress
 
 
 		if [[ $3 != 2 ]];then
@@ -135,15 +131,15 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 	                                        ${STACK}/Timescan/09_Gamma0.VH.std.tif ${STACK}/Timescan/10_Gamma0.VH.cov.tif >> ${LOG_DIR}/log_mt_stacking 2>&1
 
 			SECONDS=0
-			echo -ne " Create a kmz file for Google Earth Visualization ..." &&
-			gdalbuildvrt -separate -srcnodata 0 ${TMP_DIR_TRACK}/tmp_rgb.vrt ${STACK}/Timescan/01_Gamma0.VV.avg.tif ${STACK}/Timescan/06_Gamma0.VH.avg.tif ${STACK}/Timescan/09_Gamma0.VH.std.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+			echo -ne " Create a kmz file for Google Earth Visualization ..." | tee -a ${PROC_DIR}/.s1_rtc2ts_progress
+			gdalbuildvrt -separate -srcnodata 0 ${TMP_DIR_TRACK}/tmp_rgb.vrt ${STACK}/Timescan/01_Gamma0.VV.avg.tif ${STACK}/Timescan/06_Gamma0.VH.avg.tif ${STACK}/Timescan/09_Gamma0.VH.std.tif >> ${LOG_DIR}/log_mt_stacking 2>&1
 			gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${TMP_DIR_TRACK}/tmp_rgb.vrt ${TMP_DIR_TRACK}/RGB.8bit.tif >> ${LOG_DIR}/log_mt_stacking 2>&1
 			gdal_translate -of KMLSUPEROVERLAY -co format=JPEG ${TMP_DIR_TRACK}/RGB.8bit.tif ${STACK}/Timescan/RGB.timescan.kmz >> ${LOG_DIR}/log_mt_stacking 2>&1
-			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_rtc2ts_progress
 		fi
 
 	else
-		s1_timeseries ${FILELIST} ${AOI} ${STACK} ${ODATATYPE} VV ${TMP_DIR_TRACK} ${LOG_DIR}
+		s1_timeseries ${FILELIST} ${AOI} ${STACK} ${ODATATYPE} VV ${TMP_DIR_TRACK} ${LOG_DIR} | tee -a ${PROC_DIR}/.s1_rtc2ts_progress
 
 		if [[ $3 != 2 ]];then
 			mkdir -p ${STACK}/Timescan
@@ -160,11 +156,11 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 
 
 			SECONDS=0
-			echo -ne " Create a kmz file for Google Earth Visualization ..." &&
-			gdalbuildvrt -separate -srcnodata 0 ${TMP_DIR_TRACK}/tmp_rgb.vrt ${STACK}/Timescan/02_Gamma0.VV.max.tif ${STACK}/Timescan/03_Gamma0.VV.min.tif ${STACK}/Timescan/04_Gamma0.VV.std.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+			echo -ne " Create a kmz file for Google Earth Visualization ..."  | tee -a ${PROC_DIR}/.s1_rtc2ts_progress
+			gdalbuildvrt -separate -srcnodata 0 ${TMP_DIR_TRACK}/tmp_rgb.vrt ${STACK}/Timescan/02_Gamma0.VV.max.tif ${STACK}/Timescan/03_Gamma0.VV.min.tif ${STACK}/Timescan/04_Gamma0.VV.std.tif >> ${LOG_DIR}/log_mt_stacking 2>&1
 			gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${TMP_DIR_TRACK}/tmp_rgb.vrt ${TMP_DIR_TRACK}/RGB.8bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
 			gdal_translate -of "KMLSUPEROVERLAY" -co "format=JPEG" ${TMP_DIR_TRACK}/RGB.8bit.tif ${STACK}/Timescan/RGB.timescan.kmz >> ${LOG_MT}/log_mt_stacking 2>&1
-			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_rtc2ts_progress
 		fi
 	fi
 

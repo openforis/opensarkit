@@ -14,68 +14,69 @@ tabItem(tabName = "alos_kc_fnf",
               
               # Title                     
               title = "Processing Panel", status = "success", solidHeader= TRUE,
-              tags$h4("ALOS K&C mosaic preparation"),
-              if ( nchar(Sys.getenv('SEPAL')) > 0){
-                span(p("Warning! Make sure you have enough free space. During the processing, a lot of intermediate files have to be created,
-                        which, dependent on your AOI, may take up a considerable amount of disk space. For country wide processing make sure to have at least 100 GB of free disk space available. 
-                        For countries of the size of the Democratic Republic of Congo, Ethiopia or Bolivia, even 200 GB and more might be necessary."), style='color:red')
-              },
+              tags$h4("ALOS K&C FNF map - download & preparation"),
+              #if ( nchar(Sys.getenv('SEPAL')) > 0){
+              #  span(p("Warning! Make sure you have enough free space. During the processing, a lot of intermediate files have to be created,
+              #          which, dependent on your AOI, may take up a considerable amount of disk space. For country wide processing make sure to have at least 100 GB of free disk space available. 
+              #          For countries of the size of the Democratic Republic of Congo, Ethiopia or Bolivia, even 200 GB and more might be necessary."), style='color:red')
+              #},
               hr(),
+              #----------------------------------------------------------------------------------
+              
+              #----------------------------------------------------------------------------------
               tags$b("Project directory"),
-              p("The hereby selected directory defines the greater project folder. It should refer to the same folder which was
-                 chosen for the download of the data tiles."),
+              p("The hereby selected directory defines the greater project folder, where all data will be stored."),
               shinyDirButton('kc_fnf_directory', 'Browse', 'Select a folder'),
               br(),br(),
-              verbatimTextOutput("kc_fnf_project_dir"),
-              hr(),
+              verbatimTextOutput("kc_fnf_project_dir"),hr(),
+              #----------------------------------------------------------------------------------
+              
+              #----------------------------------------------------------------------------------
               tags$b("Area of Interest"),
               p("This parameter will define the spatial extent of the processing routine. All final products will be clipped by this file. 
                  In order to assure successful processing use the same file as for the earlier download routine. "),
               # AOI choice
-              radioButtons("KC_fnf_AOI", "",
+              radioButtons("kc_fnf_AOI", "",
                            c("Country" = "country",
                              "Shapefile (on Server/local)" = "AOI_shape_local",
                              "Shapefile (upload zipped archive)" = "AOI_zip_upload")),
               
               conditionalPanel(
-                 "input.KC_fnf_AOI == 'country'",
-                 selectInput(
-                    inputId = 'kc_fnf_countryname', 
-                    label= '', 
-                    choices = dbGetQuery(
-                       dbConnect(SQLite(),dbname=Sys.getenv("OST_DB")),
-                       sprintf("SELECT name FROM %s WHERE iso3 <> -99 ORDER BY name ASC", "countries")), 
-                    selected=NULL)
+                "input.kc_fnf_AOI == 'country'",
+                selectInput(
+                  inputId = 'kc_fnf_countryname', 
+                  label= '', 
+                  choices = dbGetQuery(
+                    dbConnect(SQLite(),dbname=Sys.getenv("OST_DB")),
+                    sprintf("SELECT name FROM %s WHERE iso3 <> -99 ORDER BY name ASC", "countries")), 
+                  selected=NULL)
               ),
               
               conditionalPanel(
-                 "input.KC_fnf_AOI == 'AOI_shape_local'",
-                 #div(style="display:inline-block",shinyFilesButton("shapefile","Choose file","Choose one or more files",FALSE)),
-                 #div(style="display:inline-block",textOutput("filepath"))
-                 shinyFilesButton("kc_fnf_shapefile","Browse","Select a shapefile",FALSE),
-                 br(),
-                 br(),
-                 verbatimTextOutput("kc_fnf_filepath")
+                "input.kc_fnf_AOI == 'AOI_shape_local'",
+                shinyFilesButton("kc_fnf_shapefile","Browse","Select a shapefile",FALSE),br(),br(),
+                verbatimTextOutput("kc_fnf_filepath")
               ),
               
               conditionalPanel(
-                 "input.KC_fnf_AOI == 'AOI_zip_upload'",
-                 fileInput('kc_fnf_zipfile_path', label = 'Browse',accept = c(".zip"))
-              ),
+                "input.kc_fnf_AOI == 'AOI_zip_upload'",
+                fileInput('kc_fnf_zipfile_path', label = 'Browse',accept = c(".zip"))
+              ),hr(),
+              #----------------------------------------------------------------------------------
               
-              hr(),
-              
+              #----------------------------------------------------------------------------------
               tags$b("Year"),
               p("Select the year for which the downloaded data should be processed. Make sure to have downloaded the corresponding tiles first."),
               selectInput("kc_fnf_year","",c(
-                 "2007" = "2007",
-                 "2008" = "2008",
-                 "2009" = "2009",
-                 "2010" = "2010",
-                 "2015" = "2015",
-                 "2016" = "2016")),                   
-              hr(),
+                "2007" = "2007",
+                "2008" = "2008",
+                "2009" = "2009",
+                "2010" = "2010",
+                "2015" = "2015",
+                "2016" = "2016")),hr(),
+              #----------------------------------------------------------------------------------
               
+              #----------------------------------------------------------------------------------
               tags$b("Provide your ALOS K&C username and password."),
               p("If you are not in possess of a user account you can create one ",
                 a(href = "http://www.eorc.jaxa.jp/ALOS/en/palsar_fnf/registration.htm", "here",".")),
@@ -85,15 +86,19 @@ tabItem(tabName = "alos_kc_fnf",
               ),
               passwordInput(inputId = "kc_fnf_piwo",
                             label = "Password",
-                            value = "Type in your password"),
-              hr(),
+                            value = "Type in your password"),hr(),
+              #----------------------------------------------------------------------------------
               
-              withBusyIndicatorUI(
-                actionButton("kc_fnf_process", "Download & Prepare")
-              ),
-              br(),
+              #----------------------------------------------------------------------------------
+              # action buttons
+              div(style="display: inline-block;vertical-align:top; width: 135px;",withBusyIndicatorUI(
+                actionButton("kc_fnf_pro_btn", "Start download"))),
+              div(style="display: inline-block;vertical-align:top; width: 125px;", withBusyIndicatorUI(
+                actionButton("kc_fnf_abort_btn", "Abort download")
+              )),
               #"Output:",
               textOutput("process_KC_fnf")
+              #----------------------------------------------------------------------------------
            ), # close box
            #----------------------------------------------------------------------------------
            
@@ -104,7 +109,10 @@ tabItem(tabName = "alos_kc_fnf",
               title = "Info Panel", status = "success", solidHeader= TRUE,
               
               tabBox(width = 700,
-                     
+                     tabPanel("Progress Monitor",
+                              tags$h4("Monitoring the progress of ongoing processing"),hr(),
+                              verbatimTextOutput("kc_fnf_progress")
+                     ),
                      tabPanel("General Info",
                               tags$h4("The global Forest/Non-Forest maps"),
                               hr(),

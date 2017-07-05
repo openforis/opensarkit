@@ -317,7 +317,7 @@
       <sourceProduct refid="TOPSAR-Merge"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <sourceBands>i_ifg_VV_12Apr2016_24Apr2016,q_ifg_VV_12Apr2016_24Apr2016,coh_VV_12Apr2016_24Apr2016,Phase_ifg_VV_12Apr2016_24Apr2016</sourceBands>
+      <sourceBands>i_ifg_VV_12Apr2016_24Apr2016,q_ifg_VV_12Apr2016_24Apr2016,coh_VV_12Apr2016_24Apr2016,Phase_ifg_VV_12Apr2016_24Apr2016  </sourceBands>
       <nRgLooks>8</nRgLooks>
       <nAzLooks>2</nAzLooks>
       <outputIntensity>false</outputIntensity>

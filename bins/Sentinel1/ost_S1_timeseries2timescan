@@ -1,7 +1,7 @@
 #! /bin/bash
 
 # The MIT License (MIT)
-# Copyright (c) 2016 Andreas Vollrath
+# written by Andreas Vollrath, 2017
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,12 +20,14 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 # OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+# source OST libs
+source ${OPENSARKIT}/lib/helpers_source
 #-------------------------------------------------------------------------------------------
 # 	0.1 Check for right usage & set up basic Script Variables
 if [ "$#" != "4" ]; then
 
 	echo -e "------------------------------------------------------------------"
-	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
+	echo -e " Open SAR Toolkit, version ${OST_VERSION}"
 	echo -e " Create timescan layers from a timeseries stack "
 	echo -e "------------------------------------------------------------------"
 	echo -e ""
@@ -46,14 +48,8 @@ if [ "$#" != "4" ]; then
 	echo -e "			  2: Percentiles (90th, 10th, Difference 90th-10th)"
 	echo -e ""
 	exit 1
-else
-	echo -e "------------------------------------------------------------------"
-	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
-	echo -e " Create timeseries stack and multi-temporal statistics from preprocessed single scenes"
-	echo -e "------------------------------------------------------------------"
 
-	# source OST libs
-	source ${OPENSARKIT}/lib/helpers_source
+else
 
 	# set up initial script variables
 	TS_STACK=$(readlink -f $1)
@@ -61,7 +57,13 @@ else
 	PREFIX=$3
 	TS_MODE=$4
 
+	echo -e "--------------------------------------------------------------------------------------" | tee ${OUT_DIR}/.s1_ts2tscan_progress
+	echo -e " Open SAR Toolkit, version ${OST_VERSION}"
+	echo -e " Create timeseries stack and multi-temporal statistics from preprocessed single scenes" | tee -a ${OUT_DIR}/.s1_ts2tscan_progress
+	echo -e "--------------------------------------------------------------------------------------" | tee -a ${OUT_DIR}/.s1_ts2tscan_progress
 
 fi
 
-ost_mt_metrics.py -i ${TS_STACK} -o ${OUT_DIR}/${PREFIX} -t ${TS_MODE} -r yes
+echo -ne " Calculating the timescan layers ..." | tee -a ${OUT_DIR}/.s1_ts2tscan_progress
+ost_mt_metrics.py -i ${TS_STACK} -o ${OUT_DIR}/${PREFIX} -t ${TS_MODE} -r yes | tee -a ${OUT_DIR}/.s1_ts2tscan_progress
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${OUT_DIR}/.s1_ts2tscan_progress

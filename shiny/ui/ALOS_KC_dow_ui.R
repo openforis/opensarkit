@@ -88,9 +88,12 @@ tabItem(tabName = "alos_kc_dow",
                             value = "Type in your password"),
               hr(),
               
-              withBusyIndicatorUI(
-                actionButton("kc_download", "Download")
-              ),
+              div(style="display: inline-block;vertical-align:top; width: 135px;",withBusyIndicatorUI(
+                actionButton("kc_dow_pro_btn", "Start download"))),
+              div(style="display: inline-block;vertical-align:top; width: 125px;", withBusyIndicatorUI(
+                actionButton("kc_dow_abort_btn", "Abort download")
+              )),
+              #"Output:",
               textOutput("download_KC")
            ), # close box
            #----------------------------------------------------------------------------------
@@ -103,6 +106,11 @@ tabItem(tabName = "alos_kc_dow",
               
               tabBox(width = 700,
                      
+                     tabPanel("General Info",
+                              tags$h4("Monitoring the progress of the download"),
+                              hr(),
+                              verbatimTextOutput("kc_dow_progress")
+                     ),
                      tabPanel("General Info",
                               tags$h4("ALOS Kyoto & Carbon SAR backscatter data"),
                               hr(),
@@ -126,31 +134,31 @@ tabItem(tabName = "alos_kc_dow",
                                  Satellite (ALOS) and Advanced Land Observing Satellite-2 (ALOS-2)."),
                               img(src = "shimada_alos_global.png", width = "100%", height = "100%"),
                               tags$b("Figure 1: 2007 - 2010 global mosaics of ALOS Kyoto & Carbon initiative (Shimada et al. 2014)")
-                              ),
+                     ),
                      
                      tabPanel("References",
                               tags$h4("References"),
                               hr(),
                               tags$b("Information Material"),
                               p("JAXA (2010): Global Environmental Monitoring by ALOS PALSAR. Science Results from the ALOS Kyoto & Carbon Initiative.",
-                              a(href = "http://www.eorc.jaxa.jp/ALOS/en/kyoto/ref/KC-Booklet_2010_comp.pdf", "Link"),"."),
+                                a(href = "http://www.eorc.jaxa.jp/ALOS/en/kyoto/ref/KC-Booklet_2010_comp.pdf", "Link"),"."),
                               p("Global 25m Resolution PALSAR-2/PALSAR Mosaic and Forest/Non-Forest Map (FNF). Dataset Description",
-                              a(href = "http://www.eorc.jaxa.jp/ALOS/en/palsar_fnf/DatasetDescription_PALSAR2_Mosaic_FNF_revC.pdf", "Link"),"."),
+                                a(href = "http://www.eorc.jaxa.jp/ALOS/en/palsar_fnf/DatasetDescription_PALSAR2_Mosaic_FNF_revC.pdf", "Link"),"."),
                               tags$b("Web sites"),
                               p(a(href = "http://www.eorc.jaxa.jp/ALOS/en/kyoto/kyoto_index.htm", target = "_blank", "ALOS Kyoto & Carbon official website")),
                               tags$b("Scientific Articles"),
                               p("Special Issue on ALOS PALSAR in Remote Sensing of Environment (2014, Open Access):",a(href = "http://www.sciencedirect.com/science/journal/00344257/155", target = "_blank", "Link"),"."), 
                               p("Mitchard, E.T.A. et al. (2012): Mapping tropical forest biomass with radar and spaceborne LiDAR in Lope National Park, 
                                  Gabon: overcoming problems of high biomass and persistent cloud. in: Biogeosciences. 9. 179-191.",
-                                 a(href = "http://www.biogeosciences.net/9/179/2012/bg-9-179-2012.pdf", target = "_blank", "Link"),"."),
+                                a(href = "http://www.biogeosciences.net/9/179/2012/bg-9-179-2012.pdf", target = "_blank", "Link"),"."),
                               p("Reiche, J. et al. (2015): Fusing Landsat and SAR time-series to detect deforestation in the tropics.
                                  in: Remote Sensing of Environment, 156, 276-293.",
-                                 a(href = "https://www.researchgate.net/publication/267339835_Fusing_Landsat_and_SAR_time_series_to_detect_deforestation_in_the_tropics",target = "_blank", "Link"),"."),                       
+                                a(href = "https://www.researchgate.net/publication/267339835_Fusing_Landsat_and_SAR_time_series_to_detect_deforestation_in_the_tropics",target = "_blank", "Link"),"."),                       
                               p("Saatchi, S. (2011): Introducing the Radar Forest Degradation Index (RFDI) from L-band Polarimetric data. 
                                  in: Proceedings of the IEEE IGARRS 2011, Vancouver, Canada.", a(href = "http://igarss11.org/papers/ViewPapers_MS.asp?PaperNum=3877", target = "_blank", "Link"),"."),
                               p("Shimada et al. (2014): New global forest/non-forest maps from ALOS PALSAR data (2007–2010). 
                                  in: Remote Sensing of Environment, 155, 13-31.", 
-                                 a(href = "http://ac.els-cdn.com/S0034425714001527/1-s2.0-S0034425714001527-main.pdf?_tid=d9c35274-acb6-11e6-b070-00000aacb360&acdnat=1479381382_15a3e412b87bf3ad00eb6833137fbf15", target = "_blank", "Link"),"."),
+                                a(href = "http://ac.els-cdn.com/S0034425714001527/1-s2.0-S0034425714001527-main.pdf?_tid=d9c35274-acb6-11e6-b070-00000aacb360&acdnat=1479381382_15a3e412b87bf3ad00eb6833137fbf15", target = "_blank", "Link"),"."),
                               p("Tange, O. (2011): GNU Parallel - The Command-Line Power Tool, ;login: The USENIX Magazine, February 2011:42-47.")
                      ),
                      
@@ -165,5 +173,5 @@ tabItem(tabName = "alos_kc_dow",
               ) # close tab box
            ) # close box
            #----------------------------------------------------------------------------------
-) # close fluidRow
+        ) # close fluidRow
 ) # close tabItem

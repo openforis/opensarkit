@@ -21,8 +21,8 @@
       <createGammaBand>false</createGammaBand>
       <createBetaBand>false</createBetaBand>
       <selectedPolarisations/>
-      <outputSigmaBand>true</outputSigmaBand>
-      <outputGammaBand>false</outputGammaBand>
+      <outputSigmaBand>false</outputSigmaBand>
+      <outputGammaBand>true</outputGammaBand>
       <outputBetaBand>false</outputBetaBand>
     </parameters>
   </node>

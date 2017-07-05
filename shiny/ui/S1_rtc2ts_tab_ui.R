@@ -43,43 +43,46 @@ tabItem(tabName = "s1_rtc2ts",
                          c("Time-series & Timescan" = "1",
                            "Time-series only" = "2",
                            "Timescan only" = "3"),
-                           "1"),
-            hr(),
+                           "1"),hr(),
+            
+            #---------------------------------------------------------------------------
+            # Datatype selction
             tags$b("Choose the output datatype for the timeseries/timescan products."), 
             p("Those values represent the amount of space reserved for one pixel per band."),
             radioButtons("s1_rtc2ts_dtype", "",
                          c("16 bit unsigned integer (recommended)" = "1",
                            "8 bit unsigned integer" = "2",
                            "32 bit floating point" = "3"),
-                           "1"),
-            hr(),
-            withBusyIndicatorUI(
-              actionButton("s1_rtc2ts_process", "Start processing")
-            ),
+                           "1"),hr(),
+            #---------------------------------------------------------------------------
+            
+            #---------------------------------------------------------------------------
+            # trigger and abort buttons
+            div(style="display: inline-block;vertical-align:top; width: 135px;",withBusyIndicatorUI(
+              actionButton("s1_rtc2ts_pro_btn", "Start processing"))),
+            div(style="display: inline-block;vertical-align:top; width: 125px;", withBusyIndicatorUI(
+              actionButton("s1_rtc2ts_abort_btn", "Abort processing")
+            )),
             #"Output:",
             textOutput("processS1_RTC2TS")
             ),
+            #---------------------------------------------------------------------------
             
             # tab panel for cleaning up files
             tabPanel("Clean up files",
                      # Title
                      tags$h4("Clean up intermediate products"),
-                     tags$b("DATA directory:"),
-                     br(),
-                     br(),
-                     shinyDirButton("S1_ts_cleanupdir","Select S1 DATA folder in your project directory","Select S1 DATA folder in your project directory",FALSE),
-                     br(),
-                     br(),
-                     verbatimTextOutput("S1_ts_cleanupdir"),
-                     hr(),
+                     tags$b("DATA directory:"),br(),br(),
+                     shinyDirButton("S1_ts_cleanupdir","Select S1 DATA folder in your project directory","Select S1 DATA folder in your project directory",FALSE),br(),br(),
+                     verbatimTextOutput("S1_ts_cleanupdir"),hr(),
+                     
                      tags$b("Clean up raw files"),
                      p("This button deletes all the raw Sentinel-1 zip files downloaded in the first place by the",tags$i(" Data Download "), " tab."),
                      withBusyIndicatorUI(
                        actionButton("s1_ts_clean_raw", "Delete files")
                      ),
                      #"Output:",
-                     textOutput("cleanS1RAW"),
-                     hr(),
+                     textOutput("cleanS1RAW"),hr(),
                      tags$b("Clean up RTC/LS files"),
                      p("This button deletes all the single, radiometrically terrain corrected products 
                         as well as the single layover/shadow maps generated during the GRD to RTC processing.",tags$i(" Data Download "), " tab."),
@@ -87,25 +90,24 @@ tabItem(tabName = "s1_rtc2ts",
                        actionButton("s1_ts_clean_rtc", "Delete files")
                      ),
                      #"Output:",
-                     textOutput("cleanS1RTC"),
-                     br(),
-                     hr(),
+                     textOutput("cleanS1RTC"),br(),hr(),
+                     
                      tags$b("Delete Time-series data"),
                      p("This button deletes the Time-series folder for each track within the project directory."),
                      withBusyIndicatorUI(
                        actionButton("s1_ts_clean_timeseries", "Delete files")
                      ),
                      #"Output:",
-                     textOutput("cleanS1TS"),
-                     hr(),
+                     textOutput("cleanS1TS"),hr(),
+                     
+                     
                      tags$b("Delete Timescan data"),
                      p("This button deletes the Timescan products for each track within the project directory."),
                      withBusyIndicatorUI(
                        actionButton("s1_ts_clean_timescan", "Delete files")
                      ),
                      #"Output:",
-                     textOutput("cleanS1TScan"),
-                     hr()
+                     textOutput("cleanS1TScan"),hr()
                      )
             )
           ), #close box
@@ -117,6 +119,11 @@ tabItem(tabName = "s1_rtc2ts",
             
             tabBox(width = 700,
                    
+                   tabPanel("Processing Monitor",
+                            tags$h4("Monitor the progress of a running process"),hr(),
+                            verbatimTextOutput("s1_rtc2ts_progress")
+                   ),
+                            
                    tabPanel("General Info",
                             tags$h4("Processing chain"),
                             hr(),

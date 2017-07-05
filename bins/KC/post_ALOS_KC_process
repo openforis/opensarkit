@@ -24,7 +24,7 @@
 if [ "$#" != "4" ]; then
 
 	echo -e "-------------------------------------"
-	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
+	echo -e " Open Foris SAR Toolkit, version ${OST_VERSION}"
 	echo -e " Prepare ALOS Kyoto & Carbon mosaics"
 	echo -e "-------------------------------------"
 	echo -e ""
@@ -54,11 +54,6 @@ if [ "$#" != "4" ]; then
 
   	exit 1
 else
-	echo -e "-------------------------------------"
-	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
-	echo -e " Prepare ALOS Kyoto & Carbon mosaics"
-	echo -e "-------------------------------------"
-	echo -e ""
 
 	# source libs
 	source ${OPENSARKIT}/lib/helpers_source
@@ -77,37 +72,50 @@ else
 	mkdir -p ${TMP_DIR}
 	LOG_DIR=${OUT_DIR}/${YEAR}/LOG
 	mkdir -p ${LOG_DIR}
+	export GDAL_CACHEMAX=512
+
+	echo -e "-------------------------------------" | tee ${OUT_DIR}/.kc_pro_progress
+	echo -e " Open SAR Toolkit, version ${OST_VERSION}" | tee -a ${OUT_DIR}/.kc_pro_progress
+	echo -e " Prepare ALOS Kyoto & Carbon mosaics" | tee -a ${OUT_DIR}/.kc_pro_progress
+	echo -e "-------------------------------------" | tee -a ${OUT_DIR}/.kc_pro_progress
+	echo -e "" | tee -a ${OUT_DIR}/.kc_pro_progress
 
 
 fi
 
+#------------------------------------------------------------------------
 # check archive integrity
 cd $ZIP_DIR
 SECONDS=0
-echo `pwd`
-echo -ne " Checking the integrity of the downloaded archives ..." &&
+echo -ne " Checking the integrity of the downloaded archives ..." | tee -a ${OUT_DIR}/.kc_pro_progress
 for file in $(ls -1 *_${YEAR_SHORT}_*tar.gz); do
 	echo "source $OPENSARKIT/lib/helpers_source; check_tar $file >> ${TMP_DIR}/check" >> ${TMP_DIR}/check_cmd
 done
 
 # run the parallel command
-cat ${TMP_DIR}/check_cmd | parallel -j "`nproc`" bash -c {}
-
+cat ${TMP_DIR}/check_cmd | parallel --no-notice -j "`nproc`" bash -c {}
 
 if [[ $(cat ${TMP_DIR}/check | grep -v 0 | wc -l) -gt 0 ]];then
-	 echo "Your downloaded data is corrupted. Please delete the downloaded files and re-start downloading." && exit 11
+	 echo "Your downloaded data is corrupted. Please delete the downloaded files and re-start downloading." | tee -a ${OUT_DIR}/.kc_pro_progress && exit 11
 fi
-duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${OUT_DIR}/.kc_pro_progress
+#------------------------------------------------------------------------
+
 #------------------------------------------------------------------------
 # extract data
 cd $ZIP_DIR
 SECONDS=0
-echo -ne " Unpacking the downloaded archives ..." &&
-ls -1 *_${YEAR_SHORT}_*tar.gz | parallel -j "`nproc`" tar -xzvf {} -C ${TMP_DIR}
-duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+echo -ne " Unpacking the downloaded archives ..."  | tee -a ${OUT_DIR}/.kc_pro_progress
+ls -1 *_${YEAR_SHORT}_*tar.gz | parallel --no-notice -j "`nproc`" tar -xzf {} -C ${TMP_DIR}
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${OUT_DIR}/.kc_pro_progress
+
+# check if we can use the RAM on sepal
+NR_OF_TILES=$(ls -1 *_${YEAR_SHORT}_*tar.gz | wc -l)
+
+# check if ramdisk can be used
+set_tmp_KC ${NR_OF_TILES} | tee -a ${OUT_DIR}/.kc_pro_progress
 
 #------------------------------------------------------------------------
-
 
 #----------------------------------------------------------------------
 # check if AOI comes from country code or is already a shape
@@ -119,15 +127,15 @@ if [ "`echo $2 | grep shp`" ]; then # AOI case
 else # country case
   COUNTRY=`echo "SELECT name FROM countries WHERE \"iso3\" = '$2';" | spatialite ${OST_DB} | head -50`
 	SECONDS=0
-	echo -ne " Extracting country boundaries for ${COUNTRY} ..." &&
+	echo -ne " Extracting country boundaries for ${COUNTRY} ..."  | tee -a ${OUT_DIR}/.kc_pro_progress
 	ogr2ogr -f "Esri Shapefile" ${TMP_DIR}/AOI.shp ${OST_DB} -dsco SPATIALITE=yes -where "\"iso3\" = \"${2}\"" -nln AOI countries > ${LOG_DIR}/log_process 2>&1
-	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${OUT_DIR}/.kc_pro_progress
 	AOI=${TMP_DIR}/AOI.shp
 
 	SECONDS=0
-	echo -ne " Creating a 0.1 degree buffer (used for final masking) ... " &&
+	echo -ne " Creating a 0.1 degree buffer (used for final masking) ... "  | tee -a ${OUT_DIR}/.kc_pro_progress
  	ogr2ogr -f "Esri Shapefile" ${TMP_DIR}/AOI_buffer.shp ${OST_DB} -dsco SPATIALITE=yes -sql "select ST_union(ST_buffer(geom,0.1)) from countries where \"iso3\" = \"${2}\""  >> ${LOG_DIR}/log_process 2>&1
-	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${OUT_DIR}/.kc_pro_progress
 	# in case a country is selected we use the buffered AOI
 	AOI=${TMP_DIR}/AOI_buffer.shp
 fi
@@ -141,50 +149,32 @@ mkdir -p ${OUT_DIR}/${YEAR}/Auxiliary
 #------------------------------------------------------------------------
 
 #------------------------------------------------------------------------
-# echo "----------------------------------------------"
-# echo " Preparing the K&C Forest/Non-Forest map tiles"
-# echo "----------------------------------------------"
-#
-# if [ ${YEAR} -gt 2006 ];then
-#
-# 	if [ ${YEAR} -gt 2010 ];then
-# 		SECONDS=0
-# 		echo -ne " Merging the FNF tiles ..." &&
-# 		gdalbuildvrt -srcnodata 0 ${TMP_DIR}/FNF_map.vrt ${TMP_DIR}/*_C_F02DAR  >> ${LOG_DIR}/log_process 2>&1
-# 		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-# 	else
-# 		SECONDS=0
-# 		echo -ne " Merging the FNF tiles ..." &&
-# 		gdalbuildvrt -srcnodata 0 ${TMP_DIR}/FNF_map.vrt ${TMP_DIR}/*_C  >> ${LOG_DIR}/log_process 2>&1
-# 		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-# 	fi
-#
-# 	SECONDS=0
-# 	echo -ne " Cropping the FNF Map to the extent of the AOI ..." &&
-# 	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/FNF_map.vrt -co COMPRESS=LZW ${OUT_DIR}/${YEAR}/FNF/${YEAR}"_KC_FNF_map.tif" >> ${LOG_DIR}/log_process 2>&1
-# 	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-# 	rm -f ${TMP_DIR}/*_C_F02DAR*
-# fi
-# #------------------------------------------------------------------------
-
-#------------------------------------------------------------------------
-echo "------------------------------------------------------------------------------------"
-echo " Processing the Auxiliary information (i.e. Acquisition Date/Local Incidence Angle) "
-echo "------------------------------------------------------------------------------------"
+echo "------------------------------------------------------------------------------------" | tee -a ${OUT_DIR}/.kc_pro_progress
+echo " Processing the Auxiliary information (i.e. Acquisition Date/Local Incidence Angle) " | tee -a ${OUT_DIR}/.kc_pro_progress
+echo "------------------------------------------------------------------------------------" | tee -a ${OUT_DIR}/.kc_pro_progress
 
 SECONDS=0
-echo -ne " Extracting auxiliary information ..." &&
+echo -ne " Extracting auxiliary information ..."  | tee -a ${OUT_DIR}/.kc_pro_progress
 gdalbuildvrt -srcnodata 0 ${TMP_DIR}/LINCI.vrt $(ls ${TMP_DIR}/*_linci* | grep -v hdr) >> ${LOG_DIR}/log_process 2>&1
 gdalbuildvrt -srcnodata 0 ${TMP_DIR}/DATE.vrt $(ls ${TMP_DIR}/*_date* | grep -v hdr) >> ${LOG_DIR}/log_process 2>&1
-duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${OUT_DIR}/.kc_pro_progress
 
 SECONDS=0
-echo -ne " Cropping the auxiliary data to the extent of the AOI ..." &&
-gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/LINCI.vrt -co "COMPRESS=LZW" ${OUT_DIR}/${YEAR}/Auxiliary/${YEAR}"_loc_inc_angle.tif" >> ${LOG_DIR}/log_process 2>&1
-duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+echo -ne " Cropping the auxiliary data to the extent of the AOI ..."  | tee -a ${OUT_DIR}/.kc_pro_progress
+gdalwarp -multi -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline ${TMP_DIR}/LINCI.vrt -co "COMPRESS=LZW" ${OUT_DIR}/${YEAR}/Auxiliary/${YEAR}"_loc_inc_angle.tif" >> ${LOG_DIR}/log_process 2>&1
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${OUT_DIR}/.kc_pro_progress
+
+# remove local inc files
+rm -rf ${TMP_DIR}/*_linci*
 
 # convert raster data into polygon
-gdal_polygonize.py ${TMP_DIR}/DATE.vrt -f 'ESRI Shapefile' ${TMP_DIR}
+SECONDS=0
+echo -ne " Create a polygon shapefile contaiing the acquistiion dates ..." | tee -a ${OUT_DIR}/.kc_pro_progress
+gdal_polygonize.py ${TMP_DIR}/DATE.vrt -f 'ESRI Shapefile' ${TMP_DIR} >> ${LOG_DIR}/log_process 2>&1
+
+#remove date files
+rm -rf ${TMP_DIR}/*_date*
+
 # add a column for the date
 ogrinfo ${TMP_DIR}/out.shp -sql "ALTER TABLE out ADD COLUMN date date"
 # fill the column for date dependent on sensor (if clause)
@@ -198,12 +188,16 @@ else
 	ogrinfo ${TMP_DIR}/out.shp -dialect SQLite -sql "UPDATE out SET date = date('2006-01-24','+' || DN || ' days')"
 	ogr2ogr -clipsrc ${AOI} ${OUT_DIR}/${YEAR}/acquisition_dates.shp ${TMP_DIR}/out.shp
 fi
+
+# delete tmp shapes
+rm -rf ${TMP_DIR}/out.*
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${OUT_DIR}/.kc_pro_progress
 #------------------------------------------------------------------------
 
 #-----------------------------------------------------------------------------------------------------
-echo "---------------------------"
-echo " Processing the Data Tiles "
-echo "---------------------------"
+echo "---------------------------" | tee -a ${OUT_DIR}/.kc_pro_progress
+echo " Processing the Data Tiles " | tee -a ${OUT_DIR}/.kc_pro_progress
+echo "---------------------------" | tee -a ${OUT_DIR}/.kc_pro_progress
 
 cd ${TMP_DIR}
 
@@ -214,33 +208,37 @@ if [ ${YEAR} -gt 2006 ];then
 	done
 
 	SECONDS=0
-	echo -ne " Processing of 1 x 1 degree tiles using GNU parallel ..."
-	cat ${TMP_DIR}/proc_list | parallel -j "`nproc`" bash -c {}
+	echo -ne " Processing of 1 x 1 degree tiles using GNU parallel ..." | tee -a ${OUT_DIR}/.kc_pro_progress
+	cat ${TMP_DIR}/proc_list | parallel --no-notice -j "`nproc`" bash -c {}
 
 
 	#--------------------------------------------------------------
 	# 3 build the final mosaic
 
 	SECONDS=0
-	echo -ne " Merging the data tiles ..." &&
+	echo -ne " Merging the data tiles ..." | tee -a ${OUT_DIR}/.kc_pro_progress
 	gdalbuildvrt ${TMP_DIR}/TILES/mosaic_hh.vrt ${TMP_DIR}/TILES/1_*sl_HH*tif >> ${LOG_DIR}/log_process 2>&1
 	gdalbuildvrt ${TMP_DIR}/TILES/mosaic_hv.vrt ${TMP_DIR}/TILES/2_*sl_HV*tif >> ${LOG_DIR}/log_process 2>&1
 	gdalbuildvrt ${TMP_DIR}/TILES/mosaic_hhhv.vrt ${TMP_DIR}/TILES/3_*ratio.tif >> ${LOG_DIR}/log_process 2>&1
 	gdalbuildvrt ${TMP_DIR}/TILES/mosaic_rfdi.vrt ${TMP_DIR}/TILES/4_*rfdi.tif >> ${LOG_DIR}/log_process 2>&1
-	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${OUT_DIR}/.kc_pro_progress
 
 	SECONDS=0
-	echo -ne " Creating RGB mosaic (R:HH, G:HV, B:HH/HV) ..."
-	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline -co "BIGTIFF=YES" -co "COMPRESS=LZW" ${TMP_DIR}/TILES/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/MOS/01_Gamma0_HH_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1
-	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline -co "BIGTIFF=YES" -co "COMPRESS=LZW" ${TMP_DIR}/TILES/mosaic_hv.vrt ${OUT_DIR}/${YEAR}/MOS/02_Gamma0_HV_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1
-	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline -co "BIGTIFF=YES" -co "COMPRESS=LZW" ${TMP_DIR}/TILES/mosaic_hhhv.vrt ${OUT_DIR}/${YEAR}/MOS/03_HHHV_ratio_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1
-	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline -co "BIGTIFF=YES" -co "COMPRESS=LZW" ${TMP_DIR}/TILES/mosaic_rfdi.vrt ${OUT_DIR}/${YEAR}/MOS/04_RFDI_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1
+	echo -ne " Creating RGB mosaic (R:HH, G:HV, B:HH/HV) ..." | tee -a ${OUT_DIR}/.kc_pro_progress
+	gdalwarp -multi -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline -co "BIGTIFF=YES" -co "COMPRESS=LZW" ${TMP_DIR}/TILES/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/MOS/01_Gamma0_HH_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1
+	rm -rf ${TMP_DIR}/TILES/1_*sl_HH*tif
+	gdalwarp -multi -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline -co "BIGTIFF=YES" -co "COMPRESS=LZW" ${TMP_DIR}/TILES/mosaic_hv.vrt ${OUT_DIR}/${YEAR}/MOS/02_Gamma0_HV_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1
+	gdalbuildvrt ${TMP_DIR}/TILES/mosaic_hv.vrt ${TMP_DIR}/TILES/2_*sl_HV*tif
+	gdalwarp -multi -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline -co "BIGTIFF=YES" -co "COMPRESS=LZW" ${TMP_DIR}/TILES/mosaic_hhhv.vrt ${OUT_DIR}/${YEAR}/MOS/03_HHHV_ratio_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1
+	gdalbuildvrt ${TMP_DIR}/TILES/mosaic_hhhv.vrt ${TMP_DIR}/TILES/3_*ratio.tif
+	gdalwarp -multi -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline -co "BIGTIFF=YES" -co "COMPRESS=LZW" ${TMP_DIR}/TILES/mosaic_rfdi.vrt ${OUT_DIR}/${YEAR}/MOS/04_RFDI_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1
+	gdalbuildvrt ${TMP_DIR}/TILES/mosaic_rfdi.vrt ${TMP_DIR}/TILES/4_*rfdi.tif
 	gdalbuildvrt -separate -vrtnodata 0 ${OUT_DIR}/${YEAR}/MOS/RGB_${YEAR}.vrt \
 				    	 ${OUT_DIR}/${YEAR}/MOS/01_Gamma0_HH_${YEAR}.tif \
 						   ${OUT_DIR}/${YEAR}/MOS/02_Gamma0_HV_${YEAR}.tif \
 						   ${OUT_DIR}/${YEAR}/MOS/03_HHHV_ratio_${YEAR}.tif \
 				       >> ${LOG_DIR}/log_process 2>&1
-	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${OUT_DIR}/.kc_pro_progress
 
 else # JERS
 
@@ -249,18 +247,18 @@ else # JERS
 	done
 
 	SECONDS=0
-	echo -ne " Processing of 1 x 1 degree tiles using GNU parallel ..."
-	cat ${TMP_DIR}/proc_list | parallel -j "`nproc`" bash -c {}
+	echo -ne " Processing of 1 x 1 degree tiles using GNU parallel ..." | tee -a ${OUT_DIR}/.kc_pro_progress
+	cat ${TMP_DIR}/proc_list | parallel -j "`nproc`" bash -c {} | tee -a ${OUT_DIR}/.kc_pro_progress
 
 	SECONDS=0
-	echo -ne " Merging the data tiles ..." &&
+	echo -ne " Merging the data tiles ..."  | tee -a ${OUT_DIR}/.kc_pro_progress
 	gdalbuildvrt ${TMP_DIR}/TILES/mosaic_hh.vrt ${TMP_DIR}/TILES/1_*sl_HH*tif >> ${LOG_DIR}/log_process 2>&1
-	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${OUT_DIR}/.kc_pro_progress
 
 	SECONDS=0
-	echo -ne " Creating the final HH mosaic (R:HH, G:HV, B:HH/HV) ..."
+	echo -ne " Creating the final HH mosaic (R:HH, G:HV, B:HH/HV) ..." | tee -a ${OUT_DIR}/.kc_pro_progress
 	gdalwarp -dstnodata 0 -overwrite -cutline ${AOI} -crop_to_cutline -co "BIGTIFF=YES" -co "COMPRESS=LZW"  ${TMP_DIR}/TILES/mosaic_hh.vrt ${OUT_DIR}/${YEAR}/MOS/01_Gamma0_HH_${YEAR}.tif >> ${LOG_DIR}/log_process 2>&1
-	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${OUT_DIR}/.kc_pro_progress
 
 fi
 #--------------------------------------------------------------
@@ -270,17 +268,17 @@ rm -rf ${TMP_DIR}
 
 if [ -e ${OUT_DIR}/${YEAR}/MOS/01_Gamma0_HH_${YEAR}.tif ] && [ -e ${OUT_DIR}/${YEAR}/MOS/04_RFDI_${YEAR}.tif ];then
 
-	echo " ---------------------------------------------------------------------------------------------"
-	echo " Succesfully processed the K&C tiles "
-	echo " You can find the RGB backscatter data in: ${OUT_DIR}/${YEAR}/MOS/RGB_${YEAR}.vrt"
+	echo " ---------------------------------------------------------------------------------------------" | tee -a ${OUT_DIR}/.kc_pro_progress
+	echo " Succesfully processed the K&C tiles " | tee -a ${OUT_DIR}/.kc_pro_progress
+	echo " You can find the RGB backscatter data in: ${OUT_DIR}/${YEAR}/MOS/RGB_${YEAR}.vrt" | tee -a ${OUT_DIR}/.kc_pro_progress
 	#echo " You can find the K&C Forest/Non-forest data in: ${OUT_DIR}/${YEAR}/FNF/${YEAR}_KC_FNF_map.tif"
-	echo " You can find the corresponding acquisiton dates: ${OUT_DIR}/${YEAR}/Auxiliary/${YEAR}_acquisition_date.tif"
-	echo " You can find the corresponding local incidence angles in: ${OUT_DIR}/${YEAR}/AUX/${YEAR}_loc_inc_angle.tif"
-	echo " ---------------------------------------------------------------------------------------------"
+	echo " You can find the corresponding acquisiton dates: ${OUT_DIR}/${YEAR}/Auxiliary/${YEAR}_acquisition_date.tif" | tee -a ${OUT_DIR}/.kc_pro_progress
+	echo " You can find the corresponding local incidence angles in: ${OUT_DIR}/${YEAR}/AUX/${YEAR}_loc_inc_angle.tif" | tee -a ${OUT_DIR}/.kc_pro_progress
+	echo " ---------------------------------------------------------------------------------------------" | tee -a ${OUT_DIR}/.kc_pro_progress
 
 else
 
-		echo " Something went terribly wrong, and your final output files have not been created."
-		echo " Most likely you ran into storage issues (i.e. no space left on device)."
+		echo " Something went terribly wrong, and your final output files have not been created." | tee -a ${OUT_DIR}/.kc_pro_progress
+		echo " Most likely you ran into storage issues (i.e. no space left on device)." | tee -a ${OUT_DIR}/.kc_pro_progress
 		exit 111
 fi

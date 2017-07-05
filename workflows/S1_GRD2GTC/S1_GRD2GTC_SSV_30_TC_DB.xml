@@ -56,25 +56,13 @@
       <sourceProduct refid="Terrain-Correction"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <sourceBands>Sigma0_VV</sourceBands>
-    </parameters>
-  </node>
-  <node id="BandSelect">
-    <operator>BandSelect</operator>
-    <sources>
-      <sourceProduct refid="Terrain-Correction"/>
-    </sources>
-    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <selectedPolarisations/>
-      <sourceBands>projectedLocalIncidenceAngle,incidenceAngleFromEllipsoid</sourceBands>
-      <bandNamePattern/>
+      <sourceBands>Gamma0_VV</sourceBands>
     </parameters>
   </node>
   <node id="Write">
     <operator>Write</operator>
     <sources>
       <sourceProduct refid="LinearToFromdB"/>
-      <sourceProduct.1 refid="BandSelect"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
       <file>${output}</file>
@@ -91,9 +79,6 @@
     </node>
     <node id="LinearToFromdB">
       <displayPosition x="290.0" y="89.0"/>
-    </node>
-    <node id="BandSelect">
-      <displayPosition x="317.0" y="182.0"/>
     </node>
     <node id="Write">
             <displayPosition x="455.0" y="135.0"/>

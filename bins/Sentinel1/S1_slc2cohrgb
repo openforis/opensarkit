@@ -1,0 +1,196 @@
+#! /bin/bash
+
+# The MIT License (MIT)
+# Copyright (c) 2016 Andreas Vollrath
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is furnished
+# to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+# OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+#-------------------------------------------------------------------------------------------
+# 	0.1 Check for right usage & set up basic Script Variables
+if [ "$#" != "3" ]; then
+
+	echo -e "------------------------------------------------------------------"
+	echo -e " Open SAR Toolkit, version ${OSK_VERSION}"
+	echo -e " Create an interferogram from two overlapping scenes"
+	echo -e "------------------------------------------------------------------"
+	echo -e ""
+	echo -e "----------------------------------"
+	echo -e "Software dependencies:"
+	echo -e "	- ESA Sentinel Application Platform SNAP"
+	echo -e "	- gdal-bin"
+	echo -e "----------------------------------"
+	echo -e ""
+	echo -e " Usage: ost_S1_slc2ifg <master> <slave> <output>"
+	echo -e ""
+	echo -e " input parameters:"
+	echo -e " master	(input) master image for the interferogram creation"
+	echo -e " slave	(input) slave image for the interferogram creation"
+	echo -e " output	(output) output interferogram"
+	echo -e ""
+	exit 1
+else
+	echo -e "------------------------------------------------------------------"
+	echo -e " Open SAR Toolkit, version ${OSK_VERSION}"
+	echo -e " Create an interferogram from two overlapping scenes"
+	echo -e "------------------------------------------------------------------"
+
+	# source OST libs
+	source ${OPENSARKIT}/lib/helpers_source
+
+	# set up initial script variables
+	MASTER_SLC=$(readlink -f $1)
+	SLAVE_SLC=$(readlink -f $2)
+	IFG=$(readlink -f $3)
+	OUT_DIR=$(dirname ${IFG})
+	TMP_DIR=${SAR_TMP:-$OUT_DIR/TMP}
+	#rm -rf ${TMP_DIR}
+	#mkdir -p ${TMP_DIR}
+fi
+
+#------------------------------------------------------------------------------------------------------------------------------------
+# AO and Split to TMP folder Master scenes
+SECONDS=0
+echo -ne " Importing Master scene ..."
+#bash ${SNAP_EXE} ${S1_SLC2IFG_GRAPHS}/S1_SLC2IFG_AO_Split.xml -x -Pinput=${MASTER_SLC} -Piw1=${TMP_DIR}/mst_iw1 -Piw2=${TMP_DIR}/mst_iw2 -Piw3=${TMP_DIR}/mst_iw3
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+#------------------------------------------------------------------------------------------------------------------------------------
+# backscatter generation master channels
+SECONDS=0
+echo -ne " GTC product generation of 1st image swath for the Master scene ..."
+bash ${SNAP_EXE} ${S1_SLC2IFG_GRAPHS}/S1_SLC2IFG_Cal_Deb_Spk_ML.xml -x -Pinput=${TMP_DIR}/mst_iw1.dim -Poutput=${TMP_DIR}/mst_iw1_sig.dim
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+SECONDS=0
+echo -ne " GTC product generation of 2nd image swath for the Master scene ..."
+bash ${SNAP_EXE} ${S1_SLC2IFG_GRAPHS}/S1_SLC2IFG_Cal_Deb_Spk_ML.xml -x -Pinput=${TMP_DIR}/mst_iw2.dim -Poutput=${TMP_DIR}/mst_iw2_sig.dim
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+SECONDS=0
+echo -ne " GTC product generation of 3rd image swath for the Master scene ..."
+bash ${SNAP_EXE} ${S1_SLC2IFG_GRAPHS}/S1_SLC2IFG_Cal_Deb_Spk_ML.xml -x -Pinput=${TMP_DIR}/mst_iw3.dim -Poutput=${TMP_DIR}/mst_iw3_sig.dim
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+SECONDS=0
+echo -ne " Merge of subswaths for the Master scene ..."
+bash ${SNAP_EXE} TOPSAR-Merge -x ${TMP_DIR}/mst_iw1_sig.dim ${TMP_DIR}/mst_iw2_sig.dim ${TMP_DIR}/mst_iw3_sig.dim -t ${TMP_DIR}/mst_sig.dim
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+#rm -rf ${TMP_DIR}/mst_iw*_sig.dim
+#------------------------------------------------------------------------------------------------------------------------------------
+
+
+SECONDS=0
+echo -ne " Importing Slave scene ..."
+#bash ${SNAP_EXE} ${S1_SLC2IFG_GRAPHS}/S1_SLC2IFG_AO_Split.xml -x -Pinput=${SLAVE_SLC} -Piw1=${TMP_DIR}/slv_iw1 -Piw2=${TMP_DIR}/slv_iw2 -Piw3=${TMP_DIR}/slv_iw3
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+#------------------------------------------------------------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------------------------------------------------------------
+# backscatter generation slave scene
+SECONDS=0
+echo -ne " GTC product generation of 1st image swath for the Slave scene ..."
+bash ${SNAP_EXE} ${S1_SLC2IFG_GRAPHS}/S1_SLC2IFG_Cal_Deb_Spk_ML.xml -x -Pinput=${TMP_DIR}/slv_iw1.dim -Poutput=${TMP_DIR}/slv_iw1_sig.dim
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+SECONDS=0
+echo -ne " GTC product generation of 2nd image swath for the Slave scene ..."
+bash ${SNAP_EXE} ${S1_SLC2IFG_GRAPHS}/S1_SLC2IFG_Cal_Deb_Spk_ML.xml -x -Pinput=${TMP_DIR}/slv_iw2.dim -Poutput=${TMP_DIR}/slv_iw2_sig.dim
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+SECONDS=0
+echo -ne " GTC product generation of 3rd image swath for the Master scene ..."
+bash ${SNAP_EXE} ${S1_SLC2IFG_GRAPHS}/S1_SLC2IFG_Cal_Deb_Spk_ML.xml -x -Pinput=${TMP_DIR}/slv_iw3.dim -Poutput=${TMP_DIR}/slv_iw3_sig.dim
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+SECONDS=0
+echo -ne " Merge of subswaths for the Master scene ..."
+bash ${SNAP_EXE} TOPSAR-Merge -x ${TMP_DIR}/mst_iw1_sig.dim ${TMP_DIR}/mst_iw2_sig.dim ${TMP_DIR}/slv_iw3_sig.dim -t ${TMP_DIR}/slv_sig.dim
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+#rm -rf ${TMP_DIR}/slv_iw*_sig.dim
+#------------------------------------------------------------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------------------------------------------------------------
+# Creation of average and difference layers
+
+#------------------------------------------------------------------------------------------------------------------------------------
+
+
+#### Coherence part #####
+#------------------------------------------------------------------------------------------------------------------------------------
+# Co-registration
+
+# create file list for co-registration
+FILELIST_IW1=${TMP_DIR}/mst_iw1.dim,${TMP_DIR}/slv_iw1.dim
+FILELIST_IW2=${TMP_DIR}/mst_iw2.dim,${TMP_DIR}/slv_iw2.dim
+FILELIST_IW3=${TMP_DIR}/mst_iw3.dim,${TMP_DIR}/slv_iw3.dim
+
+SECONDS=0
+echo -ne " Co-registration of 1st image swath ..."
+#bash ${SNAP_EXE} ${S1_SLC2IFG_GRAPHS}/S1_SLC2IFG_BGD_ESD.xml -x -Pfilelist="${FILELIST_IW1}" -Poutput=${TMP_DIR}/coreg_iw1
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+SECONDS=0
+echo -ne " Co-registration of 2nd image swath ..."
+#bash ${SNAP_EXE} ${S1_SLC2IFG_GRAPHS}/S1_SLC2IFG_BGD_ESD.xml -x -Pfilelist=${FILELIST_IW2} -Poutput=${TMP_DIR}/coreg_iw2
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+SECONDS=0
+echo -ne " Co-registration of 3rd image swath ..."
+#bash ${SNAP_EXE} ${S1_SLC2IFG_GRAPHS}/S1_SLC2IFG_BGD_ESD.xml -x -Pfilelist=${FILELIST_IW3} -Poutput=${TMP_DIR}/coreg_iw3
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+#------------------------------------------------------------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------------------------------------------------------------
+# Coherence creation
+
+#-----------------------------------------------------------
+# get dates and create source band name
+MST=$(basename ${MASTER_SLC})
+SLV=$(basename ${SLAVE_SLC})
+
+DATE_MST=${MST:17:8}
+DATE_SLV=${SLV:17:8}
+
+DATE_1=`LC_ALL=en_EN.utf8 date -d ${DATE_MST} +%d%b%Y`
+DATE_2=`LC_ALL=en_EN.utf8 date -d ${DATE_SLV} +%d%b%Y`
+
+SB="Phase_ifg_srd_VV_"${DATE_1}"_"${DATE_2}
+echo $SB
+#-----------------------------------------------------------
+
+SECONDS=0
+echo -ne " Coherence creation and TOPSAR deburst for the 1st swath ..."
+#bash ${SNAP_EXE} ${S1_SLC2IFG_GRAPHS}/S1_SLC2IFG_Ifg_Deb_TPR_GPF.xml -x -Pinput=${TMP_DIR}/coreg_iw1.dim -Poutput=${TMP_DIR}/ifg_iw1
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+SECONDS=0
+echo -ne " Coherence creation and TOPSAR deburst for the 2nd swath ..."
+bash ${SNAP_EXE} ${S1_SLC2IFG_GRAPHS}/S1_SLC2IFG_Ifg_Deb_TPR_GPF.xml -x -Pinput=${TMP_DIR}/coreg_iw2.dim -Poutput=${TMP_DIR}/ifg_iw2
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+SECONDS=0
+echo -ne " Coherence creation and TOPSAR deburst for the 3rd swath ..."
+bash ${SNAP_EXE} ${S1_SLC2IFG_GRAPHS}/S1_SLC2IFG_Ifg_Deb_TPR_GPF.xml -x -Pinput=${TMP_DIR}/coreg_iw3.dim -Poutput=${TMP_DIR}/ifg_iw3
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+#------------------------------------------------------------------------------------------------------------------------------------
+
+
+#------------------------------------------------------------------------------------------------------------------------------------
+# Create stack & geocode
+
+#------------------------------------------------------------------------------------------------------------------------------------

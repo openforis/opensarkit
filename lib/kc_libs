@@ -321,17 +321,22 @@ function kc_process () {
 		gdal_translate -of GTiff ${TMP_DIR}/${DATA_HH} ${TMP_DIR}/${DATA_HH}.tif >> ${LOG_DIR}/log_process_${DATA} 2>&1
 		gdal_translate -of GTiff ${TMP_DIR}/${DATA_HV} ${TMP_DIR}/${DATA_HV}.tif >> ${LOG_DIR}/log_process_${DATA} 2>&1
 
+    rm -rf "${TMP_DIR}/${DATA_HH}"
+    rm -rf "${TMP_DIR}/${DATA_HV}"
+
 		# Speckle Filtering
 		if [ $FILTER -eq 1 ];then #filter case
 			SECONDS=0
 			echo -ne " Applying the Refined Lee Filter on the HH band ..."
 			bash $SNAP_EXE Speckle-Filter -x -Pfilter='Refined Lee' -Ssource=${TMP_DIR}/${DATA_HH}.tif -f 'GeoTIFF' -t ${TMP_DIR}/${DATA_HH}.filtered.tif >> ${LOG_DIR}/log_process_${DATA} 2>&1
 			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+      rm -rf ${TMP_DIR}/${DATA_HH}.tif
 
-			SECONDS=0
+      SECONDS=0
 			echo -ne " Applying the Refined Lee Filter on the HV band ..."
 			bash $SNAP_EXE Speckle-Filter -x -Pfilter='Refined Lee' -Ssource=${TMP_DIR}/${DATA_HV}.tif -f 'GeoTIFF' -t ${TMP_DIR}/${DATA_HV}.filtered.tif >> ${LOG_DIR}/log_process_${DATA} 2>&1
 			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+      rm -rf ${TMP_DIR}/${DATA_HV}.tif
 		fi
 
 		if [ $FILTER -eq 2 ];then #filter case
@@ -373,24 +378,29 @@ function kc_process () {
 		echo -ne " Masking out layover/shadow areas ..." &&
 		if [ ${YEAR} -gt 2010 ];then
 			gdal_calc.py -A ${DATA:0:10}"_mask_F02DAR" --outfile=${DATA}"_mask.tif" --calc="1*(A==255)" >> ${LOG_DIR}/log_process 2>&1
+      rm -rf ${DATA:0:10}"_mask_F02DAR"
 		else
 			gdal_calc.py -A ${DATA:0:10}"_mask" --outfile=${DATA}"_mask.tif" --calc="1*(A==255)" >> ${LOG_DIR}/log_process 2>&1
+      rm -rf ${DATA:0:10}"_mask"
 		fi
 
 		if [ $FILTER -gt 0 ];then #filter case
-
 			gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HH}.filtered.tif --calc=A*B --outfile=${TMP_DIR}/TILES/1_${DATA_HH}.tif --NoDataValue=0 --type='UInt16'
+      rm -rf ${TMP_DIR}/${DATA_HH}.filtered.tif
 			gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HV}.filtered.tif --calc=A*B --outfile=${TMP_DIR}/TILES/2_${DATA_HV}.tif --NoDataValue=0 --type='UInt16'
-			gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HH}.ratio.tif --calc=A*B --outfile=${TMP_DIR}/${DATA_HH}.ratio.mask.tif --NoDataValue=0
-			gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HH}.rfdi.tif --calc=A*B --outfile=${TMP_DIR}/${DATA_HH}.rfdi.mask.tif --NoDataValue=0
-			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+      rm -rf ${TMP_DIR}/${DATA_HV}.filtered.tif
 		else
-			gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HH}.tif --calc=A*B --outfile=${TMP_DIR}/TILES/1_${DATA_HH}.tif --NoDataValue=0 --type='UInt16'
+		  gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HH}.tif --calc=A*B --outfile=${TMP_DIR}/TILES/1_${DATA_HH}.tif --NoDataValue=0 --type='UInt16'
+      rm -rf ${TMP_DIR}/${DATA_HH}.tif
 			gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HV}.tif --calc=A*B --outfile=${TMP_DIR}/TILES/2_${DATA_HV}.tif --NoDataValue=0 --type='UInt16'
-			gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HH}.ratio.tif --calc=A*B --outfile=${TMP_DIR}/${DATA_HH}.ratio.mask.tif --NoDataValue=0
-			gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HH}.rfdi.tif --calc=A*B --outfile=${TMP_DIR}/${DATA_HH}.rfdi.mask.tif --NoDataValue=0
-			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+      rm -rf ${TMP_DIR}/${DATA_HV}.tif
 		fi
+
+    gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HH}.ratio.tif --calc=A*B --outfile=${TMP_DIR}/${DATA_HH}.ratio.mask.tif --NoDataValue=0
+    rm -rf ${TMP_DIR}/${DATA_HH}.ratio.tif
+    gdal_calc.py -A "${TMP_DIR}/${DATA}_mask.tif" -B ${TMP_DIR}/${DATA_HH}.rfdi.tif --calc=A*B --outfile=${TMP_DIR}/${DATA_HH}.rfdi.mask.tif --NoDataValue=0
+    rm -rf ${TMP_DIR}/${DATA_HH}.rfdi.tif
+    duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 
 		SECONDS=0
@@ -398,10 +408,12 @@ function kc_process () {
 		MIN="0"
 		MAX="1"
 		gdal_translate -scale ${MIN} ${MAX} 0 65535 -a_nodata 0 -ot UInt16 ${TMP_DIR}/${DATA_HH}.rfdi.mask.tif ${TMP_DIR}/TILES/4_${DATA_HH}.rfdi.tif >> ${LOG_DIR}/log_process 2>&1
+    rm -rf ${TMP_DIR}/${DATA_HH}.rfdi.mask.tif
 
 		MIN=0  #	`gdal_min ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif"`
 		MAX=15 #`gdal_max ${TMP_DIR}/TILES/${DATA_HH}"_HV_ratio.float.ndv.tif"`
    	gdal_translate -scale ${MIN} ${MAX} 0 65535 -a_nodata 0 -ot UInt16 ${TMP_DIR}/${DATA_HH}.ratio.mask.tif ${TMP_DIR}/TILES/3_${DATA_HH}.ratio.tif >> ${LOG_DIR}/log_process 2>&1
+    rm -rf ${TMP_DIR}/${DATA_HH}.ratio.mask.tif
 		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 		rm -f ${TMP_DIR}/${DATA_HH}*

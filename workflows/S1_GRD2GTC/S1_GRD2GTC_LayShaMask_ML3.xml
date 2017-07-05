@@ -13,7 +13,7 @@
       <sourceProduct refid="Read"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <sourceBands>Sigma0_VV</sourceBands>
+      <sourceBands>Gamma0_VV</sourceBands>
       <demName>SRTM 3Sec</demName>
       <demResamplingMethod>BICUBIC_INTERPOLATION</demResamplingMethod>
       <externalDEMFile/>

@@ -52,7 +52,7 @@
       <sourceProduct refid="Terrain-Correction"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <sourceBands>Sigma0_VV</sourceBands>
+      <sourceBands>Gamma0_VV</sourceBands>
     </parameters>
   </node>
   <node id="Write">

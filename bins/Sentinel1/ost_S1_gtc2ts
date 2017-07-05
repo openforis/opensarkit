@@ -1,0 +1,179 @@
+#! /bin/bash
+
+# The MIT License (MIT)
+# Copyright (c) 2016 Andreas Vollrath
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is furnished
+# to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+# OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+#-------------------------------------------------------------------------------------------
+# 	0.1 Check for right usage & set up basic Script Variables
+if [ "$#" != "3" ]; then
+
+	echo -e "--------------------------------------------------------------------------------------"
+	echo -e " Open SAR Toolkit, version ${OST_VERSION}"
+	echo -e " Create timeseries stack and multi-temporal statistics from preprocessed single scenes"
+	echo -e "--------------------------------------------------------------------------------------"
+	echo -e ""
+	echo -e " Usage: ost_S1_rtc2ts <input directory> <datatype> <processing option>"
+	echo -e ""
+	echo -e " input parameters:"
+	echo -e " input directory	(input) higher-level directory of the downloaded zip file (i.e. DATA folder created by oft-sar-S1-ASF-download)"
+	echo -e " datatype		choose the output datatype"
+	echo -e "			  Available choices:"
+	echo -e "			  1: unsigned 16-bit integer (UInt16, recommended)"
+	echo -e "			  2: unsigned 8-bit integer (UInt8)"
+	echo -e "			  3: 32-bit float (Float32)"
+	echo -e " processing option"
+	echo -e "			  Available choices:"
+	echo -e "			  1: Time-series & Timescan"
+	echo -e "			  2: Time-series only"
+	echo -e "			  3: Timescan only"
+	echo -e ""
+	exit 1
+
+else
+
+	# source OST libs
+	source ${OPENSARKIT}/lib/helpers_source
+
+	# set up initial script variables
+	PROC_DIR=$(readlink -f $1)
+	TMP_DIR=${SAR_TMP:-$PROC_DIR/TMP}
+	rm -rf ${TMP_DIR}
+	mkdir -p ${TMP_DIR}
+
+	if ls ${PROC_DIR}/../.AOI/aoi*.shp 2>&1; then
+		AOI=$(ls -1 ${PROC_DIR}/../.AOI/aoi*.shp | awk NR==1)
+	else
+		AOI="dummyfoo"
+	fi
+
+	DTYPE=$2
+	# Datatype Flag
+	if [ ${DTYPE} == 2 ]; then
+		ODATATYPE="UInt8"
+	elif [ ${DTYPE} == 1 ]; then
+		ODATATYPE="UInt16"
+	elif [ ${DTYPE} == 3 ]; then
+		ODATATYPE="Float32"
+	fi
+
+	echo -e "--------------------------------------------------------------------------------------"
+	echo -e " Open SAR Toolkit, version ${OST_VERSION}"
+	echo -e " Create timeseries stack and multi-temporal statistics from preprocessed single scenes"
+	echo -e "--------------------------------------------------------------------------------------"
+
+fi
+
+cd ${PROC_DIR}
+NR_OF_TRACKS=`ls -1 -d ${PROC_DIR}/[0-9]* | wc -l`
+j=1
+# loop thorugh the tracks
+for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
+
+	if [ ${NR_OF_TRACKS} -eq 1 ];then
+		echo " Info: Processing Track: `basename ${TRACK}`"
+	else
+		echo " Info: Processing Track: `basename ${TRACK}` ($j/${NR_OF_TRACKS}) "
+	fi
+
+	echo " Info: Entering Track: ${TRACK}"
+	cd ${TRACK}
+
+	NR_OF_ACQ=`ls -1 -d 20* | wc -l`
+	echo " Info: Found ${NR_OF_ACQ} acquisitions for this swath"
+
+	STACK=${PWD}
+	LOG_DIR=${PWD}/LOG
+	TMP_DIR_TRACK=${TMP_DIR}/${TRACK}
+	mkdir -p ${LOG_DIR}
+	mkdir -p ${TMP_DIR_TRACK}
+
+	FILELIST=$(ls -1 ${PWD}/*/*.GTC.dim | tr '\n' ',' | rev | cut -c 2- | rev)
+	if [[ `ls -1 ${PWD}/*/*.GTC.data/*VH*img 2>/dev/null | wc -l` -eq ${NR_OF_ACQ} ]];then
+		s1_timeseries ${FILELIST} ${AOI} ${STACK} ${ODATATYPE} VH ${TMP_DIR_TRACK} ${LOG_DIR}
+
+
+		if [[ $3 != 2 ]];then
+			mkdir -p ${STACK}/Timescan
+			ost_S1_timeseries2timescan ${STACK}/Timeseries/timeseries.VV.vrt ${STACK}/Timescan/ Sigma0.VV 1
+			mv ${STACK}/Timescan/Sigma0.VV.avg.tif ${STACK}/Timescan/01_Sigma0.VV.avg.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/01_Sigma0.VV.avg.tif
+			mv ${STACK}/Timescan/Sigma0.VV.max.tif ${STACK}/Timescan/02_Sigma0.VV.max.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/02_Sigma0.VV.max.tif
+			mv ${STACK}/Timescan/Sigma0.VV.min.tif ${STACK}/Timescan/03_Sigma0.VV.min.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/03_Sigma0.VV.min.tif
+			mv ${STACK}/Timescan/Sigma0.VV.std.tif ${STACK}/Timescan/04_Sigma0.VV.std.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/04_Sigma0.VV.std.tif
+			mv ${STACK}/Timescan/Sigma0.VV.cov.tif ${STACK}/Timescan/05_Sigma0.VV.cov.tif
+
+			ost_S1_timeseries2timescan ${STACK}/Timeseries/timeseries.VH.vrt ${STACK}/Timescan/ Sigma0.VH 1
+			mv ${STACK}/Timescan/Sigma0.VH.avg.tif ${STACK}/Timescan/06_Sigma0.VH.avg.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/06_Sigma0.VH.avg.tif
+		  mv ${STACK}/Timescan/Sigma0.VH.max.tif ${STACK}/Timescan/07_Sigma0.VH.max.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/07_Sigma0.VH.max.tif
+		  mv ${STACK}/Timescan/Sigma0.VH.min.tif ${STACK}/Timescan/08_Sigma0.VH.min.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/08_Sigma0.VH.min.tif
+		  mv ${STACK}/Timescan/Sigma0.VH.std.tif ${STACK}/Timescan/09_Sigma0.VH.std.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/09_Sigma0.VH.std.tif
+		  mv ${STACK}/Timescan/Sigma0.VH.cov.tif ${STACK}/Timescan/10_Sigma0.VH.cov.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/10_Sigma0.VH.cov.tif
+
+			# create the vrt stack
+			gdalbuildvrt -separate -srcnodata 0 ${STACK}/Timescan/Timescan.VVVH.vrt ${STACK}/Timescan/01_Sigma0.VV.avg.tif ${STACK}/Timescan/02_Sigma0.VV.max.tif \
+	                                        ${STACK}/Timescan/03_Sigma0.VV.min.tif ${STACK}/Timescan/04_Sigma0.VV.std.tif ${STACK}/Timescan/05_Sigma0.VV.cov.tif \
+	                                        ${STACK}/Timescan/06_Sigma0.VH.avg.tif ${STACK}/Timescan/07_Sigma0.VH.max.tif ${STACK}/Timescan/08_Sigma0.VH.min.tif \
+	                                        ${STACK}/Timescan/09_Sigma0.VH.std.tif ${STACK}/Timescan/10_Sigma0.VH.cov.tif >> ${LOG_DIR}/log_mt_stacking 2>&1
+
+			SECONDS=0
+			echo -ne " Create a kmz file for Google Earth Visualization ..." &&
+			gdalbuildvrt -separate -srcnodata 0 ${TMP_DIR_TRACK}/tmp_rgb.vrt ${STACK}/Timescan/01_Sigma0.VV.avg.tif ${STACK}/Timescan/06_Sigma0.VH.avg.tif ${STACK}/Timescan/09_Sigma0.VH.std.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+			gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${TMP_DIR_TRACK}/tmp_rgb.vrt ${TMP_DIR_TRACK}/RGB.8bit.tif >> ${LOG_DIR}/log_mt_stacking 2>&1
+			gdal_translate -of KMLSUPEROVERLAY -co format=JPEG ${TMP_DIR_TRACK}/RGB.8bit.tif ${STACK}/Timescan/RGB.timescan.kmz >> ${LOG_DIR}/log_mt_stacking 2>&1
+			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+		fi
+
+	else
+		s1_timeseries ${FILELIST} ${AOI} ${STACK} ${ODATATYPE} VV ${TMP_DIR_TRACK} ${LOG_DIR}
+
+		if [[ $3 != 2 ]];then
+			mkdir -p ${STACK}/Timescan
+			ost_S1_timeseries2timescan ${STACK}/Timeseries/timeseries.VV.vrt ${STACK}/Timescan/ Sigma0.VV 1
+			mv ${STACK}/Timescan/Sigma0.VV.avg.tif ${STACK}/Timescan/01_Sigma0.VV.avg.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/01_Sigma0.VV.avg.tif
+			mv ${STACK}/Timescan/Sigma0.VV.max.tif ${STACK}/Timescan/02_Sigma0.VV.max.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/02_Sigma0.VV.max.tif
+			mv ${STACK}/Timescan/Sigma0.VV.min.tif ${STACK}/Timescan/03_Sigma0.VV.min.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/03_Sigma0.VV.min.tif
+			mv ${STACK}/Timescan/Sigma0.VV.std.tif ${STACK}/Timescan/04_Sigma0.VV.std.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/04_Sigma0.VV.std.tif
+			mv ${STACK}/Timescan/Sigma0.VV.cov.tif ${STACK}/Timescan/05_Sigma0.VV.cov.tif
+
+			# create the vrt stack
+			gdalbuildvrt -separate -srcnodata 0 ${STACK}/Timescan/Timescan.VV.vrt ${STACK}/Timescan/01_Sigma0.VV.avg.tif ${STACK}/Timescan/02_Sigma0.VV.max.tif ${STACK}/Timescan/03_Sigma0.VV.min.tif \
+	                                        ${STACK}/Timescan/04_Sigma0.VV.std.tif ${STACK}/Timescan/05_Sigma0.VV.cov.tif  >> ${LOG_DIR}/log_mt_stacking 2>&1
+
+
+			SECONDS=0
+			echo -ne " Create a kmz file for Google Earth Visualization ..." &&
+			gdalbuildvrt -separate -srcnodata 0 ${TMP_DIR_TRACK}/tmp_rgb.vrt ${STACK}/Timescan/02_Sigma0.VV.max.tif ${STACK}/Timescan/03_Sigma0.VV.min.tif ${STACK}/Timescan/04_Sigma0.VV.std.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+			gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${TMP_DIR_TRACK}/tmp_rgb.vrt ${TMP_DIR_TRACK}/RGB.8bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+			gdal_translate -of "KMLSUPEROVERLAY" -co "format=JPEG" ${TMP_DIR_TRACK}/RGB.8bit.tif ${STACK}/Timescan/RGB.timescan.kmz >> ${LOG_MT}/log_mt_stacking 2>&1
+			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+		fi
+	fi
+
+	if [[ $3 == 3 ]];then
+			 rm -rf ${STACK}/Timeseries/
+	fi
+
+  rm -rf ${TMP_DIR_TRACK}
+
+	j=`expr $j + 1`
+	cd ${PROC_DIR}
+
+done # close track loop
+
+rm -rf ${TMP_DIR}

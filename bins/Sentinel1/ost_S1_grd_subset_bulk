@@ -20,45 +20,50 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 # OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+source ${OPENSARKIT}/lib/helpers_source
 #-------------------------------------------------------------------------------------------
 # 	0.1 Check for right usage & set up basic Script Variables
 if [ "$#" != "4" ]; then
 
 	echo -e ""
-	echo -e "----------------------------------------------------------------------------------"
-	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
+	echo -e "-----------------------------------------------------------------------"
+	echo -e " Open SAR Toolkit, version ${OSK_VERSION}"
 	echo -e " Subsetting Sentinel-1 GRD data to a given Area of Interest - Bulk Mode"
-	echo -e "----------------------------------------------------------------------------------"
+	echo -e "-----------------------------------------------------------------------"
 	echo -e ""
-	echo -e "----------------------------------------------------------------------------------"
-	echo -e " Software dependencies:"
-	echo -e "	- ESA Sentinel Application Platform SNAP"
-	echo -e "	- gdal-bin"
-	echo -e "----------------------------------------------------------------------------------"
 	echo -e ""
-	echo -e " oft-sar-S1-GRD-bulk-subset <project folder> <AOI> <clean import> <delete zips>"
+	echo -e " ost_S1_grd_subset_bulk <project directory> <AOI> <clean import> <delete zips>"
 	echo -e ""
+	echo -e " input parameters:"
+	echo -e " project directory		(input/output) /path/to/DATA "
+	echo -e " AOI		Area of Interest for subsettting"
+	echo -e " clean import			do pre-processing steps (i.e., apply orbit file, calibration, thermal noise removal"
+	echo -e "			 Available choices:"
+	echo -e "			  0 keep original file"
+	echo -e "			  1 delete original file"
+	echo -e " delete zips			acquisition Mode of PALSAR instrument"
+	echo -e "			 Available choices:"
+	echo -e "			  0 keep original file"
+	echo -e "			  1 delete original file"
+	exit 1
+
 	exit 1
 
 else
-	echo -e ""
-	echo -e "----------------------------------------------------------------------------------"
-	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
-	echo -e " Subsetting Sentinel-1 GRD data to a given Area of Interest - Bulk Mode"
-	echo -e "----------------------------------------------------------------------------------"
-	echo -e ""
-
 
 	# set up initial script variables
 	AOI=`readlink -f $2`
 	cd $1
 	PROC_DIR=`pwd`
 
-	source ${OPENSARKIT}/lib/helpers_source
+	echo -e ""
+	echo -e "-----------------------------------------------------------------------"
+	echo -e " Open SAR Toolkit, version ${OSK_VERSION}"
+	echo -e " Subsetting Sentinel-1 GRD data to a given Area of Interest - Bulk Mode"
+	echo -e "-----------------------------------------------------------------------"
+	echo -e ""
+
 fi
-
-
-
 
 for LINE in `ls -1 ${PROC_DIR}`;do
 

@@ -14,39 +14,36 @@ tabItem(tabName = "s1_inv",
           box(
              # Title                     
              title = "Processing Panel", status = "success", solidHeader= TRUE,
-             tags$h4("Sentinel-1 data inventory"),
-             hr(),
+             tags$h4("Sentinel-1 data inventory"),hr(),
              tags$b("Short description:"),
              p("This interface allows to create a shapefile that contains all available Sentinel-1 scenes according to the parameters set below.
-               A careful refinement of the selection for the subsequent timeseries/timescan product generation is strongly encouraged."),
-             hr(),
-             tags$b(" Project Directory:"),
-             br(),
+               A careful refinement of the selection for the subsequent timeseries/timescan product generation is strongly encouraged."),hr(),
+             
+             #-----------------------------------------------------------------------------------------------------------
+             # Project Directory
+             tags$b(" Project Directory:"),br(),
              p("A new folder named \"Inventory\" will be created within the selected project directory. 
                 This folder contains the OST inventory shapefile that is produced by this interface."),
-             #br(),
-             #div(style="display:inline-block",shinyDirButton('directory', 'Browse', 'Select a folder')),
-             #div(style="display:inline-block",verbatimTextOutput("project_dir")),
-             shinyDirButton('S1_inv_directory', 'Browse', 'Select a folder'),
-             br(),
-             br(),
-             verbatimTextOutput("S1_inv_project_dir"),
-             hr(),
+             shinyDirButton('s1_inv_directory', 'Browse', 'Select a folder'),br(),br(),
+             verbatimTextOutput("s1_inv_project_dir"),hr(),
+             #-----------------------------------------------------------------------------------------------------------
+             
+             #-----------------------------------------------------------------------------------------------------------
              tags$b("Area of Interest"),
              p("This parameter will define the spatial extent of the data inventory. You can either choose the borders 
                 of a country or a shapefile that bounds your area of interest. If you are working from remote, 
                 you can transfer a zipped archive containing a shapefile and its associated files 
                 from your local machine to the server by selecting the third option."),
              # AOI choice
-             radioButtons("S1_inv_AOI", "",
-                          c("Country boundary" = "S1_inv_country",
-                            "Shapefile (local/ on server)" = "S1_inv_shape_local",
-                            "Shapefile (upload a zipped archive)" = "S1_inv_shape_upload")),
+             radioButtons("s1_inv_AOI", "",
+                          c("Country boundary" = "s1_inv_country",
+                            "Shapefile (local/ on server)" = "s1_inv_shape_local",
+                            "Shapefile (upload a zipped archive)" = "s1_inv_shape_upload")),
              
              conditionalPanel(
-               "input.S1_inv_AOI == 'S1_inv_country'",
+               "input.s1_inv_AOI == 's1_inv_country'",
                selectInput(
-                     inputId = 'S1_inv_countryname', 
+                     inputId = 's1_inv_countryname', 
                      label = '',
                      choices = dbGetQuery(
                      dbConnect(SQLite(),dbname=Sys.getenv("OST_DB")),
@@ -55,21 +52,21 @@ tabItem(tabName = "s1_inv",
              ),
              
              conditionalPanel(
-                    "input.S1_inv_AOI == 'S1_inv_shape_local'",
+                    "input.s1_inv_AOI == 's1_inv_shape_local'",
                      #div(style="display:inline-block",shinyFilesButton("shapefile","Choose file","Choose one or more files",FALSE)),
                      #div(style="display:inline-block",textOutput("filepath"))
-                     shinyFilesButton("S1_inv_shapefile","Browse","Choose one shapefile",FALSE),
+                     shinyFilesButton("s1_inv_shapefile","Browse","Choose one shapefile",FALSE),
                      br(),
                      br(),
-                     verbatimTextOutput("S1_inv_filepath")
+                     verbatimTextOutput("s1_inv_filepath")
              ),
              
              conditionalPanel(
-                    "input.S1_inv_AOI == 'S1_inv_shape_upload'",
-                     fileInput('S1_inv_shapefile_path', label = '',accept = c(".shp"))
-             ),
+                    "input.s1_inv_AOI == 's1_inv_shape_upload'",
+                     fileInput('s1_inv_shapefile_path', label = '',accept = c(".shp"))
+             ),hr(),
              
-             hr(),
+             #-----------------------------------------------------------------------------------------------------------
              tags$b("Date Range"),
              p("Select a period of time for which data inventory will be applied."),
              dateRangeInput("s1_inv_daterange",
@@ -79,9 +76,9 @@ tabItem(tabName = "s1_inv",
                              min = "2014-10-01",
                              max = Sys.Date(),
                              format = "yyyy-mm-dd"
-                          ),
+                          ),hr(),
              
-             hr(),
+             #-----------------------------------------------------------------------------------------------------------
              tags$b("Polarisation Mode"),
              p("Note that for subsequent processing tasks only the VV co- and VH cross-polarisations are supported
                 by OST for now. More info on the polarisation modes of Sentinel-1 can be found in the Info Panel on the right."),
@@ -92,8 +89,10 @@ tabItem(tabName = "s1_inv",
                          "Dual-pol (HH+HV)" = "dual_hh",
                          "Single-pol (HH)" = "hh",
                          "Dual-pol (HH+HV) & Single-pol (HH) " = "dual_single_hh")
-             ),
-             hr(),
+             ),hr(),
+             #-----------------------------------------------------------------------------------------------------------
+             
+             #-----------------------------------------------------------------------------------------------------------
              tags$b("Sensor Mode"),
              p(" Note that for subsequent processing tasks only the standard Interferometric Wide Swath is 
                  supported by OST for now. More info on the sensor modes of Sentinel-1 can be found in the 
@@ -102,8 +101,10 @@ tabItem(tabName = "s1_inv",
                           c("Interferometric Wide Swath (recommended) " = "iw",
                             "Extra Wide Swath" = "ew",
                             "Wave Mode" = "wv")
-             ),
-             hr(),
+             ),hr(),
+             #-----------------------------------------------------------------------------------------------------------
+             
+             #-----------------------------------------------------------------------------------------------------------
              tags$b("Product Level"),
              p("Note that for subsequent processing tasks only the GRD products are supported by OST for now.
                 More info on the product levels of Sentinel-1 can be found in the Info Panel on the right."),
@@ -111,15 +112,20 @@ tabItem(tabName = "s1_inv",
                           c("Level-1 GRD (recommended) " = "grd",
                             "Level-1 SLC" = "slc",
                             "Level-0 RAW" = "raw")
-             ),
-             hr(),
-             # div(style="display:inline-block",actionButton("s1_kc_process", "Start processing")),
-             # div(style="display:inline-block",actionButton("s1_kc_abort", "Abort processing")),
-             withBusyIndicatorUI(
-                  actionButton("s1_inv_search", "Create an OST inventory shapefile")
-             ),
-             br(),
-             textOutput("searchS1_inv")
+             ),hr(),
+             #-----------------------------------------------------------------------------------------------------------
+             
+             #-----------------------------------------------------------------------------------------------------------------------------------
+             # Trigger / Abort
+             div(style="display: inline-block;vertical-align:top; width: 220px;", withBusyIndicatorUI(
+               actionButton("s1_inv_pro_btn", "Create an OST inventory shapefile")
+             )),
+             div(style="display: inline-block;vertical-align:top; width: 150px;", withBusyIndicatorUI(
+               actionButton("s1_inv_abort_btn", "Abort the inventory")
+             )),
+             textOutput("s1_inv")
+             #-----------------------------------------------------------------------------------------------------------------------------------
+             
           ), # close box
           #----------------------------------------------------------------------------------
           
@@ -130,7 +136,14 @@ tabItem(tabName = "s1_inv",
                
                tabBox(width = 700,
                       
+                      tabPanel("Progress Monitor",
+                               tags$h4("Monitoring the progress of active inventory"),hr(),
+                               #actionButton("s1_inv_log_btn", "Start"),hr(),
+                               verbatimTextOutput("s1_inv_progress")
+                      ),
                       tabPanel("General Info",
+                               
+                               
                                tags$h4("Sentinel-1 data inventory "),
                                hr(),
                                p("By using the processing panel on the left, it is possible to easily search for data from the Sentinel-1 constellation for a certain area, 
@@ -159,15 +172,15 @@ tabItem(tabName = "s1_inv",
                                      acquired as closely as possible. Thus, effects due to different environmental conditions are reduced and the radiometry of 
                                      the output products are similar.")
                       ),
-                             
+                      
                       tabPanel("Observation Scenario",
                                tags$h4("Sentinel-1's general acquisition plan"),
                                hr(),
                                p("SENTINEL-1 provides regular global coverage of C-Band SAR data. 
                                   Since the launch of the SENTINEL-1A unit in April 2014, daily data delivery has been increased constantly. 
                                   With the availability of the data from the SENTINEL-1B unit and the integration into the",
-                                  a(href = "https://en.wikipedia.org/wiki/European_Data_Relay_System", "European Data Relay System (EDRS)"),
-                                  ", constant image acqusition is in place since October 2016."),
+                                 a(href = "https://en.wikipedia.org/wiki/European_Data_Relay_System", "European Data Relay System (EDRS)"),
+                                 ", constant image acqusition is in place since October 2016."),
                                p("Detailed information on the acquisition strategy can be found", 
                                  a(href = "https://sentinel.esa.int/web/sentinel/missions/sentinel-1/observation-scenario", target = "_blank", "here"), "."),
                                img(src = "Sentinel-1-revisit-frequency.jpg", width = "100%", height = "100%"),
@@ -249,7 +262,7 @@ tabItem(tabName = "s1_inv",
                                tags$b("Websites"),
                                
                                tags$b("Scientific Articles"),
-              
+                               
                                p("Torres et al. (2012): ")
                                
                       ),
@@ -260,10 +273,10 @@ tabItem(tabName = "s1_inv",
                                   communication material shall include a notice on the use and/or modification of the data.
                                  The full text on the use of Copernicus Sentinel Data and Service Information can be found",
                                  a(href = "https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice", target = "_blank", "here." )
-                               
-                      )
-                  ) # close tab box
-           ) # close box
+                                 
+                               )
+                      ) # close tab box
+               ) # close box
+             )
         )
-)
 )

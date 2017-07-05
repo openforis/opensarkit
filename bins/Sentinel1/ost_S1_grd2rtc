@@ -1,7 +1,7 @@
 #! /bin/bash
 
 # The MIT License (MIT)
-# Copyright (c) 2016 Andreas Vollrath
+# written by Andreas Vollrath, 2016
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,7 @@ if [ "$#" != "3" ]; then
 
 	echo -e ""
 	echo -e "----------------------------------------------------------------------------------"
-	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
+	echo -e " Open SAR Toolkit, version ${OST_VERSION}"
 	echo -e " Preprocess Sentinel-1 GRD scene to a radiometrically terrain corrected product"
 	echo -e "----------------------------------------------------------------------------------"
 	echo -e ""
@@ -45,17 +45,10 @@ if [ "$#" != "3" ]; then
 	echo -e "			  Available choices:"
 	echo -e "			  HI_RES (10m output) "
 	echo -e "			  MED_RES (30m output)"
-#	echo -e "  elevation	(optional) filename to the digital elevation model"
-#	echo -e ""
-#	echo -e "  NOTE: The DEM file should be provided in Geotiff-format as a 16Bit Integer data type with 0 as the no data value."
 	echo -e ""
 	exit 1
-else
-	echo -e "----------------------------------------------------------------------------------"
-	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
-	echo -e " Preprocess a Sentinel-1 GRD scene to a radiometrically terrain corrected product"
-	echo -e "----------------------------------------------------------------------------------"
 
+else
 
 	# set up initial script variables
 	FILE=`readlink -f $1`
@@ -71,47 +64,63 @@ else
 
 	# source libs
 	source ${OPENSARKIT}/lib/helpers_source
+
+	echo -e "----------------------------------------------------------------------------------" | tee ${PROC_DIR}/.s1_g2r_progress
+	echo -e " Open SAR Toolkit, version ${OST_VERSION}" | tee -a ${PROC_DIR}/.s1_g2r_progress
+	echo -e " Preprocess a Sentinel-1 GRD scene to a radiometrically terrain corrected product" | tee -a ${PROC_DIR}/.s1_g2r_progress
+	echo -e "----------------------------------------------------------------------------------" | tee -a ${PROC_DIR}/.s1_g2r_progress
+
 fi
 
+# Check if RAM disk is applicable
+set_tmp_S1_RTC_bulk 1 ${RESOLUTION} | tee -a ${PROC_DIR}/.s1_g2g_progress
+
 # get scene infos
+s1_info ${FILE} >> ${PROC_DIR}/.s1_g2r_progress
+# we call it a second time to get the exported variables such as SCENE_ID
 s1_info ${FILE}
 
 if [[ ${FILE} == *imported_subset.dim ]];then
 
 	SECONDS=0
-	echo -ne " Applying the Lee Sigma Speckle Filter ..."
+	echo -ne " Applying the Lee Sigma Speckle Filter ..." | tee -a ${PROC_DIR}/.s1_g2r_progress
 	bash ${SNAP_EXE} Speckle-Filter -Ssource=${FILE} -t ${TMP_DIR}/${SCENE_ID}"_speckle" > /dev/null 2>&1
-	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_g2r_progress
 
 	s1_rtc_processing ${TMP_DIR}/${SCENE_ID}"_speckle.dim" ${OUT_DIR}/${SCENE_ID} ${RESOLUTION} 0 dummyfoo ${TMP_DIR} ${OUT_DIR}
 	rm -rf ${TMP_DIR}/${SCENE_ID}"_speckle"*
 else
-	s1_frame_import ${FILE} ${TMP_DIR}/${SCENE_ID}"_import" ${OUT_DIR}
+	s1_frame_import ${FILE} ${TMP_DIR}/${SCENE_ID}"_import" ${OUT_DIR} | tee -a ${PROC_DIR}/.s1_g2r_progress
 
 	SECONDS=0
-	echo -ne " Applying the Lee Sigma Speckle Filter ..."
+	echo -ne " Applying the Lee Sigma Speckle Filter ..." | tee -a ${PROC_DIR}/.s1_g2r_progress
 	bash ${SNAP_EXE} Speckle-Filter -Ssource=${TMP_DIR}/${SCENE_ID}"_import.dim" -t ${TMP_DIR}/${SCENE_ID}"_speckle" > /dev/null 2>&1
-	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_g2r_progress
 	rm -rf ${TMP_DIR}/${SCENE_ID}"_import"*
 
-	s1_rtc_processing ${TMP_DIR}/${SCENE_ID}"_speckle.dim" ${OUT_DIR}/${SCENE_ID} ${RESOLUTION} 0 dummyfoo ${TMP_DIR} ${OUT_DIR}
+	s1_rtc_processing ${TMP_DIR}/${SCENE_ID}"_speckle.dim" ${OUT_DIR}/${SCENE_ID} ${RESOLUTION} 0 dummyfoo ${TMP_DIR} ${OUT_DIR} | tee -a ${PROC_DIR}/.s1_g2r_progress
 	rm -rf ${TMP_DIR}/${SCENE_ID}"_speckle"*
 fi
 
 if [[ ${POL_MODE} == "SDV" ]];then
 	SECONDS=0
-	echo -ne " Creating final output file (Band 1: VV, Band 2: VH, Band 3 VV/VH ratio) ..."
+	echo -ne " Creating final output file (Band 1: VV, Band 2: VH, Band 3 VV/VH ratio) ..." | tee -a ${PROC_DIR}/.s1_g2r_progress
 	gdal_merge.py -o ${OUT_DIR}/${SCENE_ID}".RTC".tif -n 0 -a_nodata 0 -separate ${TMP_DIR}/${SCENE_ID}".RTC".data/Gamma0_VV_db.img ${TMP_DIR}/${SCENE_ID}".RTC".data/Gamma0_VH_db.img ${TMP_DIR}/${SCENE_ID}".RTC".data/VV-VH_ratio.img > $OUT_DIR/log_export 2>&1
-  duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+  duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_g2r_progress
 
 elif [[ ${POL_MODE} == "SSV" ]];then
 	SECONDS=0
-	echo -ne " Creating final output file (Band 1: VV) ..."
-	gdal_translate -a_nodata 0 ${TMP_DIR}/${SCENE_ID}".RTC".data/Gamma0_VV_db.img ${OUT_DIR}/${SCENE_ID}".RTC".tif > $OUT_DIR/log_export 2>&1
-  duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+	echo -ne " Creating final output file (Band 1: VV) ..." | tee -a ${PROC_DIR}/.s1_g2r_progress
+	gdal_translate -a_nodata 0 -co "COMPRESS=LZW" -co "BIGTIFF=YES" ${TMP_DIR}/${SCENE_ID}".RTC".data/Gamma0_VV_db.img ${OUT_DIR}/${SCENE_ID}".RTC".tif > $OUT_DIR/log_export 2>&1
+  duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_g2r_progress
 fi
 
 rm -rf ${TMP_DIR}
-echo "------------------------------------------------"
-echo " Succesfully processed ${SCENE_ID}"
-echo "------------------------------------------------"
+
+if [ -e ${OUT_DIR}/${SCENE_ID}".RTC".tif ];then
+	echo "------------------------------------------------" | tee -a ${PROC_DIR}/.s1_g2r_progress
+	echo " Succesfully processed ${SCENE_ID}" | tee -a ${PROC_DIR}/.s1_g2r_progress
+	echo "------------------------------------------------" | tee -a ${PROC_DIR}/.s1_g2r_progress
+else
+	echo "Processing failed for some reason." && exit 1
+fi

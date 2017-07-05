@@ -20,12 +20,15 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 # OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+
+	# source OST libs
+	source ${OPENSARKIT}/lib/helpers_source
 #-------------------------------------------------------------------------------------------
 # 	0.1 Check for right usage & set up basic Script Variables
 if [ "$#" != "4" ]; then
 
 	echo -e "------------------------------------------------------------------"
-	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
+	echo -e " Open SAR Toolkit, version ${OST_VERSION}"
 	echo -e " Create timescan layers from a timeseries stack "
 	echo -e "------------------------------------------------------------------"
 	echo -e ""
@@ -48,18 +51,14 @@ if [ "$#" != "4" ]; then
 	exit 1
 else
 	echo -e "------------------------------------------------------------------"
-	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
+	echo -e " Open SAR Toolkit, version ${OST_VERSION}"
 	echo -e " Create timeseries stack and multi-temporal statistics from preprocessed single scenes"
 	echo -e "------------------------------------------------------------------"
 
-	# source OST libs
-	source ${OPENSARKIT}/lib/helpers_source
 
 	# set up initial script variables
 	TS_STACK=$(readlink -f $1)
 	TS_MODE=$2
-	
-
 
 fi
 

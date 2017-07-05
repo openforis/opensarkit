@@ -37,7 +37,6 @@ function s1_frame_import() {
   echo ""
   SECONDS=0
   echo -ne " Importing S1 GRD data file, applying the precise orbit file and removing thermal noise ..." &&
-  echo "bash ${SNAP_EXE} ${S1_GRD_import_GRAPHS}/S1_GRD_AO_TNR.xml -x -Pinput=$1 -Poutput=$2 "
   bash ${SNAP_EXE} ${S1_GRD_import_GRAPHS}/S1_GRD_AO_TNR.xml -x -Pinput=$1 -Poutput=$2 > $3/log_import 2>&1
   duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
@@ -141,17 +140,19 @@ function s1_rtc_processing() {
   RTC_TMP="$6"
   RTC_LOG="$7"
 
+  NR_OF_CPUS=`echo "$(nproc) * 2" | bc`
+
   if [ ${RTC_RES} == "MED_RES" ];then
 
     SECONDS=0
     echo " Calibrating to beta0, applying the terrain flattening and multi-look by a factor of 3  ..." &&
-    bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_CAL_TF_ML3.xml -x -Pinput=${RTC_IN} -Poutput=${RTC_TMP}/TF  > ${RTC_LOG}/log_cal_tf_ml 2>&1
+    bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_CAL_TF_ML3.xml -x -q ${NR_OF_CPUS} -Pinput=${RTC_IN} -Poutput=${RTC_TMP}/TF  > ${RTC_LOG}/log_cal_tf_ml 2>&1
     duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
     [ $? -ne 0 ] && return ${ERR_BRD_NOISE}
 
     SECONDS=0
     echo -ne " Creating a layover/shadow mask ... " &&
-    bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_LayShaMask_ML3.xml -x -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_OUT}.LS_mask  > ${RTC_LOG}/log_cal_tf_ml 2>&1
+    bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_LayShaMask_ML3.xml -x  -q ${NR_OF_CPUS} -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_OUT}.LS_mask  > ${RTC_LOG}/log_cal_tf_ml 2>&1
     duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
     if [ -e ${RTC_TMP}/TF.data/Gamma0_VH.img ];then
@@ -160,14 +161,14 @@ function s1_rtc_processing() {
 
         SECONDS=0
         echo -ne " Applying the geometric terrain correction, calculate the VV/VH Band Ratio and transform backscatter to decibel scale  ..." &&
-        bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_SDV_30_TC_DB_Ratio.xml -x -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_TMP}/TC_DB -PoutputRatio=${RTC_TMP}/Ratio > ${RTC_LOG}/log_tc_ratio 2>&1
+        bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_SDV_30_TC_DB_Ratio.xml -x  -q ${NR_OF_CPUS} -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_TMP}/TC_DB -PoutputRatio=${RTC_TMP}/Ratio > ${RTC_LOG}/log_tc_ratio 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_TC}
         rm -rf ${RTC_TMP}/TF.d*
 
         SECONDS=0
         echo -ne " Merging backscatter bands with ratio"
-        bash ${SNAP_EXE} BandMerge -x ${RTC_TMP}/TC_DB.dim ${RTC_TMP}/Ratio.dim -t ${RTC_TMP}/RTC.dim > ${RTC_LOG}/log_output 2>&1
+        bash ${SNAP_EXE} BandMerge -x  -q ${NR_OF_CPUS} ${RTC_TMP}/TC_DB.dim ${RTC_TMP}/Ratio.dim -t ${RTC_TMP}/RTC.dim > ${RTC_LOG}/log_output 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_BM}
         rm -rf ${RTC_TMP}/TC_DB.d* ${RTC_TMP}/Ratio.d*
@@ -207,7 +208,7 @@ function s1_rtc_processing() {
 
         SECONDS=0
         echo -ne " Create a kmz file for Google Earth Visualization ..." &&
-        gdal_contrast_stretch -ndv 0 -percentile-range 0.02 0.98 ${RTC_OUT}.RTC.tif ${RTC_TMP}/RTC.8bit.tif >> ${RTC_LOG}/log_output 2>&1
+        gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${RTC_OUT}.RTC.tif ${RTC_TMP}/RTC.8bit.tif >> ${RTC_LOG}/log_output 2>&1
         gdal_translate -of KMLSUPEROVERLAY ${RTC_TMP}/RTC.8bit.tif ${RTC_OUT}.RTC.kmz -co format=JPEG >> ${RTC_LOG}/log_output 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
@@ -215,7 +216,7 @@ function s1_rtc_processing() {
 
         SECONDS=0 # no db-scaling
         echo -ne " Applying the geometric terrain correction ..." &&
-        bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_SDV_30_TC.xml -x -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_OUT}.RTC > ${RTC_LOG}/log_tc 2>&1
+        bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_SDV_30_TC.xml -x  -q ${NR_OF_CPUS} -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_OUT}.RTC > ${RTC_LOG}/log_tc 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_TC}
         rm -rf ${RTC_TMP}/TF.d*
@@ -228,7 +229,7 @@ function s1_rtc_processing() {
 
         SECONDS=0
         echo -ne " Applying the geometric terrain correction and transform backscatter to decibel scale  ..." &&
-        bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_SSV_30_TC_DB.xml -x -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_TMP}/RTC > ${RTC_LOG}/log_tc_db 2>&1
+        bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_SSV_30_TC_DB.xml -x  -q ${NR_OF_CPUS} -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_TMP}/RTC > ${RTC_LOG}/log_tc_db 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_TC}
         rm -rf ${RTC_TMP}/TF.d*
@@ -266,7 +267,7 @@ function s1_rtc_processing() {
 
         SECONDS=0
         echo -ne " Create a kmz file for Google Earth Visualization ..." &&
-        gdal_contrast_stretch -ndv 0 -percentile-range 0.02 0.98 ${RTC_OUT}.RTC.tif ${RTC_TMP}/RTC.8bit.tif >> ${RTC_LOG}/log_output 2>&1
+        gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${RTC_OUT}.RTC.tif ${RTC_TMP}/RTC.8bit.tif >> ${RTC_LOG}/log_output 2>&1
         gdal_translate -of KMLSUPEROVERLAY ${RTC_TMP}/RTC.8bit.tif ${RTC_OUT}.RTC.kmz -co format=JPEG >> ${RTC_LOG}/log_output 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
@@ -274,7 +275,7 @@ function s1_rtc_processing() {
 
         SECONDS=0 # no db-scaling
         echo -ne " Applying the geometric terrain correction ..." &&
-        bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_SSV_30_TC.xml -x -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_OUT}.RTC > ${RTC_LOG}/log_tc 2>&1
+        bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_SSV_30_TC.xml -x  -q ${NR_OF_CPUS} -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_OUT}.RTC > ${RTC_LOG}/log_tc 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return  ${ERR_TC}
         rm -rf ${RTC_TMP}/TF.d*
@@ -288,14 +289,14 @@ function s1_rtc_processing() {
     SECONDS=0
     echo " Removing GRD border noise by deleting the outer 600 rows, calibrating to beta0, "
     echo -ne " applying the terrain flattening ..." &&
-    bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_CAL_TF_noML.xml -x -Pinput=${RTC_IN} -Pwidth=${NEW_WIDTH} -Pheight=${NEW_HEIGHT} -Poutput=${RTC_TMP}/TF > ${RTC_LOG}/log_cal_tf 2>&1
+    bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_CAL_TF_noML.xml -x -q ${NR_OF_CPUS} -Pinput=${RTC_IN} -Pwidth=${NEW_WIDTH} -Pheight=${NEW_HEIGHT} -Poutput=${RTC_TMP}/TF > ${RTC_LOG}/log_cal_tf 2>&1
     duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
     [ $? -ne 0 ] && return ${ERR_BRD_NOISE}
     rm -rf ${RTC_TMP}/${BASE}-import.dim
 
     SECONDS=0
     echo -ne " Creating a layover/shadow mask ... " &&
-    bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_LayShaMask_noML.xml -x -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_OUT}.LS_mask  > ${RTC_LOG}/log_cal_tf_ml 2>&1
+    bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_LayShaMask_noML.xml -x  -q ${NR_OF_CPUS} -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_OUT}.LS_mask  > ${RTC_LOG}/log_cal_tf_ml 2>&1
     duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 
@@ -305,14 +306,14 @@ function s1_rtc_processing() {
 
         SECONDS=0
         echo -ne " Applying the geometric terrain correction, calculate the VV/VH Band Ratio and transform backscatter to decibel scale  ..." &&
-        bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_SDV_10_TC_DB_Ratio.xml -x -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_TMP}/TC_DB -PoutputRatio=${RTC_TMP}/Ratio > ${RTC_LOG}/log_tc_ratio 2>&1
+        bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_SDV_10_TC_DB_Ratio.xml -x -q ${NR_OF_CPUS} -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_TMP}/TC_DB -PoutputRatio=${RTC_TMP}/Ratio > ${RTC_LOG}/log_tc_ratio 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_TC}
         rm -rf ${RTC_TMP}/TF.d*
 
         SECONDS=0
         echo -ne " Merging backscatter bands with ratio"
-        bash ${SNAP_EXE} BandMerge -x ${RTC_TMP}/TC_DB.dim ${RTC_TMP}/Ratio.dim -t ${RTC_TMP}/RTC.dim > ${RTC_LOG}/log_output 2>&1
+        bash ${SNAP_EXE} BandMerge -x -q ${NR_OF_CPUS} ${RTC_TMP}/TC_DB.dim ${RTC_TMP}/Ratio.dim -t ${RTC_TMP}/RTC.dim > ${RTC_LOG}/log_output 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_BM}
         rm -rf ${RTC_TMP}/TC_DB.d* ${RTC_TMP}/Ratio.d*
@@ -351,7 +352,7 @@ function s1_rtc_processing() {
 
         SECONDS=0
         echo -ne " Create a kmz file for Google Earth Visualization ..." &&
-        gdal_contrast_stretch -ndv 0 -percentile-range 0.02 0.98 ${RTC_OUT}.RTC.tif ${RTC_TMP}/RTC.8bit.tif >> ${RTC_LOG}/log_output 2>&1
+        gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${RTC_OUT}.RTC.tif ${RTC_TMP}/RTC.8bit.tif >> ${RTC_LOG}/log_output 2>&1
         gdal_translate -of KMLSUPEROVERLAY ${RTC_TMP}/RTC.8bit.tif ${RTC_OUT}.RTC.kmz -co format=JPEG >> ${RTC_LOG}/log_output 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
@@ -359,7 +360,7 @@ function s1_rtc_processing() {
 
           SECONDS=0
           echo -ne " Applying the geometric terrain correction ..." &&
-          bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_SDV_10_TC.xml -x -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_OUT}.RTC > ${RTC_LOG}/log_tc 2>&1
+          bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_SDV_10_TC.xml -x -q ${NR_OF_CPUS} -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_OUT}.RTC > ${RTC_LOG}/log_tc 2>&1
           duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
           [ $? -ne 0 ] && return ${ERR_TC}
           rm -rf ${RTC_TMP}/TF.d*
@@ -372,7 +373,7 @@ function s1_rtc_processing() {
 
         SECONDS=0
         echo -ne " Applying the geometric terrain correction and transform backscatter to decibel scale  ..." &&
-        bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_SSV_10_TC_DB.xml  -x -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_TMP}/RTC > ${RTC_LOG}/log_tc_db 2>&1
+        bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_SSV_10_TC_DB.xml -x -q ${NR_OF_CPUS} -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_TMP}/RTC > ${RTC_LOG}/log_tc_db 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_TC}
         rm -rf ${RTC_TMP}/TF.d*
@@ -411,7 +412,7 @@ function s1_rtc_processing() {
 
         SECONDS=0
         echo -ne " Create a kmz file for Google Earth Visualization ..." &&
-        gdal_contrast_stretch -ndv 0 -percentile-range 0.02 0.98 ${RTC_OUT}.RTC.tif ${RTC_TMP}/RTC.8bit.tif >> ${RTC_LOG}/log_kmz 2>&1
+        gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${RTC_OUT}.RTC.tif ${RTC_TMP}/RTC.8bit.tif >> ${RTC_LOG}/log_kmz 2>&1
         gdal_translate -of KMLSUPEROVERLAY ${RTC_TMP}/RTC.8bit.tif ${RTC_OUT}.RTC.kmz -co format=JPEG >> ${RTC_LOG}/log_kmz 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
       else
@@ -419,7 +420,7 @@ function s1_rtc_processing() {
 
         SECONDS=0
         echo -ne " Applying the geometric terrain correction ..." &&
-        bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_SSV_10_TC.xml -x -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_OUT}.RTC > ${RTC_LOG}/log_tc 2>&1
+        bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_SSV_10_TC.xml -x -q ${NR_OF_CPUS} -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_OUT}.RTC > ${RTC_LOG}/log_tc 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_TC}
         rm -rf ${RTC_TMP}/TF.d*
@@ -453,43 +454,45 @@ function s1_gtc_processing() {
   GTC_TMP="$6"
   GTC_LOG="$7"
 
+  NR_OF_CPUS=`echo "$(nproc) * 2" | bc`
+
   if [ ${GTC_RES} == "MED_RES" ];then
 
     SECONDS=0
-    echo " Calibrating to sigma0 and multi-look by a factor of 3  ..." &&
-    bash ${SNAP_EXE} ${S1_GRD2GTC_GRAPHS}/S1_GRD2GTC_CAL_ML3.xml -x -Pinput=${GTC_IN} -Poutput=${GTC_TMP}/TF  > ${GTC_LOG}/log_cal_ml 2>&1
+    echo -ne " Calibrating to Gamma0 (based on ellipsoid earth model) and multi-look by a factor of 3 ..." &&
+    bash ${SNAP_EXE} ${S1_GRD2GTC_GRAPHS}/S1_GRD2GTC_CAL_ML3.xml -x -q ${NR_OF_CPUS} -Pinput=${GTC_IN} -Poutput=${GTC_TMP}/TF  > ${GTC_LOG}/log_cal_ml 2>&1
     duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
     [ $? -ne 0 ] && return ${ERR_BRD_NOISE}
 
     SECONDS=0
     echo -ne " Creating a layover/shadow mask ... " &&
-    bash ${SNAP_EXE} ${S1_GRD2GTC_GRAPHS}/S1_GRD2GTC_LayShaMask_ML3.xml -x -Pinput=${GTC_TMP}/TF.dim -Poutput=${GTC_OUT}.LS_mask  > ${GTC_LOG}/log_ls_mask 2>&1
+    bash ${SNAP_EXE} ${S1_GRD2GTC_GRAPHS}/S1_GRD2GTC_LayShaMask_ML3.xml -x -q ${NR_OF_CPUS} -Pinput=${GTC_TMP}/TF.dim -Poutput=${GTC_OUT}.LS_mask  > ${GTC_LOG}/log_ls_mask 2>&1
     duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
-    if [ -e ${GTC_TMP}/TF.data/Sigma0_VH.img ];then
+    if [ -e ${GTC_TMP}/TF.data/Gamma0_VH.img ];then
 
       if [[ ${GTC_MODE} == 0 ]];then # db scale + ratio
 
         SECONDS=0
         echo -ne " Applying the geometric terrain correction, calculate the VV/VH Band Ratio and transform backscatter to decibel scale  ..." &&
-        bash ${SNAP_EXE} ${S1_GRD2GTC_GRAPHS}/S1_GRD2GTC_SDV_30_TC_DB_Ratio.xml -x -Pinput=${GTC_TMP}/TF.dim -Poutput=${GTC_TMP}/TC_DB -PoutputRatio=${GTC_TMP}/Ratio > ${GTC_LOG}/log_tc_ratio 2>&1
+        bash ${SNAP_EXE} ${S1_GRD2GTC_GRAPHS}/S1_GRD2GTC_SDV_30_TC_DB_Ratio.xml -x -q ${NR_OF_CPUS} -Pinput=${GTC_TMP}/TF.dim -Poutput=${GTC_TMP}/TC_DB -PoutputRatio=${GTC_TMP}/Ratio > ${GTC_LOG}/log_tc_ratio 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_TC}
         rm -rf ${GTC_TMP}/TF.d*
 
         SECONDS=0
         echo -ne " Merging backscatter bands with ratio"
-        bash ${SNAP_EXE} BandMerge -x ${GTC_TMP}/TC_DB.dim ${GTC_TMP}/Ratio.dim -t ${GTC_TMP}/GTC.dim > ${GTC_LOG}/log_output 2>&1
+        bash ${SNAP_EXE} BandMerge -x -q ${NR_OF_CPUS} ${GTC_TMP}/TC_DB.dim ${GTC_TMP}/Ratio.dim -t ${GTC_TMP}/GTC.dim > ${GTC_LOG}/log_output 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_BM}
         rm -rf ${GTC_TMP}/TC_DB.d* ${GTC_TMP}/Ratio.d*
 
         SECONDS=0
         echo -ne " Creating final output file ..." &&
-        gdalbuildvrt -separate -srcnodata 0 ${GTC_TMP}/rgb.vrt ${GTC_TMP}/GTC.data/Sigma0_VV_db.img ${GTC_TMP}/GTC.data/Sigma0_VH_db.img ${GTC_TMP}/GTC.data/VV-VH_ratio.img >> ${GTC_LOG}/log_output 2>&1
+        gdalbuildvrt -separate -srcnodata 0 ${GTC_TMP}/rgb.vrt ${GTC_TMP}/GTC.data/Gamma0_VV_db.img ${GTC_TMP}/GTC.data/Gamma0_VH_db.img ${GTC_TMP}/GTC.data/VV-VH_ratio.img >> ${GTC_LOG}/log_output 2>&1
 
-        gdal_calc.py --overwrite -A ${GTC_TMP}/GTC.data/Sigma0_VV_db.img --outfile=${GTC_TMP}/Sigma0.db.clean.tif --calc="A*(A>=-30)" --co="BIGTIFF=YES"
-        gdal_trace_outline ${GTC_TMP}/Sigma0.db.clean.tif -ndv 0 -no-donuts -out-cs ll -ogr-out ${GTC_TMP}/valid.shp >> ${GTC_LOG}/log_output 2>&1
+        gdal_calc.py --overwrite -A ${GTC_TMP}/GTC.data/Gamma0_VV_db.img --outfile=${GTC_TMP}/Gamma0.db.clean.tif --calc="A*(A>=-30)" --co="BIGTIFF=YES"
+        gdal_trace_outline ${GTC_TMP}/Gamma0.db.clean.tif -ndv 0 -no-donuts -out-cs ll -ogr-out ${GTC_TMP}/valid.shp >> ${GTC_LOG}/log_output 2>&1
 
         # create intersect of image extent and AOI
         ogr2ogr -F "ESRI Shapefile" ${GTC_TMP}/extent_buf.shp ${GTC_TMP}/valid.shp -dialect sqlite -sql "SELECT ST_buffer(geometry, -0.001) from valid"
@@ -527,7 +530,7 @@ function s1_gtc_processing() {
 
         SECONDS=0 # no db-scaling
         echo -ne " Applying the geometric terrain correction ..." &&
-        bash ${SNAP_EXE} ${S1_GRD2GTC_GRAPHS}/S1_GRD2GTC_SDV_30_TC.xml -x -Pinput=${GTC_TMP}/TF.dim -Poutput=${GTC_OUT}.GTC > ${GTC_LOG}/log_tc 2>&1
+        bash ${SNAP_EXE} ${S1_GRD2GTC_GRAPHS}/S1_GRD2GTC_SDV_30_TC.xml -x -q ${NR_OF_CPUS} -Pinput=${GTC_TMP}/TF.dim -Poutput=${GTC_OUT}.GTC > ${GTC_LOG}/log_tc 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_TC}
         rm -rf ${GTC_TMP}/TF.d*
@@ -540,15 +543,15 @@ function s1_gtc_processing() {
 
         SECONDS=0
         echo -ne " Applying the geometric terrain correction and transform backscatter to decibel scale  ..." &&
-        bash ${SNAP_EXE} ${S1_GRD2GTC_GRAPHS}/S1_GRD2GTC_SSV_30_TC_DB.xml -x -Pinput=${GTC_TMP}/TF.dim -Poutput=${GTC_TMP}/GTC > ${GTC_LOG}/log_tc_db 2>&1
+        bash ${SNAP_EXE} ${S1_GRD2GTC_GRAPHS}/S1_GRD2GTC_SSV_30_TC_DB.xml -x -q ${NR_OF_CPUS} -Pinput=${GTC_TMP}/TF.dim -Poutput=${GTC_TMP}/GTC > ${GTC_LOG}/log_tc_db 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_TC}
         rm -rf ${GTC_TMP}/TF.d*
 
         SECONDS=0
         echo -ne " Creating final output file ..." &&
-        gdal_calc.py --overwrite -A ${GTC_TMP}/GTC.data/Sigma0_VV_db.img --outfile=${GTC_TMP}/Sigma0.db.clean.tif --calc="A*(A>=-30)" --co="BIGTIFF=YES"
-        gdal_trace_outline ${GTC_TMP}/Sigma0.db.clean.tif -ndv 0 -no-donuts -out-cs ll -ogr-out ${GTC_TMP}/valid.shp >> ${GTC_LOG}/log_output 2>&1
+        gdal_calc.py --overwrite -A ${GTC_TMP}/GTC.data/Gamma0_VV_db.img --outfile=${GTC_TMP}/Gamma0.db.clean.tif --calc="A*(A>=-30)" --co="BIGTIFF=YES"
+        gdal_trace_outline ${GTC_TMP}/Gamma0.db.clean.tif -ndv 0 -no-donuts -out-cs ll -ogr-out ${GTC_TMP}/valid.shp >> ${GTC_LOG}/log_output 2>&1
 
         # create intersect of image extent and AOI
         ogr2ogr -F "ESRI Shapefile" ${GTC_TMP}/extent_buf.shp ${GTC_TMP}/valid.shp -dialect sqlite -sql "SELECT ST_buffer(geometry, -0.001) from valid"
@@ -561,7 +564,7 @@ function s1_gtc_processing() {
           CROPLINE=${EXTENT}
         fi
 
-        gdalwarp -overwrite -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline -co "COMPRESS=LZW" -co "BIGTIFF=YES" ${GTC_TMP}/GTC.data/Sigma0_VV_db.img ${GTC_TMP}/GTC_final.tif >> ${GTC_LOG}/log_output 2>&1 >> ${GTC_LOG}/log_output 2>&1
+        gdalwarp -overwrite -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline -co "COMPRESS=LZW" -co "BIGTIFF=YES" ${GTC_TMP}/GTC.data/Gamma0_VV_db.img ${GTC_TMP}/GTC_final.tif >> ${GTC_LOG}/log_output 2>&1 >> ${GTC_LOG}/log_output 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         rm -rf ${GTC_TMP}/GTC.d*
 
@@ -586,7 +589,7 @@ function s1_gtc_processing() {
 
         SECONDS=0 # no db-scaling
         echo -ne " Applying the geometric terrain correction ..." &&
-        bash ${SNAP_EXE} ${S1_GRD2GTC_GRAPHS}/S1_GRD2GTC_SSV_30_TC.xml -x -Pinput=${GTC_TMP}/TF.dim -Poutput=${GTC_OUT}.GTC > ${GTC_LOG}/log_tc 2>&1
+        bash ${SNAP_EXE} ${S1_GRD2GTC_GRAPHS}/S1_GRD2GTC_SSV_30_TC.xml -x -q ${NR_OF_CPUS} -Pinput=${GTC_TMP}/TF.dim -Poutput=${GTC_OUT}.GTC > ${GTC_LOG}/log_tc 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return  ${ERR_TC}
         rm -rf ${GTC_TMP}/TF.d*
@@ -600,40 +603,40 @@ function s1_gtc_processing() {
     SECONDS=0
     echo " Removing GRD border noise by deleting the outer 600 rows, calibrating to beta0, "
     echo -ne " applying the terrain flattening ..." &&
-    bash ${SNAP_EXE} ${S1_GRD2GTC_GRAPHS}/S1_GRD2GTC_CAL_noML.xml -x -Pinput=${GTC_IN} -Pwidth=${NEW_WIDTH} -Pheight=${NEW_HEIGHT} -Poutput=${GTC_TMP}/TF > ${GTC_LOG}/log_cal_tf 2>&1
+    bash ${SNAP_EXE} ${S1_GRD2GTC_GRAPHS}/S1_GRD2GTC_CAL_noML.xml -x -q ${NR_OF_CPUS} -Pinput=${GTC_IN} -Pwidth=${NEW_WIDTH} -Pheight=${NEW_HEIGHT} -Poutput=${GTC_TMP}/TF > ${GTC_LOG}/log_cal_tf 2>&1
     duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
     [ $? -ne 0 ] && return ${ERR_BRD_NOISE}
     rm -rf ${GTC_TMP}/${BASE}-import.dim
 
     SECONDS=0
     echo -ne " Creating a layover/shadow mask ... " &&
-    bash ${SNAP_EXE} ${S1_GRD2GTC_GRAPHS}/S1_GRD2GTC_LayShaMask_noML.xml -x -Pinput=${GTC_TMP}/TF.dim -Poutput=${GTC_OUT}.LS_mask  > ${GTC_LOG}/log_cal_tf_ml 2>&1
+    bash ${SNAP_EXE} ${S1_GRD2GTC_GRAPHS}/S1_GRD2GTC_LayShaMask_noML.xml -x -q ${NR_OF_CPUS} -Pinput=${GTC_TMP}/TF.dim -Poutput=${GTC_OUT}.LS_mask  > ${GTC_LOG}/log_cal_tf_ml 2>&1
     duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 
-    if [ -e ${GTC_TMP}/TF.data/Sigma0_VH.img ];then
+    if [ -e ${GTC_TMP}/TF.data/Gamma0_VH.img ];then
 
       if [[ ${GTC_MODE} == 0 ]];then # db scale + ratio
 
         SECONDS=0
         echo -ne " Applying the geometric terrain correction, calculate the VV/VH Band Ratio and transform backscatter to decibel scale  ..." &&
-        bash ${SNAP_EXE} ${S1_GRD2GTC_GRAPHS}/S1_GRD2GTC_SDV_10_TC_DB_Ratio.xml -x -Pinput=${GTC_TMP}/TF.dim -Poutput=${GTC_TMP}/TC_DB -PoutputRatio=${GTC_TMP}/Ratio > ${GTC_LOG}/log_tc_ratio 2>&1
+        bash ${SNAP_EXE} ${S1_GRD2GTC_GRAPHS}/S1_GRD2GTC_SDV_10_TC_DB_Ratio.xml -x -q ${NR_OF_CPUS} -Pinput=${GTC_TMP}/TF.dim -Poutput=${GTC_TMP}/TC_DB -PoutputRatio=${GTC_TMP}/Ratio > ${GTC_LOG}/log_tc_ratio 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_TC}
         rm -rf ${GTC_TMP}/TF.d*
 
         SECONDS=0
         echo -ne " Merging backscatter bands with ratio"
-        bash ${SNAP_EXE} BandMerge -x ${GTC_TMP}/TC_DB.dim ${GTC_TMP}/Ratio.dim -t ${GTC_TMP}/GTC.dim > ${GTC_LOG}/log_output 2>&1
+        bash ${SNAP_EXE} BandMerge -x -q ${NR_OF_CPUS} ${GTC_TMP}/TC_DB.dim ${GTC_TMP}/Ratio.dim -t ${GTC_TMP}/GTC.dim > ${GTC_LOG}/log_output 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_BM}
         rm -rf ${GTC_TMP}/TC_DB.d* ${GTC_TMP}/Ratio.d*
 
         SECONDS=0
         echo -ne " Creating final output file ..." &&
-        gdalbuildvrt -separate -srcnodata 0 ${GTC_TMP}/rgb.vrt ${GTC_TMP}/GTC.data/Sigma0_VV_db.img ${GTC_TMP}/GTC.data/Sigma0_VH_db.img ${GTC_TMP}/GTC.data/VV-VH_ratio.img >> ${GTC_LOG}/log_output 2>&1
-        gdal_calc.py --overwrite -A ${GTC_TMP}/GTC.data/Sigma0_VV_db.img --outfile=${GTC_TMP}/Sigma0.db.clean.tif --calc="A*(A>=-30)" --co="BIGTIFF=YES"
-        gdal_trace_outline ${GTC_TMP}/Sigma0.db.clean.tif -ndv 0 -no-donuts -out-cs ll -ogr-out ${GTC_TMP}/valid.shp >> ${GTC_LOG}/log_output 2>&1
+        gdalbuildvrt -separate -srcnodata 0 ${GTC_TMP}/rgb.vrt ${GTC_TMP}/GTC.data/Gamma0_VV_db.img ${GTC_TMP}/GTC.data/Gamma0_VH_db.img ${GTC_TMP}/GTC.data/VV-VH_ratio.img >> ${GTC_LOG}/log_output 2>&1
+        gdal_calc.py --overwrite -A ${GTC_TMP}/GTC.data/Gamma0_VV_db.img --outfile=${GTC_TMP}/Gamma0.db.clean.tif --calc="A*(A>=-30)" --co="BIGTIFF=YES"
+        gdal_trace_outline ${GTC_TMP}/Gamma0.db.clean.tif -ndv 0 -no-donuts -out-cs ll -ogr-out ${GTC_TMP}/valid.shp >> ${GTC_LOG}/log_output 2>&1
 
         # create intersect of image extent and AOI
         ogr2ogr -F "ESRI Shapefile" ${GTC_TMP}/extent_buf.shp ${GTC_TMP}/valid.shp -dialect sqlite -sql "SELECT ST_buffer(geometry, -0.001) from valid"
@@ -671,7 +674,7 @@ function s1_gtc_processing() {
 
           SECONDS=0
           echo -ne " Applying the geometric terrain correction ..." &&
-          bash ${SNAP_EXE} ${S1_GRD2GTC_GRAPHS}/S1_GRD2GTC_SDV_10_TC.xml -x -Pinput=${GTC_TMP}/TF.dim -Poutput=${GTC_OUT}.GTC > ${GTC_LOG}/log_tc 2>&1
+          bash ${SNAP_EXE} ${S1_GRD2GTC_GRAPHS}/S1_GRD2GTC_SDV_10_TC.xml -x -q ${NR_OF_CPUS} -Pinput=${GTC_TMP}/TF.dim -Poutput=${GTC_OUT}.GTC > ${GTC_LOG}/log_tc 2>&1
           duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
           [ $? -ne 0 ] && return ${ERR_TC}
           rm -rf ${GTC_TMP}/TF.d*
@@ -684,15 +687,15 @@ function s1_gtc_processing() {
 
         SECONDS=0
         echo -ne " Applying the geometric terrain correction and transform backscatter to decibel scale  ..." &&
-        bash ${SNAP_EXE} ${S1_GRD2GTC_GRAPHS}/S1_GRD2GTC_SSV_10_TC_DB.xml  -x -Pinput=${GTC_TMP}/TF.dim -Poutput=${GTC_TMP}/GTC > ${GTC_LOG}/log_tc_db 2>&1
+        bash ${SNAP_EXE} ${S1_GRD2GTC_GRAPHS}/S1_GRD2GTC_SSV_10_TC_DB.xml -x -q ${NR_OF_CPUS} -Pinput=${GTC_TMP}/TF.dim -Poutput=${GTC_TMP}/GTC > ${GTC_LOG}/log_tc_db 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_TC}
         rm -rf ${GTC_TMP}/TF.d*
 
         SECONDS=0
         echo -ne " Creating final output file ..." &&
-        gdal_calc.py --overwrite -A ${GTC_TMP}/GTC.data/Sigma0_VV_db.img --outfile=${GTC_TMP}/Sigma0.db.clean.tif --calc="A*(A>=-30)" --co="BIGTIFF=YES"
-        gdal_trace_outline ${GTC_TMP}/Sigma0.db.clean.tif -ndv 0 -no-donuts -out-cs ll -ogr-out ${GTC_TMP}/valid.shp >> ${GTC_LOG}/log_output 2>&1
+        gdal_calc.py --overwrite -A ${GTC_TMP}/GTC.data/Gamma0_VV_db.img --outfile=${GTC_TMP}/Gamma0.db.clean.tif --calc="A*(A>=-30)" --co="BIGTIFF=YES"
+        gdal_trace_outline ${GTC_TMP}/Gamma0.db.clean.tif -ndv 0 -no-donuts -out-cs ll -ogr-out ${GTC_TMP}/valid.shp >> ${GTC_LOG}/log_output 2>&1
 
         # create intersect of image extent and AOI
         ogr2ogr -F "ESRI Shapefile" ${GTC_TMP}/extent_buf.shp ${GTC_TMP}/valid.shp -dialect sqlite -sql "SELECT ST_buffer(geometry, -0.001) from valid"
@@ -705,7 +708,7 @@ function s1_gtc_processing() {
           CROPLINE=${EXTENT}
         fi
 
-        gdalwarp -overwrite -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline -co "COMPRESS=LZW" -co "BIGTIFF=YES"  ${GTC_TMP}/GTC.data/Sigma0_VV_db.img ${GTC_TMP}/GTC_final.tif >> ${GTC_LOG}/log_output 2>&1 >> ${GTC_LOG}/log_output 2>&1
+        gdalwarp -overwrite -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline -co "COMPRESS=LZW" -co "BIGTIFF=YES"  ${GTC_TMP}/GTC.data/Gamma0_VV_db.img ${GTC_TMP}/GTC_final.tif >> ${GTC_LOG}/log_output 2>&1 >> ${GTC_LOG}/log_output 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         rm -rf ${GTC_TMP}/GTC.d*
 
@@ -731,7 +734,7 @@ function s1_gtc_processing() {
 
         SECONDS=0
         echo -ne " Applying the geometric terrain correction ..." &&
-        bash ${SNAP_EXE} ${S1_GRD2GTC_GRAPHS}/S1_GRD2GTC_SSV_10_TC.xml -x -Pinput=${GTC_TMP}/TF.dim -Poutput=${GTC_OUT}.GTC > ${GTC_LOG}/log_tc 2>&1
+        bash ${SNAP_EXE} ${S1_GRD2GTC_GRAPHS}/S1_GRD2GTC_SSV_10_TC.xml -x -q ${NR_OF_CPUS} -Pinput=${GTC_TMP}/TF.dim -Poutput=${GTC_OUT}.GTC > ${GTC_LOG}/log_tc 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_TC}
         rm -rf ${GTC_TMP}/TF.d*
@@ -766,19 +769,21 @@ function s1_timeseries() {
   TMP_MT=$6
   LOG_MT=$7
 
+  NR_OF_CPUS=`echo "$(nproc) * 2" | bc`
+
   # error codes
   ERR_STACKING=" Error during stacking of multi-temporal images"
   ERR_SPECKLE=" Error during stacking of multi-temporal images"
 
   SECONDS=0
   echo -ne " Creating the multitemporal stack ..." &&
-  bash ${SNAP_EXE} ${S1_RTC2TS_GRAPHS}/S1_RTC2TS_Stacking.xml -x -Pfilelist=$1 -Poutput=${TMP_MT}/mt_stack.coreg.dim  >> ${LOG_MT}/log_mt_stacking 2>&1
+  bash ${SNAP_EXE} ${S1_RTC2TS_GRAPHS}/S1_RTC2TS_Stacking.xml -x -q ${NR_OF_CPUS} -Pfilelist=$1 -Poutput=${TMP_MT}/mt_stack.coreg.dim  >> ${LOG_MT}/log_mt_stacking 2>&1
   duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
   [ $? -ne 0 ] && return ${ERR_STACKING}
 
   SECONDS=0
   echo -ne " Executing multi-temporal Speckle-filtering to the VV polarized channels of the multi-temporal stack ... " &&
-  bash $SNAP_EXE ${S1_RTC2TS_GRAPHS}/S1_RTC2TS_MT_Speckle.xml -x -Pinput=${TMP_MT}/mt_stack.coreg.dim -Ppol=VV -Pthreshold=5 -Poutput=${TMP_MT}/mt_stack.vv.speckle.dim >> ${LOG_MT}/log_mt_stacking 2>&1
+  bash $SNAP_EXE ${S1_RTC2TS_GRAPHS}/S1_RTC2TS_MT_Speckle.xml -x -q ${NR_OF_CPUS} -Pinput=${TMP_MT}/mt_stack.coreg.dim -Ppol=VV -Pthreshold=5 -Poutput=${TMP_MT}/mt_stack.vv.speckle.dim >> ${LOG_MT}/log_mt_stacking 2>&1
   duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
   [ $? -ne 0 ] && return ${ERR_SPECKLE}
 
@@ -794,7 +799,7 @@ function s1_timeseries() {
 
   SECONDS=0
   echo -ne " Converting linear to db-scale ... " &&
-  bash $SNAP_EXE ${S1_RTC2TS_GRAPHS}/S1_RTC2TS_lin_to_db.xml -x -Pinput=${TMP_MT}/mt_stack.vv.speckle.dim -Pbandlist=${BANDLIST} -Poutput=${TMP_MT}/mt_stack.vv.db.speckle.dim >> ${LOG_MT}/log_mt_stacking 2>&1
+  bash $SNAP_EXE ${S1_RTC2TS_GRAPHS}/S1_RTC2TS_lin_to_db.xml -x -q ${NR_OF_CPUS} -Pinput=${TMP_MT}/mt_stack.vv.speckle.dim -Pbandlist=${BANDLIST} -Poutput=${TMP_MT}/mt_stack.vv.db.speckle.dim >> ${LOG_MT}/log_mt_stacking 2>&1
   duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
   [ $? -ne 0 ] && return ${ERR_SPECKLE}
   rm -rf ${TMP_MT}/mt_stack.vv.speckle.d*
@@ -994,7 +999,7 @@ function s1_timeseries() {
 
     SECONDS=0
     echo -ne " Applying the multi-temporal speckle filter to the VH polarized channels of the multi-temporal stack ... " &&
-    bash $SNAP_EXE ${S1_RTC2TS_GRAPHS}/S1_RTC2TS_MT_Speckle.xml -x -Pinput=${TMP_MT}/mt_stack.coreg.dim -Ppol=VH -Pthreshold=5 -Poutput=${TMP_MT}/mt_stack.vh.speckle.dim >> ${LOG_MT}/log_mt_stacking 2>&1
+    bash $SNAP_EXE ${S1_RTC2TS_GRAPHS}/S1_RTC2TS_MT_Speckle.xml -x -q ${NR_OF_CPUS} -Pinput=${TMP_MT}/mt_stack.coreg.dim -Ppol=VH -Pthreshold=5 -Poutput=${TMP_MT}/mt_stack.vh.speckle.dim >> ${LOG_MT}/log_mt_stacking 2>&1
     duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
     [ $? -ne 0 ] && return ${ERR_SPECKLE}
     rm -rf ${TMP_MT}/mt_stack.coreg.d*
@@ -1009,7 +1014,7 @@ function s1_timeseries() {
 
     SECONDS=0
     echo -ne " Converting linear ot dB scale ... " &&
-    bash $SNAP_EXE ${S1_RTC2TS_GRAPHS}/S1_RTC2TS_lin_to_db.xml -x -Pinput=${TMP_MT}/mt_stack.vh.speckle.dim -Pbandlist=${BANDLIST} -Poutput=${TMP_MT}/mt_stack.vh.db.speckle.dim >> ${LOG_MT}/log_mt_stacking 2>&1
+    bash $SNAP_EXE ${S1_RTC2TS_GRAPHS}/S1_RTC2TS_lin_to_db.xml -x -q ${NR_OF_CPUS} -Pinput=${TMP_MT}/mt_stack.vh.speckle.dim -Pbandlist=${BANDLIST} -Poutput=${TMP_MT}/mt_stack.vh.db.speckle.dim >> ${LOG_MT}/log_mt_stacking 2>&1
     duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
     [ $? -ne 0 ] && return ${ERR_SPECKLE}
     rm -rf ${TMP_MT}/mt_stack.vh.speckle.d*

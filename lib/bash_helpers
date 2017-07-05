@@ -20,3 +20,104 @@ function check_tar()  {
 	gunzip -c $1 2>&1 | tar t >> /dev/null 2>&1
   echo $?
 }
+
+function set_tmp_KC() {
+  if [ -z "$1" ]; then
+    echo " Missing arguments. Syntax:"
+    echo " set_tmp_KC <Nr. of Tiles> "
+    return
+  fi
+
+
+  if ls /ram > /dev/null 2>&1;then
+
+    echo -e "Checking if RAM disk offers sufficient memory for temporary file storage ..."
+    FREE_RAM=$(df -h | grep /ram | awk $'{print $2}')
+    FREE_RAM_INT=`echo ${FREE_RAM} | sed 's/G//g'`
+    CPUS=`nproc`
+
+    if echo $FREE_RAM | grep G > /dev/null; then
+
+      NEED_RAM1=`echo "$1 * 4" | bc`
+      NEED_RAM2=`echo "$CPUS * 0.24" | bc`
+
+      NEED_RAM=`echo "${NEED_RAM1} + ${NEED_RAM2}" | bc`
+      #echo "estimated tmp space needed: ${NEED_RAM}"
+
+      if [[ $( echo "${FREE_RAM_INT} > ${NEED_RAM}" | bc) -eq 1 ]];then
+        mkdir -p /ram/KC_TMP
+        export TMP_DIR=/ram/KC_TMP
+        echo -e " Using RAM disk at /ram/SAR_TMP as TMP_Folder"
+      else
+        echo -e " Not enough memory on RAM disk. Using standard temporary folder on harddisk."
+      fi
+    fi
+  fi
+}
+
+function set_tmp_S1_RTC_bulk() {
+  if [ -z "$2" ]; then
+    echo " Missing arguments. Syntax:"
+    echo " set_tmp_S1_RTC <Nr. of Frames> <resolution> "
+    return
+  fi
+
+  if ls /ram > /dev/null 2>&1;then
+
+    echo -e "Checking if RAM disk offers sufficient memory for temporary file storage ..."
+    FREE_RAM=$(df -h | grep /ram | awk $'{print $2}')
+    FREE_RAM_INT=`echo ${FREE_RAM} | sed 's/G//g'`
+
+    if [[ $2 == "MED_RES" ]];then
+      NEED_RAM=`echo "$1 * 7.45" | bc`
+    elif [[ $2 == "HI_RES" ]];then
+      NEED_RAM=`echo "$1 * 7.45 * 9" | bc`
+    fi
+
+    if [[ $( echo "${FREE_RAM_INT} > ${NEED_RAM}" | bc) -eq 1 ]];then
+      mkdir -p /ram/SAR_TMP
+      export TMP_DIR=/ram/SAR_TMP
+      echo -e " Using RAM disk at /ram/SAR_TMP as TMP_Folder"
+    else
+      echo -e " Not enough memory on RAM disk. Using standard temporary folder on harddisk."
+    fi
+
+  fi
+}
+
+
+function set_tmp_S1_TS() {
+
+  if [ -z "$1" ]; then
+    echo " Missing arguments. Syntax:"
+    echo " set_tmp_S1_RTC <Nr. of TS images> <Size per file> <number of polarisation channels>  "
+    return
+  fi
+
+  FREE_RAM=$(df -h | grep /ram | awk $'{print $2}')
+  FREE_RAM_INT=`echo ${FREE_RAM} | sed 's/G//g'`
+
+  STACK_SIZE=$(echo "$1 * $2 * $3 * 2 + 0.5" | bc)
+
+  if [[ $( echo "${FREE_RAM_INT} > ${STACK_SIZE}" | bc) -eq 1 ]];then
+    mkdir -p /ram/SAR_TMP
+    export TMP_DIR=/ram/SAR_TMP
+    echo -e " Using RAM disk at /ram/SAR_TMP as TMP_Folder"
+  else
+    echo -e " Not enough memory on RAM disk. Using standard temporary folder on harddisk."
+  fi
+
+}
+
+
+list_descendants ()
+{
+  local children=$(ps -o pid= --ppid "$1")
+
+  for pid in $children
+  do
+    list_descendants "$pid"
+  done
+
+  echo "$children"
+}

@@ -1,5 +1,5 @@
 # The MIT License (MIT)
-# Copyright (c) 2016 Andreas Vollrath
+# written by Andreas Vollrath, 2016
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -45,7 +45,10 @@ export S1_GRD_import_GRAPHS=${OPENSARKIT}/workflows/S1_GRD_import
 export S1_GRD2GTC_GRAPHS=${OPENSARKIT}/workflows/S1_GRD2GTC
 export S1_GRD2RTC_GRAPHS=${OPENSARKIT}/workflows/S1_GRD2RTC
 export S1_RTC2TS_GRAPHS=${OPENSARKIT}/workflows/S1_RTC2TS
+export S1_SLC2IFG_GRAPHS=${OPENSARKIT}/workflows/S1_SLC2IFG
 
 export SNAP_GRAPHS=${OPENSARKIT}/workflows/SNAP
 
 #source $OPENSARKIT/lib/saga_helpers
+
+export OST_VERSION="0.1"

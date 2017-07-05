@@ -21,33 +21,27 @@ tabItem(tabName = "s1_grd2rtc",
             hr(),
             tags$b("Short description:"),
             p("This interface allows processing Sentinel-1 GRD scenes to higher level RTC products. Either single files or multiple scenes can be processed. For the latter, 
-               preparation as well as execution of subsequent time-series can be optionally selected. For details on the processing check the info panel on the right."),
+               preparation as well as execution of subsequent time-series can be optionally selected. For details on the applied processing steps check the info panel on the right."),
             hr(),
             
             tags$b("Input type:"),
             p("This option lets you choose if only a single file, or multiple scenes should be processed in batch mode. For the latter, the path should point to the", tags$b(" DATA directory "), 
               "created by routine of the data download submenu, within your project folder, i.e. \"/path/to/project/DATA\""),
             radioButtons("s1_g2r_input_type", "",
-                         c("Original File" = "file",
-                           "Folder (batch processing)" = "folder")),
+                         c("Original File" = "s1_g2r_file",
+                           "Folder (batch processing)" = "s1_g2r_folder")),
             
             conditionalPanel(
-              "input.s1_g2r_input_type == 'file'",
-              tags$b("Select a Sentinel-1 zip file:"),
-              br(),
-              br(),
-              shinyFilesButton("s1_g2r_zip","Browse","Browse",FALSE),
-              br(),
-              br(),
-              verbatimTextOutput("s1_g2r_zip"),
-              hr(),
+              "input.s1_g2r_input_type == 's1_g2r_file'",
+              tags$b("Select a Sentinel-1 zip file:"),br(),br(),
+              shinyFilesButton("s1_g2r_zip","Browse","Browse",FALSE),br(),br(),
+              verbatimTextOutput("s1_g2r_zip"),hr(),
               tags$b("Output directory:"),
               p("Select a folder where the output data files will be written to:"),
-              shinyDirButton("s1_g2r_outdir","Browse","Browse",FALSE),
-              br(),
-              br(),
-              verbatimTextOutput("s1_g2r_outdir"),
-              hr(),
+              shinyDirButton("s1_g2r_outdir","Browse","Browse",FALSE),br(),br(),
+              verbatimTextOutput("s1_g2r_outdir"),hr(),
+              
+              #-----------------------------------------------------------------------------------------------------------------------------------  
               tags$b("Select the output resolution:"),
               p("This parameter defines the output resolution of your products in meter. Note that for SAR data a 
                higher resolution is not always favorable since it is more affected by Speckle noise. 
@@ -57,56 +51,66 @@ tabItem(tabName = "s1_grd2rtc",
                              "Full resolution (10m)" = "full_res"),
                              selected = "med_res")
              ),
-            
+             #-----------------------------------------------------------------------------------------------------------------------------------
+             
+             #-----------------------------------------------------------------------------------------------------------------------------------
+             # Batch processing options
              conditionalPanel(
-              "input.s1_g2r_input_type == 'folder'",
+              "input.s1_g2r_input_type == 's1_g2r_folder'",
               tags$b("Project directory:"),
               p("The path should point to the", tags$b(" DATA directory "), 
                 "created by routine of the data download submenu, within your project folder, i.e. \"/path/to/project/DATA\""),
-              shinyDirButton("s1_g2r_inputdir","Browse","Browse",FALSE),
-              br(),
-              br(),
-              verbatimTextOutput("s1_g2r_inputdir"),
-              hr(),
-              tags$b("Select the output resolution:"),
-              p("This parameter defines the output resolution of your products in meter. Note that for SAR data a 
-               higher resolution is not always favorable since it is more affected by Speckle noise. 
-               In addition a 10 m product will occupy 9 times more disk space and processing takes considerably longer."),
-              radioButtons("s1_g2r_res_folder", "",
+              shinyDirButton("s1_g2r_inputdir","Browse","Browse",FALSE),br(),br(),
+              verbatimTextOutput("s1_g2r_inputdir"),hr(),
+              
+                  #-----------------------------------------------------------------------------------------------------------------------------------
+                  # Resolution choice
+                  tags$b("Select the output resolution:"),
+                  p("This parameter defines the output resolution of your products in meter. Note that for SAR data a 
+                     higher resolution is not always favorable since it is more affected by Speckle noise. 
+                     In addition a 10 m product will occupy 9 times more disk space and processing takes considerably longer."),
+                  radioButtons("s1_g2r_res_folder", "",
                            c("Medium Resolution (30m)" = "med_res",
                              "Full resolution (10m)" = "full_res"),
-                              selected = "med_res"),
-              hr(),
-              tags$b("Select the product generation mode:"),
-              p("The standard RTC generation should only be selected, if single imagery is of particular interest. Elsewise, when acquistions from the same satellite track, but different dates
-                 overlap, use the time-series preparation mode and apply the subsequent RTC to time-series processor."),
-              radioButtons("s1_g2r_mode", "",
+                              selected = "med_res"),hr(),
+                  tags$b("Select the product generation mode:"),
+                  p("The standard RTC generation should only be selected, if single imagery is of particular interest. Elsewise, when acquistions from the same satellite track, but different dates
+                     overlap, use the time-series preparation mode and apply the subsequent RTC to time-series processor."),
+                  radioButtons("s1_g2r_mode", "",
                            c("Standard RTC generation" = "0",
                              "Timeseries preparation" = "1"),
-                             "0"),
-              hr(),
-              conditionalPanel(
-                "input.s1_g2r_mode == 1",
-                tags$b("Apply the Time-series/Timescan processing?"),
-                p("This option provides the possibility to concatenate the GRD to RTC processor with the RTC to time-series processor. The selected datatype applies 
-                 only for the multi-temporal products (i.e. time-series/timescan). For more details on the RTC to time-series processor go to the respective submenu on the left."),
-                radioButtons("s1_g2r_ts", "",
+                             "0"),hr(),
+                  #-----------------------------------------------------------------------------------------------------------------------------------
+              
+                  #-----------------------------------------------------------------------------------------------------------------------------------
+                  # Datatype choice
+                  conditionalPanel(
+                    "input.s1_g2r_mode == 1",
+                  tags$b("Apply the Time-series/Timescan processing?"),
+                  p("This option provides the possibility to concatenate the GRD to RTC processor with the RTC to time-series processor. The selected datatype applies 
+                     only for the multi-temporal products (i.e. time-series/timescan). For more details on the RTC to time-series processor go to the respective submenu on the left."),
+                  radioButtons("s1_g2r_ts", "",
                         c("No" = "0",
                         "Yes (16 bit unsigned integer, recommended)" = "1",
                         "Yes (8 bit unsigned integer)" = "2",
                         "Yes (32 bit floating point )" = "3"),
                         "1")
-                )
-              ),
-            hr(),
-            withBusyIndicatorUI(
-              actionButton("s1_g2r_process", "Start processing")
-            ),
-            br(),
+                  )),hr(),
+                  #-----------------------------------------------------------------------------------------------------------------------------------
+            #-----------------------------------------------------------------------------------------------------------------------------------
+            
+            
+            #-----------------------------------------------------------------------------------------------------------------------------------
+            # Trigger / Abort
+            div(style="display: inline-block;vertical-align:top; width: 135px;",withBusyIndicatorUI(
+              actionButton("s1_g2r_pro_btn", "Start processing"))),
+            div(style="display: inline-block;vertical-align:top; width: 125px;", withBusyIndicatorUI(
+              actionButton("s1_g2r_abort_btn", "Abort processing")
+            )),
             #"Output:",
             textOutput("processS1_G2R")
             ), #close box
-          
+            #-----------------------------------------------------------------------------------------------------------------------------------
           
           #   #----------------------------------------------------------------------------------
           #   # Info Panel
@@ -114,9 +118,12 @@ tabItem(tabName = "s1_grd2rtc",
             title = "Info Panel", status = "success", solidHeader= TRUE,
             
             tabBox(width = 700,
+                   tabPanel("Progress Monitor",
+                            tags$h4("Monitor the progress of a running process"),hr(),
+                            verbatimTextOutput("s1_g2r_progress")
+                   ),
                    tabPanel("General Info",
-                            tags$h4("Processing Chain"),
-                            hr(),
+                            tags$h4("Processing Chain"),hr(),
                             p("The", tags$b("GRD to RTC processor")," applies the necessary preprocessing for preparing either single, analysis-ready-data products 
                                suitable for land applications, or multiple scenes for the subsequent generation of time-series. It expects Level-1 GRD Sentinel-1 data as distributed
                                by ESA and transforms the image(s) to Level-2 radiometrically terrain-corrected (RTC) product(s)."),

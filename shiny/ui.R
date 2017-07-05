@@ -30,6 +30,7 @@ packages(random)
 packages(raster)
 packages(shinyjs)
 packages(parallel)
+packages(stringr)
 source("helpers.R")
 #-----------------------------------------------------------------------------------
 
@@ -41,8 +42,7 @@ ui = dashboardPage(
    #-----------------------------------------------------------------------------------
    # title
    dashboardHeader(
-      title = "Open Foris SAR Toolkit",
-      #windowTitle = "Open Foris SAR Toolkit",
+      title = "Open SAR Toolkit",
       titleWidth = 250
       ),
    #-----------------------------------------------------------------------------------
@@ -64,7 +64,7 @@ ui = dashboardPage(
          menuSubItem("SAR references", tabName = "SARrefs", icon = icon("book"))
       ),
       hr(),
-      menuItem("ALOS K&C initiative", tabName = "alos_funct", icon = icon("option-vertical", lib = "glyphicon"),
+      menuItem("ALOS K&C mosaics", tabName = "alos_funct", icon = icon("option-vertical", lib = "glyphicon"),
          menuSubItem("Backscatter download", tabName = "alos_kc_dow", icon = icon("download")),
          menuSubItem("Backscatter processing", tabName = "alos_kc_pro", icon = icon("th")),
          menuSubItem("FNF map download", tabName = "alos_kc_fnf", icon = icon("th")) #,
@@ -72,13 +72,23 @@ ui = dashboardPage(
          #menuSubItem("GRD to RTC processor", tabName = "alos_pro", icon = icon("cogs"))
       ),
       hr(),
-      menuItem("Sentinel-1", tabName = "s1_funct", icon = icon("option-vertical", lib = "glyphicon"),
+      menuItem("Sentinel-1", tabName = "s1_funct", icon = icon("option-vertical", lib = "glyphicon"),br(),
+         menuSubItem("Get data", tabName = "s1_data", icon = NULL),br(),
          menuSubItem("Data inventory", tabName = "s1_inv", icon = icon("search")),
          menuSubItem("Data download", tabName = "s1_dow", icon = icon("download")),
+         hr(),
+         menuSubItem("GRD processors", tabName = "s1_grd", icon = NULL),br(),
+         menuSubItem("GRD to GTC processor", tabName = "s1_grd2gtc", icon = icon("cogs")),
          menuSubItem("GRD to RTC processor", tabName = "s1_grd2rtc", icon = icon("cogs")),
+         #hr(),
          menuSubItem("Time-series/Timescan processor ", tabName = "s1_rtc2ts", icon = icon("cogs")),
-         menuSubItem("Time-series/Timescan mosaics ", tabName = "s1_ts2mos", icon = icon("map-o"))
-      ),
+         menuSubItem("Time-series/Timescan mosaics ", tabName = "s1_ts2mos", icon = icon("map-o")),
+         hr(),
+         menuSubItem("SLC processors", tabName = "s1_slc", icon = NULL), br(),
+         menuSubItem("SLC to Coherence processor", tabName = "s1_slc2coh", icon = icon("cogs")),
+         menuSubItem("SLC to PolSAR processor ", tabName = "s1_slc2pol", icon = icon("cogs")),
+         menuSubItem("SLC to DInSAR processor", tabName = "s1_slc2ifg", icon = icon("cogs")),br()
+         ),
       hr(),
       #menuItem("Data Viewer", tabName = "dataview", icon = icon("eye")),
       #hr(),
@@ -119,11 +129,21 @@ ui = dashboardPage(
       
       #-----------------------------------------------------------------------------
       # Sentinel 1 Tab
+      source(file.path("ui","S1_data_tab_ui.R"), local=TRUE)$value,
       source(file.path("ui","S1_inv_tab_ui.R"), local=TRUE)$value,
       source(file.path("ui","S1_dow_tab_ui.R"), local=TRUE)$value,
+      
+      source(file.path("ui","S1_grd_tab_ui.R"), local=TRUE)$value,
+      source(file.path("ui","S1_grd2gtc_tab_ui.R"), local=TRUE)$value,
       source(file.path("ui","S1_grd2rtc_tab_ui.R"), local=TRUE)$value,
+      
       source(file.path("ui","S1_rtc2ts_tab_ui.R"), local=TRUE)$value,
-      source(file.path("ui","S1_ts2mos_tab_ui.R"), local=TRUE)$value #,
+      source(file.path("ui","S1_ts2mos_tab_ui.R"), local=TRUE)$value,
+      
+      source(file.path("ui","S1_slc_tab_ui.R"), local=TRUE)$value,
+      source(file.path("ui","S1_slc2coh_tab_ui.R"), local=TRUE)$value,
+      source(file.path("ui","S1_slc2pol_tab_ui.R"), local=TRUE)$value,
+      source(file.path("ui","S1_slc2ifg_tab_ui.R"), local=TRUE)$value
       #-----------------------------------------------------------------------------
          
       #-----------------------------------------------------------------------------

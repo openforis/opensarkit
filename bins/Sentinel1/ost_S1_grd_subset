@@ -1,7 +1,7 @@
 #! /bin/bash
 
 # The MIT License (MIT)
-# Copyright (c) 2016 Andreas Vollrath
+# written by Andreas Vollrath, 2016
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,28 +21,24 @@
 # OR THE USE OR OTHER DEALINGS IN THE SOFTWARE
 
 
+source ${OPENSARKIT}/lib/helpers_source
+
 #-------------------------------------------------------------------------------------------
 # 	0.1 Check for right usage & set up basic Script Variables
 if [ "$#" != "4" ]; then
 
 	echo -e ""
-	echo -e "----------------------------------------------------------------------------------"
-	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
+	echo -e "-----------------------------------------------------------"
+	echo -e " Open SAR Toolkit, version ${OST_VERSION}"
 	echo -e " Subsetting Sentinel-1 GRD file to a given area of interest"
-	echo -e "----------------------------------------------------------------------------------"
+	echo -e "-----------------------------------------------------------"
 	echo -e ""
-	echo -e "----------------------------------------------------------------------------------"
-	echo -e " Software dependencies:"
-	echo -e "	- ESA Sentinel Application Platform SNAP"
-	echo -e "	- gdal-bin"
-	echo -e "----------------------------------------------------------------------------------"
-	echo -e ""
-	echo -e " synatx: oft-sar-S1-GRD-subset <scene> <AOI> <clean import> <delete zips>"
+	echo -e " usage: ost_S1_grd_subset <scene> <AOI> <clean import> <delete zips>"
 	echo -e ""
 	echo -e " input parameters:"
 	echo -e " scene		(input/output) /path/to/scene where the subsetted data will be stored as well"
  	echo -e " AOI		Area of Interest for subsettting"
-	echo -e " clean import			do preprocessing steps (i.e. , apply orbit file, calibration, thermal noise removal, Refined Lee Speckle Filter"
+	echo -e " clean import			do pre-processing steps (i.e. , apply orbit file, calibration, thermal noise removal"
 	echo -e "			 Available choices:"
 	echo -e "			  0 keep original file"
 	echo -e "			  1 delete original file"
@@ -53,10 +49,6 @@ if [ "$#" != "4" ]; then
 	exit 1
 
 else
-	echo -e "-----------------------------------------------------------"
-	echo -e " Open Foris SAR Toolkit, version ${OSK_VERSION}"
-	echo -e " Subsetting Sentinel-1 GRD file to a given area of interest "
-	echo -e "-----------------------------------------------------------"
 
 	# set up initial script variables
 	AOI=`readlink -f $2`
@@ -71,7 +63,10 @@ else
 	LOG_DIR=${PROC_DIR}/LOG
 	mkdir -p ${LOG_DIR}
 
-	source ${OPENSARKIT}/lib/helpers_source
+	echo -e "-----------------------------------------------------------"
+	echo -e " Open SAR Toolkit, version ${OST_VERSION}"
+	echo -e " Subsetting Sentinel-1 GRD file to a given area of interest "
+	echo -e "-----------------------------------------------------------"
 
 fi
 

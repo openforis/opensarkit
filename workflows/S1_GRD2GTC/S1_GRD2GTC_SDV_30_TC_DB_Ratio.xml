@@ -52,7 +52,7 @@
       <sourceProduct refid="Terrain-Correction"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <sourceBands>Sigma0_VH,Sigma0_VV</sourceBands>
+      <sourceBands>Gamma0_VH,Gamma0_VV</sourceBands>
     </parameters>
   </node>
   <node id="Write(2)">
@@ -75,7 +75,7 @@
         <targetBand>
           <name>VV-VH_ratio</name>
           <type>float32</type>
-          <expression>Sigma0_VV / Sigma0_VH</expression>
+          <expression>Gamma0_VV / Gamma0_VH</expression>
           <description/>
           <unit/>
           <noDataValue>0.0</noDataValue>

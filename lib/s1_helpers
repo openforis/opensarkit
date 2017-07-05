@@ -4,25 +4,25 @@
 # Copyright (c) 2016 Andreas Vollrath
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal 
-# in the Software without restriction, including without limitation the rights 
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is furnished
 # to do so, subject to the following conditions:
 
 # The above copyright notice and this permission notice shall be
 # included in all copies or substantial portions of the Software.
 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
 # INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
 # HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE 
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 # OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #get the orbit directions
 function s1_orbit_dir() {
-    if [ -z "$1" ]; then 
+    if [ -z "$1" ]; then
     echo "Missing arguments. Syntax:"
     echo "  s1_orbit <input_list>"
     return
@@ -36,7 +36,7 @@ function s1_orbit_dir() {
 
 # get polarization mode
 function s1_pol_mode() {
-    if [ -z "$1" ]; then 
+    if [ -z "$1" ]; then
     echo "Missing arguments. Syntax:"
     echo "  s1_pol_mode <input_list>"
     return
@@ -50,7 +50,7 @@ function s1_pol_mode() {
 
 # get swath identifier
 function s1_swath() {
-    if [ -z "$1" ]; then 
+    if [ -z "$1" ]; then
     echo "Missing arguments. Syntax:"
     echo "  s1_swath <input_list>"
     return
@@ -64,7 +64,7 @@ function s1_swath() {
 
 # get Scene ID
 function s1_ident() {
-    if [ -z "$1" ]; then 
+    if [ -z "$1" ]; then
     echo "Missing arguments. Syntax:"
     echo "  s1_ident <input_list>"
     return
@@ -78,7 +78,7 @@ function s1_ident() {
 
 # get UUID for download
 function s1_uuid() {
-    if [ -z "$1" ]; then 
+    if [ -z "$1" ]; then
     echo "Missing arguments. Syntax:"
     echo "  s1_uuid <input_list>"
     return
@@ -90,7 +90,7 @@ function s1_uuid() {
 
 # get acquisition date
 function s1_date() {
-    if [ -z "$1" ]; then 
+    if [ -z "$1" ]; then
     echo "Missing arguments. Syntax:"
     echo "  s1_date <input_list>"
     return
@@ -103,7 +103,7 @@ function s1_date() {
 
 # get scene footprint
 function s1_footprint() {
-    if [ -z "$1" ]; then 
+    if [ -z "$1" ]; then
     echo "Missing arguments. Syntax:"
     echo "  s1_footprint <input_list>"
     return
@@ -115,9 +115,9 @@ function s1_footprint() {
     echo "$FOOT"
 }
 
-# get orbit 
+# get orbit
 function s1_orbit() {
-    if [ -z "$1" ]; then 
+    if [ -z "$1" ]; then
     echo "Missing arguments. Syntax:"
     echo "  s1_orbit <input_list>"
     return
@@ -131,7 +131,7 @@ function s1_orbit() {
 
 # get track
 function s1_track() {
-    if [ -z "$1" ]; then 
+    if [ -z "$1" ]; then
     echo "Missing arguments. Syntax:"
     echo "  s1_track <input_list>"
     return
@@ -147,12 +147,12 @@ function s1_track() {
     else
        TRACK=`expr $line % 175 - 72`
        echo "$TRACK"
-    fi		
+    fi
     done
 }
 
 function s1_track_orbit() {
-    if [ -z "$1" ]; then 
+    if [ -z "$1" ]; then
     echo "Missing arguments. Syntax:"
     echo "  s1_track <input_list>"
     return
@@ -163,12 +163,12 @@ function s1_track_orbit() {
     else
        TRACK=`expr $1 % 175 - 72`
        echo "$TRACK"
-    fi		
+    fi
 }
 
 # get starting slice
 function s1_start_time() {
-    if [ -z "$1" ]; then 
+    if [ -z "$1" ]; then
     echo "Missing arguments. Syntax:"
     echo "  s1_slice_start <input_list>"
     return
@@ -181,7 +181,7 @@ function s1_start_time() {
 
 # get ending slice
 function s1_stop_time() {
-    if [ -z "$1" ]; then 
+    if [ -z "$1" ]; then
     echo "Missing arguments. Syntax:"
     echo "  s1_slice_start <input_list>"
     return
@@ -194,11 +194,11 @@ function s1_stop_time() {
 
 # show S1 info
 function s1_info() {
-if [ -z "$1" ]; then 
+if [ -z "$1" ]; then
     echo "Missing arguments. Syntax:"
     echo "  s1_info <input_file>"
     return
-    fi 
+    fi
     BASENAME=`basename $1`
     export SCENE_ID=`echo ${BASENAME} | rev | cut -c 5- | rev`
     export DATE=${SCENE_ID:17:8}
@@ -211,9 +211,13 @@ if [ -z "$1" ]; then
     #TRACK=${SCENE_ID:26:3}
     #FRAME_START=${SCENE_ID:29:3}
     #FRAME_END=${SCENE_ID:45:3}
-    export SATELLITE="Sentinel-1"
+    if [[ ${SCENE_ID:0:3} == "S1A" ]];then
+      export SATELLITE="Sentinel-1A/C-band SAR"
+    else
+      export SATELLITE="Sentinel-1B/C-band SAR"
+    fi
 
-    echo " " 
+    echo " "
     echo "----------------------------------------------------------------"
     echo " Scene Identifier: 		${SCENE_ID}"
     echo " Satellite/Sensor: 		${SATELLITE}"
@@ -226,5 +230,3 @@ if [ -z "$1" ]; then
     echo " Absolute Satellite Orbit: 	${ORBIT}"
     echo "----------------------------------------------------------------"
 }
-
-

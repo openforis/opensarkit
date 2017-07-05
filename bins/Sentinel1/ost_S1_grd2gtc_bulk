@@ -1,0 +1,208 @@
+#! /bin/bash
+
+# The MIT License (MIT)
+# Copyright (c) 2016 Andreas Vollrath
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is furnished
+# to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+# OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+# source libs
+source ${OPENSARKIT}/lib/helpers_source
+
+#-------------------------------------------------------------------------------------------
+# 	0.1 Check for right usage & set up basic Script Variables
+if [ "$#" != "4" ]; then
+
+	echo -e "-----------------------------------------------------------------------------"
+	echo -e " Open SAR Toolkit, version ${OST_VERSION}"
+	echo -e " Bulk preprocessing Sentinel-1 GRD scenes to geometrically, terrain"
+	echo -e " corrected (GTC) products and optionally calculate multi-temporal metrics"
+	echo -e "-----------------------------------------------------------------------------"
+	echo -e ""
+	echo -e " Usage: oft-sar-S1-GRD-bulk-preprocess <input directory> <output resolution> <mode> <ts-processing> "
+	echo -e ""
+	echo -e " input parameters:"
+	echo -e " input directory (input) higher-level directory of the downloaded zip file (i.e. DATA folder created by oft-sar-S1-download)"
+	echo -e " output resolution 	 the output resolution"
+	echo -e "			   Available choices:"
+	echo -e "			    HI_RES (10m output) "
+	echo -e "			    MED_RES (30m output)"
+	echo -e " mode		 GTC product output"
+	echo -e "			  Available choices:"
+	echo -e "			   0: Single Image mode (calculates VV/VH ratio, applies a spatial Speckle Filter and puts images to dB scale) "
+	echo -e "			   1: TS preperation mode (needs to be selected if subsequent time-series/timescan processing is envisaged)"
+	echo -e " ts-processing		 apply the time-series/timescan processing"
+	echo -e "			  Available choices:"
+	echo -e "			   0: no "
+	echo -e "			   1: yes (16 bit output, recommended)"
+	echo -e "			   2: yes (8 bit output)"
+	echo -e "			   3: yes (32 bit output)"
+	echo -e ""
+	exit 1
+else
+
+	PROC_DIR=$(readlink -f $1)
+	TMP_DIR=${SAR_TMP:-$PROC_DIR/TMP}
+	AOI="${PROC_DIR}/../.AOI/aoi*.shp"
+	rm -rf ${TMP_DIR}/*
+	mkdir -p ${TMP_DIR}
+
+	# get cl-options
+	RESOLUTION=$2
+	PROC_MODE=$3
+	TS_PROC=$4
+
+	if [[ ${TS_PROC} -gt 0 && ${PROC_MODE} -eq 0 ]];then
+		echo " WARNING: You are going to process the time-series/timescan products. Processing mode has therefore been set to TS mode preperation."
+		PROC_MODE=1
+	fi
+
+	echo -e "-----------------------------------------------------------------------------" | tee ${PROC_DIR}/.s1_g2g_progress
+	echo -e " Open SAR Toolkit, version ${OST_VERSION}" | tee -a ${PROC_DIR}/.s1_g2g_progress
+	echo -e " Bulk preprocessing Sentinel-1 GRD scenes to geometrically, terrain" | tee -a ${PROC_DIR}/.s1_g2g_progress
+	echo -e " corrected (GTC) products and optionally calculate multi-temporal metrics" | tee -a ${PROC_DIR}/.s1_g2g_progress
+	echo -e "-----------------------------------------------------------------------------" | tee -a ${PROC_DIR}/.s1_g2g_progress
+
+fi
+
+cd ${PROC_DIR}
+NR_OF_TRACKS=`ls -1 -d ${PROC_DIR}/[0-9]* | wc -l`
+j=1
+# loop thorugh the tracks
+for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
+
+	if [ ${NR_OF_TRACKS} -eq 1 ];then
+		echo " Info: Processing Track: `basename ${TRACK}`" | tee -a ${PROC_DIR}/.s1_g2g_progress
+	else
+		echo " Info: Processing Track: `basename ${TRACK}` ($j/${NR_OF_TRACKS}) " | tee -a ${PROC_DIR}/.s1_g2g_progress
+	fi
+
+	echo " Info: Entering Track: ${TRACK}" | tee -a ${PROC_DIR}/.s1_g2g_progress
+	cd ${TRACK}
+
+	NR_OF_ACQ=`ls -1 -d 20* | wc -l`
+	echo " Info: Found ${NR_OF_ACQ} acquisitions for this swath" | tee -a ${PROC_DIR}/.s1_g2g_progress
+
+	# loop through acquisition dates
+	for ACQ in `ls -1 -d 20*-[0-9]*`;do
+
+		echo " Info: Entering ${ACQ}" | tee -a ${PROC_DIR}/.s1_g2g_progress
+		cd ${ACQ}
+
+		# check if already imported products are there
+		if ls ${PWD}/*imported_subset.dim > /dev/null 2>&1;then
+			SCRIPT_MODE=SUBSET
+			NR_FRAMES=`ls -1 -d ${PWD}/*dim 2>/dev/null | wc -l`
+		elif ls ${PWD}/*zip > /dev/null 2>&1 ;then
+			SCRIPT_MODE=RAW
+			NR_FRAMES=`ls -1 -d ${PWD}/*zip 2>/dev/null | wc -l`
+		else
+			echo " ERROR: No valid files found in directory ${PWD}" | tee -a ${PROC_DIR}/.s1_g2g_progress && exit 1
+		fi
+
+		# Check if RAM disk is applicable
+		set_tmp_S1_RTC_bulk ${NR_FRAMES} ${RESOLUTION} | tee -a ${PROC_DIR}/.s1_g2g_progress
+
+		# create Log and Temp dirs
+		LOG_DIR=${PWD}/LOG
+		TMP_DIR_FRAME=${TMP_DIR}/${ACQ}
+		mkdir -p ${LOG_DIR}
+		mkdir -p ${TMP_DIR_FRAME}
+
+		if [ ${NR_FRAMES} -eq 1 ];then
+
+			echo " Info: Found ${NR_FRAMES} scene to process" | tee -a ${PROC_DIR}/.s1_g2g_progress
+
+			FRAME=`ls -1 ${PWD}/*dim 2>/dev/null || ls -1 ${PWD}/*zip 2>/dev/null`
+			s1_info ${FRAME} >> ${PROC_DIR}/.s1_g2g_progress
+			s1_info ${FRAME}
+
+			if [[ ${SCRIPT_MODE} == SUBSET && ${PROC_MODE} == 0 ]];then
+
+				SECONDS=0
+				echo -ne " Applying the Lee Sigma Speckle Filter ..." | tee -a ${PROC_DIR}/.s1_g2g_progress
+				bash ${SNAP_EXE} Speckle-Filter -Ssource=${FRAME} -t ${TMP_DIR_FRAME}/${ACQ}"_speckle" > /dev/null 2>&1
+				rm -rf ${TMP_DIR_FRAME}/${ACQ}_import.*
+				duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_g2g_progress
+
+				s1_gtc_processing ${TMP_DIR_FRAME}/${ACQ}"_speckle.dim" ${PWD}/${ACQ} ${RESOLUTION} 0 ${AOI} ${TMP_DIR_FRAME} ${LOG_DIR} | tee -a ${PROC_DIR}/.s1_g2g_progress
+
+			elif [[ ${SCRIPT_MODE} == SUBSET && ${PROC_MODE} == 1 ]];then
+
+				s1_gtc_processing ${FRAME} ${PWD}/${ACQ} ${RESOLUTION} 1 ${AOI} ${TMP_DIR_FRAME} ${LOG_DIR} | tee -a ${PROC_DIR}/.s1_g2g_progress
+
+			elif [[ ${SCRIPT_MODE} != SUBSET && ${PROC_MODE} == 0 ]];then
+				s1_frame_import ${FRAME} ${TMP_DIR_FRAME}/${ACQ}"_import" ${LOG_DIR} | tee -a ${PROC_DIR}/.s1_g2g_progress
+
+				SECONDS=0
+				echo -ne " Applying the Lee Sigma Speckle Filter ..." | tee -a ${PROC_DIR}/.s1_g2g_progress
+				bash ${SNAP_EXE} Speckle-Filter -Ssource=${TMP_DIR_FRAME}/${ACQ}"_import.dim" -t ${TMP_DIR_FRAME}/${ACQ}"_speckle" > /dev/null 2>&1
+				rm -rf ${TMP_DIR_FRAME}/${ACQ}_import.*
+				duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_g2g_progress
+
+				s1_gtc_processing ${TMP_DIR_FRAME}/${ACQ}"_speckle.dim" ${PWD}/${ACQ} ${RESOLUTION} 0 ${AOI} ${TMP_DIR_FRAME} ${LOG_DIR} | tee -a ${PROC_DIR}/.s1_g2g_progress
+
+			elif [[ ${SCRIPT_MODE} != SUBSET && ${PROC_MODE} == 1 ]];then
+				s1_frame_import ${FRAME} ${TMP_DIR_FRAME}/${ACQ}"_import" ${LOG_DIR} | tee -a ${PROC_DIR}/.s1_g2g_progress
+				s1_gtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ} ${RESOLUTION} 1 ${AOI} ${TMP_DIR_FRAME} ${LOG_DIR} | tee -a ${PROC_DIR}/.s1_g2g_progress
+			fi
+
+		else
+
+			echo " Info: Found ${NR_FRAMES} scenes to assemble and process" | tee -a ${PROC_DIR}/.s1_g2g_progress
+
+			ls -1 -d ${PWD}/*dim 2>/dev/null || ls -1 -d ${PWD}/*zip 2>/dev/null > ${TMP_DIR_FRAME}/filelist
+
+			if [ ${SCRIPT_MODE} == SUBSET ];then
+				echo " Subset mode" | tee -a ${PROC_DIR}/.s1_g2g_progress
+				#in case of subset area covering 2 scenesTO BE DONE s1_subset_rtc_processing ${TMP_DIR_FRAME}/filelist ${PWD}/${ACQ}"_RTC.dim" $2 ${TMP_DIR_FRAME} ${LOG_DIR}
+			else
+
+				s1_swath_import ${TMP_DIR_FRAME}/filelist ${TMP_DIR_FRAME}/${ACQ}"_import" ${TMP_DIR_FRAME} ${LOG_DIR} | tee -a ${PROC_DIR}/.s1_g2g_progress
+
+				if [ ${PROC_MODE} == 0 ];then
+					SECONDS=0
+					echo -ne " Applying the Lee Sigma Speckle Filter ..." | tee -a ${PROC_DIR}/.s1_g2g_progress
+					bash ${SNAP_EXE} Speckle-Filter -Ssource=${TMP_DIR_FRAME}/${ACQ}"_import.dim" -t ${TMP_DIR_FRAME}/${ACQ}"_speckle"
+					rm -rf ${TMP_DIR_FRAME}/${ACQ}_import.*
+					duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_g2g_progress
+
+					s1_gtc_processing ${TMP_DIR_FRAME}/${ACQ}"_speckle.dim" ${PWD}/${ACQ} ${RESOLUTION} 0 ${AOI} ${TMP_DIR_FRAME} ${LOG_DIR} | tee -a ${PROC_DIR}/.s1_g2g_progress
+				else
+					s1_gtc_processing ${TMP_DIR_FRAME}/${ACQ}"_import.dim" ${PWD}/${ACQ} ${RESOLUTION} 1 ${AOI} ${TMP_DIR_FRAME} ${LOG_DIR} | tee -a ${PROC_DIR}/.s1_g2g_progress
+				fi
+			fi
+
+		fi
+
+		# clean up tmp folder
+	rm -rf ${TMP_DIR_FRAME}/
+	cd ../
+
+	done # finish acquisition date loop
+
+	j=`expr $j + 1`
+	cd ${PROC_DIR}
+
+done # finish track loop
+
+# calculate MT-metrics
+if [[ ${TS_PROC} != 0 ]];then
+	ost_S1_rtc2ts ${PROC_DIR} ${TS_PROC} 1 | tee -a ${PROC_DIR}/.s1_g2g_progress
+fi
+
+rm -rf ${TMP_DIR}
