@@ -178,7 +178,7 @@ output$s1_ts2m = renderText({
   } # close value process    
   
   if(s1_ts2m_values$s1_ts2m_abort) {
-      
+    
     # delete the exit file
     unlink(s1_ts2m_exitfile)
       

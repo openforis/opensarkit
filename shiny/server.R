@@ -81,7 +81,7 @@ server <- function(input, output, session) {
    })
    
    # ALOS K&C FNF
-   observeEvent(input$link_to_tabpanel_alos_kc_pro, {
+   observeEvent(input$link_to_tabpanel_alos_kc_fnf, {
      updateTabItems(session, "menus", "alos_kc_fnf")
    })
    
@@ -94,7 +94,11 @@ server <- function(input, output, session) {
    observeEvent(input$link_to_tabpanel_alos_grd2rtc, {
    updateTabItems(session, "menus", "alos_grd2rtc")
    })
-    
+   
+   # S1 data
+   observeEvent(input$link_to_tabpanel_s1_data, {
+     updateTabItems(session, "menus", "s1_data")
+   }) 
    # S1 inventory
    observeEvent(input$link_to_tabpanel_s1_inv, {
    updateTabItems(session, "menus", "s1_inv")
@@ -104,19 +108,49 @@ server <- function(input, output, session) {
    observeEvent(input$link_to_tabpanel_s1_dow, {
    updateTabItems(session, "menus", "s1_dow")
    })
-    
+   
+   # S1 grd2gtc
+   observeEvent(input$link_to_tabpanel_s1_grd, {
+     updateTabItems(session, "menus", "s1_grd")
+   })
+   
+   # S1 grd2gtc
+   observeEvent(input$link_to_tabpanel_s1_grd2gtc, {
+     updateTabItems(session, "menus", "s1_grd2gtc")
+   })
+   
    # S1 grd2rtc
    observeEvent(input$link_to_tabpanel_s1_grd2rtc, {
    updateTabItems(session, "menus", "s1_grd2rtc")
    })
     
-   # S1 grd2rtc-ts
-   #observeEvent(input$link_to_tabpanel_s1_grd2ts, {
-   #updateTabItems(session, "menus", "s1_grd2rtc-ts")
-   #})
+   # S1 rtc2ts
+   observeEvent(input$link_to_tabpanel_s1_rtc2ts, {
+   updateTabItems(session, "menus", "s1_rtc2ts")
+   })
    
-   # S1 grd2rtc-ts
+   # S1 ts2m
    observeEvent(input$link_to_tabpanel_s1_ts2mos, {
    updateTabItems(session, "menus", "s1_ts2mos")
+   })
+   
+   # S1 SLC
+   observeEvent(input$link_to_tabpanel_s1_slc, {
+     updateTabItems(session, "menus", "s1_slc")
+   })
+   
+   # S1 SLC2COH
+   observeEvent(input$link_to_tabpanel_s1_slc2coh, {
+     updateTabItems(session, "menus", "s1_slc2coh")
+   })
+   
+   # S1 SLC2POL
+   observeEvent(input$link_to_tabpanel_s1_slc2pol, {
+     updateTabItems(session, "menus", "s1_slc2pol")
+   })
+   
+   # S1 SLC2IFG
+   observeEvent(input$link_to_tabpanel_s1_slc2ifg, {
+     updateTabItems(session, "menus", "s1_slc2ifg")
    })
 } # EOF
