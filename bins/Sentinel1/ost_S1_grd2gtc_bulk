@@ -115,8 +115,9 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 		fi
 
 		# Check if RAM disk is applicable
-		set_tmp_S1_RTC_bulk ${NR_FRAMES} ${RESOLUTION} | tee -a ${PROC_DIR}/.s1_g2g_progress
-
+		set_tmp_S1_RTC_bulk ${NR_FRAMES} ${RESOLUTION} >> ${PROC_DIR}/.s1_g2g_progress
+		set_tmp_S1_RTC_bulk ${NR_FRAMES} ${RESOLUTION}
+		
 		# create Log and Temp dirs
 		LOG_DIR=${PWD}/LOG
 		TMP_DIR_FRAME=${TMP_DIR}/${ACQ}

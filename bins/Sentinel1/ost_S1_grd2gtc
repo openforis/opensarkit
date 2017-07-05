@@ -75,7 +75,8 @@ else
 fi
 
 # Check if RAM disk is applicable
-set_tmp_S1_RTC_bulk 1 ${RESOLUTION} | tee -a ${PROC_DIR}/.s1_g2g_progress
+set_tmp_S1_RTC_bulk 1 ${RESOLUTION} >> ${PROC_DIR}/.s1_g2g_progress
+set_tmp_S1_RTC_bulk 1 ${RESOLUTION}
 
 # get scene infos
 s1_info ${FILE} >> ${PROC_DIR}/.s1_g2g_progress
