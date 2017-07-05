@@ -32,6 +32,7 @@ function set_tmp_KC() {
   if ls /ram > /dev/null 2>&1;then
 
     echo -e " Info: Checking if RAM disk offers sufficient memory for temporary file storage ..."
+    #FREE_RAM=$(df -h | grep /dev/sdb1 | awk $'{print $2}')
     FREE_RAM=$(df -h | grep /ram | awk $'{print $2}')
     FREE_RAM_INT=`echo ${FREE_RAM} | sed 's/G//g'`
     CPUS=`nproc`
@@ -65,8 +66,8 @@ function set_tmp_S1_RTC_bulk() {
   if ls /ram > /dev/null 2>&1;then
 
     echo -e " Info: Checking if RAM disk offers sufficient memory for temporary file storage ..."
-    #FREE_RAM=$(df -h | grep /ram | awk $'{print $2}')
-    FREE_RAM=$(df -h | grep /dev/sdb1 | awk $'{print $2}')
+    FREE_RAM=$(df -h | grep /ram | awk $'{print $2}')
+    #FREE_RAM=$(df -h | grep /dev/sdb1 | awk $'{print $2}')
     FREE_RAM_INT=`echo ${FREE_RAM} | sed 's/G//g'`
 
     if [[ $2 == "MED_RES" ]];then

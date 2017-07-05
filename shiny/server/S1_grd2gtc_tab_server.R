@@ -301,6 +301,7 @@ output$processS1_G2G = renderText({
     
     #run the state function
     s1_g2g_state = s1_g2g_get_state() # Can be NOT_STARTED, RUNNING, TERMINATED
+    print(paste("tmp:", Sys.getenv("TMP_DIR")))
     
     if (s1_g2g_state == "INITIAL"){
       s1_g2g_state = s1_g2g_get_args()
@@ -328,15 +329,19 @@ output$processS1_G2G = renderText({
     # delete the exit file
     unlink(s1_g2g_exitfile)
     
-    if (input$s1_g2g_input_type == "s1_g2g_file"){
-      print(paste("ost_cancel_proc \"sh -c ( ost_S1_grd2gtc", s1_g2g_args, "\"", paste(s1_g2g_dir, "/TMP", sep = "")))
-      system(paste("ost_cancel_proc \"sh -c ( ost_S1_grd2gtc", s1_g2g_args, "\"", paste(s1_g2g_dir, "/TMP", sep = "")))
-    }
+    # check whihc temp folder
+    if (dir.exists(paste(s1_g2g_dir, "/TMP")))
+        s1_g2g_tmp = paste(s1_g2g_dir, "/TMP")
     
-    if (input$s1_g2g_input_type == "s1_g2g_folder"){
-      print(paste("ost_cancel_proc \"sh -c ( ost_S1_grd2gtc_bulk", s1_g2g_args, "\"", paste(s1_g2g_dir, "/TMP", sep = "")))
-      system(paste("ost_cancel_proc \"sh -c ( ost_S1_grd2gtc_bulk", s1_g2g_args, "\"", paste(s1_g2g_dir, "/TMP", sep = "")))
-    }
+    if (!dir.exists(paste(s1_g2g_dir, "/TMP")))
+        s1_g2g_tmp = "/ram/SAR_TMP"
+    
+    print(s1_g2g_tmp)
+    if (input$s1_g2g_input_type == "s1_g2g_file")
+        system(paste("ost_cancel_proc \"sh -c ( ost_S1_grd2gtc", s1_g2g_args, "\"", s1_g2g_tmp))
+    
+    if (input$s1_g2g_input_type == "s1_g2g_folder")
+        system(paste("ost_cancel_proc \"sh -c ( ost_S1_grd2gtc_bulk", s1_g2g_args, "\"", s1_g2g_tmp))
     
     s1_g2g_dir_message="User interruption"
     s1_g2g_js_string <- 'alert("Attention");'

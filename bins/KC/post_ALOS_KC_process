@@ -86,6 +86,14 @@ fi
 #------------------------------------------------------------------------
 # check archive integrity
 cd $ZIP_DIR
+
+# check if we can use the RAM on sepal
+NR_OF_TILES=$(ls -1 *_${YEAR_SHORT}_*tar.gz | wc -l)
+
+# check if ramdisk can be used
+set_tmp_KC ${NR_OF_TILES} >> ${OUT_DIR}/.kc_pro_progress
+set_tmp_KC ${NR_OF_TILES}
+
 SECONDS=0
 echo -ne " Checking the integrity of the downloaded archives ..." | tee -a ${OUT_DIR}/.kc_pro_progress
 for file in $(ls -1 *_${YEAR_SHORT}_*tar.gz); do
@@ -109,12 +117,6 @@ echo -ne " Unpacking the downloaded archives ..."  | tee -a ${OUT_DIR}/.kc_pro_p
 ls -1 *_${YEAR_SHORT}_*tar.gz | parallel --no-notice -j "`nproc`" tar -xzf {} -C ${TMP_DIR}
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${OUT_DIR}/.kc_pro_progress
 
-# check if we can use the RAM on sepal
-NR_OF_TILES=$(ls -1 *_${YEAR_SHORT}_*tar.gz | wc -l)
-
-# check if ramdisk can be used
-set_tmp_KC ${NR_OF_TILES} >> ${OUT_DIR}/.kc_pro_progress
-set_tmp_KC ${NR_OF_TILES}
 #------------------------------------------------------------------------
 
 #----------------------------------------------------------------------

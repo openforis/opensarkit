@@ -334,15 +334,19 @@ output$processS1_G2R = renderText({
     # delete the exit file
     unlink(s1_g2r_exitfile)
     
-    if (input$s1_g2r_input_type == "s1_g2r_file"){
-      print(paste("ost_cancel_proc \"sh -c ( ost_S1_grd2rtc", s1_g2r_args, "\"", paste(s1_g2r_dir, "/TMP", sep = "")))
-      system(paste("ost_cancel_proc \"sh -c ( ost_S1_grd2rtc", s1_g2r_args, "\"", paste(s1_g2r_dir, "/TMP", sep = "")))
-    }
+    # check whihc temp folder
+    if (dir.exists(paste(s1_g2r_dir, "/TMP")))
+      s1_g2r_tmp = paste(s1_g2r_dir, "/TMP")
     
-    if (input$s1_g2r_input_type == "s1_g2r_folder"){
-      print(paste("ost_cancel_proc \"sh -c ( ost_S1_grd2rtc_bulk", s1_g2r_args, "\"", paste(s1_g2r_dir, "/TMP", sep = "")))
-      system(paste("ost_cancel_proc \"sh -c ( ost_S1_grd2rtc_bulk", s1_g2r_args, "\"", paste(s1_g2r_dir, "/TMP", sep = "")))
-    }
+    if (!dir.exists(paste(s1_g2r_dir, "/TMP")))
+      s1_g2r_tmp = "/ram/SAR_TMP"
+    
+    print(s1_g2r_tmp)
+    if (input$s1_g2r_input_type == "s1_g2r_file")
+      system(paste("ost_cancel_proc \"sh -c ( ost_S1_grd2rtc", s1_g2r_args, "\"", s1_g2r_tmp))
+
+    if (input$s1_g2r_input_type == "s1_g2r_folder")
+      system(paste("ost_cancel_proc \"sh -c ( ost_S1_grd2rtc_bulk", s1_g2r_args, "\"", s1_g2r_tmp))
     
     s1_g2r_dir_message="User interruption"
     s1_g2r_js_string <- 'alert("Attention");'

@@ -148,7 +148,7 @@ kc_pro_get_args = function(){
     } 
     
     # get year from input
-    kc_pro_year_set = input$kc_pro_year
+    kc_pro_year_set <<- input$kc_pro_year
     
     # get speckle filter modus
     if (input$kc_pro_speckle == "Yes"){
@@ -268,9 +268,12 @@ output$process_KC = renderText({
     # delete the exit file
     unlink(kc_pro_exitfile)
     
-    # cancel the
-    print(paste("ost_cancel_proc \"sh -c ( post_ALOS_KC_process", kc_pro_args, "\"", kc_pro_tmp))
-    system(paste("ost_cancel_proc \"sh -c ( post_ALOS_KC_process", kc_pro_args, "\"", kc_pro_tmp))
+    if(dir.exists(kc_pro_tmp))
+      system(paste("ost_cancel_proc \"sh -c ( post_ALOS_KC_process", kc_pro_args, "\"", kc_pro_tmp))
+    
+    if(!dir.exists(kc_pro_tmp))
+      kc_pro_tmp="/ram/KC_TMP"
+      system(paste("ost_cancel_proc \"sh -c ( post_ALOS_KC_process", kc_pro_args, "\"", kc_pro_tmp))
     
     kc_pro_dir_message="User interruption"
     kc_pro_js_string <- 'alert("Attention");'
