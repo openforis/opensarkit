@@ -37,7 +37,7 @@ tabItem(tabName = "s1_ts2mos",
             
             #-----------------------------------------------------------------------------------------------------------------------------------
             # Trigger / Abort
-            div(style="display: inline-block;vertical-align:top; width: 220px;", withBusyIndicatorUI(
+            div(style="display: inline-block;vertical-align:top; width: 135px;", withBusyIndicatorUI(
               actionButton("s1_ts2m_pro_btn", "Start mosaicking")
             )),
             div(style="display: inline-block;vertical-align:top; width: 150px;", withBusyIndicatorUI(
