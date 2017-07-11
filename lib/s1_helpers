@@ -151,19 +151,70 @@ function s1_track() {
     done
 }
 
-function s1_track_orbit() {
+# function s1_track_orbit() {
+#     if [ -z "$1" ]; then
+#     echo "Missing arguments. Syntax:"
+#     echo "  s1_track <input_list>"
+#     return
+#     fi
+#     if [[ `expr $1 % 175` -lt 72 ]];then
+#        TRACK=`expr $1 % 175 + 103`
+#        echo $TRACK
+#     else
+#        TRACK=`expr $1 % 175 - 72`
+#        echo "$TRACK"
+#     fi
+# }
+
+function s1a_track_orbit() {
     if [ -z "$1" ]; then
     echo "Missing arguments. Syntax:"
-    echo "  s1_track <input_list>"
+    echo "  s1a_track <absolute orbit>"
     return
     fi
-    if [[ `expr $1 % 175` -lt 72 ]];then
-       TRACK=`expr $1 % 175 + 103`
-       echo $TRACK
-    else
-       TRACK=`expr $1 % 175 - 72`
-       echo "$TRACK"
+
+    # get orbit and offsets
+    absolute_orbit=$1
+    cycle_offset=15
+    orbit_offset=73
+
+    # calculate the revisit cycle
+    revisit_cycle=`echo "(( ${absolute_orbit} - ${orbit_offset} ) / 175 ) + ${cycle_offset}" | bc`
+
+    # calculate the realtive orbit
+    rel_orbit_1=`echo "( ${absolute_orbit} - ( ${revisit_cycle} * 175 ) )" | bc`
+    rel_orbit_2=`echo "${absolute_orbit} - (( ${revisit_cycle} - ${cycle_offset}) * 175 ) - ${orbit_offset} + 1 " | bc`
+
+    # return the realtive orbit
+    echo "Revisit cycle: ${revisit_cycle}"
+    echo "Relative Orbit simple: ${rel_orbit_1}"
+    echo "Relative Orbit advanced: ${rel_orbit_2}"
+}
+
+
+function s1b_track_orbit() {
+    if [ -z "$1" ]; then
+    echo "Missing arguments. Syntax:"
+    echo "  s1b_track_orbit <absolute orbit>"
+    return
     fi
+
+    # get orbit and offsets
+    absolute_orbit=$1
+    cycle_offset=7
+    orbit_offset=27
+
+    # calculate the revisit cycle
+    revisit_cycle=`echo "(( ${absolute_orbit} - ${orbit_offset} ) / 175 ) + ${cycle_offset}" | bc`
+
+    # calculate the realtive orbit
+    rel_orbit_1=`echo "( ${absolute_orbit} - ( ${revisit_cycle} * 175 ) )" | bc`
+    rel_orbit_2=`echo "${absolute_orbit} - (( ${revisit_cycle} - ${cycle_offset}) * 175 ) - ${orbit_offset} + 1 " | bc`
+
+    # return the realtive orbit
+    echo "Revisit cycle: ${revisit_cycle}"
+    echo "Relative Orbit simple: ${rel_orbit_1}"
+    echo "Relative Orbit advanced: ${rel_orbit_2}"
 }
 
 # get starting slice
@@ -205,7 +256,6 @@ if [ -z "$1" ]; then
     export ORBIT=${SCENE_ID:49:6}
     export START=`echo "${SCENE_ID:26:2}":"${SCENE_ID:28:2}":"${SCENE_ID:30:2}"`
     export STOP=`echo "${SCENE_ID:42:2}":"${SCENE_ID:44:2}":"${SCENE_ID:46:2}"`
-    export TRACK_INFO=`s1_track_orbit $ORBIT`
     export MODE=${SCENE_ID:7:3}
     export POL_MODE=${SCENE_ID:13:3}
     #TRACK=${SCENE_ID:26:3}
@@ -213,8 +263,10 @@ if [ -z "$1" ]; then
     #FRAME_END=${SCENE_ID:45:3}
     if [[ ${SCENE_ID:0:3} == "S1A" ]];then
       export SATELLITE="Sentinel-1A/C-band SAR"
+      export TRACK_INFO=`s1a_track_orbit $ORBIT`
     else
       export SATELLITE="Sentinel-1B/C-band SAR"
+      export TRACK_INFO=`s1b_track_orbit $ORBIT`
     fi
 
     echo " "

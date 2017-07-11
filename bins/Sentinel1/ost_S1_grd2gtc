@@ -33,12 +33,6 @@ if [ "$#" != "3" ]; then
 	echo -e " Preprocess Sentinel-1 GRD scene to a geometrically, terrain corrected (GTC) product "
 	echo -e "----------------------------------------------------------------------------------"
 	echo -e ""
-	echo -e "----------------------------------------------------------------------------------"
-	echo -e " Software dependencies:"
-	echo -e "	- ESA Sentinel Application Platform SNAP"
-	echo -e "	- gdal-bin"
-	echo -e "----------------------------------------------------------------------------------"
-	echo -e ""
 	echo -e " Usage: ost_S1_grd2gtc <filename> <output_folder> <output resolution>" # <elevation> "
 	echo -e ""
 	echo -e " input parameters:"
@@ -118,7 +112,7 @@ elif [[ ${POL_MODE} == "SSV" ]];then
   duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_g2g_progress
 fi
 
-#rm -rf ${TMP_DIR}
+rm -rf ${TMP_DIR}
 
 if [ -e ${OUT_DIR}/${SCENE_ID}".GTC".tif ];then
 	echo "------------------------------------------------" | tee -a ${PROC_DIR}/.s1_g2g_progress

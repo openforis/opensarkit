@@ -117,7 +117,7 @@ tabItem(tabName = "s1_inv",
              
              #-----------------------------------------------------------------------------------------------------------------------------------
              # Trigger / Abort
-             div(style="display: inline-block;vertical-align:top; width: 220px;", withBusyIndicatorUI(
+             div(style="display: inline-block;vertical-align:top; width: 235px;", withBusyIndicatorUI(
                actionButton("s1_inv_pro_btn", "Create an OST inventory shapefile")
              )),
              div(style="display: inline-block;vertical-align:top; width: 150px;", withBusyIndicatorUI(
