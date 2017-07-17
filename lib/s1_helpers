@@ -182,13 +182,11 @@ function s1a_track_orbit() {
     revisit_cycle=`echo "(( ${absolute_orbit} - ${orbit_offset} ) / 175 ) + ${cycle_offset}" | bc`
 
     # calculate the realtive orbit
-    rel_orbit_1=`echo "( ${absolute_orbit} - ( ${revisit_cycle} * 175 ) )" | bc`
-    rel_orbit_2=`echo "${absolute_orbit} - (( ${revisit_cycle} - ${cycle_offset}) * 175 ) - ${orbit_offset} + 1 " | bc`
+    #rel_orbit_1=`echo "( ${absolute_orbit} - ( ${revisit_cycle} * 175 ) )" | bc`
+    rel_orbit=`echo "${absolute_orbit} - (( ${revisit_cycle} - ${cycle_offset}) * 175 ) - ${orbit_offset} + 1 " | bc`
 
     # return the realtive orbit
-    echo "Revisit cycle: ${revisit_cycle}"
-    echo "Relative Orbit simple: ${rel_orbit_1}"
-    echo "Relative Orbit advanced: ${rel_orbit_2}"
+    echo ${rel_orbit}
 }
 
 
@@ -208,13 +206,11 @@ function s1b_track_orbit() {
     revisit_cycle=`echo "(( ${absolute_orbit} - ${orbit_offset} ) / 175 ) + ${cycle_offset}" | bc`
 
     # calculate the realtive orbit
-    rel_orbit_1=`echo "( ${absolute_orbit} - ( ${revisit_cycle} * 175 ) )" | bc`
-    rel_orbit_2=`echo "${absolute_orbit} - (( ${revisit_cycle} - ${cycle_offset}) * 175 ) - ${orbit_offset} + 1 " | bc`
+    #rel_orbit_1=`echo "( ${absolute_orbit} - ( ${revisit_cycle} * 175 ) )" | bc`
+    rel_orbit=`echo "${absolute_orbit} - (( ${revisit_cycle} - ${cycle_offset}) * 175 ) - ${orbit_offset} + 1 " | bc`
 
     # return the realtive orbit
-    echo "Revisit cycle: ${revisit_cycle}"
-    echo "Relative Orbit simple: ${rel_orbit_1}"
-    echo "Relative Orbit advanced: ${rel_orbit_2}"
+    echo "${rel_orbit}"
 }
 
 # get starting slice
