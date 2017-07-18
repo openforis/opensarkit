@@ -171,7 +171,7 @@ rm -rf ${TMP_DIR}/*_linci*
 
 # convert raster data into polygon
 SECONDS=0
-echo -ne " Create a polygon shapefile contaiing the acquistiion dates ..." | tee -a ${OUT_DIR}/.kc_pro_progress
+echo -ne " Create a polygon shapefile containing the acquisition dates ..." | tee -a ${OUT_DIR}/.kc_pro_progress
 gdal_polygonize.py ${TMP_DIR}/DATE.vrt -f 'ESRI Shapefile' ${TMP_DIR} >> ${LOG_DIR}/log_process 2>&1
 
 #remove date files

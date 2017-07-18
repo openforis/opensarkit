@@ -157,7 +157,7 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 
 			SECONDS=0
 			echo -ne " Create a kmz file for Google Earth Visualization ..."  | tee -a ${PROC_DIR}/.s1_rtc2ts_progress
-			gdalbuildvrt -separate -srcnodata 0 ${TMP_DIR_TRACK}/tmp_rgb.vrt ${STACK}/Timescan/02_Gamma0.VV.max.tif ${STACK}/Timescan/03_Gamma0.VV.min.tif ${STACK}/Timescan/04_Gamma0.VV.std.tif >> ${LOG_DIR}/log_mt_stacking 2>&1
+			gdalbuildvrt -separate -srcnodata 0 ${TMP_DIR_TRACK}/tmp_rgb.vrt ${STACK}/Timescan/02_Gamma0.VV.avg.tif ${STACK}/Timescan/03_Gamma0.VV.min.tif ${STACK}/Timescan/04_Gamma0.VV.std.tif >> ${LOG_DIR}/log_mt_stacking 2>&1
 			gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${TMP_DIR_TRACK}/tmp_rgb.vrt ${TMP_DIR_TRACK}/RGB.8bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
 			gdal_translate -of "KMLSUPEROVERLAY" -co "format=JPEG" ${TMP_DIR_TRACK}/RGB.8bit.tif ${STACK}/Timescan/RGB.timescan.kmz >> ${LOG_MT}/log_mt_stacking 2>&1
 			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_rtc2ts_progress
