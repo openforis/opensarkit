@@ -240,6 +240,7 @@ apt-get install --yes --allow-unauthenticated \
 											python-statsmodels \
 											python-pandas \
 											python-geopandas \
+											python-geopy \
 											python-progressbar \
 											python-opencv \
 											python-numpy >> ${OSK_HOME}/LOG/log_install 2>&1
