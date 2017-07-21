@@ -199,6 +199,7 @@ duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duratio
 SECONDS=0
 echo -ne " Installing Ubuntu package dependencies "
 apt-get install --yes --allow-unauthenticated \
+											mlocate \
 											libcunit1-dev \
 											libfftw3-dev \
 											libshp-dev \
@@ -231,6 +232,7 @@ duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duratio
 SECONDS=0
 echo -ne " Installing python 2.7 packages "
 apt-get install --yes --allow-unauthenticated \
+											python-dev \
 											python-gdal \
 											python-saga \
 										#	python-otb \
@@ -264,8 +266,8 @@ ln -s $otb orfeo
 chmod o+rx orfeo/*.sh
 chmod o+rx orfeo/otbenv.profile
 cd -
-echo "export PYTHONPATH=/usr/local/lib/OTB-contrib-6.0.0-Linux64/lib/python" >> /etc/environment
-echo "export PATH=${PATH}:/usr/local/lib/orfeo/bin" >> /etc/environment
+echo "PYTHONPATH=/usr/local/lib/OTB-contrib-6.0.0-Linux64/lib/python" >> /etc/environment
+echo "PATH=${PATH}:/usr/local/lib/orfeo/bin" >> /etc/environment
 
 #------------------------------------------------------------------
 # 4 Download & Install non-repository Software and OSK
@@ -280,6 +282,8 @@ cd ${OSK_HOME}
 # get OpenSARKit from github
 SECONDS=0
 echo -ne " Getting the Open SAR Toolkit ..." &&
+#wget https://github.com/openforis/opensarkit/archive/v0.1-alpha.1.tar.gz
+#tar -xzf v0.1-alpha.1.tar.gz
 git clone $OSK_GIT_URL >> ${OSK_HOME}/LOG/log_install 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
@@ -306,6 +310,8 @@ done
 #-------------------------------------
 # Install SNAP
 # check if installed
+updatedb
+
 if [ `locate gpt.vmoptions | wc -c` -gt 0 ];then
 
 	SNAP_DIR=`locate gpt.vmoptions`
