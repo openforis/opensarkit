@@ -67,7 +67,9 @@ wget https://github.com/openforis/opensarkit/archive/v0.1-alpha.1.tar.gz
 tar -xzf v0.1-alpha.1.tar.gz
 mv opensarkit-0.1-alpha.1/* ${OST_HOME}
 rm -rf opensarkit-0.1-alpha.1 v0.1-alpha.1.tar.gz
-echo "OPENSARKIT=${OST_HOME}" | tee -a /etc/environment
+if [[ $(cat /etc/environment | grep OPENSARKIT | wc -c) == 0 ]];then
+	echo "OPENSARKIT=${OST_HOME}" | tee -a /etc/environment
+fi
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 
@@ -99,7 +101,9 @@ cd ${OST_HOME}/Database
 
 SECONDS=0
 echo -ne " Downloading the OST database ..."
-echo "OST_DB=${OST_HOME}/Database/OST_db.sqlite" | tee -a /etc/environment
+if [[ $(cat /etc/environment | grep OST_DB | wc -c) == 0 ]];then
+	echo "OST_DB=${OST_HOME}/Database/OST_db.sqlite" | tee -a /etc/environment
+fi
 wget https://www.dropbox.com/s/qvujm3l0ba0frch/OFST_db.sqlite?dl=0  >> ${OST_HOME}/LOG/log_install 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 mv OFST_db.sqlite?dl=0 OST_db.sqlite
@@ -131,7 +135,8 @@ rm -f ${HOME}/Desktop/OST.desktop
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 if [[ $2 == 1 ]];then
-	bash $OST_HOME/bins/Install_OST/ost_dependencies_ubuntu1604.sh
+	#bash $OST_HOME/bins/Install_OST/ost_dependencies_ubuntu1604.sh
+	bash /media/sf_avollrath/Programs/OSK/opensarkit/bins/Install_OST/ost_dependencies_ubuntu1604.sh
 fi
 
 echo "---------------------------------------------------------------------------------------------------------------------------"
