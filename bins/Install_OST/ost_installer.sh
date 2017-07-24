@@ -116,7 +116,7 @@ echo 'Exec=bash -c "R CMD BATCH ${OST_HOME}/shiny/ost.R;$SHELL"' >> ${HOME}/Desk
 echo "Icon=${OST_HOME}/OST_icon_trans.png" >> ${HOME}/Desktop/OST.desktop
 echo "Terminal=true" >> ${HOME}/Desktop/OST.desktop
 echo "Type=Application" >> ${HOME}/Desktop/OST.desktop
-echo "Categories=Application;" >> ${HOME}/Desktop/OST.desktop
+echo "Categories=Education;" >> ${HOME}/Desktop/OST.desktop
 echo "Path=" >> ${HOME}/Desktop/OST.desktop
 echo "StartupNotify=false" >> ${HOME}/Desktop/OST.desktop
 
@@ -126,12 +126,12 @@ echo "runApp('${OPENSARKIT}/shiny/',launch.browser = T)" >> ${OST_HOME}/shiny/os
 chmod +x ${HOME}/Desktop/OST.desktop
 chown ${HOME_USER}:${HOME_USER} ${HOME}/Desktop/OST.desktop
 
-cp ${HOME}/Desktop/OST.desktop /usr/share/applications/OST.desktop
-
+mv ${HOME}/Desktop/OST.desktop /usr/share/applications/OST.desktop
+rm -f ${HOME}/Desktop/OST.desktop
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 if [[ $2 == 1 ]];then
-	bash $OPENSARKIT/bins/ost_dependencies_ubuntu1604.sh
+	bash $OST_HOME/bins/Install_OST/ost_dependencies_ubuntu1604.sh
 fi
 
 echo "---------------------------------------------------------------------------------------------------------------------------"

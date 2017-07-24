@@ -34,7 +34,7 @@ if [ "$#" == "3" ]; then
 	mkdir -p ${TMP_DIR}
 
 	echo -e "---------------------------------------------------------------------------" | tee "${PROC_DIR}/.s1_dow_progress"
-	echo -e " Open SAR Toolkit, version ${OST_VERSION}"  | tee -a ${PROC_DIR}/.s1_dow_progress
+	echo -e " Open SAR Toolkit, version ${OST_VERSION}"  | tee -a "${PROC_DIR}/.s1_dow_progress"
 	echo -e " Download Sentinel-1 data from ASF server using an OST inventory shapefile"  | tee -a "${PROC_DIR}/.s1_dow_progress"
 	echo -e "---------------------------------------------------------------------------"  | tee -a "${PROC_DIR}/.s1_dow_progress"
 
@@ -59,9 +59,9 @@ else
 
 	cd $1
   PROC_DIR=`pwd`
-	TMP_DIR=${PROC_DIR}/.TMP
+	TMP_DIR="${PROC_DIR}/.TMP"
 	#rm -rf ${TMP_DIR} > /dev/null
-	mkdir -p ${TMP_DIR}
+	mkdir -p "${TMP_DIR}"
 
 	echo -e "---------------------------------------------------------------------------" | tee "${PROC_DIR}/.s1_dow_progress"
 	echo -e " Open SAR Toolkit, version ${OST_VERSION}"  | tee -a "${PROC_DIR}/.s1_dow_progress"
@@ -80,21 +80,21 @@ else
 	read -s -p " Please type your NASA Earthdata Password:" PW
 	echo ""
 
-	echo "http_user=${USERNAME}" >> ${TMP_DIR}/wget.conf
-	echo "http_password=${PW}" >> ${TMP_DIR}/wget.conf
-	chmod 600 ${TMP_DIR}/wget.conf
+	echo "http_user=${USERNAME}" >> "${TMP_DIR}/wget.conf"
+	echo "http_password=${PW}" >> "${TMP_DIR}/wget.conf"
+	chmod 600 "${TMP_DIR}/wget.conf"
 	export WGETRC="${TMP_DIR}/wget.conf"
 fi
 
 echo ""
-echo -ne " Preparing the download ..." | tee -a ${PROC_DIR}/.s1_dow_progress
+echo -ne " Preparing the download ..." | tee -a "${PROC_DIR}/.s1_dow_progress"
 SECONDS=0
 ogrinfo $2 -al | grep Product_ID | sed 's/  Product_ID (String) = //g' | tail -n +2 > ${TMP_DIR}/tmp_download_list &&
 ogrinfo $2 -al | grep Track | sed 's/  Track (Integer) = //g' | tail -n +2 > ${TMP_DIR}/tmp_track_list &&
 ogrinfo $2 -al | grep Orbit_Dir | sed 's/  Orbit_Dir (String) = //g' | tail -n +2 | cut -c -1 > ${TMP_DIR}/tmp_orb_dir_list &&
 ogrinfo $2 -al | grep Date | sed 's/  Date (Integer) = //g'| tail -n +2 > ${TMP_DIR}/tmp_date_list
 ogrinfo $2 -al | grep Scene_ID | sed 's/  Scene_ID (String) = //g' | tail -n +2 > ${TMP_DIR}/scene_id
-duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_dow_progress
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a "${PROC_DIR}/.s1_dow_progress"
 echo ""
 
 # counter for info on number of download products
@@ -127,7 +127,7 @@ while read line; do
 
 		i=3
 		SECONDS=0
-		echo -ne " Downloading Product ${COUNT} of ${NR} (Granule: ${SCENE})... " | tee -a ${PROC_DIR}/.s1_dow_progress
+		echo -ne " Downloading Product ${COUNT} of ${NR} (Granule: ${SCENE})... " | tee -a "${PROC_DIR}/.s1_dow_progress"
 		wget --show-progress --progress=dot -q -c -P ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/ "${LINK}" >> ${TMP_DIR}/log_download_${COUNT} 2>&1
 		WGET_ERR=$?
 
@@ -135,7 +135,7 @@ while read line; do
 		#  for ((k=1; k<=3; k++));do
 		# 	# get the percentage
 		# 	PERC_DOW=$(cat ${TMP_DIR}/log_download_${COUNT} log_download_1 | tail -n 2 | head -n 1 | awk '{print $7}')
-		# 	echo -e "\e[0K\r Downloading Product ${COUNT} of ${NR} (Granule: ${SCENE})...${PERC_DOW} " | tee -a ${PROC_DIR}/.s1_dow_progress
+		# 	echo -e "\e[0K\r Downloading Product ${COUNT} of ${NR} (Granule: ${SCENE})...${PERC_DOW} " | tee -a "${PROC_DIR}/.s1_dow_progress"
 		#
 		# 	if [ -z ${WGET_ERR} ];then
 		# 		k=5
@@ -148,26 +148,26 @@ while read line; do
 
 		if [ ${WGET_ERR} == 6 ]; then
 			echo -e ""
-			echo " Username/Password Authentication Failed."  | tee -a ${PROC_DIR}/.s1_dow_progress
+			echo " Username/Password Authentication Failed."  | tee -a "${PROC_DIR}/.s1_dow_progress"
 			rm -rf ${TMP_DIR} && exit 2
 		elif [ ${WGET_ERR} -ne 0 ]; then
-			i=1 && echo -e " failed, having another try."  | tee -a ${PROC_DIR}/.s1_dow_progress
+			i=1 && echo -e " failed, having another try."  | tee -a "${PROC_DIR}/.s1_dow_progress"
 			j=$(expr $j + 1)
 			if [ $j -gt 50 ];then
 				echo -e ""
-				echo " Tried more then 50 times downloading the scene. Exiting because of download problems."  | tee -a ${PROC_DIR}/.s1_dow_progress
+				echo " Tried more then 50 times downloading the scene. Exiting because of download problems."  | tee -a "${PROC_DIR}/.s1_dow_progress"
 				rm -rf ${TMP_DIR} && exit 3
 			fi
 		else
-				duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"  | tee -a ${PROC_DIR}/.s1_dow_progress
+				duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"  | tee -a "${PROC_DIR}/.s1_dow_progress"
 
 				SECONDS=0
-				echo -ne " Checking for Zip archive file integrity..."  | tee -a ${PROC_DIR}/.s1_dow_progress
+				echo -ne " Checking for Zip archive file integrity..."  | tee -a "${PROC_DIR}/.s1_dow_progress"
 				if 7z t ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/${SCENE}.zip | grep "Everything is Ok" > /dev/null;then
-					duration=$SECONDS && echo -e " passed ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"  | tee -a ${PROC_DIR}/.s1_dow_progress
+					duration=$SECONDS && echo -e " passed ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"  | tee -a "${PROC_DIR}/.s1_dow_progress"
 				else
 					i=1
-					duration=$SECONDS && echo -e " failed. Will restart download. ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"  | tee -a ${PROC_DIR}/.s1_dow_progress
+					duration=$SECONDS && echo -e " failed. Will restart download. ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"  | tee -a "${PROC_DIR}/.s1_dow_progress"
 					rm -f ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/${SCENE}.zip
 				fi
 
@@ -179,8 +179,8 @@ while read line; do
 
 done < ${TMP_DIR}/tmp_list
 
-echo "------------------------------------------------" | tee -a ${PROC_DIR}/.s1_dow_progress
-echo " Download of all products succesfully completed"  | tee -a ${PROC_DIR}/.s1_dow_progress
-echo "------------------------------------------------" | tee -a ${PROC_DIR}/.s1_dow_progress
+echo "------------------------------------------------" | tee -a "${PROC_DIR}/.s1_dow_progress"
+echo " Download of all products succesfully completed"  | tee -a "${PROC_DIR}/.s1_dow_progress"
+echo "------------------------------------------------" | tee -a "${PROC_DIR}/.s1_dow_progress"
 
 rm -rf ${TMP_DIR}
