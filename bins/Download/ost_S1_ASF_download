@@ -33,10 +33,10 @@ if [ "$#" == "3" ]; then
 	TMP_DIR=${PROC_DIR}/.TMP
 	mkdir -p ${TMP_DIR}
 
-	echo -e "---------------------------------------------------------------------------" | tee ${PROC_DIR}/.s1_dow_progress
+	echo -e "---------------------------------------------------------------------------" | tee "${PROC_DIR}/.s1_dow_progress"
 	echo -e " Open SAR Toolkit, version ${OST_VERSION}"  | tee -a ${PROC_DIR}/.s1_dow_progress
-	echo -e " Download Sentinel-1 data from ASF server using an OST inventory shapefile"  | tee -a ${PROC_DIR}/.s1_dow_progress
-	echo -e "---------------------------------------------------------------------------"  | tee -a ${PROC_DIR}/.s1_dow_progress
+	echo -e " Download Sentinel-1 data from ASF server using an OST inventory shapefile"  | tee -a "${PROC_DIR}/.s1_dow_progress"
+	echo -e "---------------------------------------------------------------------------"  | tee -a "${PROC_DIR}/.s1_dow_progress"
 
 elif [ "$#" != "2" ]; then
 
@@ -63,11 +63,10 @@ else
 	#rm -rf ${TMP_DIR} > /dev/null
 	mkdir -p ${TMP_DIR}
 
-	echo -e "---------------------------------------------------------------------------"  | tee -a ${PROC_DIR}/.s1_dow_progress
-	echo -e " Open SAR Toolkit, version ${OST_VERSION}"  | tee -a ${PROC_DIR}/.s1_dow_progress
-	echo -e " Download Sentinel-1 data from ASF server using an OST inventory shapefile"  | tee -a ${PROC_DIR}/.s1_dow_progress
-	echo -e "---------------------------------------------------------------------------"  | tee -a ${PROC_DIR}/.s1_dow_progress
-
+	echo -e "---------------------------------------------------------------------------" | tee "${PROC_DIR}/.s1_dow_progress"
+	echo -e " Open SAR Toolkit, version ${OST_VERSION}"  | tee -a "${PROC_DIR}/.s1_dow_progress"
+	echo -e " Download Sentinel-1 data from ASF server using an OST inventory shapefile"  | tee -a "${PROC_DIR}/.s1_dow_progress"
+	echo -e "---------------------------------------------------------------------------"  | tee -a "${PROC_DIR}/.s1_dow_progress"
 fi
 
 if [ "$#" == "3" ];then

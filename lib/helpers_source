@@ -51,4 +51,4 @@ export SNAP_GRAPHS=${OPENSARKIT}/workflows/SNAP
 
 #source $OPENSARKIT/lib/saga_helpers
 
-export OST_VERSION="0.1"
+export OST_VERSION="v0.1-alpha.1"
