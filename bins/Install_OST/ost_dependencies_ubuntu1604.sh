@@ -24,17 +24,19 @@
 # 1 Adding extra repositories
 #----------------------------------
 
+OST_HOME=$(cat /etc/environment | grep OPENSARKIT | awk -F '=' '{print $2}')
+echo "ost: $OST_HOME"
 RELEASE=`lsb_release -sc`
 
 SECONDS=0
 echo -ne " Adding the Ubuntu GIS unstable repository ..." &&
-add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable > ${OSK_HOME}/LOG/log_install 2>&1
+add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable >> ${OST_HOME}/LOG/log_install 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 
 SECONDS=0
 echo -ne " Adding the multiverse repository ..." &&
-add-apt-repository -y "deb http://archive.ubuntu.com/ubuntu/ ${RELEASE} main multiverse"  >> ${OSK_HOME}/LOG/log_install 2>&1
+add-apt-repository -y "deb http://archive.ubuntu.com/ubuntu/ ${RELEASE} main multiverse"  >> ${OST_HOME}/LOG/log_install 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 ## IX R-CRAN from R mirror
@@ -43,8 +45,8 @@ if grep -q "qgis.org/ubuntugis" /etc/apt/sources.list;then
 	echo "detected cran repository for R installation"
 else
 	add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu ${RELEASE}/"
-	gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys E084DAB9 >> ${OSK_HOME}/LOG/log_install 2>&1
-	gpg -a --export E084DAB9 | apt-key add - >> ${OSK_HOME}/LOG/log_install 2>&1
+	gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys E084DAB9 >> ${OST_HOME}/LOG/log_install 2>&1
+	gpg -a --export E084DAB9 | apt-key add - >> ${OST_HOME}/LOG/log_install 2>&1
 fi
 
 if grep -q "qgis.org/ubuntugis" /etc/apt/sources.list;then
@@ -59,11 +61,11 @@ else
 	echo "deb http://qgis.org/ubuntugis ${RELEASE} main" >> /etc/apt/sources.list
 	echo "deb-src http://qgis.org/ubuntugis ${RELEASE} main" >> /etc/apt/sources.list
 	# add key
-	#apt-key adv --keyserver keyserver.ubuntu.com --recv-key 073D307A618E5811 >> ${OSK_HOME}/LOG/log_install 2>&1
+	#apt-key adv --keyserver keyserver.ubuntu.com --recv-key 073D307A618E5811 >> ${OST_HOME}/LOG/log_install 2>&1
 	#apt-key adv --keyserver keyserver.ubuntu.com --recv-key 073D307A618E5811
 
-	wget -O - http://qgis.org/downloads/qgis-2016.gpg.key | gpg --import >> ${OSK_HOME}/LOG/log_install 2>&1
-	gpg --export --armor 073D307A618E5811 | apt-key add - >> ${OSK_HOME}/LOG/log_install 2>&1
+	wget -O - http://qgis.org/downloads/qgis-2016.gpg.key | gpg --import >> ${OST_HOME}/LOG/log_install 2>&1
+	gpg --export --armor 073D307A618E5811 | apt-key add - >> ${OST_HOME}/LOG/log_install 2>&1
 fi
 
 #------------------------------------------------------------------
@@ -72,8 +74,8 @@ fi
 
 SECONDS=0
 echo -ne " Updating the system ..."
-apt-get update -y >> ${OSK_HOME}/LOG/log_install 2>&1
-apt-get upgrade -y >> ${OSK_HOME}/LOG/log_install 2>&1
+apt-get update -y >> ${OST_HOME}/LOG/log_install 2>&1
+apt-get upgrade -y >> ${OST_HOME}/LOG/log_install 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 #------------------------------------------------------------------
@@ -94,7 +96,7 @@ apt-get install --yes --allow-unauthenticated \
 											geotiff-bin \
 											libgeotiff-dev \
 											spatialite-bin \
-											spatialite-gui >> ${OSK_HOME}/LOG/log_install_gis 2>&1
+											spatialite-gui >> ${OST_HOME}/LOG/log_install_gis 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 
@@ -128,7 +130,7 @@ apt-get install --yes --allow-unauthenticated \
 											libxcursor-dev \
 											swig \
 											r-base \
-											libv8-3.14-dev >> ${OSK_HOME}/LOG/log_install 2>&1
+											libv8-3.14-dev >> ${OST_HOME}/LOG/log_install 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 SECONDS=0
@@ -147,7 +149,7 @@ apt-get install --yes --allow-unauthenticated \
 											python-geopy \
 											python-progressbar \
 											python-opencv \
-											python-numpy >> ${OSK_HOME}/LOG/log_install 2>&1
+											python-numpy >> ${OST_HOME}/LOG/log_install 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 echo ""
@@ -174,12 +176,12 @@ updatedb
 
 SECONDS=0
 echo -ne " Downloading the SNAP software ..." &&
-wget http://step.esa.int/downloads/5.0/installers/esa-snap_sentinel_unix_5_0.sh  >> ${OSK_HOME}/LOG/log_install 2>&1
+wget http://step.esa.int/downloads/5.0/installers/esa-snap_sentinel_unix_5_0.sh  >> ${OST_HOME}/LOG/log_install 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 SECONDS=0
 echo -ne " Installing the SNAP software ..." &&
-sh esa-snap_sentinel_unix_5_0.sh -q -overwrite  >> ${OSK_HOME}/LOG/log_install 2>&1
+sh esa-snap_sentinel_unix_5_0.sh -q -overwrite  >> ${OST_HOME}/LOG/log_install 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 rm -f esa-snap_sentinel_unix_5_0.sh
@@ -191,7 +193,7 @@ echo 'SNAP_EXE=/usr/local/snap/bin/gpt' | tee -a /etc/environment
 SECONDS=0
 echo -ne " Updating SNAP to the latest version ..." &&
 #/usr/local/snap/bin/snap
-snap --nosplash --nogui --modules --update-all  >> ${OSK_HOME}/LOG/log_install 2>&1
+snap --nosplash --nogui --modules --update-all  >> ${OST_HOME}/LOG/log_install 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 HOME_USER=`stat -c '%U' ${HOME}/.bashrc`
@@ -204,16 +206,16 @@ chown -R ${HOME_USER}:${HOME_USER} ${HOME}/.snap
 #------------------------------------------------------------------
 
 echo -ne " Installing R packages for shiny app ..." &&
-/usr/bin/R -e "install.packages('shiny', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1
-/usr/bin/R -e "install.packages('shinydashboard', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1
-/usr/bin/R -e "install.packages('shinyFiles', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1
-/usr/bin/R -e "install.packages('shinyjs', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1
-/usr/bin/R -e "install.packages('RSQLite', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1
-/usr/bin/R -e "install.packages('RColorBrewer', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1
-/usr/bin/R -e "install.packages('random', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1
-/usr/bin/R -e "install.packages('raster', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1
-/usr/bin/R -e "install.packages('mapview', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1
-/usr/bin/R -e "install.packages('rknn', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OSK_HOME}/LOG/log_install 2>&1
+/usr/bin/R -e "install.packages('shiny', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OST_HOME}/LOG/log_install 2>&1
+/usr/bin/R -e "install.packages('shinydashboard', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OST_HOME}/LOG/log_install 2>&1
+/usr/bin/R -e "install.packages('shinyFiles', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OST_HOME}/LOG/log_install 2>&1
+/usr/bin/R -e "install.packages('shinyjs', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OST_HOME}/LOG/log_install 2>&1
+/usr/bin/R -e "install.packages('RSQLite', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OST_HOME}/LOG/log_install 2>&1
+/usr/bin/R -e "install.packages('RColorBrewer', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OST_HOME}/LOG/log_install 2>&1
+/usr/bin/R -e "install.packages('random', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OST_HOME}/LOG/log_install 2>&1
+/usr/bin/R -e "install.packages('raster', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OST_HOME}/LOG/log_install 2>&1
+/usr/bin/R -e "install.packages('mapview', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OST_HOME}/LOG/log_install 2>&1
+/usr/bin/R -e "install.packages('rknn', dependencies=TRUE, repos='http://cran.rstudio.com/')" >> ${OST_HOME}/LOG/log_install 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 echo "---------------------------------------------------------------------------------------------------------------------------"
