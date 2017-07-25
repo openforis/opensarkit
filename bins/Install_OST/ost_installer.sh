@@ -135,8 +135,7 @@ rm -f ${HOME}/Desktop/OST.desktop
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 if [[ $2 == 1 ]];then
-	#bash $OST_HOME/bins/Install_OST/ost_dependencies_ubuntu1604.sh
-	bash /media/sf_avollrath/Programs/OSK/opensarkit/bins/Install_OST/ost_dependencies_ubuntu1604.sh
+	bash $OST_HOME/bins/Install_OST/ost_dependencies_ubuntu1604.sh
 fi
 
 echo "---------------------------------------------------------------------------------------------------------------------------"
