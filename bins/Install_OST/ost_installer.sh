@@ -116,7 +116,7 @@ echo "[Desktop Entry]" > ${HOME}/Desktop/OST.desktop
 echo "Version=0.1-alpha.1" >> ${HOME}/Desktop/OST.desktop
 echo "Name=Open SAR Toolkit" >> ${HOME}/Desktop/OST.desktop
 echo "Comment=" >> ${HOME}/Desktop/OST.desktop
-echo 'Exec=bash -c "R CMD BATCH ${OST_HOME}/shiny/ost.R;$SHELL"' >> ${HOME}/Desktop/OST.desktop
+echo 'Exec=bash -c "R CMD BATCH ${OPENSARKIT}/shiny/ost.R;$SHELL"' >> ${HOME}/Desktop/OST.desktop
 echo "Icon=${OST_HOME}/OST_icon_trans.png" >> ${HOME}/Desktop/OST.desktop
 echo "Terminal=true" >> ${HOME}/Desktop/OST.desktop
 echo "Type=Application" >> ${HOME}/Desktop/OST.desktop
