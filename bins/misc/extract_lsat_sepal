@@ -1,0 +1,50 @@
+#! /bin/bash
+
+# The MIT License (MIT)
+# written by Andreas Vollrath, 2017
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is furnished
+# to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+# OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+# source libs
+source ${OPENSARKIT}/lib/helpers_source
+
+
+echo -e " usage: extract_lsat_stack <ls-stack (vrt-file)> <AOI> <out directory>"
+
+LS_STACK=$(readlink -f $1)
+AOI=$(readlink -f $2)
+OUT_DIR=$(readlink -f $3)
+TMP_DIR=${OUT_DIR}/TMP
+mkdir -p ${TMP_DIR}
+NR_OF_BANDS=$(gdalinfo ${LS_STACK} | tail -n 1 | awk '{print $2}')
+
+list=(0 A B C D E F G H I J K)
+
+#for((i=1;i<=${NR_OF_BANDS};i++));do
+
+  #gdal_translate -b ${i} ${LS_STACK} ${TMP_DIR}/${i}_band.tif
+  #gdalwarp -overwrite -crop_to_cutline -cutline ${AOI} ${TMP_DIR}/${i}_band.tif ${OUT_DIR}/0${i}.lsat.tif
+  #gdal_calc.py --overwrite -A ${OUT_DIR}/0${i}.lsat.tif --calc="(A/A)" --outfile=${TMP_DIR}/${i}.mask.tif
+
+  #echo "-${list[i]} ${TMP_DIR}/${i}.mask.tif" >> ${TMP_DIR}/mask_list
+  #echo ${list[i]} >> ${TMP_DIR}/calc_list
+
+#done
+
+gdal_calc.py $(cat  ${TMP_DIR}/mask_list | tr '\n' ' ') --calc=$(cat ${TMP_DIR}/calc_list  | tr '\n' ' ' | sed s/" "/*/g | sed 's/.$//') --outfile=nodata.mask.tif --NoDataValue=0
+gdalbuildvrt -srcnodata 0 -separate lsat.stack.vrt $(ls -1 ${OUT_DIR}/0*.lsat.tif | tr '\n' ' ')
