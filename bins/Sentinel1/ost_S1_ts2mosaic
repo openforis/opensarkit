@@ -60,7 +60,7 @@ else
 	mkdir -p ${LOG_DIR}
 
 	RAM_TOTAL=$(free -m | awk 'NR == 2' | awk '{print $2}')
- 	RAM=$(echo "${RAM_TOTAL} / 2 | bc)"
+ 	RAM=$(echo "${RAM_TOTAL} / 2" | bc)
 
 	echo -e "--------------------------------------------------------------------------------------" | tee ${PROC_DIR}/.s1_ts2m_progress
 	echo -e " Open SAR Toolkit, version ${OST_VERSION}" | tee -a ${PROC_DIR}/.s1_ts2m_progress

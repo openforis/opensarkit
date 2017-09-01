@@ -245,6 +245,8 @@ apt-get install --yes --allow-unauthenticated \
 											python-geopy \
 											python-progressbar \
 											python-opencv \
+											python-rasterio \
+											python-sklearn \
 											python-numpy >> ${OSK_HOME}/LOG/log_install 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 

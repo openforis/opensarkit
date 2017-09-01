@@ -90,12 +90,12 @@ function s1_swath_import() {
     echo -ne " Removing GRD Border Noise ..." &&
     FILE_NAME="$3/${BASE}-import"
     cp ${FILE_NAME}.data/Intensity_VV.hdr ${FILE_NAME}.data/Intensity_VV.orig.hdr
-    ost_remove_border.py -i ${FILE_NAME}.data/Intensity_VV.img -o ${FILE_NAME}.data/Intensity_VV.img > $3/log_import 2>&1
+    ost_remove_border.py -i ${FILE_NAME}.data/Intensity_VV.img -o ${FILE_NAME}.data/Intensity_VV.img >> $4/log_import 2>&1
     mv ${FILE_NAME}.data/Intensity_VV.orig.hdr ${FILE_NAME}.data/Intensity_VV.hdr
 
     if [[ -e ${FILE_NAME}.data/Intensity_VH.img ]];then
       cp ${FILE_NAME}.data/Intensity_VH.hdr ${FILE_NAME}.data/Intensity_VH.orig.hdr
-      ost_remove_border.py -i ${FILE_NAME}.data/Intensity_VH.img -o ${FILE_NAME}.data/Intensity_VH.img > $3/log_import 2>&1
+      ost_remove_border.py -i ${FILE_NAME}.data/Intensity_VH.img -o ${FILE_NAME}.data/Intensity_VH.img >> $4/log_import 2>&1
       mv ${FILE_NAME}.data/Intensity_VH.orig.hdr ${FILE_NAME}.data/Intensity_VH.hdr
     fi
     duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
@@ -146,13 +146,13 @@ function s1_rtc_processing() {
 
     SECONDS=0
     echo " Calibrating to beta0, applying the terrain flattening and multi-look by a factor of 3  ..." &&
-    bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_CAL_TF_ML3.xml -x -q ${NR_OF_CPUS} -Pinput=${RTC_IN} -Poutput=${RTC_TMP}/TF  > ${RTC_LOG}/log_cal_tf_ml 2>&1
+    bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_CAL_TF_ML3.xml -x -q ${NR_OF_CPUS} -Pinput=${RTC_IN} -Poutput=${RTC_TMP}/TF > ${RTC_LOG}/log_cal_tf_ml 2>&1
     duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
     [ $? -ne 0 ] && return ${ERR_BRD_NOISE}
 
     SECONDS=0
     echo -ne " Creating a layover/shadow mask ... " &&
-    bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_LayShaMask_ML3.xml -x  -q ${NR_OF_CPUS} -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_OUT}.LS_mask  > ${RTC_LOG}/log_cal_tf_ml 2>&1
+    bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_LayShaMask_ML3.xml -x  -q ${NR_OF_CPUS} -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_OUT}.LS_mask >> ${RTC_LOG}/log_cal_tf_ml 2>&1
     duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
     if [ -e ${RTC_TMP}/TF.data/Gamma0_VH.img ];then
@@ -216,7 +216,7 @@ function s1_rtc_processing() {
 
         SECONDS=0 # no db-scaling
         echo -ne " Applying the geometric terrain correction ..." &&
-        bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_SDV_30_TC.xml -x  -q ${NR_OF_CPUS} -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_OUT}.RTC > ${RTC_LOG}/log_tc 2>&1
+        bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_SDV_30_TC.xml -x -q ${NR_OF_CPUS} -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_OUT}.RTC > ${RTC_LOG}/log_tc 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_TC}
         rm -rf ${RTC_TMP}/TF.d*
@@ -275,7 +275,7 @@ function s1_rtc_processing() {
 
         SECONDS=0 # no db-scaling
         echo -ne " Applying the geometric terrain correction ..." &&
-        bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_SSV_30_TC.xml -x  -q ${NR_OF_CPUS} -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_OUT}.RTC > ${RTC_LOG}/log_tc 2>&1
+        bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_SSV_30_TC.xml -x -q ${NR_OF_CPUS} -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_OUT}.RTC > ${RTC_LOG}/log_tc 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return  ${ERR_TC}
         rm -rf ${RTC_TMP}/TF.d*
@@ -296,7 +296,7 @@ function s1_rtc_processing() {
 
     SECONDS=0
     echo -ne " Creating a layover/shadow mask ... " &&
-    bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_LayShaMask_noML.xml -x  -q ${NR_OF_CPUS} -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_OUT}.LS_mask  > ${RTC_LOG}/log_cal_tf_ml 2>&1
+    bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_LayShaMask_noML.xml -x -q ${NR_OF_CPUS} -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_OUT}.LS_mask  >> ${RTC_LOG}/log_cal_tf_ml 2>&1
     duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 
@@ -769,8 +769,10 @@ function s1_timeseries() {
   TMP_MT=$6
   LOG_MT=$7
 
+  # double amoun tof CPUs for SNAP related tasks
   NR_OF_CPUS=`echo "$(nproc) * 2" | bc`
-
+  # actual amount of CPUs for Thumbnail creation
+  CPUS=$(nproc)
   # error codes
   ERR_STACKING=" Error during stacking of multi-temporal images"
   ERR_SPECKLE=" Error during stacking of multi-temporal images"
@@ -895,21 +897,13 @@ function s1_timeseries() {
       rm -f ${TMP_MT}/${DATE}.16bit.ones.tif
 
       if [ ${POL_MODE_MT} == VV ];then
-        SECONDS=0
-        echo -ne " Creating a thumbnail file for the acquisition of ${DATE} ..."
-        gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.16bit.tif ${TMP_MT}/${i}_${DATE}.VV.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-        # create jpg
-        gdal_translate -of JPEG -outsize 20% 20% -a_nodata 0 ${TMP_MT}/${i}_${DATE}.VV.TN.tif ${TMP_MT}/${i}_${DATE}.VV.TN.jpg >> ${LOG_MT}/log_mt_stacking 2>&1
-        # get width of jpeg
-        WIDTH_TN=$(identify -format %w ${TMP_MT}/${i}_${DATE}.VV.TN.jpg)
-        HEIGHT_TN=$(identify -format %h ${TMP_MT}/${i}_${DATE}.VV.TN.jpg)
-        HEIGHT_LABEL=$(expr $HEIGHT_TN / 15)
-        # add annotation with date
-        convert -background '#0008' -fill white -gravity center -size ${WIDTH_TN}x${HEIGHT_LABEL} caption:"${DATE}" \
-                ${TMP_MT}/${i}_${DATE}.VV.TN.jpg +swap -gravity north -composite ${TMP_MT}/${i}_${DATE}.VV.TN.jpg
-        # create a tif thumbnail for visualization in sepal
-        gdal_translate -outsize 20% 20% -a_nodata 0 ${TMP_MT}/${i}_${DATE}.VV.TN.tif ${OUT_STACK_MT}/Timeseries/Thumbnails/${i}_${DATE}.VV.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-        duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+        if [ ! -z ${SEPAL} ];then
+          echo "source ${OPENSARKIT}/lib/helpers_source; s1_create_thumb_vv ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.16bit.tif ${OUT_STACK_MT}/Timeseries/Thumbnails/${i}_${DATE}.VV.TN.tif ${TMP_MT}; s1_create_labeled_jpeg ${OUT_STACK_MT}/Timeseries/Thumbnails/${i}_${DATE}.VV.TN.tif ${DATE} ${TMP_MT}/${i}_${DATE}.VV.TN.jpg" >> ${TMP_MT}/tn_proc
+        else
+          s1_create_thumb_vv ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.16bit.tif ${OUT_STACK_MT}/Timeseries/Thumbnails/${i}_${DATE}.VV.TN.tif ${TMP_MT} >> ${LOG_MT}/log_mt_stacking 2>&1
+          s1_create_labeled_jpeg ${OUT_STACK_MT}/Timeseries/Thumbnails/${i}_${DATE}.VV.TN.tif ${DATE} ${TMP_MT}/${i}_${DATE}.VV.TN.jpg >> ${LOG_MT}/log_mt_stacking 2>&1
+        fi
       fi
 
     elif [ ${ODATATYPE} = "UInt8" ]; then
@@ -933,18 +927,13 @@ function s1_timeseries() {
       rm -f ${TMP_MT}/${DATE}.8bit.ones.tif
 
       if [ ${POL_MODE_MT} == VV ];then
-        SECONDS=0
-        echo -ne " Creating a thumbnail file for the acquisition of ${DATE} ..."
-        gdal_translate -of JPEG -outsize 20% 20% -a_nodata 0 ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.8bit.tif ${TMP_MT}/${i}_${DATE}.VV.TN.jpg >> ${LOG_MT}/log_mt_stacking 2>&1
-        # get width of jpeg
-        WIDTH_TN=$(identify -format %w ${TMP_MT}/${i}_${DATE}.VV.TN.jpg)
-        HEIGHT_TN=$(identify -format %h ${TMP_MT}/${i}_${DATE}.VV.TN.jpg)
-        HEIGHT_LABEL=$(expr $HEIGHT_TN / 15)
-        # add annotation with date
-        convert -background '#0008' -fill white -gravity center -size ${WIDTH_TN}x${HEIGHT_LABEL} caption:"${DATE}" ${TMP_MT}/${i}_${DATE}.VV.TN.jpg +swap -gravity north -composite ${TMP_MT}/${i}_${DATE}.VV.TN.jpg
-        # create a tif thumbnail for visualization in sepal
-        gdal_translate -outsize 20% 20% -a_nodata 0 ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.8bit.tif ${OUT_STACK_MT}/Timeseries/Thumbnails/${i}_${DATE}.VV.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-        duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+        # if we are on sepal prepare for gnu parallel
+        if [ ! -z ${SEPAL} ];then
+          echo "source ${OPENSARKIT}/lib/helpers_source; s1_create_thumb_vv ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.8bit.tif ${OUT_STACK_MT}/Timeseries/Thumbnails/${i}_${DATE}.VV.TN.tif ${TMP_MT}; s1_create_labeled_jpeg ${OUT_STACK_MT}/Timeseries/Thumbnails/${i}_${DATE}.VV.TN.tif ${DATE} ${TMP_MT}/${i}_${DATE}.VV.TN.jpg" >> ${TMP_MT}/tn_proc
+        else
+          s1_create_thumb_vv ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.8bit.tif ${OUT_STACK_MT}/Timeseries/Thumbnails/${i}_${DATE}.VV.TN.tif ${TMP_MT} >> ${LOG_MT}/log_mt_stacking 2>&1
+          s1_create_labeled_jpeg ${OUT_STACK_MT}/Timeseries/Thumbnails/${i}_${DATE}.VV.TN.tif ${DATE} ${TMP_MT}/${i}_${DATE}.VV.TN.jpg >> ${LOG_MT}/log_mt_stacking 2>&1
+        fi
       fi
 
     elif [ ${ODATATYPE} = "Float32" ]; then
@@ -958,19 +947,14 @@ function s1_timeseries() {
       duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
       if [ ${POL_MODE_MT} == VV ];then
-        echo -ne " Creating a thumbnail file for the acquisition of ${DATE} ..."
-        gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.tif ${TMP_MT}/${i}_${DATE}.VV.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-        # create jpg
-        gdal_translate -of JPEG -outsize 20% 20% -a_nodata 0 ${TMP_MT}/${i}_${DATE}.VV.TN.tif ${TMP_MT}/${i}_${DATE}.VV.TN.jpg >> ${LOG_MT}/log_mt_stacking 2>&1
-        # get width of jpeg
-        WIDTH_TN=$(identify -format %w ${TMP_MT}/${i}_${DATE}.VV.TN.jpg)
-        HEIGHT_TN=$(identify -format %h ${TMP_MT}/${i}_${DATE}.VV.TN.jpg)
-        HEIGHT_LABEL=$(expr $HEIGHT_TN / 15)
-        # add annotation with date
-        convert -background '#0008' -fill white -gravity center -size ${WIDTH_TN}x${HEIGHT_LABEL} caption:"${DATE}" \
-                ${TMP_MT}/${i}_${DATE}.VV.TN.jpg +swap -gravity north -composite ${TMP_MT}/${i}_${DATE}.VV.TN.jpg
-        # create a tif thumbnail for visualization in sepal
-        gdal_translate -outsize 20% 20% -a_nodata 0 ${TMP_MT}/${i}_${DATE}.VV.TN.tif ${OUT_STACK_MT}/Timeseries/Thumbnails/${i}_${DATE}.VV.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+
+        # if we are on sepal prepare for gnu parallel
+        if [ ! -z ${SEPAL} ];then
+          echo "source ${OPENSARKIT}/lib/helpers_source; s1_create_thumb_vv ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.tif ${OUT_STACK_MT}/Timeseries/Thumbnails/${i}_${DATE}.VV.TN.tif ${TMP_MT}; s1_create_labeled_jpeg ${OUT_STACK_MT}/Timeseries/Thumbnails/${i}_${DATE}.VV.TN.tif ${DATE} ${TMP_MT}/${i}_${DATE}.VV.TN.jpg" >> ${TMP_MT}/tn_proc
+        else
+          s1_create_thumb_vv ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.tif ${OUT_STACK_MT}/Timeseries/Thumbnails/${i}_${DATE}.VV.TN.tif ${TMP_MT} >> ${LOG_MT}/log_mt_stacking 2>&1
+          s1_create_labeled_jpeg ${OUT_STACK_MT}/Timeseries/Thumbnails/${i}_${DATE}.VV.TN.tif ${DATE} ${TMP_MT}/${i}_${DATE}.VV.TN.jpg >> ${LOG_MT}/log_mt_stacking 2>&1
+        fi
       fi
     fi
 
@@ -985,6 +969,12 @@ function s1_timeseries() {
   rm -f ${TMP_MT}/ts_vrt_list.txt
 
   if [ ${POL_MODE_MT} == VV ];then
+
+    echo -ne " Creating a gif animation file for the time-series stack ..."
+    # using gnu parallel for production of TN and jpgs in case we are on Sepal
+    if [ ! -z ${SEPAL} ];then
+      cat ${TMP_MT}/tn_proc | parallel -j ${CPUS} bash -c {} >> ${LOG_MT}/log_mt_stacking 2>&1
+    fi
 
     # Create a time-series animation
     REC_DIR=${PWD}
@@ -1055,26 +1045,14 @@ function s1_timeseries() {
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
         echo -ne " Creating a thumbnail file for the acquisition of ${DATE} ..."
-        gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.16bit.tif ${TMP_MT}/${i}_${DATE}.VV.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-        gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.16bit.tif ${TMP_MT}/${i}_${DATE}.VH.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-        gdal_calc.py --overwrite -A ${TMP_MT}/${i}_${DATE}.VV.TN.tif -B ${TMP_MT}/${i}_${DATE}.VH.TN.tif --calc="A.astype(float)/B.astype(float)" --type=Float32 --outfile=${TMP_MT}/${i}_${DATE}.VVVH.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-        gdal_contrast_stretch -ndv 0 -percentile-range 0.02 0.98 ${TMP_MT}/${i}_${DATE}.VVVH.TN.tif ${TMP_MT}/${i}_${DATE}.VVVH.TN.8bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-
-        gdal_merge.py -separate -co "COMPRESS=LZW" -a_nodata 0 -o ${TMP_MT}/${i}_${DATE}.RGB.TN.tif \
-                      ${TMP_MT}/${i}_${DATE}.VV.TN.tif ${TMP_MT}/${i}_${DATE}.VH.TN.tif ${TMP_MT}/${i}_${DATE}.VVVH.TN.8bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-        # create jpg
-        gdal_translate -of JPEG -outsize 20% 20% -a_nodata 0 ${TMP_MT}/${i}_${DATE}.RGB.TN.tif ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg >> ${LOG_MT}/log_mt_stacking 2>&1
-
-        # get width of jpeg
-        WIDTH_TN=$(identify -format %w ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg)
-        HEIGHT_TN=$(identify -format %h ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg)
-        HEIGHT_LABEL=$(expr $HEIGHT_TN / 15)
-        # add annotation with date
-        convert -background '#0008' -fill white -gravity center -size ${WIDTH_TN}x${HEIGHT_LABEL} caption:"${DATE}" \
-                ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg +swap -gravity north -composite ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg
-        # create a tif thumbnail for visualization in sepal
-        gdal_translate -outsize 20% 20% -a_nodata 0 ${TMP_MT}/${i}_${DATE}.RGB.TN.tif ${OUT_STACK_MT}/Timeseries/Thumbnails/${i}_${DATE}.RGB.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-        duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+        # if we are on sepal prepare for gnu parallel
+        if [ ! -z ${SEPAL} ];then
+          echo "source ${OPENSARKIT}/lib/helpers_source; s1_create_thumb_rgb ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.16bit.tif ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.16bit.tif ${OUT_STACK_MT}/Timeseries/Thumbnails/${i}_${DATE}.RGB.TN.tif ${TMP_MT}; s1_create_labeled_jpeg ${OUT_STACK_MT}/Timeseries/Thumbnails/${i}_${DATE}.RGB.TN.tif ${DATE} ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg" >> ${TMP_MT}/tn_proc
+        else
+          # create a processing file for gnu parallel
+          s1_create_thumb_rgb ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.16bit.tif ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.16bit.tif ${OUT_STACK_MT}/Timeseries/Thumbnails/${i}_${DATE}.RGB.TN.tif ${TMP_MT} >> ${LOG_MT}/log_mt_stacking 2>&1
+          s1_create_labeled_jpeg ${OUT_STACK_MT}/Timeseries/Thumbnails/${i}_${DATE}.RGB.TN.tif ${DATE} ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg >> ${LOG_MT}/log_mt_stacking 2>&1
+        fi
 
       elif [ ${ODATATYPE} = "UInt8" ]; then
 
@@ -1093,64 +1071,31 @@ function s1_timeseries() {
         echo ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.8bit.tif >> ${TMP_MT}/ts_vrt_list.VH.txt
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
-        echo -ne " Creating a thumbnail file for the acquisition of ${DATE} ..."
-        gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.8bit.tif ${TMP_MT}/${i}_${DATE}.VV.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-        gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.8bit.tif ${TMP_MT}/${i}_${DATE}.VH.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-        gdal_calc.py --overwrite -A ${TMP_MT}/${i}_${DATE}.VV.TN.tif -B ${TMP_MT}/${i}_${DATE}.VH.TN.tif --calc="A.astype(float)/B.astype(float)" --type=Float32 --outfile=${TMP_MT}/${i}_${DATE}.VVVH.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-        gdal_contrast_stretch -ndv 0 -percentile-range 0.02 0.98 ${TMP_MT}/${i}_${DATE}.VVVH.TN.tif ${TMP_MT}/${i}_${DATE}.VVVH.TN.8bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-
-        gdal_merge.py -separate -co "COMPRESS=LZW" -a_nodata 0 -o ${TMP_MT}/${i}_${DATE}.RGB.TN.tif \
-                      ${TMP_MT}/${i}_${DATE}.VV.TN.tif ${TMP_MT}/${i}_${DATE}.VH.TN.tif ${TMP_MT}/${i}_${DATE}.VVVH.TN.8bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-        # create jpg
-        gdal_translate -of JPEG -outsize 20% 20% -a_nodata 0 ${TMP_MT}/${i}_${DATE}.RGB.TN.tif ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg >> ${LOG_MT}/log_mt_stacking 2>&1
-
-        # get width of jpeg
-        WIDTH_TN=$(identify -format %w ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg)
-        HEIGHT_TN=$(identify -format %h ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg)
-        HEIGHT_LABEL=$(expr $HEIGHT_TN / 15)
-
-        # add annotation with date
-        convert -background '#0008' -fill white -gravity center -size ${WIDTH_TN}x${HEIGHT_LABEL} caption:"${DATE}" \
-                ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg +swap -gravity north -composite ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg
-
-        # create a tif thumbnail for visualization in sepal
-        gdal_translate -outsize 20% 20% -a_nodata 0 ${TMP_MT}/${i}_${DATE}.RGB.TN.tif ${OUT_STACK_MT}/Timeseries/Thumbnails/${i}_${DATE}.RGB.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-        duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+        # if we are on sepal prepare for gnu parallel
+        if [ ! -z ${SEPAL} ];then
+          echo "source ${OPENSARKIT}/lib/helpers_source; s1_create_thumb_rgb ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.8bit.tif ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.8bit.tif ${OUT_STACK_MT}/Timeseries/Thumbnails/${i}_${DATE}.RGB.TN.tif ${TMP_MT}; s1_create_labeled_jpeg ${OUT_STACK_MT}/Timeseries/Thumbnails/${i}_${DATE}.RGB.TN.tif ${DATE} ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg" >> ${TMP_MT}/tn_proc
+        else
+          # create a processing file for gnu parallel
+          s1_create_thumb_rgb ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.8bit.tif ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.8bit.tif ${OUT_STACK_MT}/Timeseries/Thumbnails/${i}_${DATE}.RGB.TN.tif ${TMP_MT} >> ${LOG_MT}/log_mt_stacking 2>&1
+          s1_create_labeled_jpeg ${OUT_STACK_MT}/Timeseries/Thumbnails/${i}_${DATE}.RGB.TN.tif ${DATE} ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg >> ${LOG_MT}/log_mt_stacking 2>&1
+        fi
 
       elif [ ${ODATATYPE} = "Float32" ]; then
 
         SECONDS=0
         echo -ne " Cropping ${DATE} to common extent and cut by AOI ..."
-        gdalwarp -overwrite -co "COMPRESS=LZW"  -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${file} ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+        gdalwarp -overwrite -co "COMPRESS=LZW" -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${file} ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.tif >> ${LOG_MT}/log_mt_stacking 2>&1
         echo ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.tif >> ${TMP_MT}/ts_vrt_list.VH.txt
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
-        # create jpgs for gif animation
-        echo -ne " Creating a thumbnail file for the acquisition of ${DATE} ..."
-        gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.tif ${TMP_MT}/${i}_${DATE}.VV.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-        gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.tif ${TMP_MT}/${i}_${DATE}.VH.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-        gdal_calc.py --overwrite -A ${TMP_MT}/${i}_${DATE}.VV.TN.tif -B ${TMP_MT}/${i}_${DATE}.VH.TN.tif --calc="A/B" --type=Float32 --outfile=${TMP_MT}/${i}_${DATE}.VVVH.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-        gdal_contrast_stretch -ndv 0 -percentile-range 0.02 0.98 ${TMP_MT}/${i}_${DATE}.VVVH.TN.tif ${TMP_MT}/${i}_${DATE}.VVVH.TN.8bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-
-        gdal_merge.py -separate -co "COMPRESS=LZW" -a_nodata 0 -o ${TMP_MT}/${i}_${DATE}.RGB.TN.tif \
-                      ${TMP_MT}/${i}_${DATE}.VV.TN.tif ${TMP_MT}/${i}_${DATE}.VH.TN.tif ${TMP_MT}/${i}_${DATE}.VVVH.TN.8bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-        # create jpg
-        gdal_translate -of JPEG -outsize 20% 20% -a_nodata 0 ${TMP_MT}/${i}_${DATE}.RGB.TN.tif ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg >> ${LOG_MT}/log_mt_stacking 2>&1
-        duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-
-        echo -ne " Creating a gif animation file for the time-series stack ..."
-        # get width of jpeg
-        WIDTH_TN=$(identify -format %w ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg)
-        HEIGHT_TN=$(identify -format %h ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg)
-        HEIGHT_LABEL=$(expr $HEIGHT_TN / 15)
-
-        # add annotation with date
-        convert -background '#0008' -fill white -gravity center -size ${WIDTH_TN}x${HEIGHT_LABEL} caption:"${DATE}" \
-                ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg +swap -gravity north -composite ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg
-
-        # create a tif thumbnail for visualization in sepal
-        gdal_translate -outsize 20% 20% -a_nodata 0 ${TMP_MT}/${i}_${DATE}.RGB.TN.tif ${OUT_STACK_MT}/Timeseries/Thumbnails/${i}_${DATE}.RGB.TN.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-        duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+        # if we are on sepal prepare for gnu parallel
+        if [ ! -z ${SEPAL} ];then
+          echo "source ${OPENSARKIT}/lib/helpers_source; s1_create_thumb_rgb ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.tif ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.tif ${OUT_STACK_MT}/Timeseries/Thumbnails/${i}_${DATE}.RGB.TN.tif ${TMP_MT}; s1_create_labeled_jpeg ${OUT_STACK_MT}/Timeseries/Thumbnails/${i}_${DATE}.RGB.TN.tif ${DATE} ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg" >> ${TMP_MT}/tn_proc
+        else
+          # create a processing file for gnu parallel
+          s1_create_thumb_rgb ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.tif ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.tif ${OUT_STACK_MT}/Timeseries/Thumbnails/${i}_${DATE}.RGB.TN.tif ${TMP_MT} >> ${LOG_MT}/log_mt_stacking 2>&1
+          s1_create_labeled_jpeg ${OUT_STACK_MT}/Timeseries/Thumbnails/${i}_${DATE}.RGB.TN.tif ${DATE} ${TMP_MT}/${i}_${DATE}.RGB.TN.jpg >> ${LOG_MT}/log_mt_stacking 2>&1
+        fi
       fi
 
     i=$(expr $i + 1)
@@ -1159,12 +1104,18 @@ function s1_timeseries() {
     # remvoing original snap files
     rm -rf ${TMP_MT}/mt_stack.vh.db.speckle.d*
 
+    echo -ne " Creating a gif animation file for the time-series stack ..."
+    # using gnu parallel for production of TN and jpgs in case we are on Sepal
+    if [ ! -z ${SEPAL} ];then
+      cat ${TMP_MT}/tn_proc | parallel -j ${CPUS} bash -c {} >> ${LOG_MT}/log_mt_stacking 2>&1
+    fi
+
     # Create a time-series animation
     REC_DIR=${PWD}
     cd ${TMP_MT}
-    convert -delay 100 -loop 10 $(ls -1 *.RGB.TN.jpg | sort -g) ${OUT_STACK_MT}/Timeseries/time_animation.gif  >> ${LOG_MT}/log_mt_stacking 2>&1
+    convert -delay 100 -loop 10 $(ls -1 *.TN.jpg | sort -g) ${OUT_STACK_MT}/Timeseries/time_animation.gif  >> ${LOG_MT}/log_mt_stacking 2>&1
     cd ${REC_DIR}
-    #rm -f ${TMP_MT}/*.RGB.TN.jpg
+    rm -f ${TMP_MT}/*.RGB.TN.jpg
 
     # create a virtual raster
     gdalbuildvrt -separate -srcnodata 0 ${OUT_STACK_MT}/Timeseries/timeseries.VH.vrt $(cat ${TMP_MT}/ts_vrt_list.VH.txt | tr "\n" " ")  >> ${LOG_MT}/log_mt_stacking 2>&1
@@ -1204,5 +1155,89 @@ function s1_timescan() {
   mv ${OUT_DIR}/Gamma0.VV.std.tif ${OUT_DIR}/04_Gamma0.VV.std.tif && gdal_edit.py -a_nodata 0 ${OUT_DIR}/04_Gamma0.VV.std.tif
   mv ${OUT_DIR}/Gamma0.VV.cov.tif ${OUT_DIR}/05_Gamma0.VV.cov.tif && gdal_edit.py -a_nodata 0 ${OUT_DIR}/05_Gamma0.VV.cov.tif
   duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+}
+
+
+function s1_create_thumb_vv() {
+
+	if [ -z "$3" ]; then
+	    echo " Missing arguments. Syntax:"
+	    echo " s1_create_thumb_vv <input_VV> <outfile> <tmp-folder>"
+	    return
+  fi
+
+  INPUT_VV=$(readlink -f $1)
+  OUT_TN=$(readlink -f $2)
+  TMP_TN=$(readlink -f $3)
+  INPUT_VV_BASE=$(basename ${INPUT_VV})
+
+  source ${OPENSARKIT}/lib/helpers_source
+	echo -ne " Creating a thumbnail file for the acquisition of ${DATE} ..."
+  # resize and  bring to 8 bit the VV channel
+  gdal_translate -outsize 20% 20% -a_nodata 0 ${INPUT_VV} ${TMP_TN}/${INPUT_VV_BASE}
+  gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${TMP_TN}/${INPUT_VV_BASE} ${OUT_TN}
+  rm -f ${TMP_TN}/${i}_${DATE}.VV.TN.tif
+
+}
+
+function s1_create_thumb_rgb() {
+
+	if [ -z "$4" ]; then
+	    echo " Missing arguments. Syntax:"
+	    echo " s1_create_thumb_rgb <input_VV> <input_VH> <outfile> <tmp-folder>"
+	    return
+  fi
+
+  INPUT_VV=$(readlink -f $1)
+  INPUT_VH=$(readlink -f $2)
+  OUT_TN=$(readlink -f $3)
+  TMP_TN=$(readlink -f $4)
+
+  INPUT_VV_BASE=$(basename ${INPUT_VV})
+  INPUT_VH_BASE=$(basename ${INPUT_VH})
+
+  source ${OPENSARKIT}/lib/helpers_source
+	echo -ne " Creating a thumbnail file for the acquisition of ${DATE} ..."
+  # resize and  bring to 8 bit the VV channel
+  gdal_translate -outsize 20% 20% -a_nodata 0 ${INPUT_VV} ${TMP_TN}/${INPUT_VV_BASE}
+  gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${TMP_TN}/${INPUT_VV_BASE} ${TMP_TN}/${INPUT_VV_BASE}.8bit.tif
+  rm -f ${TMP_TN}/${INPUT_VV_BASE}
+
+  # resize and  bring to 8 bit the VH channel
+  gdal_translate -outsize 20% 20% -a_nodata 0 ${INPUT_VH} ${TMP_TN}/${INPUT_VH_BASE}
+  gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${TMP_TN}/${INPUT_VH_BASE} ${TMP_TN}/${INPUT_VH_BASE}.8bit.tif
+  rm -f ${TMP_TN}/${INPUT_VH_BASE}
+
+  # create ratio band in float and stretch to 8 bit
+  gdal_calc.py --overwrite -A ${TMP_TN}/${INPUT_VV_BASE}.8bit.tif -B ${TMP_TN}/${INPUT_VH_BASE}.8bit.tif --calc="A/B" --type=Float32 --outfile=${TMP_TN}/${INPUT_VV_BASE}.VVVH.TN.tif
+  gdal_contrast_stretch -ndv 0 -percentile-range 0.02 0.98 ${TMP_TN}/${INPUT_VV_BASE}.VVVH.TN.tif ${TMP_TN}/${INPUT_VV_BASE}.VVVH.TN.8bit.tif
+  rm -f ${TMP_TN}/${INPUT_VV_BASE}.VVVH.TN.tif
+
+  # create RGB Thumbnail
+  gdal_merge.py -separate -co "COMPRESS=LZW" -a_nodata 0 -o ${OUT_TN} \
+                      ${TMP_TN}/${INPUT_VV_BASE}.8bit.tif ${TMP_TN}/${INPUT_VH_BASE}.8bit.tif ${TMP_TN}/${INPUT_VV_BASE}.VVVH.TN.8bit.tif
+
+}
+
+function s1_create_labeled_jpeg() {
+
+	if [ -z "$3" ]; then
+	    echo " Missing arguments. Syntax:"
+	    echo "  s1_create_labeled_jpeg <input> <label> <output.jpg>"
+	    return
+  fi
+
+  # create JPEG for gif creation
+  gdal_translate -of JPEG -a_nodata 0 $1 $3
+
+  # add the acq date to jpeg
+  WIDTH_TN=$(identify -format %w $3)
+  HEIGHT_TN=$(identify -format %h $3)
+  HEIGHT_LABEL=$(expr $HEIGHT_TN / 15)
+
+  # add annotation with date
+  convert -background '#0008' -fill white -gravity center -size ${WIDTH_TN}x${HEIGHT_LABEL} caption:"$2" \
+         $3 +swap -gravity north -composite $3
 
 }

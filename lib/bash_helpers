@@ -28,31 +28,26 @@ function set_tmp_KC() {
     return
   fi
 
+  if [ ! -e /ram ];then
+    echo " Info: No RAM disk found at /ram for temporary file storage. Using harddisk instead."
+    return
+  fi
 
-  if ls /ram > /dev/null 2>&1;then
+  echo -e " Info: Checking if RAM disk offers sufficient memory for temporary file storage ..."
+  FREE_RAM=$(df | grep /ram | awk $'{print $2}')
+  CPUS=`nproc`
 
-    echo -e " Info: Checking if RAM disk offers sufficient memory for temporary file storage ..."
-    #FREE_RAM=$(df -h | grep /dev/sdb1 | awk $'{print $2}')
-    FREE_RAM=$(df -h | grep /ram | awk $'{print $2}')
-    FREE_RAM_INT=`echo ${FREE_RAM} | sed 's/G//g'`
-    CPUS=`nproc`
+  NEED_RAM1=`echo "$1 * 4000000" | bc`
+  NEED_RAM2=`echo "$CPUS * 240000" | bc`
 
-    if echo $FREE_RAM | grep G > /dev/null; then
+  NEED_RAM=`echo "${NEED_RAM1} + ${NEED_RAM2}" | bc`
 
-      NEED_RAM1=`echo "$1 * 4" | bc`
-      NEED_RAM2=`echo "$CPUS * 0.24" | bc`
-
-      NEED_RAM=`echo "${NEED_RAM1} + ${NEED_RAM2}" | bc`
-      #echo "estimated tmp space needed: ${NEED_RAM}"
-
-      if [[ $( echo "${FREE_RAM_INT} > ${NEED_RAM}" | bc) -eq 1 ]];then
-        mkdir -p /ram/KC_TMP
-        export TMP_DIR=/ram/KC_TMP
-        echo -e " Info: Using RAM disk at /ram/KC_TMP as TMP_Folder"
-      else
-        echo -e " Info: Not enough memory on RAM disk. Using standard temporary folder on harddisk."
-      fi
-    fi
+  if [[ $( echo "${FREE_RAM_INT} > ${NEED_RAM}" | bc) -eq 1 ]];then
+    mkdir -p /ram/KC_TMP
+    export TMP_DIR=/ram/KC_TMP
+    echo -e " Info: Using RAM disk at /ram/KC_TMP as TMP_Folder"
+  else
+    echo -e " Info: Not enough memory on RAM disk. Using standard temporary folder on harddisk."
   fi
 }
 
@@ -63,45 +58,48 @@ function set_tmp_S1_RTC_bulk() {
     return
   fi
 
-  if ls /ram > /dev/null 2>&1;then
+  if [ ! -e /ram ];then
+    echo " Info: No RAM disk found at /ram for temporary file storage. Using harddisk instead."
+    return
+  fi
 
-    echo -e " Info: Checking if RAM disk offers sufficient memory for temporary file storage ..."
-    FREE_RAM=$(df -h | grep /ram | awk $'{print $2}')
-    #FREE_RAM=$(df -h | grep /dev/sdb1 | awk $'{print $2}')
-    FREE_RAM_INT=`echo ${FREE_RAM} | sed 's/G//g'`
+  echo -e " Info: Checking if RAM disk offers sufficient memory for temporary file storage ..."
+  FREE_RAM=$(df | grep /ram | awk $'{print $2}')
 
-    if [[ $2 == "MED_RES" ]];then
-      NEED_RAM=`echo "$1 * 7.45" | bc`
-    elif [[ $2 == "HI_RES" ]];then
-      NEED_RAM=`echo "$1 * 7.45 * 9" | bc`
-    fi
+  if [[ $2 == "MED_RES" ]];then
+    NEED_RAM=`echo "$1 * 7450000" | bc`
+  elif [[ $2 == "HI_RES" ]];then
+    NEED_RAM=`echo "$1 * 7450000 * 9" | bc`
+  fi
 
-    if [[ $( echo "${FREE_RAM_INT} > ${NEED_RAM}" | bc) -eq 1 ]];then
-      mkdir -p /ram/SAR_TMP
-      export TMP_DIR=/ram/SAR_TMP
-      echo -e " Info: Using RAM disk at /ram/SAR_TMP as TMP_Folder"
-    else
-      echo -e " Info: Not enough memory on RAM disk. Using standard temporary folder on harddisk."
-    fi
-
+  if [[ $( echo "${FREE_RAM} > ${NEED_RAM}" | bc) -eq 1 ]];then
+    mkdir -p /ram/SAR_TMP
+    export TMP_DIR=/ram/SAR_TMP
+    echo -e " Info: Using RAM disk at /ram/SAR_TMP as TMP_Folder"
+  else
+    echo -e " Info: Not enough memory on RAM disk. Using standard temporary folder on harddisk."
   fi
 }
 
 
 function set_tmp_S1_TS() {
-
+  echo "here 1"
   if [ -z "$1" ]; then
     echo " Missing arguments. Syntax:"
-    echo " set_tmp_S1_RTC <Nr. of TS images> <Size per file> <number of polarisation channels>  "
+    echo " set_tmp_S1_RTC <Size of Images> "
     return
   fi
 
-  FREE_RAM=$(df -h | grep /ram | awk $'{print $2}')
-  FREE_RAM_INT=`echo ${FREE_RAM} | sed 's/G//g'`
+  if [ ! -e /ram ];then
+    echo " Info: No RAM disk found at /ram for temporary file storage. Using harddisk instead."
+    return
+  fi
 
-  STACK_SIZE=$(echo "$1 * $2 * $3 * 2 + 0.5" | bc)
+  echo -e " Info: Checking if RAM disk offers sufficient memory for temporary file storage ..."
+  FREE_RAM=$(df | grep /ram | awk $'{print $2}')
+  STACK_SIZE=$(echo "$1 * 2.1" | bc)
 
-  if [[ $( echo "${FREE_RAM_INT} > ${STACK_SIZE}" | bc) -eq 1 ]];then
+  if [[ $( echo "${FREE_RAM} > ${STACK_SIZE}" | bc) -eq 1 ]];then
     mkdir -p /ram/SAR_TMP
     export TMP_DIR=/ram/SAR_TMP
     echo -e " Using RAM disk at /ram/SAR_TMP as TMP_Folder"
@@ -110,7 +108,6 @@ function set_tmp_S1_TS() {
   fi
 
 }
-
 
 list_descendants ()
 {
