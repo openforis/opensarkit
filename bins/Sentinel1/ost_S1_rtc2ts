@@ -96,12 +96,10 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 
 	NR_OF_ACQ=`ls -1 -d 20* | wc -l`
 	echo " Info: Found ${NR_OF_ACQ} acquisitions for this swath" | tee -a ${PROC_DIR}/.s1_rtc2ts_progress
-	du -h */*/*Gamma*img
+
 	# see if we can use RAM for tmp
 	STACK_SIZE=$(du */*/*Gamma*img | awk '{print; total += $1};END { print total }' | tail -n 1)
-	echo "size $STACK_SIZE"
-
-	set_tmp_S1_TS ${STACK_SIZE} #>> ${PROC_DIR}/.s1_rtc2ts_progress
+	set_tmp_S1_TS ${STACK_SIZE} >> ${PROC_DIR}/.s1_rtc2ts_progress
 	set_tmp_S1_TS ${STACK_SIZE}
 
 	STACK=${PWD}

@@ -180,7 +180,7 @@ if [ `echo $2 | grep shp` ]; then # AOI case
 		mv ${TMP_DIR}/aoi_convex* ${AOI_PATH}
 		AOI=${AOI_PATH}/aoi_convex.shp
 	else
-		echo $AOI
+		echo " AOI file used: $AOI"
 		BASE=`basename ${AOI} | rev | cut -c 5- | rev`
 		cp ${AOI_DIR}/${BASE}.shp ${AOI_PATH}/aoi.shp
 		cp ${AOI_DIR}/${BASE}.shx ${AOI_PATH}/aoi.shx
@@ -217,7 +217,7 @@ OUTPUT_FORMAT="output=csv"
 OUTPUT="${MODE}-data_inventory"
 OUT_FILE=${TMP_DIR}/$OUTPUT.csv
 ASK="\&polygon=${AOI}&${PLATFORM}&${BEAM}&${PERIOD}&${POLAR}&${PROCESSING}&${OUTPUT_FORMAT}"
-#ASK="\&polygon=${AOI}&${PLATFORM}&${BEAM}&${PERIOD}&${PROCESSING}&${OUTPUT_FORMAT}"
+
 echo -ne " Data inventory from ASF server ..." | tee -a ${PROC_DIR}/.s1_inv_progress
 curl -s https://api.daac.asf.alaska.edu/services/search/param?keyword=value$ASK | tail -n +2  > ${OUT_FILE}
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_inv_progress

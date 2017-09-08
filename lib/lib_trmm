@@ -78,8 +78,8 @@ DATE_3=$(date -u -d "0 ${TRMM_DATE} - 3 days" '+%Y%m%d')
 gdalbuildvrt -separate -srcnodata 0 ${TRMM_TMP}/3days.vrt $(ls -1 ${TRMM_TMP}/*${TRMM_DATE}*nd.tif | tr '\n' ' ') $(ls -1 ${TRMM_TMP}/*${DATE_1}*nd.tif | tr '\n' ' ') $(ls -1 ${TRMM_TMP}/*${DATE_2}*nd.tif | tr '\n' ' ') $(ls -1 ${TRMM_TMP}/*${DATE_3}*nd.tif | tr '\n' ' ')
 
 # calculating sum of all days before
-ost_mt_metrics.py -i ${TRMM_TMP}/3days.vrt -o ${TRMM_OUT}/TRMM.${TRMM_DATE}.3days.sum -t 6
-ost_mt_metrics.py -i ${TRMM_TMP}/10days.vrt -o ${TRMM_OUT}/TRMM.${TRMM_DATE}.10days.sum -t 6
+ost_mt_metrics.py -i ${TRMM_TMP}/3days.vrt -o ${TRMM_OUT}/TRMM.${TRMM_DATE}.3days.sum -t 6 -m no
+ost_mt_metrics.py -i ${TRMM_TMP}/10days.vrt -o ${TRMM_OUT}/TRMM.${TRMM_DATE}.10days.sum -t 6 -m no
 
 rm -f ${TRMM_TMP}/time_list
 # getting the 2 nearest times:

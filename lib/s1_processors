@@ -813,7 +813,7 @@ function s1_timeseries() {
   echo -ne " Create the minimum extent mask  ..." &&
   gdalbuildvrt -separate ${TMP_MT}/mask.vrt ${TMP_MT}/mt_stack.vv.db.speckle.data/*img >> ${LOG_MT}/log_mt_stacking 2>&1
   gdal_edit.py -unsetnodata ${TMP_MT}/mask.vrt >> ${LOG_MT}/log_mt_stacking 2>&1
-  ost_mt_metrics.py -i ${TMP_MT}/mask.vrt -o ${TMP_MT}/mask -t 3 -r no >> ${LOG_MT}/log_mt_stacking 2>&1
+  ost_mt_metrics.py -i ${TMP_MT}/mask.vrt -o ${TMP_MT}/mask -t 3 -r no -m no >> ${LOG_MT}/log_mt_stacking 2>&1
   gdal_calc.py --overwrite -A ${TMP_MT}/mask.max.tif -B ${TMP_MT}/mask.min.tif --calc="(A*B)/(A*B)" --outfile ${TMP_MT}/mask.final.tif >> ${LOG_MT}/log_mt_stacking 2>&1
   gdal_trace_outline ${TMP_MT}/mask.final.tif -ndv 0 -no-donuts -out-cs ll -ogr-out ${TMP_MT}/extent.shp >> ${LOG_MT}/log_mt_stacking 2>&1
   duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
@@ -851,7 +851,7 @@ function s1_timeseries() {
     fi
   fi
 
-  ost_mt_metrics.py -i ${TMP_MT}/ls_mask_stack.vrt -o ${TMP_MT}/LS.map -t 4 -r no >> ${LOG_MT}/log_mt_stacking 2>&1
+  ost_mt_metrics.py -i ${TMP_MT}/ls_mask_stack.vrt -o ${TMP_MT}/LS.map -t 4 -r no -m no >> ${LOG_MT}/log_mt_stacking 2>&1
   gdal_translate -a_nodata 0 ${TMP_MT}/LS.map.max.tif ${TMP_MT}/LS.map.max.nd.tif >> ${LOG_MT}/log_mt_stacking 2>&1
   gdal_fillnodata.py -md 3 ${TMP_MT}/LS.map.max.nd.tif ${TMP_MT}/LS.map.max.nd.closed.tif >> ${LOG_MT}/log_mt_stacking 2>&1
   gdalwarp -overwrite -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${TMP_MT}/LS.map.max.nd.closed.tif ${TMP_MT}/LS.map.tif >> ${LOG_MT}/log_mt_stacking 2>&1

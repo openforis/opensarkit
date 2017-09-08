@@ -29,7 +29,7 @@ if [ "$#" != "3" ]; then
 	echo -e " Create timeseries stack and multi-temporal statistics from preprocessed single scenes"
 	echo -e "--------------------------------------------------------------------------------------"
 	echo -e ""
-	echo -e " Usage: ost_S1_rtc2ts <input directory> <datatype> <processing option>"
+	echo -e " Usage: ost_S1_gtc2ts <input directory> <datatype> <processing option>"
 	echo -e ""
 	echo -e " input parameters:"
 	echo -e " input directory	(input) higher-level directory of the downloaded zip file (i.e. DATA folder created by oft-sar-S1-ASF-download)"
@@ -111,29 +111,29 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 
 		if [[ $3 != 2 ]];then
 			mkdir -p ${STACK}/Timescan
-			ost_S1_timeseries2timescan ${STACK}/Timeseries/timeseries.VV.vrt ${STACK}/Timescan/ Sigma0.VV 1
-			mv ${STACK}/Timescan/Sigma0.VV.avg.tif ${STACK}/Timescan/01_Sigma0.VV.avg.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/01_Sigma0.VV.avg.tif
-			mv ${STACK}/Timescan/Sigma0.VV.max.tif ${STACK}/Timescan/02_Sigma0.VV.max.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/02_Sigma0.VV.max.tif
-			mv ${STACK}/Timescan/Sigma0.VV.min.tif ${STACK}/Timescan/03_Sigma0.VV.min.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/03_Sigma0.VV.min.tif
-			mv ${STACK}/Timescan/Sigma0.VV.std.tif ${STACK}/Timescan/04_Sigma0.VV.std.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/04_Sigma0.VV.std.tif
-			mv ${STACK}/Timescan/Sigma0.VV.cov.tif ${STACK}/Timescan/05_Sigma0.VV.cov.tif
+			ost_S1_timeseries2timescan ${STACK}/Timeseries/timeseries.VV.vrt ${STACK}/Timescan/ Gamma0.VV 1
+			mv ${STACK}/Timescan/Gamma0.VV.avg.tif ${STACK}/Timescan/01_Gamma0.VV.avg.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/01_Gamma0.VV.avg.tif
+			mv ${STACK}/Timescan/Gamma0.VV.max.tif ${STACK}/Timescan/02_Gamma0.VV.max.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/02_Gamma0.VV.max.tif
+			mv ${STACK}/Timescan/Gamma0.VV.min.tif ${STACK}/Timescan/03_Gamma0.VV.min.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/03_Gamma0.VV.min.tif
+			mv ${STACK}/Timescan/Gamma0.VV.std.tif ${STACK}/Timescan/04_Gamma0.VV.std.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/04_Gamma0.VV.std.tif
+			mv ${STACK}/Timescan/Gamma0.VV.cov.tif ${STACK}/Timescan/05_Gamma0.VV.cov.tif
 
-			ost_S1_timeseries2timescan ${STACK}/Timeseries/timeseries.VH.vrt ${STACK}/Timescan/ Sigma0.VH 1
-			mv ${STACK}/Timescan/Sigma0.VH.avg.tif ${STACK}/Timescan/06_Sigma0.VH.avg.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/06_Sigma0.VH.avg.tif
-		  mv ${STACK}/Timescan/Sigma0.VH.max.tif ${STACK}/Timescan/07_Sigma0.VH.max.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/07_Sigma0.VH.max.tif
-		  mv ${STACK}/Timescan/Sigma0.VH.min.tif ${STACK}/Timescan/08_Sigma0.VH.min.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/08_Sigma0.VH.min.tif
-		  mv ${STACK}/Timescan/Sigma0.VH.std.tif ${STACK}/Timescan/09_Sigma0.VH.std.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/09_Sigma0.VH.std.tif
-		  mv ${STACK}/Timescan/Sigma0.VH.cov.tif ${STACK}/Timescan/10_Sigma0.VH.cov.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/10_Sigma0.VH.cov.tif
+			ost_S1_timeseries2timescan ${STACK}/Timeseries/timeseries.VH.vrt ${STACK}/Timescan/ Gamma0.VH 1
+			mv ${STACK}/Timescan/Gamma0.VH.avg.tif ${STACK}/Timescan/06_Gamma0.VH.avg.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/06_Gamma0.VH.avg.tif
+		  mv ${STACK}/Timescan/Gamma0.VH.max.tif ${STACK}/Timescan/07_Gamma0.VH.max.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/07_Gamma0.VH.max.tif
+		  mv ${STACK}/Timescan/Gamma0.VH.min.tif ${STACK}/Timescan/08_Gamma0.VH.min.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/08_Gamma0.VH.min.tif
+		  mv ${STACK}/Timescan/Gamma0.VH.std.tif ${STACK}/Timescan/09_Gamma0.VH.std.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/09_Gamma0.VH.std.tif
+		  mv ${STACK}/Timescan/Gamma0.VH.cov.tif ${STACK}/Timescan/10_Gamma0.VH.cov.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/10_Gamma0.VH.cov.tif
 
 			# create the vrt stack
-			gdalbuildvrt -separate -srcnodata 0 ${STACK}/Timescan/Timescan.VVVH.vrt ${STACK}/Timescan/01_Sigma0.VV.avg.tif ${STACK}/Timescan/02_Sigma0.VV.max.tif \
-	                                        ${STACK}/Timescan/03_Sigma0.VV.min.tif ${STACK}/Timescan/04_Sigma0.VV.std.tif ${STACK}/Timescan/05_Sigma0.VV.cov.tif \
-	                                        ${STACK}/Timescan/06_Sigma0.VH.avg.tif ${STACK}/Timescan/07_Sigma0.VH.max.tif ${STACK}/Timescan/08_Sigma0.VH.min.tif \
-	                                        ${STACK}/Timescan/09_Sigma0.VH.std.tif ${STACK}/Timescan/10_Sigma0.VH.cov.tif >> ${LOG_DIR}/log_mt_stacking 2>&1
+			gdalbuildvrt -separate -srcnodata 0 ${STACK}/Timescan/Timescan.VVVH.vrt ${STACK}/Timescan/01_Gamma0.VV.avg.tif ${STACK}/Timescan/02_Gamma0.VV.max.tif \
+	                                        ${STACK}/Timescan/03_Gamma0.VV.min.tif ${STACK}/Timescan/04_Gamma0.VV.std.tif ${STACK}/Timescan/05_Gamma0.VV.cov.tif \
+	                                        ${STACK}/Timescan/06_Gamma0.VH.avg.tif ${STACK}/Timescan/07_Gamma0.VH.max.tif ${STACK}/Timescan/08_Gamma0.VH.min.tif \
+	                                        ${STACK}/Timescan/09_Gamma0.VH.std.tif ${STACK}/Timescan/10_Gamma0.VH.cov.tif >> ${LOG_DIR}/log_mt_stacking 2>&1
 
 			SECONDS=0
 			echo -ne " Create a kmz file for Google Earth Visualization ..." &&
-			gdalbuildvrt -separate -srcnodata 0 ${TMP_DIR_TRACK}/tmp_rgb.vrt ${STACK}/Timescan/01_Sigma0.VV.avg.tif ${STACK}/Timescan/06_Sigma0.VH.avg.tif ${STACK}/Timescan/09_Sigma0.VH.std.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+			gdalbuildvrt -separate -srcnodata 0 ${TMP_DIR_TRACK}/tmp_rgb.vrt ${STACK}/Timescan/01_Gamma0.VV.avg.tif ${STACK}/Timescan/06_Gamma0.VH.avg.tif ${STACK}/Timescan/09_Gamma0.VH.std.tif >> ${LOG_MT}/log_mt_stacking 2>&1
 			gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${TMP_DIR_TRACK}/tmp_rgb.vrt ${TMP_DIR_TRACK}/RGB.8bit.tif >> ${LOG_DIR}/log_mt_stacking 2>&1
 			gdal_translate -of KMLSUPEROVERLAY -co format=JPEG ${TMP_DIR_TRACK}/RGB.8bit.tif ${STACK}/Timescan/RGB.timescan.kmz >> ${LOG_DIR}/log_mt_stacking 2>&1
 			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
@@ -144,21 +144,21 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 
 		if [[ $3 != 2 ]];then
 			mkdir -p ${STACK}/Timescan
-			ost_S1_timeseries2timescan ${STACK}/Timeseries/timeseries.VV.vrt ${STACK}/Timescan/ Sigma0.VV 1
-			mv ${STACK}/Timescan/Sigma0.VV.avg.tif ${STACK}/Timescan/01_Sigma0.VV.avg.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/01_Sigma0.VV.avg.tif
-			mv ${STACK}/Timescan/Sigma0.VV.max.tif ${STACK}/Timescan/02_Sigma0.VV.max.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/02_Sigma0.VV.max.tif
-			mv ${STACK}/Timescan/Sigma0.VV.min.tif ${STACK}/Timescan/03_Sigma0.VV.min.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/03_Sigma0.VV.min.tif
-			mv ${STACK}/Timescan/Sigma0.VV.std.tif ${STACK}/Timescan/04_Sigma0.VV.std.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/04_Sigma0.VV.std.tif
-			mv ${STACK}/Timescan/Sigma0.VV.cov.tif ${STACK}/Timescan/05_Sigma0.VV.cov.tif
+			ost_S1_timeseries2timescan ${STACK}/Timeseries/timeseries.VV.vrt ${STACK}/Timescan/ Gamma0.VV 1
+			mv ${STACK}/Timescan/Gamma0.VV.avg.tif ${STACK}/Timescan/01_Gamma0.VV.avg.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/01_Gamma0.VV.avg.tif
+			mv ${STACK}/Timescan/Gamma0.VV.max.tif ${STACK}/Timescan/02_Gamma0.VV.max.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/02_Gamma0.VV.max.tif
+			mv ${STACK}/Timescan/Gamma0.VV.min.tif ${STACK}/Timescan/03_Gamma0.VV.min.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/03_Gamma0.VV.min.tif
+			mv ${STACK}/Timescan/Gamma0.VV.std.tif ${STACK}/Timescan/04_Gamma0.VV.std.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/04_Gamma0.VV.std.tif
+			mv ${STACK}/Timescan/Gamma0.VV.cov.tif ${STACK}/Timescan/05_Gamma0.VV.cov.tif
 
 			# create the vrt stack
-			gdalbuildvrt -separate -srcnodata 0 ${STACK}/Timescan/Timescan.VV.vrt ${STACK}/Timescan/01_Sigma0.VV.avg.tif ${STACK}/Timescan/02_Sigma0.VV.max.tif ${STACK}/Timescan/03_Sigma0.VV.min.tif \
-	                                        ${STACK}/Timescan/04_Sigma0.VV.std.tif ${STACK}/Timescan/05_Sigma0.VV.cov.tif  >> ${LOG_DIR}/log_mt_stacking 2>&1
+			gdalbuildvrt -separate -srcnodata 0 ${STACK}/Timescan/Timescan.VV.vrt ${STACK}/Timescan/01_Gamma0.VV.avg.tif ${STACK}/Timescan/02_Gamma0.VV.max.tif ${STACK}/Timescan/03_Gamma0.VV.min.tif \
+	                                        ${STACK}/Timescan/04_Gamma0.VV.std.tif ${STACK}/Timescan/05_Gamma0.VV.cov.tif  >> ${LOG_DIR}/log_mt_stacking 2>&1
 
 
 			SECONDS=0
 			echo -ne " Create a kmz file for Google Earth Visualization ..." &&
-			gdalbuildvrt -separate -srcnodata 0 ${TMP_DIR_TRACK}/tmp_rgb.vrt ${STACK}/Timescan/02_Sigma0.VV.max.tif ${STACK}/Timescan/03_Sigma0.VV.min.tif ${STACK}/Timescan/04_Sigma0.VV.std.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+			gdalbuildvrt -separate -srcnodata 0 ${TMP_DIR_TRACK}/tmp_rgb.vrt ${STACK}/Timescan/02_Gamma0.VV.max.tif ${STACK}/Timescan/03_Gamma0.VV.min.tif ${STACK}/Timescan/04_Gamma0.VV.std.tif >> ${LOG_MT}/log_mt_stacking 2>&1
 			gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${TMP_DIR_TRACK}/tmp_rgb.vrt ${TMP_DIR_TRACK}/RGB.8bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
 			gdal_translate -of "KMLSUPEROVERLAY" -co "format=JPEG" ${TMP_DIR_TRACK}/RGB.8bit.tif ${STACK}/Timescan/RGB.timescan.kmz >> ${LOG_MT}/log_mt_stacking 2>&1
 			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"

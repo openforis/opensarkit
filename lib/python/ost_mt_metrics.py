@@ -21,10 +21,9 @@ def rescale_from_db(arrayin,minVal,maxVal,datatype):
     a = minVal - ((maxVal - minVal)/(display_max - display_min))
     x = (maxVal - minVal)/(display_max - 1)
     arrayout = np.round((arrayin - a) / x).astype(datatype)
-    #arrayout[arrayin == 0] = 0
     return arrayout
 
-def mt_metrics(rasterfn,newRasterfn,mt_type,rescale_sar):
+def mt_metrics(rasterfn,newRasterfn,mt_type,rescale_sar, outlier):
 
     # open raster file
     raster3d = gdal.Open(rasterfn)
@@ -93,23 +92,56 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,rescale_sar):
                 xsize = cols - x
 
             # create the blocksized array
-            stacked_array=np.empty((raster3d.RasterCount, ysize, xsize), dtype=data_type_name)
+            stacked_array_orig=np.empty((raster3d.RasterCount, ysize, xsize), dtype=data_type_name)
 
             # loop through the timeseries and fill the stacked array part
             for i in xrange( raster3d.RasterCount ):
                 i += 0
-                stacked_array[i,:,:] = np.array(raster3d.GetRasterBand(i+1).ReadAsArray(x,y,xsize,ysize))
+                stacked_array_orig[i,:,:] = np.array(raster3d.GetRasterBand(i+1).ReadAsArray(x,y,xsize,ysize))
 
-                #print data_type_name
                 # convert back to original dB
                 if rescale_sar == 'yes':
                     if data_type_name == 'uint8':
-                        stacked_array_db = stacked_array.astype(float) * ( 30. / 254.) + (-25. - (30. / 254.))
+                        stacked_array = stacked_array_orig.astype(float) * ( 30. / 254.) + (-25. - (30. / 254.))
 
                     elif data_type_name == 'UInt16':
-                        stacked_array_db = stacked_array.astype(float) * ( 30. / 65535.) + (-25. - (30. / 65535.))
+                        stacked_array = stacked_array_orig.astype(float) * ( 30. / 65535.) + (-25. - (30. / 65535.))
+                    else:
+                        stacked_array = stacked_array_orig
 
-            #data_type = gdal.GDT_Float32
+            # original nd_mask
+            nd_mask = stacked_array_orig[1,:,:] == 0
+
+            # the outlier removal routine
+            if outlier == 'yes':
+
+                # calculate percentiles
+                p90 = np.percentile(stacked_array, 90, axis=0)
+                p10 = np.percentile(stacked_array, 10, axis=0)
+
+                # we mask out the percetile outliers for std dev calculation
+                masked_array = np.ma.MaskedArray(
+                                stacked_array,
+                                mask = np.logical_or(
+                                stacked_array > p90,
+                                stacked_array < p10
+                                )
+                )
+
+                # we calculate new std and mean
+                masked_std = np.std(masked_array, axis=0)
+                masked_mean = np.mean(masked_array, axis=0)
+
+                # # we mask based on mean +- 2 * stddev
+                stacked_array = np.ma.MaskedArray(
+                                stacked_array,
+                                mask = np.logical_or(
+                                stacked_array > masked_mean + masked_std * 4,
+                                stacked_array < masked_mean - masked_std * 4,
+                                )
+                )
+
+            # we calculate the metrics needed
             for metric in metrics:
 
                 # calculate the specific metric
@@ -130,13 +162,16 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,rescale_sar):
                         if ndv is not None:
                             outRaster_avg.GetRasterBand(1).SetNoDataValue(ndv)
 
-                    if (data_type_name == 'Float32') or (rescale_sar == 'no'):
-                        outmetric_avg = np.mean(stacked_array, axis=0)
-                        outband_avg.WriteArray(outmetric_avg, x, y)
-                    else:
-                        outmetric_avg = np.mean(stacked_array_db, axis=0)
-                        outmetric_avg_res = rescale_from_db(outmetric_avg,-25. ,5. , data_type_name)
-                        outband_avg.WriteArray(outmetric_avg_res, x, y)
+                    # calulate the mean
+                    outmetric_avg = np.mean(stacked_array, axis=0)
+
+                    # rescale to actual data type
+                    if rescale_sar == 'yes':
+                        outmetric_avg = rescale_from_db(outmetric_avg,-25. ,5. , data_type_name)
+                        outmetric_avg[nd_mask == True] = ndv
+
+                    # write to array
+                    outband_avg.WriteArray(outmetric_avg, x, y)
 
                 elif metric == "max":
 
@@ -155,14 +190,15 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,rescale_sar):
                         if ndv is not None:
                             outRaster_max.GetRasterBand(1).SetNoDataValue(ndv)
 
-                    if (data_type_name == 'Float32') or (rescale_sar == 'no'):
-                        outmetric_max = np.max(stacked_array, axis=0)
-                        outband_max.WriteArray(outmetric_max, x, y)
-                    else:
-                        outmetric_max = np.max(stacked_array_db, axis=0)
-                        outmetric_max_res = rescale_from_db(outmetric_max,-25. ,5. , data_type_name)
-                        outmetric_max_res[stacked_array[1,:,:] == 0] = 0
-                        outband_max.WriteArray(outmetric_max_res, x, y)
+                    # calculate the max
+                    outmetric_max = np.max(stacked_array, axis=0)
+
+                    # rescale to actual data type
+                    if rescale_sar == 'yes':
+                        outmetric_max = rescale_from_db(outmetric_max,-25. ,5. , data_type_name) + 1
+                        outmetric_max[nd_mask == True] = ndv
+
+                    outband_max.WriteArray(outmetric_max, x, y)
 
                 elif metric == "min":
 
@@ -181,14 +217,13 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,rescale_sar):
                         if ndv is not None:
                             outRaster_min.GetRasterBand(1).SetNoDataValue(ndv)
 
-                    if (data_type_name == 'Float32') or (rescale_sar == 'no'):
-                        outmetric_min = np.min(stacked_array, axis=0)
-                        outband_min.WriteArray(outmetric_min, x, y)
-                    else:
-                        outmetric_min = np.min(stacked_array_db, axis=0)
-                        outmetric_min_res = rescale_from_db(outmetric_min,-25. ,5. , data_type_name)
-                        outmetric_min_res[stacked_array[1,:,:] == 0] = 0
-                        outband_min.WriteArray(outmetric_min_res, x, y)
+                    outmetric_min = np.min(stacked_array, axis=0)
+
+                    if rescale_sar == 'yes':
+                        outmetric_min = rescale_from_db(outmetric_min,-25. ,5., data_type_name)
+                        outmetric_min[nd_mask == True] = ndv
+
+                    outband_min.WriteArray(outmetric_min, x, y)
 
                 elif metric == "std":
 
@@ -207,18 +242,17 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,rescale_sar):
                         if ndv is not None:
                             outRaster_std.GetRasterBand(1).SetNoDataValue(ndv)
 
-                    if (data_type_name == 'Float32') or (rescale_sar == 'no'):
-                        outmetric_std = np.std(stacked_array, axis=0)
-                        outband_std.WriteArray(outmetric_std, x, y)
-                    else:
-                        outmetric_std = np.std(stacked_array_db, axis=0)
-                        outmetric_std_res = rescale_from_db(outmetric_std, 0.00001 , 10 , data_type_name) + 1
-                        outmetric_std_res[stacked_array[1,:,:] == 0] = 0
-                        outband_std.WriteArray(outmetric_std_res, x, y)
+                    outmetric_std = np.std(stacked_array, axis=0)
+
+                    if rescale_sar == 'yes':
+                        outmetric_std = rescale_from_db(outmetric_std, 0.00001, 10., data_type_name) + 1
+                        outmetric_std[nd_mask == 1] = ndv
+
+                    outband_std.WriteArray(outmetric_std, x, y)
 
                 elif metric == "cov":
 
-                     if k == 1:
+                    if k == 1:
                          outRaster_cov = driver.Create(newRasterfn + ".cov.tif", cols, rows, 1, data_type,
                                  options=[           # Format-specific creation options.
                                  'TILED=YES',
@@ -233,15 +267,15 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,rescale_sar):
                          if ndv is not None:
                              outRaster_cov.GetRasterBand(1).SetNoDataValue(ndv)
 
-                     if (data_type_name == 'Float32') or (rescale_sar == 'no'):
-                         outmetric_cov = scipy.stats.variation(stacked_array, axis=0)
-                         outmetric_cov[stacked_array[1,:,:] == 0] = 0
-                         outband_cov.WriteArray(outmetric_cov, x, y)
-                     else:
-                         outmetric_cov = scipy.stats.variation(stacked_array_db, axis=0)
-                         outmetric_cov_res = rescale_from_db(outmetric_cov, -1.5 , 0.5 , data_type_name)
-                         outmetric_cov_res[stacked_array[1,:,:] == 0] = 0
-                         outband_cov.WriteArray(outmetric_cov_res, x, y)
+                    # calulate cov
+                    #outmetric_cov = scipy.stats.variation(stacked_array, axis=0)
+                    outmetric_cov = np.divide(outmetric_std.astype('float'), outmetric_avg.astype('float'))
+
+                    if rescale_sar == 'yes':
+                        outmetric_cov = rescale_from_db(outmetric_cov, -0.25, 0.25 , data_type_name) + 1
+                        outmetric_cov[nd_mask == 1] = 0
+
+                    outband_cov.WriteArray(outmetric_cov, x, y)
 
                 elif metric == "p90":
 
@@ -339,9 +373,6 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,rescale_sar):
                     outmetric = np.sum(stacked_array, axis=0)
                     outband_sum.WriteArray(outmetric, x, y)
 
-
-
-
             # counter to write the outbup just once
             k = k + 1
 
@@ -349,7 +380,7 @@ def main():
 
     from optparse import OptionParser
 
-    usage = "usage: %prog [options] -i inputfile -o outputfile prefix -t type of metric"
+    usage = "usage: %prog [options] -i inputfile -o outputfile prefix -t type of metric -m outlier removal"
     parser = OptionParser()
     parser.add_option("-i", "--inputfile", dest="ifile",
                 help="choose an input time-series stack", metavar="<input time-series stack>")
@@ -369,6 +400,8 @@ def main():
     parser.add_option("-r", "--rescale", dest="rescale_sar",
                 help="rescale integer SAR data back to dB (OST specific)", metavar="(yes/no) ")
 
+    parser.add_option("-m", "--outlier", dest="outlier",
+                help="mask outliers in the timeseries", metavar="(yes/no) ")
 
     (options, args) = parser.parse_args()
 
@@ -388,8 +421,12 @@ def main():
         parser.error("Choose if you want to apply rescaling to dB (for Integer SAR data produced by OST). Valid inputs (yes/no).")
         print usage
 
+    if not ((options.outlier == 'yes') or (options.outlier == 'no')):
+        parser.error("Choose if you want to remove outliers in the timeseries. Valid inputs (yes/no).")
+        print usage
+
     currtime = time()
-    mt_metrics(options.ifile,options.ofile,options.mt_type,options.rescale_sar)
+    mt_metrics(options.ifile,options.ofile,options.mt_type,options.rescale_sar,options.outlier)
     print 'time elapsed:', time() - currtime
 
 

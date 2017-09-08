@@ -15,7 +15,7 @@ Options:
 
 #https://gist.github.com/perrygeo/5667173#file-zonal_stats-py-L10
 
-from osgeo import gdal, ogr, gdal_array
+from osgeo import gdal, ogr, gdal_array, osr
 from osgeo.gdalconst import *
 from pandas import DataFrame
 from sklearn.ensemble import RandomForestRegressor
@@ -42,7 +42,7 @@ def bbox_to_pixel_offsets(gt, bbox):
     return (x1, y1, xsize, ysize)
 
 
-def zonal_stats(vector_path, raster_path, nodata_value=None, global_src_extent=False):
+def regressor(raster_path, vector_path, vector_field, newRasterfn, global_src_extent=False):
 
     # open raster file
     rds = gdal.Open(raster_path, GA_ReadOnly)
@@ -53,6 +53,28 @@ def zonal_stats(vector_path, raster_path, nodata_value=None, global_src_extent=F
 
     # get number of bands
     bands = rds.RasterCount
+    myBlockSize=rds.GetRasterBand(1).GetBlockSize();
+    x_block_size = myBlockSize[0]
+    y_block_size = myBlockSize[1]
+
+    # Get image sizes
+    cols = rds.RasterXSize
+    rows = rds.RasterYSize
+    geotransform = rds.GetGeoTransform()
+    originX = geotransform[0]
+    originY = geotransform[3]
+    pixelWidth = geotransform[1]
+    pixelHeight = geotransform[5]
+
+    # we need this for file creation
+    outRasterSRS = osr.SpatialReference()
+    outRasterSRS.ImportFromWkt(rds.GetProjectionRef())
+    # get datatype and transform to numpy readable
+    data_type = rds.GetRasterBand(1).DataType
+    data_type_name = gdal.GetDataTypeName(data_type)
+
+    if data_type_name == "Byte":
+        data_type_name = "uint8"
 
     # open vector file
     vds = ogr.Open(vector_path, GA_ReadOnly)  # TODO maybe open update if we want to write stats
@@ -61,7 +83,6 @@ def zonal_stats(vector_path, raster_path, nodata_value=None, global_src_extent=F
     vlyr = vds.GetLayer(0)
 
     # count valid features
-    #nr_of_feat = vlyr.GetFeatureCount()
     c = 0
     feat = vlyr.GetNextFeature()
     while feat is not None:
@@ -74,20 +95,17 @@ def zonal_stats(vector_path, raster_path, nodata_value=None, global_src_extent=F
 
     feat = vlyr.ResetReading()
     print "features:" + str(nr_of_feat)
-    # create an array for final stats with number of features
-    final_stats = np.arange(nr_of_feat)
-    #mean = np.empty((nr_of_feat, bands))
-    # create a python list to fill during subsequent loop
+
+    # create a python list to fill during subsequent loop for mean and training data
     mean = [[0 for _ in range(bands)] for _ in range(nr_of_feat)]
-    print mean
-    #training = np.empty((nr_of_feat))
     training = []
+
+    # extract mean value for each polygon on each band (zonal stats function)
     for x in xrange (1, bands + 1):
 
-        print "run:" + str(x)
         rb = rds.GetRasterBand(x)
-
-        #vlyr = vds.GetLayer(0)
+        nodata_value = rb.GetNoDataValue()
+        print 'NDV:' + str (nodata_value)
 
         if nodata_value:
             nodata_value = float(nodata_value)
@@ -116,18 +134,13 @@ def zonal_stats(vector_path, raster_path, nodata_value=None, global_src_extent=F
         mem_drv = ogr.GetDriverByName('Memory')
         driver = gdal.GetDriverByName('MEM')
 
-        # Loop through vectors
-        stats = []
-        feat = None
-
         # reset feature reading for every band
         feat = vlyr.ResetReading()
         # get the first feature (subsequent features call is in the loop)
         feat = vlyr.GetNextFeature()
 
-
+        # loop through the features and keep an index i per loop
         i = 0
-        # loop through the features
         while feat is not None:
 
             label = feat.GetField("biomass")
@@ -137,10 +150,8 @@ def zonal_stats(vector_path, raster_path, nodata_value=None, global_src_extent=F
             # extract the training (we only need once)
                 if x == 1:
                     label = feat.GetField("biomass")
-            #        print "label: " + str(label)
-
                     training.append(feat.GetField("biomass"))
-                    print training
+
                 # extract the band values
                 if not global_src_extent:
                     # use local source extent
@@ -183,92 +194,73 @@ def zonal_stats(vector_path, raster_path, nodata_value=None, global_src_extent=F
                 )
 
                 band_mean = str(x) + "_mean"
-                #print band_mean
-                feature_stats = {
-                    #'min': float(masked.min()),
-                    band_mean: float(masked.mean())}#,
-                    #'max': float(masked.max()),
-                    #'std': float(masked.std()),
-                    #'sum': float(masked.sum()),
-                    #'count': int(masked.count()),
-                    #'fid': int(feat.GetFID())}
 
-                #stats_1.(mean)
-
-                #stats.append(feature_stats)
+                # index array by bands and feature
                 ar_row = i
                 ar_col = x - 1
                 i = i + 1
-                print i
-                #print "row:" + str(ar_row)
-                #print "col:" + str(ar_col)
 
                 # fill the array with the respective values
                 mean[ar_row][ar_col] = float(masked.mean())
-                #print "mean:" + str(float(masked.mean()))
 
             rvds = None
             mem_ds = None
             feat = vlyr.GetNextFeature()
 
-
-        #final_stats = np.append(final_stats, mean)
-        #print final_stats
-        #print stats
-
-
     # python lists to numpy array
-    training = np.array(training)
+    #training = np.array(training)
     mean = np.array(mean)
-    print "mean:" + str(mean)
-    print "training" + str(training)
 
+    # plotting
+    plt.style.use('fivethirtyeight')
+    fig, ax = plt.subplots()
+    ax.plot(range(nr_of_feat), mean, 'ro-')
+    plt.show()
+    # we do not need the vector layr anymore
     vds = None
-    #rds = None
 
-    rf = RandomForestRegressor(n_estimators=20, oob_score=True)
-    #print np.shape(training)
-    #print np.shape(mean)
-    print training.shape
-    print mean.shape
-    # Fit our model to training data
-    rf = rf.fit(mean, training)
-    print('Our OOB prediction of accuracy is: {oob}%'.format(oob=rf.oob_score_ * 100))
 
-    bands = [1, 2, 3] # need to be changed]
-    for b, imp in zip(bands, rf.feature_importances_):
-        print('Band {b} importance: {imp}'.format(b=b, imp=imp))
 
-    img = np.zeros((rds.RasterYSize, rds.RasterXSize, rds.RasterCount),
-               gdal_array.GDALTypeCodeToNumericTypeCode(rds.GetRasterBand(1).DataType))
+def main():
 
-    for b in range(img.shape[2]):
-        img[:, :, b] = rds.GetRasterBand(b + 1).ReadAsArray()
+    from optparse import OptionParser
+    from time import time
 
-    new_shape = (img.shape[0] * img.shape[1], img.shape[2])
-    img_as_array = img.reshape(new_shape)
-    #print img_as_array[]
-    print('Reshaped from {o} to {n}'.format(o=img.shape,
-                                        n=img_as_array.shape))
-    print "Score" + str(rf.score(mean, training))
-    classification = rf.predict(img_as_array)
-    # Reshape our classification map
-    classification = classification.reshape(img[:, :, 0].shape)
-    print classification.shape
+    usage = "usage: %prog [options] -r inputstack -v input vector -f vector field -o output file "
+    parser = OptionParser()
+    parser.add_option("-r", "--inputraster", dest="iraster",
+                help="select an input raster stack", metavar="<input raster stack>")
 
-    return classification
+    parser.add_option("-v", "--inputvector", dest="ivector",
+            help="select a training data shape file ", metavar="<input training vector>")
+
+    parser.add_option("-f", "--vectorfield", dest="vfield",
+        help="select the column of the shapefile with the biomass values", metavar="<vector field>")
+
+    parser.add_option("-o", "--outputfile", dest="ofile",
+                help="Outputfile prefix ", metavar="<utputfile prefix>")
+
+    (options, args) = parser.parse_args()
+
+    if not options.iraster:
+        parser.error("Input stack is empty")
+        print usage
+
+    if not options.ivector:
+        parser.error("Input vector is empty")
+        print usage
+
+    if not options.vfield:
+        parser.error("No column name selected")
+        print usage
+
+    if not options.ofile:
+        parser.error("Output file is empty")
+        print usage
+
+    currtime = time()
+    regressor(options.iraster,options.ivector,options.vfield,options.ofile)
+    print 'time elapsed:', time() - currtime
 
 if __name__ == "__main__":
-    opts = {'VECTOR': sys.argv[1], 'RASTER': sys.argv[2]}
-
-    stats = zonal_stats(opts['VECTOR'], opts['RASTER'], 0)
-    plt.imshow(stats, cmap=plt.cm.summer)
-    colorbar()
-    #plt.show
-    plt.savefig('/home/avollrath/test.png')
-    try:
-        from pandas import DataFrame
-        #print DataFrame(stats)
-    except ImportError:
-        import json
-        print json.dumps(stats, indent=2)
+        main()
