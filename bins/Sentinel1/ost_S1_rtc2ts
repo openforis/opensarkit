@@ -25,14 +25,14 @@ source ${OPENSARKIT}/lib/helpers_source
 
 #-------------------------------------------------------------------------------------------
 # 	0.1 Check for right usage & set up basic Script Variables
-if [ "$#" != "3" ]; then
+if [ "$#" != "4" ]; then
 
 	echo -e "------------------------------------------------------------------------"
 	echo -e " Open SAR Toolkit, version ${OST_VERSION}"
 	echo -e " Create timeseries stack and multi-temporal statistics from RTC products"
 	echo -e "------------------------------------------------------------------------"
 	echo -e ""
-	echo -e " Usage: ost_S1_rtc2timeseries <input directory> <datatype> <processing option>"
+	echo -e " Usage: ost_S1_rtc2timeseries <input directory> <datatype> <processing option> <apply LS mask>"
 	echo -e ""
 	echo -e " input parameters:"
 	echo -e " input directory	(input) higher-level directory of the downloaded zip file (i.e. DATA folder created by oft-sar-S1-ASF-download)"
@@ -46,6 +46,10 @@ if [ "$#" != "3" ]; then
 	echo -e "			  1: Time-series & Timescan"
 	echo -e "			  2: Time-series only"
 	echo -e "			  3: Timescan only"
+	echo -e " apply Layover/Shadow mask (note: mask will be generated in either case)"
+	echo -e "			  Available choices:"
+	echo -e "			  0: not applied (recommended, if you are going to mosaic later)"
+	echo -e "			  1: will be applied (recommended, if you are only processing one track)"
 	echo -e ""
 	exit 1
 
@@ -56,6 +60,7 @@ else
 	TMP_DIR=${SAR_TMP:-$PROC_DIR/TMP}
 	rm -rf ${TMP_DIR}
 	mkdir -p ${TMP_DIR}
+	LS_MASK_ON=$4
 
 	echo -e "------------------------------------------------------------------------" | tee ${PROC_DIR}/.s1_rtc2ts_progress
 	echo -e " Open SAR Toolkit, version ${OST_VERSION}" | tee -a ${PROC_DIR}/.s1_rtc2ts_progress
@@ -110,8 +115,7 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 
 	FILELIST=$(ls -1 ${PWD}/*/*.*TC.dim | tr '\n' ',' | rev | cut -c 2- | rev)
 	if [[ `ls -1 ${PWD}/*/*.*TC.data/*VH*img 2>/dev/null | wc -l` -eq ${NR_OF_ACQ} ]];then
-		s1_timeseries ${FILELIST} ${AOI} ${STACK} ${ODATATYPE} VH ${TMP_DIR_TRACK} ${LOG_DIR} | tee -a ${PROC_DIR}/.s1_rtc2ts_progress
-
+		s1_timeseries ${FILELIST} ${AOI} ${STACK} ${ODATATYPE} VH ${LS_MASK_ON} ${TMP_DIR_TRACK} ${LOG_DIR} | tee -a ${PROC_DIR}/.s1_rtc2ts_progress
 
 		if [[ $3 != 2 ]];then
 			mkdir -p ${STACK}/Timescan
@@ -144,7 +148,7 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 		fi
 
 	else
-		s1_timeseries ${FILELIST} ${AOI} ${STACK} ${ODATATYPE} VV ${TMP_DIR_TRACK} ${LOG_DIR} | tee -a ${PROC_DIR}/.s1_rtc2ts_progress
+		s1_timeseries ${FILELIST} ${AOI} ${STACK} ${ODATATYPE} VV ${LS_MASK_ON} ${TMP_DIR_TRACK} ${LOG_DIR} | tee -a ${PROC_DIR}/.s1_rtc2ts_progress
 
 		if [[ $3 != 2 ]];then
 			mkdir -p ${STACK}/Timescan
@@ -173,7 +177,7 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 			 rm -rf ${STACK}/Timeseries/
 	fi
 
-  rm -rf ${TMP_DIR_TRACK}
+#  rm -rf ${TMP_DIR_TRACK}
 
 	j=`expr $j + 1`
 	cd ${PROC_DIR}

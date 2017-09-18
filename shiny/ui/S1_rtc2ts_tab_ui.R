@@ -47,13 +47,23 @@ tabItem(tabName = "s1_rtc2ts",
             
             #---------------------------------------------------------------------------
             # Datatype selction
-            tags$b("Choose the output datatype for the timeseries/timescan products."), 
+            tags$b("Select an output datatype for the timeseries/timescan products."), 
             p("Those values represent the amount of space reserved for one pixel per band."),
             radioButtons("s1_rtc2ts_dtype", "",
                          c("16 bit unsigned integer (recommended)" = "1",
                            "8 bit unsigned integer" = "2",
                            "32 bit floating point" = "3"),
                            "1"),hr(),
+            #---------------------------------------------------------------------------
+            
+            #---------------------------------------------------------------------------
+            # Layover/shadow mask selction
+            tags$b("Apply the Layover/Shadow mask?"), 
+            p("This option provides the possibility to set the Layover/Shadow affected areas to 0 (no data value)."),
+            radioButtons("s1_rtc2ts_ls", "",
+                         c("Yes (recommended if you process a single swath)" = "1",
+                           "No (recommended if you want to mosaic afterwards)" = "0"),
+                           "0"),hr(),
             #---------------------------------------------------------------------------
             
             #---------------------------------------------------------------------------

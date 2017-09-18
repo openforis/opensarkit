@@ -145,7 +145,7 @@ function s1_rtc_processing() {
   if [ ${RTC_RES} == "MED_RES" ];then
 
     SECONDS=0
-    echo " Calibrating to beta0, applying the terrain flattening and multi-look by a factor of 3  ..." &&
+    echo -ne " Calibrating to beta0, applying the terrain flattening and multi-look by a factor of 3  ..." &&
     bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_CAL_TF_ML3.xml -x -q ${NR_OF_CPUS} -Pinput=${RTC_IN} -Poutput=${RTC_TMP}/TF > ${RTC_LOG}/log_cal_tf_ml 2>&1
     duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
     [ $? -ne 0 ] && return ${ERR_BRD_NOISE}
@@ -753,9 +753,9 @@ function s1_gtc_processing() {
 
 
 function s1_timeseries() {
-  if [ -z "$7" ]; then
+  if [ -z "$8" ]; then
     echo " Missing arguments. Syntax:"
-    echo " s1_timeseries <file_list> <AOI> <output directory> <datatype> <pol mode> <tmpdir> <logfile>"
+    echo " s1_timeseries <file_list> <AOI> <output directory> <datatype> <pol mode> <ls_map> <tmpdir> <logfile>"
     return
   fi
 
@@ -766,8 +766,9 @@ function s1_timeseries() {
   OUT_STACK_MT=$3
   ODATATYPE=$4
   POL_MODE_MT=$5
-  TMP_MT=$6
-  LOG_MT=$7
+  LS_MAP_OPT=$6
+  TMP_MT=$7
+  LOG_MT=$8
 
   # double amoun tof CPUs for SNAP related tasks
   NR_OF_CPUS=`echo "$(nproc) * 2" | bc`
@@ -813,13 +814,14 @@ function s1_timeseries() {
   echo -ne " Create the minimum extent mask  ..." &&
   gdalbuildvrt -separate ${TMP_MT}/mask.vrt ${TMP_MT}/mt_stack.vv.db.speckle.data/*img >> ${LOG_MT}/log_mt_stacking 2>&1
   gdal_edit.py -unsetnodata ${TMP_MT}/mask.vrt >> ${LOG_MT}/log_mt_stacking 2>&1
-  ost_mt_metrics.py -i ${TMP_MT}/mask.vrt -o ${TMP_MT}/mask -t 3 -r no -m no >> ${LOG_MT}/log_mt_stacking 2>&1
+  ost_mt_metrics.py -i ${TMP_MT}/mask.vrt -o ${TMP_MT}/mask -t 3 -p no -r no -m no >> ${LOG_MT}/log_mt_stacking 2>&1
   gdal_calc.py --overwrite -A ${TMP_MT}/mask.max.tif -B ${TMP_MT}/mask.min.tif --calc="(A*B)/(A*B)" --outfile ${TMP_MT}/mask.final.tif >> ${LOG_MT}/log_mt_stacking 2>&1
   gdal_trace_outline ${TMP_MT}/mask.final.tif -ndv 0 -no-donuts -out-cs ll -ogr-out ${TMP_MT}/extent.shp >> ${LOG_MT}/log_mt_stacking 2>&1
   duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
   # create output folders.
   #mkdir -p ${OUT_STACK_MT}/Timescan
+  rm -rf ${OUT_STACK_MT}/Timeseries
   mkdir -p ${OUT_STACK_MT}/Timeseries/Thumbnails
 
   # create intersect of image extent and AOI
@@ -851,12 +853,12 @@ function s1_timeseries() {
     fi
   fi
 
-  ost_mt_metrics.py -i ${TMP_MT}/ls_mask_stack.vrt -o ${TMP_MT}/LS.map -t 4 -r no -m no >> ${LOG_MT}/log_mt_stacking 2>&1
-  gdal_translate -a_nodata 0 ${TMP_MT}/LS.map.max.tif ${TMP_MT}/LS.map.max.nd.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-  gdal_fillnodata.py -md 3 ${TMP_MT}/LS.map.max.nd.tif ${TMP_MT}/LS.map.max.nd.closed.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-  gdalwarp -overwrite -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${TMP_MT}/LS.map.max.nd.closed.tif ${TMP_MT}/LS.map.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+  ost_mt_metrics.py -i ${TMP_MT}/ls_mask_stack.vrt -o ${TMP_MT}/LS.map -t 4 -p no -r no -m no >> ${LOG_MT}/log_mt_stacking 2>&1
+  gdal_edit.py -a_nodata 0 ${TMP_MT}/LS.map.max.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+  gdal_fillnodata.py -md 3 ${TMP_MT}/LS.map.max.tif ${TMP_MT}/LS.map.tif >> ${LOG_MT}/log_mt_stacking 2>&1
   gdal_edit.py -unsetnodata ${TMP_MT}/LS.map.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-  gdal_calc.py --overwrite --type='Byte' -A ${TMP_MT}/LS.map.tif --outfile=${OUT_STACK_MT}/LS.map.tif --calc="1*(A==0)" --NoDataValue=0 --co='COMPRESS=LZW' >> ${LOG_MT}/log_mt_stacking 2>&1
+  gdal_calc.py --overwrite --type='Byte' -A ${TMP_MT}/LS.map.tif --outfile=${TMP_MT}/LS.map.invert.tif --calc="1*(A==0)" --NoDataValue=0 --co='COMPRESS=LZW' >> ${LOG_MT}/log_mt_stacking 2>&1
+  gdalwarp -overwrite -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${TMP_MT}/LS.map.invert.tif ${OUT_STACK_MT}/LS.map.tif >> ${LOG_MT}/log_mt_stacking 2>&1
   rm -f ${TMP_MT}/LS.map*
   duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
@@ -881,8 +883,8 @@ function s1_timeseries() {
     if [ ${ODATATYPE} = "UInt16" ]; then
 
       SECONDS=0
-      echo -ne " Scaling ${DATE} layer to 16 bit (-25 dB to 5dB) ..."
-      gdal_translate -ot "UInt16" -projwin $(ogr_extent ${CROPLINE}) -scale -25 5 1 65536 ${file} ${TMP_MT}/${DATE}.16bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+      echo -ne " Scaling ${DATE} layer to 16 bit (-30 dB to 5dB) ..."
+      gdal_translate -ot "UInt16" -projwin $(ogr_extent ${CROPLINE}) -scale -30 5 1 65536 ${file} ${TMP_MT}/${DATE}.16bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
 
       # replace all zeros to one to avoid outlier removal from rescaling
       ost_replace_values.py -i ${TMP_MT}/${DATE}.16bit.tif -o ${TMP_MT}/${DATE}.16bit.ones.tif -r 0 -n 1 >> ${LOG_MT}/log_mt_stacking 2>&1
@@ -890,7 +892,13 @@ function s1_timeseries() {
 
       # cut to the actual extent of interest coming from the intersect above
       gdalwarp -overwrite -co "COMPRESS=LZW" -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${TMP_MT}/${DATE}.16bit.ones.tif ${TMP_MT}/${i}_${DATE}.VV.16bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-      gdal_calc.py --overwrite -A ${TMP_MT}/${i}_${DATE}.VV.16bit.tif -B ${OUT_STACK_MT}/LS.map.tif --calc="A*B" --outfile=${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.16bit.tif --NoDataValue=0 --co='COMPRESS=LZW' >> ${LOG_MT}/log_mt_stacking 2>&1
+
+      if [ ${LS_MAP_OPT} = 1 ];then
+        gdal_calc.py --overwrite -A ${TMP_MT}/${i}_${DATE}.VV.16bit.tif -B ${OUT_STACK_MT}/LS.map.tif --calc="A*B" --outfile=${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.16bit.tif --NoDataValue=0 --co='COMPRESS=LZW' >> ${LOG_MT}/log_mt_stacking 2>&1
+      else
+        mv ${TMP_MT}/${i}_${DATE}.VV.16bit.tif ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.16bit.tif
+      fi
+
       rm -f ${TMP_MT}/${DATE}.VV.16.bit.ones.tif ${TMP_MT}/${i}_${DATE}.VV.16bit.tif
       echo ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.16bit.tif >> ${TMP_MT}/ts_vrt_list.txt
       duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
@@ -909,8 +917,8 @@ function s1_timeseries() {
     elif [ ${ODATATYPE} = "UInt8" ]; then
 
       SECONDS=0
-      echo -ne " Scaling ${DATE} layer to 8 bit (-25 dB to 5dB) ..."
-      gdal_translate -ot "Byte" -projwin $(ogr_extent ${CROPLINE}) -scale -25 5 1 255 ${file} ${TMP_MT}/${DATE}.8bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+      echo -ne " Scaling ${DATE} layer to 8 bit (-30 dB to 5dB) ..."
+      gdal_translate -ot "Byte" -projwin $(ogr_extent ${CROPLINE}) -scale -30 5 1 255 ${file} ${TMP_MT}/${DATE}.8bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
       rm -f ${TMP_MT}/mt-metrics_ssv.data/Gamma0_VV.img ${TMP_MT}/mt-metrics_ssv.data/Gamma0_VV.hdr
 
       # replace all zeros to one to avoid outlier removal from rescaling
@@ -919,7 +927,11 @@ function s1_timeseries() {
 
       # cut to the actual extent of interest coming from the intersect above
       gdalwarp -overwrite -co "COMPRESS=LZW" -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${TMP_MT}/${DATE}.8bit.ones.tif ${TMP_MT}//${i}_${DATE}.VV.8bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-      gdal_calc.py --overwrite -A ${TMP_MT}/${i}_${DATE}.VV.8bit.tif -B ${OUT_STACK_MT}/LS.map.tif --calc="A*B" --outfile=${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.8bit.tif --NoDataValue=0 --co='COMPRESS=LZW' >> ${LOG_MT}/log_mt_stacking 2>&1
+      if [ ${LS_MAP_OPT} = 1 ];then
+        gdal_calc.py --overwrite -A ${TMP_MT}/${i}_${DATE}.VV.8bit.tif -B ${OUT_STACK_MT}/LS.map.tif --calc="A*B" --outfile=${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.8bit.tif --NoDataValue=0 --co='COMPRESS=LZW' >> ${LOG_MT}/log_mt_stacking 2>&1
+      else
+        mv ${TMP_MT}/${i}_${DATE}.VV.8bit.tif ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.8bit.tif
+      fi
       rm -f ${TMP_MT}/${DATE}.VV.8bit.ones.tif ${TMP_MT}/${i}_${DATE}.VV.8bit.tif
       # create a list of files fo later vrt creation
       echo ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.8bit.tif >> ${TMP_MT}/ts_vrt_list.txt
@@ -940,8 +952,12 @@ function s1_timeseries() {
 
       SECONDS=0
       echo -ne " Cropping ${DATE} to common extent and cut by AOI ..."
-      gdalwarp -overwrite -co "COMPRESS=LZW"  -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${file} ${TMP_MT}/${i}_${DATE}.VV.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-      gdal_calc.py --overwrite -A ${TMP_MT}/${i}_${DATE}.VV.tif -B ${OUT_STACK_MT}/LS.map.tif --calc="A*B" --outfile=${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.tif --NoDataValue=0 --co='COMPRESS=LZW' >> ${LOG_MT}/log_mt_stacking 2>&1
+      gdalwarp -overwrite -co "COMPRESS=LZW" -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${file} ${TMP_MT}/${i}_${DATE}.VV.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+      if [ ${LS_MAP_OPT} = 1 ];then
+        gdal_calc.py --overwrite -A ${TMP_MT}/${i}_${DATE}.VV.tif -B ${OUT_STACK_MT}/LS.map.tif --calc="A*B" --outfile=${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.tif --NoDataValue=0 --co='COMPRESS=LZW' >> ${LOG_MT}/log_mt_stacking 2>&1
+      else
+        mv ${TMP_MT}/${i}_${DATE}.VV.tif ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.tif
+      fi
       rm -f ${TMP_MT}/${i}_${DATE}.VV.tif
       echo ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.tif >> ${TMP_MT}/ts_vrt_list.txt
       duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
@@ -1023,7 +1039,7 @@ function s1_timeseries() {
 
     i=1
     while read line; do
-      #DATE=`basename $(echo $file) | awk -F "_" '{print $4}'`
+
       DATE=$(echo $line | awk '{print $1}')
       file=$(echo $line | awk '{print $2}')
 
@@ -1039,7 +1055,11 @@ function s1_timeseries() {
 
         # cut to the actual extent of interest coming from the intersect above
         gdalwarp -overwrite -co "COMPRESS=LZW" -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${TMP_MT}/${DATE}.VH.16bit.ones.tif ${TMP_MT}/${i}_${DATE}.VH.16bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-        gdal_calc.py --overwrite -A ${TMP_MT}/${i}_${DATE}.VH.16bit.tif -B ${OUT_STACK_MT}/LS.map.tif --calc="A*B" --outfile=${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.16bit.tif --NoDataValue=0 --co='COMPRESS=LZW' >> ${LOG_MT}/log_mt_stacking 2>&1
+        if [ ${LS_MAP_OPT} = 1 ];then
+          gdal_calc.py --overwrite -A ${TMP_MT}/${i}_${DATE}.VH.16bit.tif -B ${OUT_STACK_MT}/LS.map.tif --calc="A*B" --outfile=${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.16bit.tif --NoDataValue=0 --co='COMPRESS=LZW' >> ${LOG_MT}/log_mt_stacking 2>&1
+        else
+          mv ${TMP_MT}/${i}_${DATE}.VH.16bit.tif ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.16bit.tif
+        fi
         rm -f ${TMP_MT}/${DATE}.VH.16bit.ones.tif ${TMP_MT}/${i}_${DATE}.VH.16bit.tif
         echo ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.16bit.tif >> ${TMP_MT}/ts_vrt_list.VH.txt
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
@@ -1062,11 +1082,15 @@ function s1_timeseries() {
 
         # replace all zeros to one to avoid outlier removal from rescaling
         ost_replace_values.py -i ${TMP_MT}/${DATE}.VH.8bit.tif -o ${TMP_MT}/${DATE}.VH.8bit.ones.tif -r 0 -n 1 >> ${LOG_MT}/log_mt_stacking 2>&1
-        rm -f ${TMP_MT}/${DATE}.8bit.tif
+        rm -f ${TMP_MT}/${DATE}.VH.8bit.tif
 
         # cut to the actual extent of interest coming from the intersect above
         gdalwarp -overwrite -co "COMPRESS=LZW" -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${TMP_MT}/${DATE}.VH.8bit.ones.tif ${TMP_MT}/${i}_${DATE}.VH.8bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
-        gdal_calc.py --overwrite -A ${TMP_MT}/${i}_${DATE}.VH.8bit.tif -B ${OUT_STACK_MT}/LS.map.tif --calc="A*B" --outfile=${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.8bit.tif --NoDataValue=0 --co='COMPRESS=LZW' >> ${LOG_MT}/log_mt_stacking 2>&1
+        if [ ${LS_MAP_OPT} = 1 ];then
+          gdal_calc.py --overwrite -A ${TMP_MT}/${i}_${DATE}.VH.8bit.tif -B ${OUT_STACK_MT}/LS.map.tif --calc="A*B" --outfile=${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.8bit.tif --NoDataValue=0 --co='COMPRESS=LZW' >> ${LOG_MT}/log_mt_stacking 2>&1
+        else
+          mv ${TMP_MT}/${i}_${DATE}.VH.8bit.tif ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.8bit.tif
+        fi
         rm -f ${TMP_MT}/${DATE}.VH.8bit.ones.tif ${TMP_MT}/${i}_${DATE}.VH.8bit.tif
         echo ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.8bit.tif >> ${TMP_MT}/ts_vrt_list.VH.txt
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
@@ -1084,7 +1108,13 @@ function s1_timeseries() {
 
         SECONDS=0
         echo -ne " Cropping ${DATE} to common extent and cut by AOI ..."
-        gdalwarp -overwrite -co "COMPRESS=LZW" -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${file} ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+        gdalwarp -overwrite -co "COMPRESS=LZW" -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${file} ${TMP_MT}/${i}_${DATE}.VH.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+        if [ ${LS_MAP_OPT} = 1 ];then
+          gdal_calc.py --overwrite -A ${TMP_MT}/${i}_${DATE}.VH.tif -B ${OUT_STACK_MT}/LS.map.tif --calc="A*B" --outfile=${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.tif --NoDataValue=0 --co='COMPRESS=LZW' >> ${LOG_MT}/log_mt_stacking 2>&1
+        else
+          mv ${TMP_MT}/${i}_${DATE}.VH.tif ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.tif
+        fi
+
         echo ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VH.tif >> ${TMP_MT}/ts_vrt_list.VH.txt
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
@@ -1124,7 +1154,7 @@ function s1_timeseries() {
   fi
 
   echo "------------------------------------------------------------------------------------------------------"
-  echo " Info: Succesfully created a stack of multi-temporal metrics. "
+  echo " Info: Succesfully created a stack of time-series. "
   echo "------------------------------------------------------------------------------------------------------"
 
 }
@@ -1148,7 +1178,7 @@ function s1_timescan() {
 
   SECONDS=0
   echo -ne " Calculating multi-temporal metrics for the VV polarization ..."
-  ost_mt_metrics.py -i ${OUT_STACK_MT}/Timeseries/timeseries.VV.vrt -o ${OUT_DIR}/Gamma0.VV -t 1 >> ${LOG_MT}/log_mt_stacking 2>&1
+  ost_mt_metrics.py -i ${OUT_STACK_MT}/Timeseries/timeseries.VV.vrt -o ${OUT_DIR}/Gamma0.VV -t 1 -p yes -r yes -m yes >> ${LOG_MT}/log_mt_stacking 2>&1
   mv ${OUT_DIR}/Gamma0.VV.avg.tif ${OUT_DIR}/01_Gamma0.VV.avg.tif && gdal_edit.py -a_nodata 0 ${OUT_DIR}/01_Gamma0.VV.avg.tif
   mv ${OUT_DIR}/Gamma0.VV.max.tif ${OUT_DIR}/02_Gamma0.VV.max.tif && gdal_edit.py -a_nodata 0 ${OUT_DIR}/02_Gamma0.VV.max.tif
   mv ${OUT_DIR}/Gamma0.VV.min.tif ${OUT_DIR}/03_Gamma0.VV.min.tif && gdal_edit.py -a_nodata 0 ${OUT_DIR}/03_Gamma0.VV.min.tif

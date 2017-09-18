@@ -77,7 +77,9 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 	echo " Info: Entering Track: ${TRACK}"
 	cd ${TRACK}
 
+	rm -rf ${TRACK}/Timescan
 	mkdir -p ${TRACK}/Timescan
+	
 	ost_S1_timeseries2timescan ${TRACK}/Timeseries/timeseries.VV.vrt ${TRACK}/Timescan/ Gamma0.VV ${TS_MODE}
 	mv ${TRACK}/Timescan/Gamma0.VV.avg.tif ${TRACK}/Timescan/01_Gamma0.VV.avg.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/01_Gamma0.VV.avg.tif
 	mv ${TRACK}/Timescan/Gamma0.VV.max.tif ${TRACK}/Timescan/02_Gamma0.VV.max.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/02_Gamma0.VV.max.tif

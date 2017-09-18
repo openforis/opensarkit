@@ -213,8 +213,16 @@ s1_g2g_get_args = function(){
         TS_PROC = input$s1_g2g_ts 
       }
       
+      # decide to apply LS map based on number of tracks
+      if (length(Sys.glob(file.path(s1_g2g_dir, "[0-9]*"))) > 1){
+        s1_g2g_ls = "0"  
+      }
+      else {
+        s1_g2g_ls = "1"
+      }
+      
       # set arguments as global variable
-      s1_g2g_args <<- paste(s1_g2g_dir, s1_g2g_resolution, MODE, TS_PROC)     
+      s1_g2g_args <<- paste(s1_g2g_dir, s1_g2g_resolution, MODE, TS_PROC, s1_g2g_ls)     
       
       # create a exitfile path and export as global variable
       s1_g2g_exitfile <<- paste(s1_g2g_dir, "/.exitfile", sep="")
@@ -239,7 +247,6 @@ s1_g2g_start = function() {
       session$sendCustomMessage(type='jsCode', list(value = js_string_s1_g2r))
       
       # run processing
-      print(paste("ost_S1_grd2gtc", s1_g2g_args))
       system(paste("( ost_S1_grd2gtc", s1_g2g_args, "; echo $? >", s1_g2g_exitfile, ")"), wait = FALSE, intern=FALSE)
       
       return("RUNNING")
@@ -252,7 +259,6 @@ s1_g2g_start = function() {
       session$sendCustomMessage(type='jsCode', list(value = js_string_s1_g2r))
       
       # run processing
-      print(paste("ost_S1_grd2gtc_bulk", s1_g2g_args))
       system(paste("( ost_S1_grd2gtc_bulk", s1_g2g_args, "; echo $? >", s1_g2g_exitfile, ")"), wait = FALSE, intern=FALSE)
       
       return("RUNNING")

@@ -26,7 +26,7 @@ source ${OPENSARKIT}/lib/helpers_source
 
 #-------------------------------------------------------------------------------------------
 # 	0.1 Check for right usage & set up basic Script Variables
-if [ "$#" != "4" ]; then
+if [ "$#" != "5" ]; then
 
 	echo -e "-----------------------------------------------------------------------"
 	echo -e " Open SAR Toolkit, version ${OST_VERSION}"
@@ -34,7 +34,7 @@ if [ "$#" != "4" ]; then
 	echo -e " corrected products and and optionally calculate multi-temporal metrics"
 	echo -e "-----------------------------------------------------------------------"
 	echo -e ""
-	echo -e " Usage: ost_S1_grd_rtc_bulk <input directory> <output resolution> <mode> <ts-processing> "
+	echo -e " Usage: ost_S1_grd_rtc_bulk <input directory> <output resolution> <mode> <ts-processing> <apply LS mask>"
 	echo -e ""
 	echo -e " input parameters:"
 	echo -e " input directory (input) higher-level directory of the downloaded zip file (i.e. DATA folder created by oft-sar-S1-download)"
@@ -52,6 +52,10 @@ if [ "$#" != "4" ]; then
 	echo -e "			   1: yes (16 bit output, recommended)"
 	echo -e "			   2: yes (8 bit output)"
 	echo -e "			   3: yes (32 bit output)"
+	echo -e " apply Layover/Shadow mask for time-series/timescan products (note: mask will be generated in either case)"
+	echo -e "			  Available choices:"
+	echo -e "			  0: not applied (recommended, if you are going to mosaic later)"
+	echo -e "			  1: will be applied (recommended, if you are only processing one track)"
 	echo -e ""
 	exit 1
 
@@ -69,7 +73,8 @@ else
 	RESOLUTION=$2
 	PROC_MODE=$3
 	TS_PROC=$4
-
+	LS_MAP_ON=$5
+	
 	echo -e "-----------------------------------------------------------------------" | tee ${PROC_DIR}/.s1_g2r_progress
 	echo -e " Open SAR Toolkit, version ${OST_VERSION}" | tee -a ${PROC_DIR}/.s1_g2r_progress
 	echo -e " Bulk preprocessing Sentinel-1 GRD scenes to radiometrically terrain" | tee -a ${PROC_DIR}/.s1_g2r_progress
@@ -209,7 +214,7 @@ done # finish track loop
 
 # calculate MT-metrics
 if [[ ${TS_PROC} != 0 ]];then
-	ost_S1_rtc2ts ${PROC_DIR} ${TS_PROC} 1 | tee -a ${PROC_DIR}/.s1_g2r_progress
+	ost_S1_rtc2ts ${PROC_DIR} ${TS_PROC} 1 ${LS_MAP_ON} | tee -a ${PROC_DIR}/.s1_g2r_progress
 fi
 
 rm -rf ${TMP_DIR}

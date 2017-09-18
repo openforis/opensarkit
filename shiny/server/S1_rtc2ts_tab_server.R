@@ -130,9 +130,10 @@ s1_rtc2ts_get_args = function(){
     s1_rtc2ts_dir <<- parseDirPath(volumes, input$s1_rtc2ts_inputdir)
     s1_rtc2ts_mode = input$s1_rtc2ts_mode
     s1_rtc2ts_dtype = input$s1_rtc2ts_dtype
+    s1_rtc2ts_ls = input$s1_rtc2ts_ls
     
     # processing arguments
-    s1_rtc2ts_args <<- paste(s1_rtc2ts_dir, s1_rtc2ts_dtype, s1_rtc2ts_mode)
+    s1_rtc2ts_args <<- paste(s1_rtc2ts_dir, s1_rtc2ts_dtype, s1_rtc2ts_mode, s1_rtc2ts_ls)
     
     # create a exitfile path and export as global variable
     s1_rtc2ts_exitfile <<- paste(s1_rtc2ts_dir, "/.s1_rtc2ts_exitfile", sep="")
@@ -153,7 +154,7 @@ s1_rtc2ts_start = function() {
       js_string_s1_rtc2ts <- sub("Processing",s1_rtc2ts_message,js_string_s1_rtc2ts)
       session$sendCustomMessage(type='jsCode', list(value = js_string_s1_rtc2ts))
       
-      #print(paste("( ost_S1_rtc2ts", s1_rtc2ts_args, "; echo $? >", s1_rtc2ts_exitfile, ")"))
+      # TRIGGER PROCESSING
       system(paste("( ost_S1_rtc2ts", s1_rtc2ts_args, "; echo $? >", s1_rtc2ts_exitfile, ")"), wait = FALSE, intern = FALSE)
       
       return("RUNNING")

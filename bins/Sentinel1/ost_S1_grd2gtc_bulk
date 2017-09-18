@@ -25,7 +25,7 @@ source ${OPENSARKIT}/lib/helpers_source
 
 #-------------------------------------------------------------------------------------------
 # 	0.1 Check for right usage & set up basic Script Variables
-if [ "$#" != "4" ]; then
+if [ "$#" != "5" ]; then
 
 	echo -e "-----------------------------------------------------------------------------"
 	echo -e " Open SAR Toolkit, version ${OST_VERSION}"
@@ -51,6 +51,10 @@ if [ "$#" != "4" ]; then
 	echo -e "			   1: yes (16 bit output, recommended)"
 	echo -e "			   2: yes (8 bit output)"
 	echo -e "			   3: yes (32 bit output)"
+	echo -e " apply Layover/Shadow mask for time-series/timescan products (note: mask will be generated in either case)"
+	echo -e "			  Available choices:"
+	echo -e "			  0: not applied (recommended, if you are going to mosaic later)"
+	echo -e "			  1: will be applied (recommended, if you are only processing one track)"
 	echo -e ""
 	exit 1
 else
@@ -65,6 +69,7 @@ else
 	RESOLUTION=$2
 	PROC_MODE=$3
 	TS_PROC=$4
+	LS_MAP_ON=$5
 
 	if [[ ${TS_PROC} -gt 0 && ${PROC_MODE} -eq 0 ]];then
 		echo " WARNING: You are going to process the time-series/timescan products. Processing mode has therefore been set to TS mode preperation."
@@ -117,7 +122,7 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 		# Check if RAM disk is applicable
 		set_tmp_S1_RTC_bulk ${NR_FRAMES} ${RESOLUTION} >> ${PROC_DIR}/.s1_g2g_progress
 		set_tmp_S1_RTC_bulk ${NR_FRAMES} ${RESOLUTION}
-		
+
 		# create Log and Temp dirs
 		LOG_DIR=${PWD}/LOG
 		TMP_DIR_FRAME=${TMP_DIR}/${ACQ}
@@ -203,7 +208,7 @@ done # finish track loop
 
 # calculate MT-metrics
 if [[ ${TS_PROC} != 0 ]];then
-	ost_S1_rtc2ts ${PROC_DIR} ${TS_PROC} 1 | tee -a ${PROC_DIR}/.s1_g2g_progress
+	ost_S1_rtc2ts ${PROC_DIR} ${TS_PROC} 1 ${LS_MAP_ON} | tee -a ${PROC_DIR}/.s1_g2g_progress
 fi
 
 rm -rf ${TMP_DIR}

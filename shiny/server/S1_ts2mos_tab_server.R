@@ -80,7 +80,8 @@ s1_ts2m_get_args = function(){
     s1_ts2m_dir <<- parseDirPath(volumes, input$s1_ts2m_inputdir)
     #s1_ts2m_mode = input$s1_ts2mos_mode
 
-    s1_ts2m_args <<- paste(s1_ts2m_dir, "1")
+    s1_ts2m_ls = input$s1_ts2mos_ls
+    s1_ts2m_args <<- paste(s1_ts2m_dir, "1", s1_ts2m_ls)
     #s1_ts2m_args <<- paste(s1_ts2m_dir, s1_ts2m_mode)
     
     # create a exitfile path and export as global variable

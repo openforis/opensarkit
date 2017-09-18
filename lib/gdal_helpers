@@ -56,6 +56,22 @@ function gdal_extent() {
     echo -n "$EXTENT"
 }
 
+function gdal_ul() {
+# taken from https://github.com/dwtkns/gdal-cheat-sheet
+    if [ -z "$1" ]; then
+        echo "Missing arguments. Syntax:"
+        echo "  gdal_extent <input_raster>"
+        return
+    fi
+    EXTENT=$(gdalinfo $1 |\
+        grep "Upper Left\|Lower Right" |\
+        sed "s/Upper Left  //g;s/Lower Right //g;s/).*//g" |\
+        tr "\n" " " |\
+        sed 's/ *$//g' |\
+        tr -d "[(,]")
+    echo -n "$EXTENT"
+}
+
 function ogr_extent() {
 # taken from https://github.com/dwtkns/gdal-cheat-sheet
 

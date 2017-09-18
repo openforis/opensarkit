@@ -26,14 +26,24 @@ tabItem(tabName = "s1_ts2mos",
             shinyDirButton("s1_ts2m_inputdir","Browse","Browse",FALSE),
             br(),
             br(),
-            verbatimTextOutput("s1_ts2m_inputdir"),
+            verbatimTextOutput("s1_ts2m_inputdir"),hr(),
+            #---------------------------------------------------------------------------
+            # Layover/shadow mask selction
+            tags$b("Apply the Layover/Shadow mask?"), 
+            p("This option provides the possibility to set the Layover/Shadow affected areas to 0 (no data value)."),
+            radioButtons("s1_ts2mos_ls", "",
+                         c("Yes" = "1",
+                           "No" = "0"),
+                         "0"),hr(),
+            #---------------------------------------------------------------------------
+            
             # hr(),
             # tags$b("Mosaicking type"),
             # p(""),
             # radioButtons("s1_ts2mos_type", "",
             #              c("Full scene statistic (recommended)" = "1",
             #                "Overlap statistics" = "2")),
-            hr(),
+
             
             #-----------------------------------------------------------------------------------------------------------------------------------
             # Trigger / Abort

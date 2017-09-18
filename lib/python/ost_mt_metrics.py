@@ -17,13 +17,13 @@ def rescale_from_db(arrayin,minVal,maxVal,datatype):
     elif datatype == 'UInt16':
         display_max = 65535.
 
-    type(minVal)
     a = minVal - ((maxVal - minVal)/(display_max - display_min))
     x = (maxVal - minVal)/(display_max - 1)
     arrayout = np.round((arrayin - a) / x).astype(datatype)
+
     return arrayout
 
-def mt_metrics(rasterfn,newRasterfn,mt_type,rescale_sar, outlier):
+def mt_metrics(rasterfn,newRasterfn,mt_type,toPower,rescale_sar, outlier):
 
     # open raster file
     raster3d = gdal.Open(rasterfn)
@@ -108,23 +108,24 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,rescale_sar, outlier):
                         stacked_array = stacked_array_orig.astype(float) * ( 30. / 65535.) + (-25. - (30. / 65535.))
                     else:
                         stacked_array = stacked_array_orig
+                else:
+                    stacked_array = stacked_array_orig
 
             # original nd_mask
             nd_mask = stacked_array_orig[1,:,:] == 0
 
             # the outlier removal routine
-            if outlier == 'yes':
-
+            if outlier == 'yes' and raster3d.RasterCount >= 5:
                 # calculate percentiles
-                p90 = np.percentile(stacked_array, 90, axis=0)
-                p10 = np.percentile(stacked_array, 10, axis=0)
+                p95 = np.percentile(stacked_array, 95, axis=0)
+                p5 = np.percentile(stacked_array, 5, axis=0)
 
                 # we mask out the percetile outliers for std dev calculation
                 masked_array = np.ma.MaskedArray(
                                 stacked_array,
                                 mask = np.logical_or(
-                                stacked_array > p90,
-                                stacked_array < p10
+                                stacked_array > p95,
+                                stacked_array < p5
                                 )
                 )
 
@@ -140,6 +141,13 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,rescale_sar, outlier):
                                 stacked_array < masked_mean - masked_std * 4,
                                 )
                 )
+
+            # convert to power
+            if toPower == 'yes':
+                #print stacked_array.shape
+                stacked_array_pow = 10 ** (stacked_array / 10)
+                stacked_array = stacked_array_pow
+                #print stacked_array.shape
 
             # we calculate the metrics needed
             for metric in metrics:
@@ -165,8 +173,12 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,rescale_sar, outlier):
                     # calulate the mean
                     outmetric_avg = np.mean(stacked_array, axis=0)
 
+                    if toPower == 'yes':
+                        outmetric_avg_db = 10 * np.log10(outmetric_avg)
+                        outmetric_avg = outmetric_avg_db
+
                     # rescale to actual data type
-                    if rescale_sar == 'yes':
+                    if rescale_sar == 'yes' and data_type_name != 'Float32':
                         outmetric_avg = rescale_from_db(outmetric_avg,-25. ,5. , data_type_name)
                         outmetric_avg[nd_mask == True] = ndv
 
@@ -193,8 +205,12 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,rescale_sar, outlier):
                     # calculate the max
                     outmetric_max = np.max(stacked_array, axis=0)
 
+                    if toPower == 'yes':
+                        outmetric_max_db = 10 * np.log10(outmetric_max)
+                        outmetric_max = outmetric_max_db
+
                     # rescale to actual data type
-                    if rescale_sar == 'yes':
+                    if rescale_sar == 'yes' and data_type_name != 'Float32':
                         outmetric_max = rescale_from_db(outmetric_max,-25. ,5. , data_type_name) + 1
                         outmetric_max[nd_mask == True] = ndv
 
@@ -219,7 +235,11 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,rescale_sar, outlier):
 
                     outmetric_min = np.min(stacked_array, axis=0)
 
-                    if rescale_sar == 'yes':
+                    if toPower == 'yes':
+                        outmetric_min_db = 10 * np.log10(outmetric_min)
+                        outmetric_min = outmetric_min_db
+
+                    if rescale_sar == 'yes' and data_type_name != 'Float32':
                         outmetric_min = rescale_from_db(outmetric_min,-25. ,5., data_type_name)
                         outmetric_min[nd_mask == True] = ndv
 
@@ -244,7 +264,11 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,rescale_sar, outlier):
 
                     outmetric_std = np.std(stacked_array, axis=0)
 
-                    if rescale_sar == 'yes':
+                    if toPower == 'yes':
+                        outmetric_std_db = 10 * np.log10(outmetric_std)
+                        outmetric_std = outmetric_std_db
+
+                    if rescale_sar == 'yes' and data_type_name != 'Float32':
                         outmetric_std = rescale_from_db(outmetric_std, 0.00001, 10., data_type_name) + 1
                         outmetric_std[nd_mask == 1] = ndv
 
@@ -271,7 +295,7 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,rescale_sar, outlier):
                     #outmetric_cov = scipy.stats.variation(stacked_array, axis=0)
                     outmetric_cov = np.divide(outmetric_std.astype('float'), outmetric_avg.astype('float'))
 
-                    if rescale_sar == 'yes':
+                    if rescale_sar == 'yes' and data_type_name != 'Float32':
                         outmetric_cov = rescale_from_db(outmetric_cov, -0.25, 0.25 , data_type_name) + 1
                         outmetric_cov[nd_mask == 1] = 0
 
@@ -397,6 +421,9 @@ def main():
                      "6 = Sum ",
                 metavar="<Number referring to MT metrics>")
 
+    parser.add_option("-p", "--power", dest="toPower",
+            help="de-logarithmize to power", metavar="(yes/no) ")
+
     parser.add_option("-r", "--rescale", dest="rescale_sar",
                 help="rescale integer SAR data back to dB (OST specific)", metavar="(yes/no) ")
 
@@ -417,6 +444,10 @@ def main():
         parser.error("Choose one of the metric types")
         print usage
 
+    if not ((options.toPower == 'yes') or (options.toPower == 'no')):
+        parser.error("Choose if you need to de-logarithmize from dB to power (yes/no). Note: applies to all time-series created by OST.")
+        print usage
+
     if not ((options.rescale_sar == 'yes') or (options.rescale_sar == 'no')):
         parser.error("Choose if you want to apply rescaling to dB (for Integer SAR data produced by OST). Valid inputs (yes/no).")
         print usage
@@ -426,7 +457,7 @@ def main():
         print usage
 
     currtime = time()
-    mt_metrics(options.ifile,options.ofile,options.mt_type,options.rescale_sar,options.outlier)
+    mt_metrics(options.ifile,options.ofile,options.mt_type,options.toPower,options.rescale_sar,options.outlier)
     print 'time elapsed:', time() - currtime
 
 
