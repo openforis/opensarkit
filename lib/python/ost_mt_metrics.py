@@ -102,10 +102,10 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,toPower,rescale_sar, outlier):
                 # convert back to original dB
                 if rescale_sar == 'yes':
                     if data_type_name == 'uint8':
-                        stacked_array = stacked_array_orig.astype(float) * ( 30. / 254.) + (-25. - (30. / 254.))
+                        stacked_array = stacked_array_orig.astype(float) * ( 35. / 254.) + (-30. - (35. / 254.))
 
                     elif data_type_name == 'UInt16':
-                        stacked_array = stacked_array_orig.astype(float) * ( 30. / 65535.) + (-25. - (30. / 65535.))
+                        stacked_array = stacked_array_orig.astype(float) * ( 35. / 65535.) + (-30. - (35. / 65535.))
                     else:
                         stacked_array = stacked_array_orig
                 else:
@@ -179,7 +179,7 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,toPower,rescale_sar, outlier):
 
                     # rescale to actual data type
                     if rescale_sar == 'yes' and data_type_name != 'Float32':
-                        outmetric_avg = rescale_from_db(outmetric_avg,-25. ,5. , data_type_name)
+                        outmetric_avg = rescale_from_db(outmetric_avg,-30. ,5. , data_type_name)
                         outmetric_avg[nd_mask == True] = ndv
 
                     # write to array
@@ -211,7 +211,7 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,toPower,rescale_sar, outlier):
 
                     # rescale to actual data type
                     if rescale_sar == 'yes' and data_type_name != 'Float32':
-                        outmetric_max = rescale_from_db(outmetric_max,-25. ,5. , data_type_name) + 1
+                        outmetric_max = rescale_from_db(outmetric_max,-30. ,5. , data_type_name) + 1
                         outmetric_max[nd_mask == True] = ndv
 
                     outband_max.WriteArray(outmetric_max, x, y)
@@ -240,7 +240,7 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,toPower,rescale_sar, outlier):
                         outmetric_min = outmetric_min_db
 
                     if rescale_sar == 'yes' and data_type_name != 'Float32':
-                        outmetric_min = rescale_from_db(outmetric_min,-25. ,5., data_type_name)
+                        outmetric_min = rescale_from_db(outmetric_min,-30. ,5., data_type_name)
                         outmetric_min[nd_mask == True] = ndv
 
                     outband_min.WriteArray(outmetric_min, x, y)
@@ -323,7 +323,7 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,toPower,rescale_sar, outlier):
                         outband_p90.WriteArray(outmetric_p90, x, y)
                     else:
                         outmetric_p90 = np.percentile(stacked_array_db, 90, axis=0)
-                        outmetric_p90_res = rescale_from_db(outmetric_p90, -25 , 5 , data_type_name)
+                        outmetric_p90_res = rescale_from_db(outmetric_p90, -30 , 5 , data_type_name)
                         outband_p90.WriteArray(outmetric_p90_res, x, y)
 
 
@@ -349,7 +349,7 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,toPower,rescale_sar, outlier):
                         outband_p10.WriteArray(outmetric_p10, x, y)
                     else:
                         outmetric_p10 = np.percentile(stacked_array_db, 10, axis=0)
-                        outmetric_p10_res = rescale_from_db(outmetric_p10, -25 , 5 , data_type_name)
+                        outmetric_p10_res = rescale_from_db(outmetric_p10, -30 , 5 , data_type_name)
                         outband_p10.WriteArray(outmetric_p10_res, x, y)
 
 
