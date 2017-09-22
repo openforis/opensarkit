@@ -183,7 +183,7 @@ if [ $2 == 1 ];then
 			if [ $i == 1 ];then
 				SECONDS=0
 				echo -ne " Mosaicking the LS map and crop to the extent of the data layers  ..." | tee -a ${PROC_DIR}/.s1_ts2m_progress
-				gdal_merge.py -o $PROC_DIR/MOSAIC/LS.map.tif -ul_lr $(gdal_ul ${TMP_DIR}/${i}_Gamma0.VV.tif) -ps $(gdal_resolution ${TMP_DIR}/${i}_Gamma0.VV.tif)  -co "COMPRESS=LZW" -co "BIGTIFF=YES" \
+				gdal_merge.py -o ${TMP_DIR}/LS.map.tif -ul_lr $(gdal_ul ${TMP_DIR}/${i}_Gamma0.VV.tif) -ps $(gdal_resolution ${TMP_DIR}/${i}_Gamma0.VV.tif) -co "BIGTIFF=YES" \
 											-n 0 -a_nodata 0 $(cat ${TMP_DIR}/lslist | tr '\n' ' ') >> ${LOG_DIR}/log_mosaicking 2>&1
 				duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_ts2m_progress
 			fi
@@ -193,12 +193,13 @@ if [ $2 == 1 ];then
 				echo -ne " Applying the LS map  ..." | tee -a ${PROC_DIR}/.s1_ts2m_progress
 				ost_replace_values.py -i ${TMP_DIR}/${i}_Gamma0.VV.tif -o ${TMP_DIR}/${i}_Gamma0.VV.ones.tif -r 0 -n 1
 				rm -rf ${TMP_DIR}/${i}_Gamma0.VV.tif
-				gdal_calc.py -A ${TMP_DIR}/${i}_Gamma0.VV.ones.tif -B ${PROC_DIR}/MOSAIC/LS.map.tif --calc="A*B" --co "COMPRESS=LZW" --co "BIGTIFF=YES" --NoDataValue=0 --outfile ${PROC_DIR}/MOSAIC/Timeseries/${i}_Gamma0.VV.tif >> ${LOG_DIR}/log_mosaicking 2>&1
+				gdal_calc.py -A ${TMP_DIR}/${i}_Gamma0.VV.ones.tif -B ${TMP_DIR}/LS.map.tif --calc="A*B" --co "BIGTIFF=YES" --NoDataValue=0 --outfile ${TMP_DIR}/${i}_Gamma0.VV.tif >> ${LOG_DIR}/log_mosaicking 2>&1
 				rm -rf ${TMP_DIR}/${i}_Gamma0.VV.ones.tif
 				duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_ts2m_progress
-			else
-				mv ${TMP_DIR}/${i}_Gamma0.VV.tif $PROC_DIR/MOSAIC/Timeseries/${i}_Gamma0.VV.tif
 			fi
+
+			mv ${TMP_DIR}/${i}_Gamma0.VV.tif $PROC_DIR/MOSAIC/Timeseries/${i}_Gamma0.VV.tif
+
 
 			i=$(expr ${i} + 1)
 	 done
@@ -214,12 +215,13 @@ if [ $2 == 1 ];then
 		echo -ne " Applying the LS map  ..." | tee -a ${PROC_DIR}/.s1_ts2m_progress
 		ost_replace_values.py -i ${TMP_DIR}/01_Gamma0.VV.avg.tif -o ${TMP_DIR}/01_Gamma0.VV.avg.ones.tif -r 0 -n 1
 		rm -rf ${TMP_DIR}/01_Gamma0.VV.avg.tif
-		gdal_calc.py -A ${TMP_DIR}/01_Gamma0.VV.avg.ones.tif -B ${PROC_DIR}/MOSAIC/LS.map.tif --calc="A*B" --co "COMPRESS=LZW" --co "BIGTIFF=YES" --NoDataValue=0 --outfile ${PROC_DIR}/MOSAIC/Timescan//01_Gamma0.VV.avg.tif >> ${LOG_DIR}/log_mosaicking 2>&1
+		gdal_calc.py -A ${TMP_DIR}/01_Gamma0.VV.avg.ones.tif -B ${TMP_DIR}/LS.map.tif --calc="A*B" --co "BIGTIFF=YES" --NoDataValue=0 --outfile ${TMP_DIR}/01_Gamma0.VV.avg.tif >> ${LOG_DIR}/log_mosaicking 2>&1
 		rm -rf ${TMP_DIR}/01_Gamma0.VV.avg.ones.tif
 		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_ts2m_progress
-	else
-		mv ${TMP_DIR}/01_Gamma0.VV.avg.tif $PROC_DIR/MOSAIC/Timescan/01_Gamma0.VV.avg.tif
 	fi
+
+	mv ${TMP_DIR}/01_Gamma0.VV.avg.tif $PROC_DIR/MOSAIC/Timescan/01_Gamma0.VV.avg.tif
+
 
 	SECONDS=0
 	echo -ne " Mosaicking the Gamma0 VV maximum timescan layer ..." | tee -a ${PROC_DIR}/.s1_ts2m_progress
@@ -232,12 +234,12 @@ if [ $2 == 1 ];then
 		echo -ne " Applying the LS map  ..." | tee -a ${PROC_DIR}/.s1_ts2m_progress
 		ost_replace_values.py -i ${TMP_DIR}/02_Gamma0.VV.max.tif -o ${TMP_DIR}/02_Gamma0.VV.max.ones.tif -r 0 -n 1
 		rm -rf ${TMP_DIR}/02_Gamma0.VV.max.tif
-		gdal_calc.py -A ${TMP_DIR}/02_Gamma0.VV.max.ones.tif -B ${PROC_DIR}/MOSAIC/LS.map.tif --calc="A*B" --co "COMPRESS=LZW" --co "BIGTIFF=YES" --NoDataValue=0 --outfile ${PROC_DIR}/MOSAIC/Timescan/02_Gamma0.VV.max.tif >> ${LOG_DIR}/log_mosaicking 2>&1
+		gdal_calc.py -A ${TMP_DIR}/02_Gamma0.VV.max.ones.tif -B ${TMP_DIR}/LS.map.tif --calc="A*B" --co "BIGTIFF=YES" --NoDataValue=0 --outfile ${TMP_DIR}/02_Gamma0.VV.max.tif >> ${LOG_DIR}/log_mosaicking 2>&1
 		rm -rf ${TMP_DIR}/02_Gamma0.VV.max.ones.tif
 		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_ts2m_progress
-	else
-		mv ${TMP_DIR}/02_Gamma0.VV.max.tif $PROC_DIR/MOSAIC/Timescan/02_Gamma0.VV.max.tif
 	fi
+
+	mv ${TMP_DIR}/02_Gamma0.VV.max.tif $PROC_DIR/MOSAIC/Timescan/02_Gamma0.VV.max.tif
 
 	SECONDS=0
 	echo -ne " Mosaicking the Gamma0 VV minimum timescan layer ..." | tee -a ${PROC_DIR}/.s1_ts2m_progress
@@ -250,12 +252,12 @@ if [ $2 == 1 ];then
 		echo -ne " Applying the LS map  ..." | tee -a ${PROC_DIR}/.s1_ts2m_progress
 		ost_replace_values.py -i ${TMP_DIR}/03_Gamma0.VV.min.tif -o ${TMP_DIR}/03_Gamma0.VV.min.ones.tif -r 0 -n 1
 		rm -rf ${TMP_DIR}/03_Gamma0.VV.min.tif
-		gdal_calc.py -A ${TMP_DIR}/03_Gamma0.VV.min.ones.tif -B ${PROC_DIR}/MOSAIC/LS.map.tif --calc="A*B" --co "COMPRESS=LZW" --co "BIGTIFF=YES" --NoDataValue=0 --outfile ${PROC_DIR}/MOSAIC/Timescan/03_Gamma0.VV.min.tif >> ${LOG_DIR}/log_mosaicking 2>&1
+		gdal_calc.py -A ${TMP_DIR}/03_Gamma0.VV.min.ones.tif -B ${TMP_DIR}/LS.map.tif --calc="A*B" --co "BIGTIFF=YES" --NoDataValue=0 --outfile ${TMP_DIR}/03_Gamma0.VV.min.tif >> ${LOG_DIR}/log_mosaicking 2>&1
 		rm -rf ${TMP_DIR}/03_Gamma0.VV.min.ones.tif
 		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_ts2m_progress
-	else
-		mv ${TMP_DIR}/03_Gamma0.VV.min.tif $PROC_DIR/MOSAIC/Timescan/03_Gamma0.VV.min.tif
 	fi
+
+	mv ${TMP_DIR}/03_Gamma0.VV.min.tif $PROC_DIR/MOSAIC/Timescan/03_Gamma0.VV.min.tif
 
 	SECONDS=0
 	echo -ne " Mosaicking the Gamma0 VV standard deviation timescan layer ..." | tee -a ${PROC_DIR}/.s1_ts2m_progress
@@ -268,12 +270,12 @@ if [ $2 == 1 ];then
 		echo -ne " Applying the LS map  ..." | tee -a ${PROC_DIR}/.s1_ts2m_progress
 		ost_replace_values.py -i ${TMP_DIR}/04_Gamma0.VV.std.tif -o ${TMP_DIR}/04_Gamma0.VV.std.ones.tif -r 0 -n 1
 		rm -rf ${TMP_DIR}/04_Gamma0.VV.std.tif
-		gdal_calc.py -A ${TMP_DIR}/04_Gamma0.VV.std.ones.tif -B ${PROC_DIR}/MOSAIC/LS.map.tif --calc="A*B" --co "COMPRESS=LZW" --co "BIGTIFF=YES" --NoDataValue=0 --outfile ${PROC_DIR}/MOSAIC/Timescan/04_Gamma0.VV.std.tif >> ${LOG_DIR}/log_mosaicking 2>&1
+		gdal_calc.py -A ${TMP_DIR}/04_Gamma0.VV.std.ones.tif -B ${TMP_DIR}/LS.map.tif --calc="A*B" --co "BIGTIFF=YES" --NoDataValue=0 --outfile ${TMP_DIR}/04_Gamma0.VV.std.tif >> ${LOG_DIR}/log_mosaicking 2>&1
 		rm -rf ${TMP_DIR}/04_Gamma0.VV.std.ones.tif
 		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_ts2m_progress
-	else
-		mv ${TMP_DIR}/04_Gamma0.VV.std.tif $PROC_DIR/MOSAIC/Timescan/04_Gamma0.VV.std.tif
 	fi
+
+	mv ${TMP_DIR}/04_Gamma0.VV.std.tif $PROC_DIR/MOSAIC/Timescan/04_Gamma0.VV.std.tif
 
 	SECONDS=0
 	echo -ne " Mosaicking the Gamma0 VV coefficient of variation timescan layer ..." | tee -a ${PROC_DIR}/.s1_ts2m_progress
@@ -286,12 +288,13 @@ if [ $2 == 1 ];then
 		echo -ne " Applying the LS map  ..." | tee -a ${PROC_DIR}/.s1_ts2m_progress
 		ost_replace_values.py -i ${TMP_DIR}/05_Gamma0.VV.cov.tif -o ${TMP_DIR}/05_Gamma0.VV.cov.ones.tif -r 0 -n 1
 		rm -rf ${TMP_DIR}/05_Gamma0.VV.cov.tif
-		gdal_calc.py -A ${TMP_DIR}/05_Gamma0.VV.cov.ones.tif -B ${PROC_DIR}/MOSAIC/LS.map.tif --calc="A*B" --co "COMPRESS=LZW" --co "BIGTIFF=YES" --NoDataValue=0 --outfile ${PROC_DIR}/MOSAIC/Timescan/05_Gamma0.VV.cov.tif >> ${LOG_DIR}/log_mosaicking 2>&1
+		gdal_calc.py -A ${TMP_DIR}/05_Gamma0.VV.cov.ones.tif -B ${TMP_DIR}/LS.map.tif --calc="A*B" --co "BIGTIFF=YES" --NoDataValue=0 --outfile ${TMP_DIR}/05_Gamma0.VV.cov.tif >> ${LOG_DIR}/log_mosaicking 2>&1
 		rm -rf ${TMP_DIR}/05_Gamma0.VV.cov.ones.tif
 		duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_ts2m_progress
-	else
-		mv ${TMP_DIR}/05_Gamma0.VV.cov.tif $PROC_DIR/MOSAIC/Timescan/05_Gamma0.VV.cov.tif
 	fi
+
+	mv ${TMP_DIR}/05_Gamma0.VV.cov.tif $PROC_DIR/MOSAIC/Timescan/05_Gamma0.VV.cov.tif
+
 
 	# percentile
 	# otbcli_Mosaic -ram ${RAM} -progress 1 -comp.feather large -harmo.method band -harmo.cost mu -tmpdir ${TMP_DIR} -il $(cat ${TMP_DIR}/p90list | tr '\n' ' ') -out $PROC_DIR/MOSAIC/Timescan/01_Gamma0.VV.p90.tif ${ITYPE}
@@ -317,12 +320,13 @@ if [ $2 == 1 ];then
 					echo -ne " Applying the LS map  ..." | tee -a ${PROC_DIR}/.s1_ts2m_progress
 					ost_replace_values.py -i ${TMP_DIR}/${i}_Gamma0.VH.tif -o ${TMP_DIR}/${i}_Gamma0.VH.ones.tif -r 0 -n 1
 					rm -rf ${TMP_DIR}/${i}_Gamma0.VH.tif
-					gdal_calc.py -A ${TMP_DIR}/${i}_Gamma0.VH.ones.tif -B ${PROC_DIR}/MOSAIC/LS.map.tif --calc="A*B" --co "COMPRESS=LZW" --co "BIGTIFF=YES" --NoDataValue=0 --outfile ${PROC_DIR}/MOSAIC/Timeseries/${i}_Gamma0.VH.tif >> ${LOG_DIR}/log_mosaicking 2>&1
+					gdal_calc.py -A ${TMP_DIR}/${i}_Gamma0.VH.ones.tif -B ${TMP_DIR}/LS.map.tif --calc="A*B" --co "BIGTIFF=YES" --NoDataValue=0 --outfile ${TMP_DIR}/${i}_Gamma0.VH.tif	 >> ${LOG_DIR}/log_mosaicking 2>&1
 					rm -rf ${TMP_DIR}/${i}_Gamma0.VH.ones.tif
 					duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_ts2m_progress
-				else
-					mv ${TMP_DIR}/${i}_Gamma0.VH.tif $PROC_DIR/MOSAIC/Timeseries/${i}_Gamma0.VH.tif
 				fi
+
+				mv ${TMP_DIR}/${i}_Gamma0.VH.tif $PROC_DIR/MOSAIC/Timeseries/${i}_Gamma0.VH.tif
+
 
 				i=$(expr ${i} + 1)
 		done
@@ -339,12 +343,13 @@ if [ $2 == 1 ];then
 			echo -ne " Applying the LS map  ..." | tee -a ${PROC_DIR}/.s1_ts2m_progress
 			ost_replace_values.py -i ${TMP_DIR}/06_Gamma0.VH.avg.tif -o ${TMP_DIR}/06_Gamma0.VH.avg.ones.tif -r 0 -n 1
 			rm -rf ${TMP_DIR}/06_Gamma0.VH.avg.tif
-			gdal_calc.py -A ${TMP_DIR}/06_Gamma0.VH.avg.ones.tif -B ${PROC_DIR}/MOSAIC/LS.map.tif --calc="A*B" --co "COMPRESS=LZW" --co "BIGTIFF=YES" --NoDataValue=0 --outfile ${PROC_DIR}/MOSAIC/Timescan/06_Gamma0.VH.avg.tif >> ${LOG_DIR}/log_mosaicking 2>&1
+			gdal_calc.py -A ${TMP_DIR}/06_Gamma0.VH.avg.ones.tif -B ${TMP_DIR}/LS.map.tif --calc="A*B" --co "BIGTIFF=YES" --NoDataValue=0 --outfile ${TMP_DIR}/06_Gamma0.VH.avg.tif >> ${LOG_DIR}/log_mosaicking 2>&1
 			rm -rf ${TMP_DIR}/06_Gamma0.VH.avg.ones.tif
 			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_ts2m_progress
-		else
-			mv ${TMP_DIR}/06_Gamma0.VH.avg.tif $PROC_DIR/MOSAIC/Timescan/06_Gamma0.VH.avg.tif
 		fi
+
+		mv ${TMP_DIR}/06_Gamma0.VH.avg.tif $PROC_DIR/MOSAIC/Timescan/06_Gamma0.VH.avg.tif
+
 
 		SECONDS=0
 		echo -ne " Mosaicking the Gamma0 VH maximum timescan layer ..." | tee -a ${PROC_DIR}/.s1_ts2m_progress
@@ -356,12 +361,13 @@ if [ $2 == 1 ];then
 			echo -ne " Applying the LS map  ..." | tee -a ${PROC_DIR}/.s1_ts2m_progress
 			ost_replace_values.py -i ${TMP_DIR}/07_Gamma0.VH.max.tif -o ${TMP_DIR}/07_Gamma0.VH.max.ones.tif -r 0 -n 1
 			rm -rf ${TMP_DIR}/07_Gamma0.VH.max.tif
-			gdal_calc.py -A ${TMP_DIR}/07_Gamma0.VH.max.ones.tif -B ${PROC_DIR}/MOSAIC/LS.map.tif --calc="A*B" --co "COMPRESS=LZW" --co "BIGTIFF=YES" --NoDataValue=0 --outfile ${PROC_DIR}/MOSAIC/Timescan/07_Gamma0.VH.max.tif >> ${LOG_DIR}/log_mosaicking 2>&1
+			gdal_calc.py -A ${TMP_DIR}/07_Gamma0.VH.max.ones.tif -B ${TMP_DIR}/LS.map.tif --calc="A*B" --co "BIGTIFF=YES" --NoDataValue=0 --outfile ${TMP_DIR}/07_Gamma0.VH.max.tif >> ${LOG_DIR}/log_mosaicking 2>&1
 			rm -rf ${TMP_DIR}/07_Gamma0.VH.max.ones.tif
 			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_ts2m_progress
-		else
-			mv ${TMP_DIR}/07_Gamma0.VH.max.tif $PROC_DIR/MOSAIC/Timescan/07_Gamma0.VH.max.tif
 		fi
+
+		mv ${TMP_DIR}/07_Gamma0.VH.max.tif $PROC_DIR/MOSAIC/Timescan/07_Gamma0.VH.max.tif
+
 
 		SECONDS=0
 		echo -ne " Mosaicking the Gamma0 VH minimum timescan layer ..." | tee -a ${PROC_DIR}/.s1_ts2m_progress
@@ -373,12 +379,13 @@ if [ $2 == 1 ];then
 			echo -ne " Applying the LS map  ..." | tee -a ${PROC_DIR}/.s1_ts2m_progress
 			ost_replace_values.py -i ${TMP_DIR}/08_Gamma0.VH.min.tif -o ${TMP_DIR}/08_Gamma0.VH.min.ones.tif -r 0 -n 1
 			rm -rf ${TMP_DIR}/08_Gamma0.VH.min.tif
-			gdal_calc.py -A ${TMP_DIR}/08_Gamma0.VH.min.ones.tif -B ${PROC_DIR}/MOSAIC/LS.map.tif --calc="A*B" --co "COMPRESS=LZW" --co "BIGTIFF=YES" --NoDataValue=0 --outfile ${PROC_DIR}/MOSAIC/Timescan/08_Gamma0.VH.min.tif >> ${LOG_DIR}/log_mosaicking 2>&1
+			gdal_calc.py -A ${TMP_DIR}/08_Gamma0.VH.min.ones.tif -B ${TMP_DIR}/LS.map.tif --calc="A*B" --co "BIGTIFF=YES" --NoDataValue=0 --outfile ${TMP_DIR}/08_Gamma0.VH.min.tif >> ${LOG_DIR}/log_mosaicking 2>&1
 			rm -rf ${TMP_DIR}/08_Gamma0.VH.min.ones.tif
 			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_ts2m_progress
-		else
-			mv ${TMP_DIR}/08_Gamma0.VH.min.tif $PROC_DIR/MOSAIC/Timescan/08_Gamma0.VH.min.tif
 		fi
+
+		mv ${TMP_DIR}/08_Gamma0.VH.min.tif $PROC_DIR/MOSAIC/Timescan/08_Gamma0.VH.min.tif
+
 
 		SECONDS=0
 		echo -ne " Mosaicking the Gamma0 VH SD timescan layer ..." | tee -a ${PROC_DIR}/.s1_ts2m_progress
@@ -390,12 +397,13 @@ if [ $2 == 1 ];then
 			echo -ne " Applying the LS map  ..." | tee -a ${PROC_DIR}/.s1_ts2m_progress
 			ost_replace_values.py -i ${TMP_DIR}/09_Gamma0.VH.std.tif -o ${TMP_DIR}/09_Gamma0.VH.std.ones.tif -r 0 -n 1
 			rm -rf ${TMP_DIR}/09_Gamma0.VH.std.tif
-			gdal_calc.py -A ${TMP_DIR}/09_Gamma0.VH.std.ones.tif -B ${PROC_DIR}/MOSAIC/LS.map.tif --calc="A*B" --outfile ${PROC_DIR}/MOSAIC/Timescan/09_Gamma0.VH.std.tif >> ${LOG_DIR}/log_mosaicking 2>&1
+			gdal_calc.py -A ${TMP_DIR}/09_Gamma0.VH.std.ones.tif -B ${TMP_DIR}/LS.map.tif --calc="A*B" --co "BIGTIFF=YES" --outfile ${TMP_DIR}/09_Gamma0.VH.std.tif >> ${LOG_DIR}/log_mosaicking 2>&1
 			rm -rf ${TMP_DIR}/09_Gamma0.VH.std.ones.tif
 			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_ts2m_progress
-		else
-			mv ${TMP_DIR}/09_Gamma0.VH.std.tif $PROC_DIR/MOSAIC/Timescan/09_Gamma0.VH.std.tif
 		fi
+
+		mv ${TMP_DIR}/09_Gamma0.VH.std.tif $PROC_DIR/MOSAIC/Timescan/09_Gamma0.VH.std.tif
+
 
 		SECONDS=0
 		echo -ne " Mosaicking the Gamma0 VH CoV timescan layer ..." | tee -a ${PROC_DIR}/.s1_ts2m_progress
@@ -407,12 +415,13 @@ if [ $2 == 1 ];then
 			echo -ne " Applying the LS map  ..." | tee -a ${PROC_DIR}/.s1_ts2m_progress
 			ost_replace_values.py -i ${TMP_DIR}/10_Gamma0.VH.cov.tif -o ${TMP_DIR}/10_Gamma0.VH.cov.ones.tif -r 0 -n 1
 			rm -rf ${TMP_DIR}/10_Gamma0.VH.cov.tif
-			gdal_calc.py -A ${TMP_DIR}/10_Gamma0.VH.cov.ones.tif -B ${PROC_DIR}/MOSAIC/LS.map.tif --calc="A*B" --co "COMPRESS=LZW" --co "BIGTIFF=YES" --NoDataValue=0 --NoDataValue=0 --outfile ${PROC_DIR}/MOSAIC/Timescan/10_Gamma0.VH.cov.tif >> ${LOG_DIR}/log_mosaicking 2>&1
+			gdal_calc.py -A ${TMP_DIR}/10_Gamma0.VH.cov.ones.tif -B ${TMP_DIR}/LS.map.tif --calc="A*B" --co "BIGTIFF=YES" --NoDataValue=0 --outfile ${TMP_DIR}/10_Gamma0.VH.cov.tif >> ${LOG_DIR}/log_mosaicking 2>&1
 			rm -rf ${TMP_DIR}/10_Gamma0.VH.cov.ones.tif
 			duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_ts2m_progress
-		else
-			mv ${TMP_DIR}/10_Gamma0.VH.cov.tif $PROC_DIR/MOSAIC/Timescan/10_Gamma0.VH.cov.tif
 		fi
+
+		mv ${TMP_DIR}/10_Gamma0.VH.cov.tif $PROC_DIR/MOSAIC/Timescan/10_Gamma0.VH.cov.tif
+
 
 	fi
 

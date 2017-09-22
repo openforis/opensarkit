@@ -41,11 +41,11 @@ def replaceValues(rasterfn,newRasterfn,repValue,newValue):
 
     outRaster = driver.Create(newRasterfn, cols, rows, 1, data_type,
         options=[           # Format-specific creation options.
-        'TILED=YES',
         'BIGTIFF=IF_SAFER',
-        'BLOCKXSIZE=256',   # must be a power of 2
-        'BLOCKYSIZE=256',  # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
-        'COMPRESS=LZW'
+        'BLOCKXSIZE=' + str(cols),   # must be a power of 2
+        'BLOCKYSIZE=1'    # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
+        #'COMPRESS=LZW'
+        #'TILED=YES'#,
         ] )
     outRaster.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
     outband = outRaster.GetRasterBand(1)

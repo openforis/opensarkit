@@ -8,8 +8,8 @@ tabItem(tabName = "about",
                      
                      tabPanel("Welcome",
                               br(),
-                              tags$h4("Welcome to the Open Foris SAR Toolkit!"),
-                              p("The Open Foris SAR toolkit (OST) provides easy-to-use and standardized workflows to transform raw
+                              tags$h4("Welcome to the Open SAR Toolkit!"),
+                              p("The Open SAR toolkit (OST) provides easy-to-use and standardized workflows to transform raw
                                  and low-level radar imagery, as provided by different space agencies, into higher level remote sensing 
                                  products. Processing of Radar Remote Sensing imagery is complex and differs considerably from its optical counterpart. 
                                  On the other hand, lots of the required steps can be automized. OST intends to achieve a high level of automization 
@@ -23,7 +23,7 @@ tabItem(tabName = "about",
                               p("OST bases on free and open source software components. The actual SAR processing is done by the
                                  Sentinel Application Platform (SNAP) provided free of charge by the European Space Agency (ESA). Basic geospatial operations
                                  are accomplished by using the Geospatial Data Abstraction Library (GDAL). The graphical user interface is constructed by 
-                                 the R shiny package."),
+                                 the R shiny package. Some functionalities are also based on Orfeo Toolbox as well as thepython scipy package."),
                               p("The development is funded under the UN-FAO SEPAL project and aims to contribute to the activities of the UN programme for 
                                  Reduction of Emissions from Deforestation and Degradation (UN-REDD)."),
                               br(),

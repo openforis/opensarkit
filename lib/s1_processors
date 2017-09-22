@@ -1046,8 +1046,8 @@ function s1_timeseries() {
       if [ ${ODATATYPE} = "UInt16" ]; then
 
         SECONDS=0
-        echo -ne " Scaling ${DATE} layer to 16 bit (-25 dB to 5dB) ..."
-        gdal_translate -ot "UInt16" -projwin $(ogr_extent ${CROPLINE}) -scale -25 5 1 65536 ${file} ${TMP_MT}/${DATE}.VH.16bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+        echo -ne " Scaling ${DATE} layer to 16 bit (-30 dB to 5dB) ..."
+        gdal_translate -ot "UInt16" -projwin $(ogr_extent ${CROPLINE}) -scale -30 5 1 65536 ${file} ${TMP_MT}/${DATE}.VH.16bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
 
         # replace all zeros to one to avoid outlier removal from rescaling
         ost_replace_values.py -i ${TMP_MT}/${DATE}.VH.16bit.tif -o ${TMP_MT}/${DATE}.VH.16bit.ones.tif -r 0 -n 1 >> ${LOG_MT}/log_mt_stacking 2>&1
@@ -1077,8 +1077,8 @@ function s1_timeseries() {
       elif [ ${ODATATYPE} = "UInt8" ]; then
 
         SECONDS=0
-        echo -ne " Scaling ${DATE} layer to 8 bit (-25 dB to 5dB) ..."
-        gdal_translate -ot "Byte" -projwin $(ogr_extent ${CROPLINE}) -scale -25 5 1 255 ${file} ${TMP_MT}/${DATE}.VH.8bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+        echo -ne " Scaling ${DATE} layer to 8 bit (-30 dB to 5dB) ..."
+        gdal_translate -ot "Byte" -projwin $(ogr_extent ${CROPLINE}) -scale -30 5 1 255 ${file} ${TMP_MT}/${DATE}.VH.8bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
 
         # replace all zeros to one to avoid outlier removal from rescaling
         ost_replace_values.py -i ${TMP_MT}/${DATE}.VH.8bit.tif -o ${TMP_MT}/${DATE}.VH.8bit.ones.tif -r 0 -n 1 >> ${LOG_MT}/log_mt_stacking 2>&1
@@ -1143,7 +1143,7 @@ function s1_timeseries() {
     # Create a time-series animation
     REC_DIR=${PWD}
     cd ${TMP_MT}
-    convert -delay 100 -loop 10 $(ls -1 *.TN.jpg | sort -g) ${OUT_STACK_MT}/Timeseries/time_animation.gif  >> ${LOG_MT}/log_mt_stacking 2>&1
+    convert -delay 200 -loop 20 $(ls -1 *.TN.jpg | sort -g) ${OUT_STACK_MT}/Timeseries/time_animation.gif  >> ${LOG_MT}/log_mt_stacking 2>&1
     cd ${REC_DIR}
     rm -f ${TMP_MT}/*.RGB.TN.jpg
 
@@ -1269,5 +1269,67 @@ function s1_create_labeled_jpeg() {
   # add annotation with date
   convert -background '#0008' -fill white -gravity center -size ${WIDTH_TN}x${HEIGHT_LABEL} caption:"$2" \
          $3 +swap -gravity north -composite $3
+
+}
+
+
+function s1_create_mosaic_ts() {
+
+	if [ -z "$3" ]; then
+	    echo " Missing arguments. Syntax:"
+	    echo "  s1_create_mosaic_ts <data directory> <size> <tmp_dir>"
+	    return
+  fi
+
+  DATA_DIR=(readlink -f $1)
+  SIZE=$2
+  TMP_DIR_TS=$3
+
+  cd ${DATA_DIR}/MOSAIC/Timeseries
+
+  for file in `ls -1 *tif`; do
+    gdal_translate -outsize ${SIZE}% ${SIZE}% -a_nodata 0 ${file} ${TMP_DIR_TS}/${file}
+  done
+
+  cd $TMP_DIR_TS
+  NR_OF_MOSAICS=$(ls -1 *VV.tif | wc -l)
+  for i in $(seq 1 $NR_OF_MOSAICS);do
+
+    VV_FILE=$(ls ${i}_*VV.tif)
+    VH_FILE=$(ls ${i}_*VH.tif)
+
+    # stretch to 8bit
+    gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${TMP_DIR_TS}/${VV_FILE} ${TMP_DIR_TS}/${VV_FILE}.8bit.tif
+    gdal_contrast_stretch -ndv 0 -percentile-range 0.01 0.99 ${TMP_DIR_TS}/${VH_FILE} ${TMP_DIR_TS}/${VH_FILE}.8bit.tif
+
+    # create ratio band
+    gdal_calc.py --overwrite -A ${TMP_DIR_TS}/${VV_FILE}.8bit.tif -B ${TMP_DIR_TS}/${VH_FILE}.8bit.tif --calc="A/B" --type=Float32 --outfile=${TMP_DIR_TS}/${VV_FILE}.ratio.tif
+    gdal_contrast_stretch -ndv 0 -percentile-range 0.02 0.98 ${TMP_DIR_TS}/${VV_FILE}.ratio.tif ${TMP_DIR_TS}/${VV_FILE}.ratio.8bit.tif
+
+    # create RGB Thumbnail
+    gdal_merge.py -separate -a_nodata 0 -o ${TMP_DIR_TS}/${i}_RGB.tif -of GTiff \
+                        ${TMP_DIR_TS}/${VV_FILE}.8bit.tif ${TMP_DIR_TS}/${VH_FILE}.8bit.tif ${TMP_DIR_TS}/${VV_FILE}.ratio.8bit.tif
+
+    # to jpeg
+    gdal_translate -of JPEG -a_nodata 0 ${TMP_DIR_TS}/${i}_RGB.tif ${TMP_DIR_TS}/${i}_RGB.jpg
+
+    echo "here"
+    ls -1 ${DATA_DIR}/*/Timeseries/${i}*VV* | awk -F "_" '{print $2}' | awk -F '.' '{print $1}' | sort > ${TMP_DIR_TS}/${i}_date
+    START=$(head -n 1)
+    END=$(tail -n 1)
+
+    # add the acq date to jpeg
+    WIDTH_TN=$(identify -format %w ${TMP_DIR_TS}/${i}_RGB.jpg)
+    HEIGHT_TN=$(identify -format %h ${TMP_DIR_TS}/${i}_RGB.jpg)
+    HEIGHT_LABEL=$(expr $HEIGHT_TN / 15)
+
+    # add annotation with date
+    convert -background '#0008' -fill white -gravity center -size ${WIDTH_TN}x${HEIGHT_LABEL} caption:"$START-$END" \
+           ${TMP_DIR_TS}/${i}_RGB.jpg +swap -gravity north -composite ${TMP_DIR_TS}/${i}_RGB.jpg
+  done
+
+  cd ${DATA_DIR}
+
+
 
 }
