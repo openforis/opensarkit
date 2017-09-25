@@ -544,4 +544,5 @@ else
 	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_ts2m_progress
 fi
 
+mv ${TMP_DIR}/LS.map.tif ${PROC_DIR}/MOSAIC/LS.map.tif
 rm -rf ${TMP_DIR}
