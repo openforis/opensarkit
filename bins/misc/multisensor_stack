@@ -23,15 +23,113 @@
 # source libs
 source ${OPENSARKIT}/lib/helpers_source
 
+LSAT_STACK=$1
+S1_STACK=$2
+KC_STACK=$3
+OUT_STACK=$4
+OUT_DIR=$(dirname ${OUT_STACK})
+TMP_DIR=${OUT_DIR}/.TMP
+mkdir -p ${TMP_DIR}
+#-----------------------------------------------------------------------
+# 1 get image stacks
+
+# creation options for all layers
 
 
+# 1a get landsat from sepal
+
+# get band numbers
+LSAT_NR_BANDS=$(python -c "import gdal; raster=gdal.Open('${LSAT_STACK}'); print raster.RasterCount" )
+LSAT_WIDTH=$(gdal_size ${LSAT_STACK} | awk '{print $1}')
+COS="-co 'BIGTIFF=YES' -co 'BLOCKXSIZE=${LSAT_WIDTH}' -co 'BLOCKYSIZE=1'"
+
+# for i in $(seq 1 ${LSAT_NR_BANDS}); do
+#    echo $i
+#    LSAT_BAND=$(gdalinfo ${LSAT_STACK} | grep -A 3 "Band $i Block" | grep BAND_NAME | awk -F "\=" '{print $2}')
+#
+#    SECONDS=0
+#    echo -ne "Extracting the ${LSAT_BAND} band from the Landsat stack..."
+#    if [ $i -lt 10 ]; then
+#      gdal_translate -b $i ${LSAT_STACK} ${OUT_DIR}/0${i}.LSAT.${LSAT_BAND}.tif -co "BIGTIFF=YES" -co "BLOCKXSIZE=${LSAT_WIDTH}" -co "BLOCKYSIZE=1"
+#     else
+#      gdal_translate -b $i ${LSAT_STACK} ${OUT_DIR}/${i}.LSAT.${LSAT_BAND}.tif -co "BIGTIFF=YES" -co "BLOCKXSIZE=${LSAT_WIDTH}" -co "BLOCKYSIZE=1"
+#    fi
+#    duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+# done
+#
+# # create a no-data layer
+#  SECONDS=0
+#  echo -ne "Create a Landsat no data mask..."
+#  mkdir -p ${OUT_DIR}/masks
+#  gdal_calc.py -A ${OUT_DIR}/01.LSAT.*.tif --calc="1*(A>0)" --outfile=${OUT_DIR}/masks/lsat_mask.tif --type=Byte --co "BIGTIFF=YES" --co "BLOCKXSIZE=${LSAT_WIDTH}" --co "BLOCKYSIZE=1"
+#  gdal_trace_outline ${OUT_DIR}/masks/lsat_mask.tif -ndv 0 -major-ring -out-cs ll -ogr-out ${TMP_DIR}/test.shp
+#  duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+# 1b get sentinel timescan
+S1_TS_DIR=$(dirname ${S1_STACK})
+S1_NR_BANDS=$(python -c "import gdal; raster=gdal.Open('${S1_STACK}'); print raster.RasterCount" )
+S1_OPTS="-te $(gdal_extent ${OUT_DIR}/01.*.tif) -tr $(gdal_resolution ${OUT_DIR}/01.*.tif) -cutline ${TMP_DIR}/test.shp -crop_to_cutline -srcnodata 0 -dstnodata 0"
+# get extents, dimension etc. for homogenization with other data layers
+for i in $(seq 1 ${S1_NR_BANDS}); do
+
+    # extract filename and create new numbered prefix
+    file=$(ls ${S1_TS_DIR}/*${i}_Gamma0.*.tif)
+    j=$(expr ${LSAT_NR_BANDS} + $i )
+    filename=$(echo `basename ${file}` | rev | cut -c 5- | rev | cut -c 4- )
+
+    SECONDS=0
+    echo -ne "Extracting the `basename $file` band from the Sentinel-1 stack..."
+    if [ $j -lt 10 ]; then
+      echo 0${j}.S1.${filename}.tif
+      gdalwarp ${S1_OPTS} -co "BIGTIFF=YES" -co "BLOCKXSIZE=${LSAT_WIDTH}" -co "BLOCKYSIZE=1" ${file} ${OUT_DIR}/0${j}.S1.${filename}.tif
+    else
+      echo ${j}.S1.${filename}.tif
+      gdalwarp ${S1_OPTS} -co "BIGTIFF=YES" -co "BLOCKXSIZE=${LSAT_WIDTH}" -co "BLOCKYSIZE=1" ${file} ${OUT_DIR}/${j}.S1.${filename}.tif
+    fi
+    duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+done
+
+SECONDS=0
+echo -ne "Cropping the LS mask of Sentinel-1 to the common extent..."
+gdalwarp ${S1_OPTS} -ot Byte -co "BIGTIFF=YES" -co "BLOCKXSIZE=${LSAT_WIDTH}" -co "BLOCKYSIZE=1" ${S1_TS_DIR}/../LS.map.tif ${OUT_DIR}/masks/s1_mask.tif
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 
-# get image stacks
-
-
+# get ALOS
+KC_TS_DIR=$(dirname ${KC_STACK})
+KC_NR_BANDS=$(python -c "import gdal; raster=gdal.Open('${KC_STACK}'); print raster.RasterCount" )
+KC_OPTS="-te $(gdal_extent ${OUT_DIR}/01.*.tif) -tr $(gdal_resolution ${OUT_DIR}/01.*.tif) -cutline ${TMP_DIR}/test.shp -crop_to_cutline -srcnodata 0 -dstnodata 0"
 # crop to same AOI
+for i in $(seq 1 ${KC_NR_BANDS}); do
 
+  # extract filename and create new numbered prefix
+  file=$(ls ${KC_TS_DIR}/*${i}_*.tif)
+  j=$(expr ${LSAT_NR_BANDS} + ${S1_NR_BANDS} + $i )
+  filename=$(echo `basename ${file}` | rev | cut -c 5- | rev | cut -c 4- )
+
+  SECONDS=0
+  echo -ne "Extracting the `basename $file` band from the ALOS stack..."
+  if [ $j -lt 10 ]; then
+    echo 0${j}_${filename}.tif
+    gdalwarp ${S1_OPTS} -co "BIGTIFF=YES" -co "BLOCKXSIZE=${LSAT_WIDTH}" -co "BLOCKYSIZE=1" ${file} ${OUT_DIR}/0${j}.ALOS.${filename}.tif
+  else
+    echo ${j}_${filename}.tif
+    gdalwarp ${S1_OPTS} -co "BIGTIFF=YES" -co "BLOCKXSIZE=${LSAT_WIDTH}" -co "BLOCKYSIZE=1" ${file} ${OUT_DIR}/${j}.ALOS.${filename}.tif
+  fi
+  duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+done
+
+SECONDS=0
+echo -ne "Cropping the LS mask of ALOS to the common extent..."
+gdal_calc.py -A ${OUT_DIR}/$j.ALOS*.tif --calc="1*(A>0)" --outfile=${OUT_DIR}/masks/alos_mask.tif --type=Byte --co "BIGTIFF=YES" --co "BLOCKXSIZE=${LSAT_WIDTH}" --co "BLOCKYSIZE=1"
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+SECONDS=0
+echo -ne "Combining the masks..."
+gdal_calc.py -A ${OUT_DIR}/masks/alos_mask.tif -B ${OUT_DIR}/masks/lsat_mask.tif -C ${OUT_DIR}/masks/s1_mask.tif --calc="A*B*C" --outfile=lsat_s1_alos_mask.tif  --type=Byte --co "BIGTIFF=YES" --co "BLOCKXSIZE=${LSAT_WIDTH}" --co "BLOCKYSIZE=1"
+gdal_calc.py -A ${OUT_DIR}/masks/alos_mask.tif -B ${OUT_DIR}/masks/lsat_mask.tif --calc="A*B" --outfile=lsat_alos_mask.tif  --type=Byte --co "BIGTIFF=YES" --co "BLOCKXSIZE=${LSAT_WIDTH}" --co "BLOCKYSIZE=1"
+gdal_calc.py -A ${OUT_DIR}/masks/alos_mask.tif -B ${OUT_DIR}/masks/s1_mask.tif --calc="A*B" --outfile=s1_alos_mask.tif  --type=Byte --co "BIGTIFF=YES" --co "BLOCKXSIZE=${LSAT_WIDTH}" --co "BLOCKYSIZE=1"
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 # create stack
 

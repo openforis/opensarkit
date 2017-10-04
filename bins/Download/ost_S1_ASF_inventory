@@ -296,7 +296,8 @@ for LINE in `cat $OUT_FILE | awk -F "," $'{print $17 "," $18 "," $19 "," $20 ","
 
 	else
 
-		echo "\"POLYGON (("${N_START},${N_END},${F_END},${F_START},${N_START}"))\"" >> ${TMP_DIR}/polys
+		#echo "\"POLYGON (("${N_START},${N_END},${F_END},${F_START},${N_START}"))\"" >> ${TMP_DIR}/polys
+		echo "\"POLYGON (("${N_START},${F_START},${F_END},${N_END},${N_START}"))\"" >> ${TMP_DIR}/polys
 	fi
 done
 #----------------------------------------------------------------------------------
@@ -326,7 +327,7 @@ echo "</OGRVRTDataSource>" >> ${TMP_DIR}/wkt.vrt
 
 # convert to final shapefile
 rm -rf "${INV}/S1_ASF_${MODE}_${LEVEL_2}_${POL_2}.shp"
-ogr2ogr -f "Esri Shapefile" "${INV}/S1_ASF_${MODE}_${LEVEL_2}_${POL_2}.shp" "${TMP_DIR}/wkt.vrt" > /dev/null 2>&1
+ogr2ogr -wrapdateline -datelineoffset 0.05 -f "Esri Shapefile" "${INV}/S1_ASF_${MODE}_${LEVEL_2}_${POL_2}.shp" "${TMP_DIR}/wkt.vrt" > /dev/null 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_inv_progress
 
 rm -rf ${TMP_DIR}
