@@ -92,6 +92,10 @@ mkdir -p $2
 
 COUNTRY=`echo "SELECT name FROM countries WHERE \"iso3\" = '$1';" | spatialite ${OST_DB} | head -50`
 
+if [ -z $COUNTRY ];then
+  echo "ISO3 code is invalid" && exit 11
+fi
+
 SECONDS=0
 echo -ne " Extracting country boundaries for ${COUNTRY} ..." &&
 ogr2ogr -f "Esri Shapefile" $2/$1.shp ${OST_DB} -dsco SPATIALITE=yes -where "\"iso3\" = \"${1}\"" -nln AOI countries > /dev/null 2>&1

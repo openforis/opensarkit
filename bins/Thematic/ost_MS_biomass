@@ -1,0 +1,121 @@
+#!/bin/bash
+
+#! /bin/bash
+
+# The MIT License (MIT)
+# written by Andreas Vollrath, 2017
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is furnished
+# to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+# OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+# source libs
+source ${OPENSARKIT}/lib/helpers_source
+
+#-------------------------------------------------------------------------------------------
+# 	0.1 Check for right usage & set up basic Script Variables
+if [ "$#" == "4" ]; then
+
+	MS_DIR=$(readlink -f $1)
+	REG_SHP=$(readlink -f $2)
+	REG_FIELD=$3
+	OUT_DIR=$(readlink -f $4)
+	mkdir -p ${OUT_DIR}
+
+  echo -e "------------------------------------------" | tee ${OUT_DIR}/.bm_progress
+  echo -e " Open SAR Toolkit, version ${OST_VERSION}" | tee -a ${OUT_DIR}/.bm_progress
+  echo -e " Multi-Sensor Biomass Estimation" | tee -a ${OUT_DIR}/.bm_progress
+  echo -e "------------------------------------------" | tee -a ${OUT_DIR}/.bm_progress
+
+else
+
+  echo -e "------------------------------------------"
+  echo -e " Open SAR Toolkit, version ${OST_VERSION}"
+  echo -e " Multi-Sensor Biomass Estimation"
+  echo -e "------------------------------------------"
+
+  echo -e ""
+  echo -e " syntax: ost_MS_biomass <Multi-Sensor Stack Folder> <Shapefile> <Column Name> <Output Directory>"
+  echo -e ""
+  echo -e " description of input parameters:"
+  echo -e " Multi-Sensor Stack: (input) The MS-Stack that has been prepared by the OST routine "
+  echo -e " Shapefile: (input) The traing data shapefile that contains the biomass values."
+  echo -e " Column Name: (input) The column name of the traing data shapefile, which contains the biomass values"
+  echo -e " Output Directory: (output) Folder where the Biomass map will be stored."
+  echo -e ""
+  exit 1
+fi
+
+FULL_STACK=${MS_DIR}/lsat_s1_alos_srtm_stack.vrt
+LS_S1_SRTM_STACK=${MS_DIR}/lsat_s1_srtm_stack.vrt
+LS_ALOS_SRTM_STACK=${MS_DIR}/lsat_alos_srtm_stack.vrt
+LS_SRTM_STACK=${MS_DIR}/lsat_srtm_stack.vrt
+
+# Check if field exists
+REG_DBF=`echo ${REG_SHP} | rev | cut -c 5- |rev`
+REG_DBF=${REG_DBF}.dbf
+GREP_RESULT=$(dbview ${REG_DBF} | awk '{print $1}' | grep -w -m 1 ${REG_FIELD})
+echo "out:$GREP_RESULT "
+if [ -z $GREP_RESULT ];then
+	echo " No column named ${REG_FIELD} within the given shapefile"
+	exit 2
+fi
+
+SECONDS=0
+echo -ne " Creating a ${REG_FIELD} map for the full stack ..." | tee -a ${OUT_DIR}/.bm_progress
+mkdir -p ${OUT_DIR}/LSAT_S1_ALOS_SRTM
+ost_rf_regressor.py -r ${FULL_STACK} -v ${REG_SHP} -f ${REG_FIELD} -o ${OUT_DIR}/LSAT_S1_ALOS_SRTM/${REG_FIELD}.lsat_s1_alos_srtm.tif
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${OUT_DIR}/.bm_progress
+
+SECONDS=0
+echo -ne " Creating a ${REG_FIELD} map for the reduced stack of Landsat, Sentinel-1 and SRTM ..." | tee -a ${OUT_DIR}/.bm_progress
+mkdir -p ${OUT_DIR}/LSAT_S1_SRTM
+ost_rf_regressor.py -r ${LS_S1_SRTM_STACK} -v ${REG_SHP} -f ${REG_FIELD} -o ${OUT_DIR}/LSAT_S1_SRTM/${REG_FIELD}.lsat_s1_srtm.tif
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${OUT_DIR}/.bm_progress
+
+SECONDS=0
+echo -ne " Creating a ${REG_FIELD} map for the reduced stack of Landsat, ALOS K&C and SRTM ..." | tee -a ${OUT_DIR}/.bm_progress
+mkdir -p ${OUT_DIR}/LSAT_ALOS_SRTM/
+ost_rf_regressor.py -r ${LS_ALOS_SRTM_STACK} -v ${REG_SHP} -f ${REG_FIELD} -o ${OUT_DIR}/LSAT_ALOS_SRTM/${REG_FIELD}.lsat_alos_srtm.tif
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${OUT_DIR}/.bm_progress
+
+SECONDS=0
+echo -ne " Creating a ${REG_FIELD} map for the reduced stack of Landsat and SRTM ..." | tee -a ${OUT_DIR}/.bm_progress
+mkdir -p ${OUT_DIR}/LSAT_SRTM
+ost_rf_regressor.py -r ${LS_SRTM_STACK} -v ${REG_SHP} -f ${REG_FIELD} -o ${OUT_DIR}/LSAT_SRTM/${REG_FIELD}.lsat_srtm.tif
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${OUT_DIR}/.bm_progress
+
+SECONDS=0
+mkdir -p ${OUT_DIR}/Combined
+echo -ne "Combining the maps with the best results ..." | tee -a ${OUT_DIR}/.bm_progress
+gdal_edit.py -unsetnodata ${OUT_DIR}/LSAT_S1_ALOS_SRTM/${REG_FIELD}.lsat_s1_alos_srtm.tif
+gdal_edit.py -unsetnodata ${OUT_DIR}/LSAT_S1_SRTM/${REG_FIELD}.lsat_s1_srtm.tif
+gdal_edit.py -unsetnodata ${OUT_DIR}/LSAT_ALOS_SRTM/${REG_FIELD}.lsat_alos_srtm.tif
+gdal_edit.py -unsetnodata ${OUT_DIR}/LSAT_SRTM/${REG_FIELD}.lsat_srtm.tif
+
+gdal_calc.py -A ${OUT_DIR}/LSAT_S1_ALOS_SRTM/${REG_FIELD}.lsat_s1_alos_srtm.tif \
+		   -B ${OUT_DIR}/LSAT_S1_SRTM/${REG_FIELD}.lsat_s1_srtm.tif \
+		   -C ${OUT_DIR}/LSAT_ALOS_SRTM/${REG_FIELD}.lsat_alos_srtm.tif \
+		   -D ${OUT_DIR}/LSAT_SRTM/${REG_FIELD}.lsat_srtm.tif \
+		   --calc="A + B*(A==0) + C*(logical_and(A==0,B==0)) + D*(logical_and(A==0,logical_and(B==0,C==0)))"\
+		   --outfile=${OUT_DIR}/Combined/${REG_FIELD}.tif
+
+gdal_edit.py -a_nodata 0 ${OUT_DIR}/LSAT_S1_ALOS_SRTM/${REG_FIELD}.lsat_s1_alos_srtm.tif
+gdal_edit.py -a_nodata 0 ${OUT_DIR}/LSAT_S1_SRTM/${REG_FIELD}.lsat_s1_srtm.tif
+gdal_edit.py -a_nodata 0 ${OUT_DIR}/LSAT_ALOS_SRTM/${REG_FIELD}.lsat_alos_srtm.tif
+gdal_edit.py -a_nodata 0 ${OUT_DIR}/LSAT_SRTM/${REG_FIELD}.lsat_srtm.tif
+gdal_edit.py -a_nodata 0 ${OUT_DIR}/Combined/${REG_FIELD}.tif
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${OUT_DIR}/.bm_progress

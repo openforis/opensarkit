@@ -182,6 +182,7 @@ SECONDS=0
 echo -ne " Installing GIS/Remote sensing packages ..."
 apt-get install --yes --allow-unauthenticated \
 											gdal-bin \
+											dbview \
 											libgdal-dev \
  										  dans-gdal-scripts \
 											saga \

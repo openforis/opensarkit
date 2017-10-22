@@ -76,6 +76,8 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,toPower,rescale_sar, outlier):
         metrics = ["avg", "max", "min", "std", "cov" , "skew", "kurt", "argmin", "argmax", "median" ]
     elif mt_type is '6':
         metrics = ["sum"] # for TRMM
+    elif mt_type is '7':
+        metrics = ["min","std"] # for TRMM
 
     # loop through y direction
     for y in xrange(0, rows, y_block_size):
@@ -404,7 +406,7 @@ def main():
 
     from optparse import OptionParser
 
-    usage = "usage: %prog [options] -i inputfile -o outputfile prefix -t type of metric -m outlier removal"
+    usage = "usage: %prog [options] -i inputfile -o outputfile prefix -t type of metric -p toPower -m outlier removal"
     parser = OptionParser()
     parser.add_option("-i", "--inputfile", dest="ifile",
                 help="choose an input time-series stack", metavar="<input time-series stack>")
@@ -418,7 +420,8 @@ def main():
                      "3 = Max, Min\t\t\t\t\t\t\t\t"
                      "4 = Max\t\t\t\t\t\t\t"
                      "5 = Avg, Max, Min, SD, CoV , Skew, Kurt, Argmin, Argmax, Median \t\t\t\t\t "
-                     "6 = Sum ",
+                     "6 = Sum\t\t\t\t\t\t\t\t ",
+                     #"7 = Min, SD ",
                 metavar="<Number referring to MT metrics>")
 
     parser.add_option("-p", "--power", dest="toPower",

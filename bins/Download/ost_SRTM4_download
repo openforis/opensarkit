@@ -1,0 +1,238 @@
+#! /bin/bash
+
+# The MIT License (MIT)
+# written by Andreas Vollrath, 2017
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is furnished
+# to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+# OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+# source libs
+source ${OPENSARKIT}/lib/helpers_source
+
+#-------------------------------------------------------------------------------------------
+# 	0.1 Check for right usage & set up basic Script Variables
+if [ "$#" == "4" ]; then
+
+	if [ "`echo $2 | grep shp`" ]; then # AOI case
+    AOI=`readlink -f $2`
+    AOI_PATH=`dirname ${AOI}`
+  fi
+
+	PROC_DIR=$(readlink -f $1)
+	TMP_DIR=${PROC_DIR}/.TMP
+	rm -rf ${TMP_DIR} > /dev/null
+	mkdir -p ${TMP_DIR}
+
+	echo -e ""
+	echo -e "------------------------------------------" | tee ${PROC_DIR}/.srtm_dow_progress
+  echo -e " Open SAR Toolkit, version ${OST_VERSION}" | tee -a ${PROC_DIR}/.srtm_dow_progress
+  echo -e " Download and prepare SRTM v4.1 files " | tee -a ${PROC_DIR}/.srtm_dow_progress
+  echo -e "------------------------------------------" | tee -a ${PROC_DIR}/.srtm_dow_progress
+	echo -e ""
+
+else
+	echo -e ""
+	echo -e "------------------------------------------"
+  echo -e " Open SAR Toolkit, version ${OST_VERSION}"
+  echo -e " Download and prepare SRTM v4.1 files "
+  echo -e "------------------------------------------"
+	echo -e ""
+	echo -e ""
+	echo -e " syntax: ost_SRTM_download <output_folder> <area_of_interest> <mode> <datatype>"
+	echo -e ""
+	echo -e " description of input parameters:"
+	echo -e " output_folder		(output) folder where the downloaded data will be saved"
+	echo -e " ISO3/AOI		ISO3 country code or shapefile of your area of interest"
+	echo -e " mode			Additional Preparation of Topographic Indices"
+	echo -e "			 Available choices:"
+	echo -e "			 0: no additional indices will be calculated"
+	echo -e "			 1: Slope and Aspect will be calculated"
+	echo -e "			 2: Slope, Aspect, Terrain Ruggedness Index (TRI), Terrain Position Index (TPI) and roughness will be calculated"
+	echo -e " datatype			choose the output datatype for the Topographic Indices"
+	echo -e "			 Available choices:"
+	echo -e "			  0: no change to original dataypes"
+	echo -e "			  1: unsigned 16-bit integer (UInt16, recommended for multisensor classification)"
+	echo -e ""
+	exit 1
+fi
+
+
+#----------------------------------------------------------------------
+# 2 check if AOI comes from country code or is already a shapefile
+if [ "`echo $AOI | grep shp`" ]; then # AOI case
+
+  # check numberof layers/polygons
+  aoi_valid_poly ${AOI} ${TMP_DIR}/aoi_convex.shp ${TMP_DIR}
+
+  #check EPSG
+  if [ -e ${TMP_DIR}/aoi_convex.shp ];then
+    aoi_valid_epsg ${TMP_DIR}/aoi_convex.shp ${TMP_DIR}/aoi_wgs84.shp ${TMP_DIR}
+  else
+    aoi_valid_epsg ${AOI} ${TMP_DIR}/aoi_wgs84.shp ${TMP_DIR}
+  fi
+  if [ -e ${TMP_DIR}/aoi_wgs84.shp ];then
+    mv ${TMP_DIR}/aoi_wgs84* ${AOI_PATH}
+    AOI=${AOI_PATH}/aoi_wgs84.shp
+    elif [ -e ${TMP_DIR}/aoi_convex.shp ];then
+    mv ${TMP_DIR}/aoi_convex* ${AOI_PATH}
+    AOI=${AOI_PATH}/aoi_convex.shp
+  else
+    AOI=${AOI}
+  fi
+else # country case
+  mkdir -p ${PROC_DIR}/AOI/
+  aoi_from_iso3 $2 ${PROC_DIR}/AOI | tee -a ${PROC_DIR}/.srtm_dow_progress
+	AOI=${PROC_DIR}/AOI/$2.shp
+fi
+#----------------------------------------------------------------------
+
+
+#----------------------------------------------------------------------
+# 3 Get K&C 5x5 Tiles list
+LAYER=`ogrinfo ${AOI} | tail -1 | awk $'{print $2}'`
+
+# create a vrt layer for consequent interect operation with ogr2ogr
+echo "<OGRVRTDataSource>" > ${TMP_DIR}/intersect.vrt
+echo "   <OGRVRTLayer name=\"${LAYER}\">" >> ${TMP_DIR}/intersect.vrt
+echo "      <SrcDataSource>${AOI}</SrcDataSource>" >> ${TMP_DIR}/intersect.vrt
+echo "   </OGRVRTLayer>" >> ${TMP_DIR}/intersect.vrt
+echo "   <OGRVRTLayer name=\"srtm3_grid\">" >> ${TMP_DIR}/intersect.vrt
+echo "      <SrcDataSource>${OST_DB}</SrcDataSource>" >> ${TMP_DIR}/intersect.vrt
+echo "   </OGRVRTLayer>" >> ${TMP_DIR}/intersect.vrt
+echo "</OGRVRTDataSource>" >> ${TMP_DIR}/intersect.vrt
+
+# intersect with ogr2ogr
+ogr2ogr -f "csv" ${TMP_DIR}/tiles.csv ${TMP_DIR}/intersect.vrt -dialect sqlite -sql "SELECT b.COL,b.ROW FROM ${LAYER} a, srtm3_grid b WHERE ST_Intersects(a.geometry, b.geom)"
+# get tile list
+cat ${TMP_DIR}/tiles.csv | tail -n +2 | tr ',' '\ ' > ${TMP_DIR}/srtm_list
+
+NR_OF_TILES=$(cat ${TMP_DIR}/srtm_list | wc -l)
+i=1
+while read LINE; do
+
+	COL=`echo ${LINE} | awk $'{print $1}'`
+	ROW=`echo ${LINE} | awk $'{print $2}'`
+
+
+	if [ ${#ROW} == 1 ];then ROW=0$ROW;fi
+	if [ ${#COL} == 1 ];then COL=0$COL;fi
+
+	SECONDS=0
+ 	echo -ne " Downloading SRTM tile $i/$NR_OF_TILES ..." | tee -a ${PROC_DIR}/.srtm_dow_progress
+	wget -c -q http://droppr.org/srtm/v4.1/6_5x5_TIFs/srtm_$COL"_"$ROW.zip
+	unzip -o -q srtm_$COL"_"$ROW.zip -d ${TMP_DIR}/SRTM
+	rm -f srtm_$COL"_"$ROW.zip
+	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.srtm_dow_progress
+
+	i=$(expr $i + 1)
+done < ${TMP_DIR}/srtm_list
+
+SECONDS=0
+echo -ne " Preparing the DEM tiles ..." | tee -a ${PROC_DIR}/.srtm_dow_progress
+# merge SRTM tiles
+gdalbuildvrt -srcnodata -32768 ${TMP_DIR}/tmp_dem.vrt ${TMP_DIR}/SRTM/*.tif > /dev/null 2>&1
+gdalwarp -crop_to_cutline -cutline ${AOI} -dstnodata -32768 ${TMP_DIR}/tmp_dem.vrt ${TMP_DIR}/tmp_dem.tif > /dev/null 2>&1
+rm -rf ${TMP_DIR}/SRTM
+# recalculate 0's to 1
+gdal_edit.py -unsetnodata ${TMP_DIR}/tmp_dem.tif
+gdal_calc.py -A ${TMP_DIR}/tmp_dem.tif --type=UInt16 --calc="(A<=0)*1 + (A>=0)*A" --outfile=${TMP_DIR}/01.height.ones.tif > /dev/null 2>&1
+rm -f ${TMP_DIR}/tmp_dem.tif
+gdalwarp -cutline ${AOI} -crop_to_cutline -dstnodata 0 ${TMP_DIR}/01.height.ones.tif ${PROC_DIR}/01.height.tif > /dev/null 2>&1
+rm -f ${TMP_DIR}/01.height.ones.tif
+gdal_edit.py -a_nodata 0 ${PROC_DIR}/01.height.tif > /dev/null 2>&1
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.srtm_dow_progress
+
+if [ $3 > 0 ];then
+
+	SECONDS=0
+	echo -ne " Calculating the slope ..." | tee -a ${PROC_DIR}/.srtm_dow_progress
+	gdaldem slope ${PROC_DIR}/01.height.tif ${TMP_DIR}/02.slope.tif -s 111120 > /dev/null 2>&1
+	ost_replace_values.py -i ${TMP_DIR}/02.slope.tif -o ${TMP_DIR}/02.slope.ones.tif -r 0 -n 1 > /dev/null 2>&1
+	rm -f ${TMP_DIR}/02.slope.tif
+	ost_replace_values.py -i ${TMP_DIR}/02.slope.ones.tif -o ${TMP_DIR}/02.slope.tif -r -9999 -n 0 > /dev/null 2>&1
+	rm -f ${TMP_DIR}/02.slope.ones.tif
+	if [ $4 = 1 ];then
+		gdal_calc.py -A ${TMP_DIR}/02.slope.tif --type=UInt16 --calc="(A!=0)*(A*100)" --outfile=${PROC_DIR}/02.slope.tif > /dev/null 2>&1
+	else
+		mv ${TMP_DIR}/02.slope.tif ${PROC_DIR}/02.slope.tif
+	fi
+	gdal_edit.py -a_nodata 0 ${PROC_DIR}/02.slope.tif > /dev/null 2>&1
+	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.srtm_dow_progress
+
+	SECONDS=0
+	echo -ne " Calculating the aspect ..." | tee -a ${PROC_DIR}/.srtm_dow_progress
+	gdaldem aspect ${PROC_DIR}/01.height.tif ${TMP_DIR}/03.aspect.tif -s 111120 > /dev/null 2>&1
+	gdal_edit.py -unsetnodata ${TMP_DIR}/03.aspect.tif
+	gdal_calc.py -A ${TMP_DIR}/03.aspect.tif --calc="(A<=0)*1 + (A>=0)*A" --outfile=${TMP_DIR}/03.aspect.ones.tif > /dev/null 2>&1
+	rm -f ${TMP_DIR}/03.aspect.tif
+	gdalwarp -cutline ${AOI} -crop_to_cutline -dstnodata 0 ${TMP_DIR}/03.aspect.ones.tif ${TMP_DIR}/03.aspect.tif > /dev/null 2>&1
+	rm -f ${TMP_DIR}/03.aspect.ones.tif
+	if [ $4 = 1 ];then
+		gdal_calc.py -A ${TMP_DIR}/03.aspect.tif --type=UInt16 --NoDataValue=0 --calc="(A!=0)*(A*10)" --outfile=${PROC_DIR}/03.aspect.tif > /dev/null 2>&1
+	else
+		mv ${TMP_DIR}/03.aspect.tif ${PROC_DIR}/03.aspect.tif > /dev/null 2>&1
+	fi
+	rm -f ${TMP_DIR}/03.aspect.tif
+	gdal_edit.py -a_nodata 0 ${PROC_DIR}/03.aspect.tif > /dev/null 2>&1
+	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.srtm_dow_progress
+fi
+
+if [ $3 == 2 ];then
+	SECONDS=0
+	echo -ne " Calculating the TRI ..."
+	gdaldem TRI ${PROC_DIR}/01.height.tif ${TMP_DIR}/04.TRI.tif > /dev/null 2>&1
+	ost_replace_values.py -i ${TMP_DIR}/04.TRI.tif -o ${TMP_DIR}/04.TRI.ones.tif -r 0 -n 1 > /dev/null 2>&1
+	rm -f ${TMP_DIR}/04.TRI.tif
+	ost_replace_values.py -i ${TMP_DIR}/04.TRI.ones.tif -o ${PROC_DIR}/04.TRI.tif -r -9999 -n 0
+	rm -f ${TMP_DIR}/04.TRI.ones.tif
+	gdal_edit.py -a_nodata 0 ${PROC_DIR}/04.TRI.tif > /dev/null 2>&1
+	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.srtm_dow_progress
+
+	SECONDS=0
+	echo -ne " Calculating the TPI ..."
+	gdaldem TPI ${PROC_DIR}/01.height.tif ${TMP_DIR}/05.TPI.tif
+	ost_replace_values.py -i ${TMP_DIR}/05.TPI.tif -o ${TMP_DIR}/05.TPI.ones.tif -r 0 -n 1
+	rm -f ${TMP_DIR}/05.TPI.tif
+	ost_replace_values.py -i ${TMP_DIR}/05.TPI.ones.tif -o ${PROC_DIR}/05.TPI.tif -r -9999 -n 0
+	rm -f ${TMP_DIR}/05.TPI.ones.tif
+	gdal_edit.py -a_nodata 0 ${PROC_DIR}/05.TPI.tif > /dev/null 2>&1
+	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.srtm_dow_progress
+
+	SECONDS=0
+	echo -ne " Calculating the roughness ..."
+	gdaldem roughness ${PROC_DIR}/01.height.tif ${TMP_DIR}/06.roughness.tif
+	ost_replace_values.py -i ${TMP_DIR}/06.roughness.tif -o ${TMP_DIR}/06.roughness.ones.tif -r 0 -n 1
+	rm -f ${TMP_DIR}/06.roughness.tif
+	ost_replace_values.py -i ${TMP_DIR}/06.roughness.ones.tif -o ${TMP_DIR}/06.roughness.tif -r -9999 -n 0
+	rm -f ${TMP_DIR}/06.roughness.ones.tif
+	if [ $4 = 1 ];then
+		gdal_calc.py -A ${TMP_DIR}/06.roughness.tif --calc="(A!=0)*(A*100)"
+	else
+		mv ${TMP_DIR}/06.roughness.tif ${PROC_DIR}/06.roughness.tif
+	fi
+	gdal_edit.py -a_nodata 0 ${PROC_DIR}/06.roughness.tif > /dev/null 2>&1
+	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.srtm_dow_progress
+fi
+
+if [ $3 -gt 0 ];then
+	SECONDS=0
+	echo -ne " Creating a final vrt-stack" | tee -a ${PROC_DIR}/.srtm_dow_progress
+	gdalbuildvrt -separate -srcnodata 0 ${PROC_DIR}/SRTM.vrt $(ls ${PROC_DIR}/*tif) 
+fi
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.srtm_dow_progress
+
+rm -rf ${TMP_DIR}

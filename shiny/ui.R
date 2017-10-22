@@ -72,6 +72,9 @@ ui = dashboardPage(
          #menuSubItem("GRD to RTC processor", tabName = "alos_pro", icon = icon("cogs"))
       ),
       hr(),
+      menuItem("SRTM DEM", tabName = "srtm_funct", icon = icon("option-vertical", lib = "glyphicon"),br(),
+        menuSubItem("Download & Preparation", tabName = "srtm_dow", icon = icon("download")),br()
+        ),hr(),
       menuItem("Sentinel-1", tabName = "s1_funct", icon = icon("option-vertical", lib = "glyphicon"),br(),
          menuSubItem("Get data", tabName = "s1_data", icon = NULL),br(),
          menuSubItem("Data inventory", tabName = "s1_inv", icon = icon("search")),
@@ -80,7 +83,6 @@ ui = dashboardPage(
          menuSubItem("GRD processors", tabName = "s1_grd", icon = NULL),br(),
          menuSubItem("GRD to GTC processor", tabName = "s1_grd2gtc", icon = icon("cogs")),
          menuSubItem("GRD to RTC processor", tabName = "s1_grd2rtc", icon = icon("cogs")),
-         #hr(),
          menuSubItem("Time-series/Timescan processor ", tabName = "s1_rtc2ts", icon = icon("cogs")),
          menuSubItem("Time-series/Timescan mosaics ", tabName = "s1_ts2mos", icon = icon("map-o")),
          hr(),
@@ -88,7 +90,17 @@ ui = dashboardPage(
          menuSubItem("SLC to Coherence processor", tabName = "s1_slc2coh", icon = icon("cogs")),
          menuSubItem("SLC to PolSAR processor ", tabName = "s1_slc2pol", icon = icon("cogs")),
          menuSubItem("SLC to DInSAR processor", tabName = "s1_slc2ifg", icon = icon("cogs")),br()
-         ),
+         ),hr(),
+      menuItem("Sensor Fusion", tabName = "thematic", icon = icon("option-vertical", lib = "glyphicon"),br(),
+        menuSubItem("Landsat/Sentinel-1/ALOS ", tabName = "ms_ls_s1_kc", icon = icon("map-o")),br(),
+        menuSubItem("Landsat/Sentinel-1/ALOS/SRTM ", tabName = "ms_ls_s1_kc_srtm", icon = icon("map-o")),br()
+      ),
+      hr(),
+      menuItem("Thematic Mapping", tabName = "thematic", icon = icon("option-vertical", lib = "glyphicon"),br(),
+        menuSubItem("LC/LU classification", tabName = "ms_lc_class", icon = icon("cogs")),
+        menuSubItem("Biomass", tabName = "ms_biomass", icon = icon("cogs")),
+        menuSubItem("Change Detection", tabName = "ms_cd", icon = icon("cogs")),br()
+      ),
       hr(),
       #menuItem("Data Viewer", tabName = "dataview", icon = icon("eye")),
       #hr(),
@@ -128,6 +140,11 @@ ui = dashboardPage(
       #-----------------------------------------------------------------------------
       
       #-----------------------------------------------------------------------------
+      # SRTM tab
+      source(file.path("ui","SRTM_dow_ui.R"), local=TRUE)$value,
+      
+      #-----------------------------------------------------------------------------
+      #-----------------------------------------------------------------------------
       # Sentinel 1 Tab
       source(file.path("ui","S1_data_tab_ui.R"), local=TRUE)$value,
       source(file.path("ui","S1_inv_tab_ui.R"), local=TRUE)$value,
@@ -143,7 +160,14 @@ ui = dashboardPage(
       source(file.path("ui","S1_slc_tab_ui.R"), local=TRUE)$value,
       source(file.path("ui","S1_slc2coh_tab_ui.R"), local=TRUE)$value,
       source(file.path("ui","S1_slc2pol_tab_ui.R"), local=TRUE)$value,
-      source(file.path("ui","S1_slc2ifg_tab_ui.R"), local=TRUE)$value
+      source(file.path("ui","S1_slc2ifg_tab_ui.R"), local=TRUE)$value,
+      
+      source(file.path("ui","MS_fusion_LS_S1_KC_ui.R"), local=TRUE)$value,
+      source(file.path("ui","MS_fusion_LS_S1_KC_srtm_ui.R"), local=TRUE)$value,
+      
+      source(file.path("ui","LC_map.R"), local=TRUE)$value,
+      source(file.path("ui","biomass_map_ui.R"), local=TRUE)$value,
+      source(file.path("ui","CD_map.R"), local=TRUE)$value
       #-----------------------------------------------------------------------------
          
       #-----------------------------------------------------------------------------

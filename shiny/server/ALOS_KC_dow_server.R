@@ -196,32 +196,32 @@ kc_dow_start = function() {
 
 #---------------------------------------------------------------------------
 # Termination Function (what to do when script stopped)
-kc_dow_term = function() {
+srtm_dow_term = function() {
   
   # get the exit state of the script
-  kc_dow_status = readLines(kc_dow_exitfile)
+  srtm_dow_status = readLines(srtm_dow_exitfile)
   
   # we want to remove the exit file for the next run
-  unlink(kc_dow_exitfile, force = TRUE)
+  unlink(srtm_dow_exitfile, force = TRUE)
   
   # message when all downloads finished/failed
-  if ( kc_dow_status != 0 ){
-    kc_dow_end_message="Download failed. Please try again!"
-    kc_dow_js_string <- 'alert("SUCCESS");'
-    kc_dow_js_string <- sub("SUCCESS",kc_dow_end_message,kc_dow_js_string)
-    session$sendCustomMessage(type='jsCode', list(value = kc_dow_js_string))
+  if ( srtm_dow_status != 0 ){
+    srtm_dow_end_message="Download failed. Please try again!"
+    srtm_dow_js_string <- 'alert("SUCCESS");'
+    srtm_dow_js_string <- sub("SUCCESS",srtm_dow_end_message,srtm_dow_js_string)
+    session$sendCustomMessage(type='jsCode', list(value = srtm_dow_js_string))
   }
   
   else {
     # Pop-up message for having finished data inventory
-    kc_dow_fin_message="Download finished"
-    js_string_kc_dow_fin <- 'alert("Processing");'
-    js_string_kc_dow_fin <- sub("Processing",kc_dow_fin_message,js_string_kc_dow_fin)
-    session$sendCustomMessage(type='jsCode', list(value = js_string_kc_dow_fin))
+    srtm_dow_fin_message="Download finished"
+    js_string_srtm_dow_fin <- 'alert("Processing");'
+    js_string_srtm_dow_fin <- sub("Processing",srtm_dow_fin_message,js_string_srtm_dow_fin)
+    session$sendCustomMessage(type='jsCode', list(value = js_string_srtm_dow_fin))
   }
   
   # reset button to 0 for enable re-start
-  kc_dow_values$kc_dow_pro = 0
+  srtm_dow_values$srtm_dow_pro = 0
 }  
 #---------------------------------------------------------------------------
 

@@ -17,6 +17,11 @@ server <- function(input, output, session) {
    #------------------------------------------------------------------------------------------------
    
    #------------------------------------------------------------------------------------------------
+   # SRTM 
+   source(file.path("server","SRTM_dow_server.R"), local=TRUE)$value
+   #------------------------------------------------------------------------------------------------
+  
+   #------------------------------------------------------------------------------------------------
    # source S1 server files
    source(file.path("server","S1_inv_tab_server.R"), local=TRUE)$value
    source(file.path("server","S1_dow_tab_server.R"), local=TRUE)$value
@@ -28,6 +33,10 @@ server <- function(input, output, session) {
    source(file.path("server","S1_ts2mos_tab_server.R"), local=TRUE)$value
    #------------------------------------------------------------------------------------------------
    
+   source(file.path("server","MS_fusion_LS_S1_KC_server.R"), local=TRUE)$value
+   source(file.path("server","MS_fusion_LS_S1_KC_srtm_server.R"), local=TRUE)$value
+  
+   source(file.path("server","biomass_map_server.R"), local=TRUE)$value
    #------------------------------------------------------------------------------------------------
    #mapviewOptions(raster.palette = colorRampPalette(brewer.pal(9, "Greys")))
    #n=mapview(raster("/home/avollrath/Projects/UGA/DEM/DEM_SRTM3V4.1.tif"), legend = TRUE)

@@ -32,14 +32,7 @@ if [ "$#" == "8" ]; then
 
 	AOI=$(readlink -f $2)
 
-	if [ -d $1 ];then
-		cd $1
-	else
-		mkdir -p $1
-		cd $1
-	fi
-
-	PROC_DIR=`pwd`
+	PROC_DIR=$(readlink -f $1)
 	TMP_DIR=${PROC_DIR}/.TMP
 	rm -rf ${TMP_DIR} > /dev/null
 	mkdir -p ${TMP_DIR}
