@@ -92,7 +92,7 @@ mkdir -p $2
 
 COUNTRY=`echo "SELECT name FROM countries WHERE \"iso3\" = '$1';" | spatialite ${OST_DB} | head -50`
 
-if [ -z $COUNTRY ];then
+if [ -z "$COUNTRY" ];then
   echo "ISO3 code is invalid" && exit 11
 fi
 

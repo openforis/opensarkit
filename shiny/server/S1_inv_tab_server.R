@@ -132,9 +132,9 @@ s1_inv_get_args = function(){
     }
     
     else if (input$s1_inv_AOI == "s1_inv_shape_upload"){
-      df = input$s1_inv_shape_upload
+      df = input$s1_inv_shapefile_path
       ARCHIVE = df$datapath
-      OUT_ARCHIVE = paste(OUTDIR, "/Inventory_upload", sep = "")
+      OUT_ARCHIVE = paste(s1_inv_dir, "/Inventory_upload", sep = "")
       dir.create(OUT_ARCHIVE)
       unzip(ARCHIVE, junkpaths = TRUE, exdir = OUT_ARCHIVE)
       OST_inv=list.files(OUT_ARCHIVE, pattern = "*.shp")

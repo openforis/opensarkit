@@ -7,6 +7,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 from scipy.stats import gaussian_kde
+#from scipy.stats import linregress
+from scipy import stats
+from sklearn.metrics import mean_squared_error
+from math import sqrt
 
 def bbox_to_pixel_offsets(gt, bbox):
     originX = gt[0]
@@ -23,6 +27,9 @@ def bbox_to_pixel_offsets(gt, bbox):
     ysize = y2 - y1
     return (x1, y1, xsize, ysize)
 
+def mean_absolute_percentage_error(y_true, y_pred):
+    y_true, y_pred = np.array(y_true), np.array(y_pred)
+    return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
 
 def regressor(raster_path, vector_path, vector_field, newRasterfn, global_src_extent=False):
 
@@ -204,24 +211,45 @@ def regressor(raster_path, vector_path, vector_field, newRasterfn, global_src_ex
     #
     x, y = pd.Series(mx, name="x_var"), pd.Series(my, name="y_var")
 
+    meanSquaredError=mean_squared_error(mx, my)
+    print("MSE:", meanSquaredError)
+    rootMeanSquaredError = sqrt(meanSquaredError)
+    print("RMSE:", rootMeanSquaredError)
+    MAPE = mean_absolute_percentage_error(mx,my)
+    print("MAPE:", MAPE)
+    slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
+    print("Slope:", slope)
+    print("Intercept:", intercept)
+    print("R_value:", r_value)
+    print("P_value:", p_value)
+    print("Std Err:", std_err)
 
+    plt.legend(('data', 'line-regression r={}'.format(r_value)), 'best')
     # # Sort the points by density, so that the densest points are plotted last
-    # idx = z.argsort()
-    # mx, my, z = mx[idx], my[idx], z[idx]
-    #
-    #     # fit with np.polyfit
-    # m, b = np.polyfit(x, y, 1)
+    idx = z.argsort()
+    mx, my, z = mx[idx], my[idx], z[idx]
+
+    # fit with np.polyfit
+    m, b = np.polyfit(x, y, 1)
     #
     fig, ax = plt.subplots()
-    # ax.scatter(mx, my, c=z, s=10, edgecolor='', cmap=plt.cm.plasma)
+    ax.scatter(mx, my, c=z, s=10, edgecolor='', cmap=plt.cm.plasma)
+
+    # seabrn stuff
     #ax = sns.regplot(x=x, y=y, marker="+")
     #ax = sns.jointplot(x, y)
-    cmap = sns.cubehelix_palette(as_cmap=True, dark=0, light=1, reverse=False)
-    g = sns.jointplot(x, y, kind="kde", color="b");
-    g.plot_joint(plt.scatter, c="b", s=30, linewidth=1)
-    g.ax_joint.collections[0].set_alpha(0)
+#    cmap = sns.cubehelix_palette(as_cmap=True, dark=0, light=1, reverse=False)
+#    g = sns.jointplot(x, y, kind="kde", color="b");
+#    g.plot_joint(plt.scatter, c="b", s=30, linewidth=1)
+#    g.ax_joint.collections[0].set_alpha(0)
 
-    # plt.plot(mx, np.poly1d(np.polyfit(mx, my, 1))(mx))
+    plt.plot(mx, np.poly1d(np.polyfit(mx, my, 1))(mx))
+    plt.grid(True)
+    plt.xlim((-5,150))
+    plt.ylim((-5,150))
+    plt.ylabel('Predicted Biomass')
+    plt.xlabel('NFI biomass')
+
     plt.show()
     # plt.colorbar()
 
