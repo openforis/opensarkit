@@ -63,7 +63,7 @@ tabItem(tabName = "s1_inv",
              
              conditionalPanel(
                     "input.s1_inv_AOI == 's1_inv_shape_upload'",
-                     fileInput('s1_inv_shapefile_path', label = '',accept = c(".shp"))
+                     fileInput('s1_inv_shapefile_path', label = '',accept = c(".zip"))
              ),hr(),
              
              #-----------------------------------------------------------------------------------------------------------
