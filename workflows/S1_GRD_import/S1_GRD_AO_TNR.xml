@@ -42,16 +42,16 @@
   <applicationData id="Presentation">
     <Description/>
     <node id="Read">
-            <displayPosition x="12.0" y="13.0"/>
+            <displayPosition x="37.0" y="134.0"/>
     </node>
     <node id="Apply-Orbit-File">
-      <displayPosition x="61.0" y="50.0"/>
+      <displayPosition x="151.0" y="134.0"/>
     </node>
     <node id="ThermalNoiseRemoval">
-      <displayPosition x="122.0" y="88.0"/>
+      <displayPosition x="269.0" y="184.0"/>
     </node>
     <node id="Write">
-            <displayPosition x="413.0" y="165.0"/>
+            <displayPosition x="455.0" y="135.0"/>
     </node>
   </applicationData>
 </graph>

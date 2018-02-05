@@ -140,7 +140,7 @@ function s1_rtc_processing() {
   RTC_TMP="$6"
   RTC_LOG="$7"
 
-  NR_OF_CPUS=`echo "$(nproc) * 2" | bc`
+  NR_OF_CPUS=`echo "$(nproc) * 1" | bc`
 
   if [ ${RTC_RES} == "MED_RES" ];then
 
@@ -152,7 +152,7 @@ function s1_rtc_processing() {
 
     SECONDS=0
     echo -ne " Creating a layover/shadow mask ... " &&
-    bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_LayShaMask_ML3.xml -x  -q ${NR_OF_CPUS} -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_OUT}.LS_mask >> ${RTC_LOG}/log_cal_tf_ml 2>&1
+    bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_LayShaMask_ML3.xml -x -q ${NR_OF_CPUS} -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_OUT}.LS_mask >> ${RTC_LOG}/log_cal_tf_ml 2>&1
     duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
     if [ -e ${RTC_TMP}/TF.data/Gamma0_VH.img ];then
@@ -161,14 +161,14 @@ function s1_rtc_processing() {
 
         SECONDS=0
         echo -ne " Applying the geometric terrain correction, calculate the VV/VH Band Ratio and transform backscatter to decibel scale  ..." &&
-        bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_SDV_30_TC_DB_Ratio.xml -x  -q ${NR_OF_CPUS} -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_TMP}/TC_DB -PoutputRatio=${RTC_TMP}/Ratio > ${RTC_LOG}/log_tc_ratio 2>&1
+        bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_SDV_30_TC_DB_Ratio.xml -x -q ${NR_OF_CPUS} -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_TMP}/TC_DB -PoutputRatio=${RTC_TMP}/Ratio > ${RTC_LOG}/log_tc_ratio 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_TC}
         rm -rf ${RTC_TMP}/TF.d*
 
         SECONDS=0
         echo -ne " Merging backscatter bands with ratio ..." &&
-        bash ${SNAP_EXE} BandMerge -x  -q ${NR_OF_CPUS} ${RTC_TMP}/TC_DB.dim ${RTC_TMP}/Ratio.dim -t ${RTC_TMP}/RTC.dim > ${RTC_LOG}/log_output 2>&1
+        bash ${SNAP_EXE} BandMerge -x -q ${NR_OF_CPUS} ${RTC_TMP}/TC_DB.dim ${RTC_TMP}/Ratio.dim -t ${RTC_TMP}/RTC.dim > ${RTC_LOG}/log_output 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_BM}
         rm -rf ${RTC_TMP}/TC_DB.d* ${RTC_TMP}/Ratio.d*
@@ -229,7 +229,7 @@ function s1_rtc_processing() {
 
         SECONDS=0
         echo -ne " Applying the geometric terrain correction and transform backscatter to decibel scale  ..." &&
-        bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_SSV_30_TC_DB.xml -x  -q ${NR_OF_CPUS} -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_TMP}/RTC > ${RTC_LOG}/log_tc_db 2>&1
+        bash ${SNAP_EXE} ${S1_GRD2RTC_GRAPHS}/S1_GRD2RTC_SSV_30_TC_DB.xml -x -q ${NR_OF_CPUS} -Pinput=${RTC_TMP}/TF.dim -Poutput=${RTC_TMP}/RTC > ${RTC_LOG}/log_tc_db 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_TC}
         rm -rf ${RTC_TMP}/TF.d*
@@ -454,7 +454,7 @@ function s1_gtc_processing() {
   GTC_TMP="$6"
   GTC_LOG="$7"
 
-  NR_OF_CPUS=`echo "$(nproc) * 2" | bc`
+  NR_OF_CPUS=`echo "$(nproc) * 1" | bc`
 
   if [ ${GTC_RES} == "MED_RES" ];then
 
@@ -770,7 +770,7 @@ function s1_timeseries() {
   LOG_MT=$8
 
   # double amoun tof CPUs for SNAP related tasks
-  NR_OF_CPUS=`echo "$(nproc) * 2" | bc`
+  NR_OF_CPUS=`echo "$(nproc) * 1" | bc`
   # actual amount of CPUs for Thumbnail creation
   CPUS=$(nproc)
   # error codes
@@ -1337,7 +1337,4 @@ function s1_create_mosaic_ts() {
   done
 
   cd ${DATA_DIR}
-
-
-
 }
