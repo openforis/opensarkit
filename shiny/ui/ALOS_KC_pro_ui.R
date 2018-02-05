@@ -65,7 +65,7 @@ tabItem(tabName = "alos_kc_pro",
               ),
               
               conditionalPanel(
-                "input.KC_pro_AOI == 'AOI_zip_upload'",
+                "input.kc_pro_AOI == 'AOI_zip_upload'",
                 fileInput('kc_pro_zipfile_path', label = 'Browse',accept = c(".zip"))
               ),hr(),
               #----------------------------------------------------------------------------------

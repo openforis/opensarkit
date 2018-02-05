@@ -25,7 +25,7 @@
 	source ${OPENSARKIT}/lib/helpers_source
 #-------------------------------------------------------------------------------------------
 # 	0.1 Check for right usage & set up basic Script Variables
-if [ "$#" != "4" ]; then
+if [ "$#" != "2" ]; then
 
 	echo -e "------------------------------------------------------------------"
 	echo -e " Open SAR Toolkit, version ${OST_VERSION}"
@@ -42,7 +42,6 @@ if [ "$#" != "4" ]; then
 	echo -e ""
 	echo -e " input parameters:"
 	echo -e " input directory	(input) (i.e. DATA folder created by oft-sar-S1-ASF-download)"
-	echo -e " data prefix (output) name "
 	echo -e " processing option"
 	echo -e "			  Available choices:"
 	echo -e "			  1: Avg, Max, Min, SD, CoV"
@@ -79,7 +78,7 @@ for TRACK in `ls -1 -d ${PROC_DIR}/[0-9]*`;do
 
 	rm -rf ${TRACK}/Timescan
 	mkdir -p ${TRACK}/Timescan
-	
+
 	ost_S1_timeseries2timescan ${TRACK}/Timeseries/timeseries.VV.vrt ${TRACK}/Timescan/ Gamma0.VV ${TS_MODE}
 	mv ${TRACK}/Timescan/Gamma0.VV.avg.tif ${TRACK}/Timescan/01_Gamma0.VV.avg.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/01_Gamma0.VV.avg.tif
 	mv ${TRACK}/Timescan/Gamma0.VV.max.tif ${TRACK}/Timescan/02_Gamma0.VV.max.tif #&& gdal_edit.py -a_nodata 0 ${STACK}/Timescan/02_Gamma0.VV.max.tif

@@ -328,12 +328,12 @@ else
 
 	SECONDS=0
 	echo -ne " Downloading the SNAP software ..." &&
-	wget http://step.esa.int/downloads/5.0/installers/esa-snap_sentinel_unix_5_0.sh  >> ${OSK_HOME}/LOG/log_install 2>&1
+	wget http://step.esa.int/downloads/6.0/installers/esa-snap_sentinel_unix_6_0.sh  >> ${OSK_HOME}/LOG/log_install 2>&1
 	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 	SECONDS=0
 	echo -ne " Installing the SNAP software ..." &&
-	sh esa-snap_sentinel_unix_5_0.sh -q -overwrite  >> ${OSK_HOME}/LOG/log_install 2>&1
+	sh esa-snap_sentinel_unix_6_0.sh -q -overwrite  >> ${OSK_HOME}/LOG/log_install 2>&1
 	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 	rm -f esa-snap_sentinel_unix_5_0.sh

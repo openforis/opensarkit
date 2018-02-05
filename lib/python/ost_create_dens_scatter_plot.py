@@ -67,7 +67,7 @@ def regressor(raster_path, vector_path, vector_field, newRasterfn, global_src_ex
 
     # open vector file
     vds = ogr.Open(vector_path, GA_ReadOnly)  # TODO maybe open update if we want to write stats
-    assert(vds)
+    #assert(vds)
     # get the layer
     vlyr = vds.GetLayer(0)
 
@@ -246,7 +246,7 @@ def regressor(raster_path, vector_path, vector_field, newRasterfn, global_src_ex
     plt.plot(mx, np.poly1d(np.polyfit(mx, my, 1))(mx))
     plt.grid(True)
     plt.xlim((-5,150))
-    plt.ylim((-5,150))
+    #plt.ylim((-5,150))
     plt.ylabel('Predicted Biomass')
     plt.xlabel('NFI biomass')
 

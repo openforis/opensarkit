@@ -110,6 +110,7 @@ gdal_calc.py -A ${OUT_DIR}/LSAT_S1_ALOS_SRTM/${REG_FIELD}.lsat_s1_alos_srtm.tif 
 		   -B ${OUT_DIR}/LSAT_S1_SRTM/${REG_FIELD}.lsat_s1_srtm.tif \
 		   -C ${OUT_DIR}/LSAT_ALOS_SRTM/${REG_FIELD}.lsat_alos_srtm.tif \
 		   -D ${OUT_DIR}/LSAT_SRTM/${REG_FIELD}.lsat_srtm.tif \
+			 --co "BLOCKXSIZE=128" --co "BLOCKYSIZE=128" --co "TILED=YES" \
 		   --calc="A + B*(A==0) + C*(logical_and(A==0,B==0)) + D*(logical_and(A==0,logical_and(B==0,C==0)))"\
 		   --outfile=${OUT_DIR}/Combined/${REG_FIELD}.tif
 

@@ -22,41 +22,594 @@
 
 #-------------------------------------------------------------------------------------------
 # 	0.1 Check for right usage & set up basic Script Variables
-if [ "$#" != "2" ]; then
+if [ "$#" != "3" ]; then
 
 	echo -e "------------------------------------------------------------------"
-	echo -e " Open SAR Toolkit, version ${OSK_VERSION}"
+	echo -e " Open SAR Toolkit, version ${OST_VERSION}"
 	echo -e " Refine the image selection from an OST inventory shapefile"
 	echo -e "------------------------------------------------------------------"
-	echo -e ""
-	echo -e "----------------------------------"
-	echo -e "Software dependencies:"
-	echo -e "	- ESA Sentinel Application Platform SNAP"
-	echo -e "	- gdal-bin"
-	echo -e "----------------------------------"
 	echo -e ""
 	echo -e " Usage: ost_S1_ASF_sort4ts <input file> <AOI/ISO3> <output file> "
 	echo -e ""
 	echo -e " input parameters:"
 	echo -e " input file 	 OST inventory shapefile created by ost_S1_ASF_inventory"
+	echo -e " AOI/ISO3 	 Area of interest or ISO3 country code"
 	echo -e " output file		 OST inventory shapfile"
 	echo -e ""
 	exit 1
+
 else
+
 	echo -e "------------------------------------------------------------------"
-	echo -e " Open Foris SARKit, version ${OSK_VERSION}"
+	echo -e " Open SAR Toolkit, version ${OST_VERSION}"
 	echo -e " Refine the image selection from an OST inventory shapefile"
 	echo -e "------------------------------------------------------------------"
 
 	# set up initial script variables
 	OST_INV_IN=$(readlink -f $1)
+	BASE=$(basename ${OST_INV_IN} | rev | cut -c 5- |rev)
+
 	AOI=$(readlink -f $2)
+	AOI_BASE=$(basename ${AOI} | rev | cut -c 5- |rev)
 	OST_INV_OUT=$(readlink -f $2)
 
 	PROC_DIR=`dirname $OST_INV_IN`
   TMP_DIR=${SAR_TMP:-$PROC_DIR/TMP}
 	mkdir -p ${TMP_DIR}
+
 	# source libs
 	source ${OPENSARKIT}/lib/helpers_source
 
 fi
+
+function check_overlap_aoi() {
+
+	if [ -z "$3" ]; then
+          echo " Missing arguments. Syntax:"
+          echo " check_overlap_aoi <AOI> <OST inventory shape> <temp-folder>"
+          return
+      fi
+
+	AOIFILE=$(readlink -f $1)
+	SHAPE=$(readlink -f $2)
+ 	TMP_OVERLAP=$(readlink -f $3)
+	BASE_SHAPE=$(basename ${SHAPE} | rev | cut -c 5- | rev)
+	BASE_AOI=$(basename ${AOIFILE} | rev | cut -c 5- | rev)
+
+	# create a list of tracks
+	ogrinfo -q ${SHAPE} -sql "SELECT DISTINCT TRACK FROM \"${BASE_SHAPE}\"" | grep TRACK | awk -F '\=' '{print $2}' > ${TMP_DIR}/track_list
+
+	# get intersect area
+	cat ${TMP_DIR}/track_list | while read track; do
+
+			if [[ ${track} != "" ]];then
+
+				# create a dissolved version of the track from all acquisitions
+				ogr2ogr -f "ESRI Shapefile" ${TMP_DIR}/${BASE_SHAPE}.${track}.shp ${SHAPE} -dialect sqlite -sql "SELECT ST_Buffer(st_unaryunion(st_collect(geometry)),-0.05) FROM \"${BASE_SHAPE}\"  WHERE \"TRACK\" = ${track}"
+
+				# intersect dissolved track with AOI
+				intersect_shp ${AOIFILE} ${TMP_DIR}/${BASE_SHAPE}.${track}.shp ${TMP_DIR}/${BASE_SHAPE}.${track}.inter.shp
+				rm ${TMP_DIR}/${BASE_SHAPE}.${track}.shp ${TMP_DIR}/${BASE_SHAPE}.${track}.dbf ${TMP_DIR}/${BASE_SHAPE}.${track}.prj ${TMP_DIR}/${BASE_SHAPE}.${track}.shx
+
+				# get area for intersected region
+				AREA=`ogrinfo -q ${TMP_DIR}/${BASE_SHAPE}.${track}.inter.shp -dialect sqlite -sql "SELECT Area(geometry) FROM \"${BASE_SHAPE}.${track}.inter\"" | grep Area | awk -F '\=' '{print $2}'`
+				rm ${TMP_DIR}/${BASE_SHAPE}.${track}*
+
+				# create a list of dates
+				ogrinfo -q ${SHAPE} -sql "SELECT DISTINCT DATE FROM \"${BASE_SHAPE}\" WHERE \"TRACK\" = ${track}" | grep DATE | awk -F '\=' '{print $2}' > ${TMP_DIR}/date_list
+
+					# loop through dates
+					cat ${TMP_DIR}/date_list | while read dates; do
+						if [[ ${dates} != "" ]];then
+
+							# create a dissolved version of the track/date
+							ogr2ogr -f "ESRI Shapefile" ${TMP_DIR}/${BASE_SHAPE}.${track}.${dates}.shp ${SHAPE} -dialect sqlite -sql "SELECT st_unaryunion(st_collect(geometry)) FROM \"${BASE_SHAPE}\"  WHERE \"TRACK\" = ${track} AND \"DATE\" = ${dates}"
+
+							# intersect rack with AOI
+							intersect_shp ${AOIFILE} ${TMP_DIR}/${BASE_SHAPE}.${track}.${dates}.shp ${TMP_DIR}/${BASE_SHAPE}.${track}.${dates}.inter.shp
+							rm ${TMP_DIR}/${BASE_SHAPE}.${track}.${dates}.sh* ${TMP_DIR}/${BASE_SHAPE}.${track}.${dates}.prj ${TMP_DIR}/${BASE_SHAPE}.${track}.${dates}.dbf
+
+							# get area for intersected region
+							AREA_DATE=`ogrinfo -q ${TMP_DIR}/${BASE_SHAPE}.${track}.${dates}.inter.shp -dialect sqlite -sql "SELECT Area(geometry) FROM \"${BASE_SHAPE}.${track}.${dates}.inter\"" | grep Area | awk -F '\=' '{print $2}'`
+
+
+							# check if area is greater than, and f not delete entries from inventory shapefile
+							test=`echo "${AREA} >= ${AREA_DATE}" | bc -l`
+
+							if [[ ${test} -eq 1 ]]; then
+
+								# delete entries
+								ogrinfo -q ${SHAPE} -dialect sqlite -sql "DELETE FROM \"${BASE_SHAPE}\" WHERE \"TRACK\" = ${track} AND \"DATE\" = ${dates}"
+
+							fi
+
+							rm ${TMP_DIR}/${BASE_SHAPE}.${track}.${dates}.*
+
+						fi
+					done
+			fi
+	done
+
+	rm ${TMP_DIR}/date_list ${TMP_DIR}/track_list
+}
+
+function adjust_equator_tracks() { # should only applied to ascending tracks!
+
+	if [ -z "$2" ]; then
+					echo " Missing arguments. Syntax:"
+					echo " adjust_equator_tracks <OST inventory shape> <temp-folder>"
+					return
+	fi
+
+	TMP_INV_FILE=$(readlink -f $1)
+	TMP_INV_BASE=$(basename ${TMP_INV_FILE} | rev | cut -c 5- | rev)
+	TMP_DIR=$(readlink -f $2)
+
+	# create a lst of dates
+	ogrinfo -q ${TMP_INV_FILE} -sql "SELECT DISTINCT DATE FROM \"${TMP_INV_BASE}\" " | grep DATE | awk -F '\=' '{print $2}' > ${TMP_DIR}/date_list
+
+	cat ${TMP_DIR}/date_list | while read date; do
+
+		# get the number of tracks per acquisition date
+		NR_OF_TRACKS=`ogrinfo -q ${TMP_INV_FILE} -dialect sqlite -sql "SELECT DISTINCT \"TRACK\" FROM \"${TMP_INV_BASE}\" WHERE \"DATE\" = ${date} " | grep Track | wc -l`
+
+		# check if there are more than one track per acquistion date
+		if [[ ${NR_OF_TRACKS} -ge 2 ]];then
+
+			 for ((i=1;i<=${NR_OF_TRACKS};i++));do
+        echo `ogrinfo -q ${TMP_INV_FILE} -dialect sqlite -sql "SELECT DISTINCT \"TRACK\" FROM \"${TMP_INV_BASE}\" WHERE \"DATE\" = ${date} " | grep Track | awk "NR == $i" | awk -F '\=' '{print $2}'` >> ${TMP_DIR}/${date}_list
+			 done
+
+      i=1
+			cat ${TMP_DIR}/${date}_list | sort | while read line; do
+
+        i=`expr $i + 1`
+
+        j=`cat ${TMP_DIR}/${date}_list | sort | awk "NR == $i"`
+        if [ ! -z $j ];then
+          k=`expr $j - 1`
+        else
+          k=-99
+        fi
+
+        if [[ $line -eq $k ]];then
+
+					NUMBER_1=$line
+					NUMBER_2=$(cat ${TMP_DIR}/${date}_list | sort | awk "NR == $i")
+
+          # get the center longitude of the end of orbit scene
+          CENT_LONG=`ogrinfo -q ${TMP_INV_FILE} -dialect sqlite -sql "SELECT Min(ST_X(ST_Centroid(geometry))) FROM \"${TMP_INV_BASE}\" WHERE Track = ${NUMBER_1}" | grep Min | awk -F '\= ' '{print $2}'`
+
+          # where track number is higher and center longitude is betweeen
+    	    ogrinfo -q ${TMP_INV_FILE} -dialect sqlite -sql "UPDATE \"${TMP_INV_BASE}\" SET Track=${NUMBER_1}
+        																								   WHERE (Track=${NUMBER_2})
+         																								   AND ( ST_X(ST_Centroid(geometry)) BETWEEN ${CENT_LONG} - 5 AND ${CENT_LONG} + 5 )"
+
+        fi
+      done
+      rm ${TMP_DIR}/${date}_list*
+
+		fi
+	done
+}
+
+function check_homogeneous_coverage() {
+
+	if [ -z "$3" ]; then
+					echo " Missing arguments. Syntax:"
+					echo " check_homogeneous_coverag	e <OST inventory shapefile> <temp-folder> <outfile> "
+					return
+	fi
+
+	TMP_INV_FILE=$(readlink -f $1)
+	TMP_INV_BASE=$(basename ${TMP_INV_FILE} | rev | cut -c 5- | rev)
+	TMP_DIR=$(readlink -f $2)
+	OUT_SHAPE=$(readlink -f $3)
+
+	# get number of tracks
+	NR_OF_TRACKS=`ogrinfo -q ${TMP_INV_FILE} -dialect sqlite -sql "SELECT DISTINCT TRACK FROM \"${TMP_INV_BASE}\"" | grep Track | wc -l`
+
+	# get first acq. date
+	FIRST_ACQ=`ogrinfo -q ${TMP_INV_FILE} -dialect sqlite -sql "SELECT Min(Date) FROM \"${TMP_INV_BASE}\"" | grep "Min(Date)" | awk -F '\= ' '{print $2}'`
+
+	# get last acq date
+	LAST_ACQ=`ogrinfo -q ${TMP_INV_FILE} -dialect sqlite -sql "SELECT Max(Date) FROM \"${TMP_INV_BASE}\"" | grep "Max(Date)" | awk -F '\= ' '{print $2}'`
+
+	# we start counting mosaics
+	i=0
+
+	while [[ ${FIRST_ACQ} -lt ${LAST_ACQ} ]];do
+
+		# determine end of cycle by 5 days
+		END_OF_CYCLE=`date -d "${FIRST_ACQ}+5 days" +%Y%m%d`
+
+		# number of tracks in specific date range range
+		PERIOD_TRACK=`ogrinfo -q ${TMP_INV_FILE} -dialect sqlite -sql "SELECT DISTINCT TRACK FROM \"${TMP_INV_BASE}\"
+																																	 WHERE \"Date\" BETWEEN ${FIRST_ACQ} AND ${END_OF_CYCLE}" | grep Track | wc -l`
+		# number of tracks for the period are not the same as overall, discard scenes of this period
+		if [[ ${PERIOD_TRACK} -eq ${NR_OF_TRACKS} ]];then
+
+			echo "INFO: I've just found a mosaic in a 6 days repeat cycle. FA: ${FIRST_ACQ} EC: ${END_OF_CYCLE}"
+			# we count another full mosaic
+			i=`expr $i + 1`
+
+			# we write the acquisitions to the shapefile
+			ogr2ogr -f 'ESRI Shapefile' ${OUT_SHAPE} ${TMP_INV_FILE} -append -dialect sqlite \
+							-sql "SELECT * FROM \"${TMP_INV_BASE}\" WHERE \"Date\" BETWEEN ${FIRST_ACQ} AND ${END_OF_CYCLE}"
+
+			# write out to textfile for GEE import
+			ogrinfo -q ${TMP_INV_FILE} -dialect sqlite \
+							-sql "SELECT * FROM \"${TMP_INV_BASE}\" WHERE \"Date\" BETWEEN ${FIRST_ACQ} AND ${END_OF_CYCLE}" >> ${OUT_SHAPE}.csv
+
+			# we overwrite first acq date to the next cycle
+			FIRST_ACQ=`date -d "${FIRST_ACQ}+6 days" +%Y%m%d`
+
+		else
+
+			# we define a 12 day repeat cycle
+			END_OF_CYCLE=`date -d "${FIRST_ACQ}+11 days" +%Y%m%d`
+
+			# number of tracks in specific date range range
+			PERIOD_TRACK=`ogrinfo -q ${TMP_INV_FILE} -dialect sqlite -sql "SELECT DISTINCT TRACK FROM \"${TMP_INV_BASE}\"
+																																		 WHERE \"Date\" BETWEEN ${FIRST_ACQ} AND ${END_OF_CYCLE}" | grep Track | wc -l`
+
+			if [[ ${PERIOD_TRACK} -eq ${NR_OF_TRACKS} ]];then
+
+				echo "INFO: I've just found a mosaic in a 12 days repeat cycle. FA: ${FIRST_ACQ} EC: ${END_OF_CYCLE}"
+				# we count another full mosaic
+				i=`expr $i + 1`
+
+				# we write the 12 day repeat mosaic to the shapefile
+				ogr2ogr -f 'ESRI Shapefile' ${OUT_SHAPE} ${TMP_INV_FILE} -append -dialect sqlite \
+								-sql "SELECT * FROM \"${TMP_INV_BASE}\"
+											WHERE (Date IN
+												(SELECT Date FROM \"${TMP_INV_BASE}\"
+													WHERE Date BETWEEN ${FIRST_ACQ} AND ${END_OF_CYCLE} GROUP BY Track))
+											AND (Track + Date IN
+												(SELECT Track + Date FROM \"${TMP_INV_BASE}\"
+													WHERE Date BETWEEN ${FIRST_ACQ} AND ${END_OF_CYCLE} GROUP BY Track))"
+
+				# write out to textfile for GEE import
+				ogrinfo -q ${TMP_INV_FILE} -dialect sqlite \
+				        -sql "SELECT Scene_Id FROM \"${TMP_INV_BASE}\"
+				              WHERE (Date IN
+				                (SELECT Date FROM \"${TMP_INV_BASE}\"
+				                  WHERE Date BETWEEN ${FIRST_ACQ} AND ${END_OF_CYCLE} GROUP BY Track))
+				              AND (Track + Date IN
+				                (SELECT Track + Date FROM \"${TMP_INV_BASE}\"
+				                  WHERE Date BETWEEN ${FIRST_ACQ} AND ${END_OF_CYCLE} GROUP BY Track))" | grep "Scene_ID" | awk -F '\=' '{print $2}' >> ${OUT_SHAPE}.csv
+													echo "MOSAIC_END" >> ${OUT_SHAPE}.csv
+
+				# we update our first acquisition
+				FIRST_ACQ=`date -d "${FIRST_ACQ}+12 days" +%Y%m%d`
+
+			else # we go for 24 days
+
+				# we define a 12 day repeat cycle
+				END_OF_CYCLE=`date -d "${FIRST_ACQ}+23 days" +%Y%m%d`
+
+				# number of tracks in specific date range range
+				PERIOD_TRACK=`ogrinfo -q ${TMP_INV_FILE} -dialect sqlite -sql "SELECT DISTINCT TRACK FROM \"${TMP_INV_BASE}\"
+																																			 WHERE \"Date\" BETWEEN ${FIRST_ACQ} AND ${END_OF_CYCLE}" | grep Track | wc -l`
+
+				if [[ ${PERIOD_TRACK} -eq ${NR_OF_TRACKS} ]];then
+
+					echo "INFO: I've just found a mosaic in a 24 days repeat cycle. FA: ${FIRST_ACQ} EC: ${END_OF_CYCLE}"
+					# we count another full mosaic
+					i=`expr $i + 1`
+
+					# we write the 12 day repeat mosaic to the shapefile
+					ogr2ogr -f 'ESRI Shapefile' ${OUT_SHAPE} ${TMP_INV_FILE} -append -dialect sqlite \
+									-sql "SELECT * FROM \"${TMP_INV_BASE}\"
+												WHERE (Date IN
+													(SELECT Date FROM \"${TMP_INV_BASE}\"
+													 WHERE Date BETWEEN ${FIRST_ACQ} AND ${END_OF_CYCLE} GROUP BY Track))
+												AND (Track + Date IN
+													(SELECT Track + Date FROM \"${TMP_INV_BASE}\"
+													 WHERE Date BETWEEN ${FIRST_ACQ} AND ${END_OF_CYCLE} GROUP BY Track))"
+
+					# write out to textfile for GEE import
+					 ogrinfo -q ${TMP_INV_FILE} -dialect sqlite \
+					 				-sql "SELECT Scene_Id FROM \"${TMP_INV_BASE}\"
+					 							WHERE (Date IN
+					 								(SELECT Date FROM \"${TMP_INV_BASE}\"
+					 									WHERE Date BETWEEN ${FIRST_ACQ} AND ${END_OF_CYCLE} GROUP BY Track))
+					 							AND (Track + Date IN
+					 								(SELECT Track + Date FROM \"${TMP_INV_BASE}\"
+					 									WHERE Date BETWEEN ${FIRST_ACQ} AND ${END_OF_CYCLE} GROUP BY Track))" | grep "Scene_ID" | awk -F '\=' '{print $2}' >> ${OUT_SHAPE}.csv
+					 									echo "MOSAIC_END" >> ${OUT_SHAPE}.csv
+
+					 # we update our first acquisition with 24 days
+					 FIRST_ACQ=`date -d "${FIRST_ACQ}+24 days" +%Y%m%d`
+
+				 else
+
+					 #echo "INFO: I haven't found a mosaic in the 24 days repeat cycle. FA: ${FIRST_ACQ} EC: ${END_OF_CYCLE}"
+					 # we update our first acquisition with 24 days
+					 FIRST_ACQ=`date -d "${FIRST_ACQ}+1 days" +%Y%m%d` # maybe here we could do 1 day in order to get all possibilities
+
+				 fi
+			fi # close the 12 days if
+		fi # close the 6 days if
+	done
+
+	if [[ $i -eq 0 ]];then
+		echo " No valid mosaics. "
+	else
+		echo " Found $i valid mosaics for `basename ${TMP_INV_FILE}`. "
+	fi
+}
+
+function rename_splitted_tracks() {
+
+  if [ -z "$2" ]; then
+          echo " Missing arguments. Syntax:"
+          echo " rename_double_tracks <OST inventory shape> <temp-folder>"
+          return
+  fi
+
+  TMP_INV_FILE=$(readlink -f $1)
+  TMP_INV_BASE=$(basename ${TMP_INV_FILE} | rev | cut -c 5- | rev)
+  TMP_DIR=$(readlink -f $2)
+
+  # TBD
+  # take center longitude of track with some margin, if 2 have significant different numbers treat them
+  ogrinfo -q ${TMP_INV_FILE} -sql "SELECT DISTINCT Date FROM \"${TMP_INV_BASE}\" " | grep Date | awk -F '\= ' '{print $2}' > ${TMP_DIR}/date_list
+
+  cat ${TMP_DIR}/date_list | while read date;do
+
+    # create a lst of tracks
+    ogrinfo -q ${TMP_INV_FILE} -sql "SELECT DISTINCT Track FROM \"${TMP_INV_BASE}\" WHERE Date = ${date} " | grep Track | awk -F '\= ' '{print $2}' > ${TMP_DIR}/track_list
+
+    cat ${TMP_DIR}/track_list | while read track;do
+
+      ogrinfo -q ${TMP_INV_FILE} -dialect sqlite \
+              -sql "SELECT \"Start_Time\",Track FROM \"${TMP_INV_BASE}\"
+                    WHERE (Date = ${date})
+                    AND (Track = ${track})
+                    AND (Start_Time NOT IN (SELECT Stop_Time
+                                            FROM \"${TMP_INV_BASE}\"
+                                            WHERE (Date = ${date})
+                                            AND (Track = ${track})))" | grep Start_Time | awk -F '\= ' '{print $2}' > ${TMP_DIR}/starts
+
+			# if we have two separated takes within one swath
+      if [ `cat ${TMP_DIR}/starts | wc -l` -gt 1 ];then
+
+        ogrinfo -q ${TMP_INV_FILE} -dialect sqlite \
+                 -sql "SELECT \"Stop_Time\" FROM \"${TMP_INV_BASE}\"
+                       WHERE (Date = ${date})
+                       AND (Stop_Time NOT IN (SELECT Start_Time
+                                              FROM \"${TMP_INV_BASE}\"
+                                              WHERE (Date = ${date})
+                                              AND (Track = ${track})))" | grep Stop_Time | awk -F '\= ' '{print $2}' >> ${TMP_DIR}/starts
+
+
+				# do a check if consecutive numbers appear in start/stop time (i.e. no catual split)
+				cat ${TMP_DIR}/starts | sort > ${TMP_DIR}/starts_sorted
+				LINES=$(cat ${TMP_DIR}/starts_sorted | head -n -1 | wc -l)
+
+
+				i=2
+				while [ $i -lt ${LINES} ];do
+
+					DATE_1=`awk "NR == $i" ${TMP_DIR}/starts_sorted`
+					DATE_2=`awk "NR == $i + 1" ${TMP_DIR}/starts_sorted`
+
+					if [ ! -z "${DATE_2}" ];then
+
+						if [[ `expr ${DATE_2} - ${DATE_1}` > 1 ]];then
+
+							i=`expr $i + 2`
+
+						else
+
+							j=`expr $i + 1`
+							sed -i "${i},${j}d" ${TMP_DIR}/starts_sorted
+
+						fi
+					else
+
+						i=`expr $i + 2`
+					fi
+				done
+
+
+				i=0
+				if [ `cat ${TMP_DIR}/starts_sorted | wc -l` -gt 2 ];then
+					cat ${TMP_DIR}/starts_sorted | head -n -1 | while read starts;do
+
+						i=`expr $i + 1`
+
+						# only get every second line (i.e. if line number is odd)
+						if [ $((i%2)) -ne 0 ]; then
+							STARTTIME=${starts}
+							ENDTIME=`awk "NR == $i + 1" ${TMP_DIR}/starts_sorted`
+
+							ogrinfo -q ${TMP_INV_FILE} -dialect sqlite \
+							 				-sql "UPDATE \"${TMP_INV_BASE}\" SET Track=9${i}${track}
+														WHERE (Date = ${date})
+														AND (Track=${track})
+														AND ( Start_Time BETWEEN ${STARTTIME} AND ${ENDTIME} )"
+						fi
+					done
+
+				fi
+			fi
+		done
+	done
+}
+#-----------------------------------------------------
+# 1) split ascending and descending, VV and VV and VH
+#-----------------------------------------------------
+
+SECONDS=0
+echo -ne " Split inventory data in Ascending and Descending track and sort for polarization mode..."
+
+# ascending
+ogr2ogr -f "ESRI Shapefile" ${TMP_DIR}/asc.ssv.shp ${OST_INV_IN} -dialect sqlite -sql "SELECT * FROM \"${BASE}\" WHERE \"Orbit_Dir\" = 'ASCENDING' " # AND \"Pol_Mode\" = 'VV'"
+ogr2ogr -f "ESRI Shapefile" ${TMP_DIR}/asc.sdv.shp ${OST_INV_IN} -dialect sqlite -sql "SELECT * FROM \"${BASE}\" WHERE \"Orbit_Dir\" = 'ASCENDING' AND \"Pol_Mode\" = 'VV VH'"
+
+# descending
+ogr2ogr -f "ESRI Shapefile" ${TMP_DIR}/dsc.ssv.shp ${OST_INV_IN} -dialect sqlite -sql "SELECT * FROM \"${BASE}\" WHERE \"Orbit_Dir\" = 'DESCENDING' " # AND \"Pol_Mode\" = 'VV'"
+ogr2ogr -f "ESRI Shapefile" ${TMP_DIR}/dsc.sdv.shp ${OST_INV_IN} -dialect sqlite -sql "SELECT * FROM \"${BASE}\" WHERE \"Orbit_Dir\" = 'DESCENDING' AND \"Pol_Mode\" = 'VV VH'"
+
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+#-----------------------------------------------------
+# 2) Scenes that actually intersect with AOI (not GEE)
+#-----------------------------------------------------
+
+SECONDS=0
+echo -ne " Sorting out scenes that do not overlap the AOI..."
+# ascending
+st_intersects_shp ${TMP_DIR}/asc.ssv.shp ${AOI} ${TMP_DIR}/2.asc.ssv.shp
+st_intersects_shp ${TMP_DIR}/asc.sdv.shp ${AOI} ${TMP_DIR}/2.asc.sdv.shp
+
+# descending
+st_intersects_shp ${TMP_DIR}/dsc.ssv.shp ${AOI} ${TMP_DIR}/2.dsc.ssv.shp
+st_intersects_shp ${TMP_DIR}/dsc.sdv.shp ${AOI} ${TMP_DIR}/2.dsc.sdv.shp
+
+# remove temp files
+rm ${TMP_DIR}/asc.ssv.* ${TMP_DIR}/asc.sdv.* ${TMP_DIR}/dsc.ssv.* ${TMP_DIR}/dsc.sdv.*
+
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+#-----------------------------------------------------
+# 3a) removing double entries
+#-----------------------------------------------------
+
+SECONDS=0
+echo -ne " Removing double entries..."
+
+# ascending
+ogr2ogr -f "ESRI Shapefile" ${TMP_DIR}/3.asc.ssv.shp ${TMP_DIR}/2.asc.ssv.shp -dialect sqlite \
+				-sql "SELECT *
+							FROM \"2.asc.ssv\"
+							GROUP BY substr(Scene_Id, 1, 63)"
+ogr2ogr -f "ESRI Shapefile" ${TMP_DIR}/3.asc.sdv.shp ${TMP_DIR}/2.asc.sdv.shp -dialect sqlite \
+				-sql "SELECT *
+							FROM \"2.asc.sdv\"
+							GROUP BY substr(Scene_Id, 1, 63)"
+
+# descending
+ogr2ogr -f "ESRI Shapefile" ${TMP_DIR}/3.dsc.ssv.shp ${TMP_DIR}/2.dsc.ssv.shp -dialect sqlite \
+ 			  -sql "SELECT *
+							FROM \"2.dsc.ssv\"
+							GROUP BY substr(Scene_Id, 1, 63)"
+ogr2ogr -f "ESRI Shapefile" ${TMP_DIR}/3.dsc.sdv.shp ${TMP_DIR}/2.dsc.sdv.shp -dialect sqlite \
+				-sql "SELECT *
+							FROM \"2.dsc.sdv\"
+							GROUP BY substr(Scene_Id, 1, 63)"
+
+							#GROUP BY \"Start_Time\" + \"Stop_Time\" + \"Date\" + \"Orbit_Nr\""
+
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+#-----------------------------------------------------
+# 3b ) create a spatial index
+#-----------------------------------------------------
+
+# ascending
+ogrinfo -q ${TMP_DIR}/3.asc.ssv.shp -dialect sqlite -sql "CREATE SPATIAL INDEX ON \"3.asc.ssv\""
+ogrinfo -q ${TMP_DIR}/3.asc.sdv.shp -dialect sqlite -sql "CREATE SPATIAL INDEX ON \"3.asc.sdv\""
+
+# descending
+ogrinfo -q ${TMP_DIR}/3.dsc.ssv.shp -dialect sqlite -sql "CREATE SPATIAL INDEX ON \"3.dsc.ssv\""
+ogrinfo -q ${TMP_DIR}/3.dsc.sdv.shp -dialect sqlite -sql "CREATE SPATIAL INDEX ON \"3.dsc.sdv\""
+
+#-----------------------------------------------------
+# 4) take care of equator (change in track number)) (maybe not GEE)
+#-----------------------------------------------------
+
+# do the correction of relative orbit numbers for ease of use with OST if equator zone (0.5 - 4 degree north) is crossed
+
+# create temporary wkt Equator file
+echo "WKT,id" > ${TMP_DIR}/equ.csv
+echo "\"POLYGON ((-180.0 0.5, 180.0 0.5, 180 4, -180 4, -180.0 0.5))\",1" >> ${TMP_DIR}/equ.csv
+
+# create vrt for ogr reading
+echo "<OGRVRTDataSource>" > ${TMP_DIR}/.intersect.vrt
+echo "<OGRVRTLayer name=\"equ\">" >> ${TMP_DIR}/.intersect.vrt
+echo "<SrcDataSource>${TMP_DIR}/equ.csv</SrcDataSource>" >> ${TMP_DIR}/.intersect.vrt
+echo "<GeometryType>wkbPolygon</GeometryType>" >> ${TMP_DIR}/.intersect.vrt
+echo "<LayerSRS>WGS84</LayerSRS>" >> ${TMP_DIR}/.intersect.vrt
+echo "<GeometryField encoding=\"WKT\" field=\"WKT\"> </GeometryField>" >> ${TMP_DIR}/.intersect.vrt
+echo "</OGRVRTLayer>" >> ${TMP_DIR}/.intersect.vrt
+echo "</OGRVRTDataSource>" >> ${TMP_DIR}/.intersect.vrt
+
+# convert to shapefile
+ogr2ogr -f "ESRI Shapefile" ${TMP_DIR}/equ_intersect.shp ${TMP_DIR}/.intersect.vrt
+
+# check for intersection area
+EQU_OVERLAP=`st_intersection_area ${AOI} ${TMP_DIR}/equ_intersect.shp`
+
+if [ ${EQU_OVERLAP} != '(null)' ];then
+
+	SECONDS=0
+	echo -ne " Checking for consistent orbit numeration crossing the Equator ..."
+
+	# only valid for ascendent tracks
+	adjust_equator_tracks ${TMP_DIR}/3.asc.ssv.shp ${TMP_DIR}
+	adjust_equator_tracks ${TMP_DIR}/3.asc.sdv.shp ${TMP_DIR}
+	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+fi
+
+#-----------------------------------------------------
+# 7) take care of dateline (not GEE)
+#-----------------------------------------------------
+
+# TBD
+# SECONDS=0
+# echo -ne " Correct for dateline crossing ..."
+# h2 solution
+
+
+#-----------------------------------------------------
+# 8) check if acquisitions for full track overlap
+#-----------------------------------------------------
+
+SECONDS=0
+echo -ne " Checking if acquisitions cross the entire AOI..."
+
+# ascending
+check_overlap_aoi ${AOI} ${TMP_DIR}/3.asc.ssv.shp ${TMP_DIR}
+check_overlap_aoi ${AOI} ${TMP_DIR}/3.asc.sdv.shp ${TMP_DIR}
+
+# descending
+check_overlap_aoi ${AOI} ${TMP_DIR}/3.dsc.ssv.shp ${TMP_DIR}
+check_overlap_aoi ${AOI} ${TMP_DIR}/3.dsc.sdv.shp ${TMP_DIR}
+
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+
+#-----------------------------------------------------
+# 5) check if there are 2 equal track number at same date for different parts of the AOI ()
+#-----------------------------------------------------
+
+SECONDS=0
+echo -ne " Rename track numbers for tracks appearing twice (start and end of orbit) ..."
+rename_splitted_tracks ${TMP_DIR}/3.asc.ssv.shp ${TMP_DIR}
+rename_splitted_tracks ${TMP_DIR}/3.asc.sdv.shp ${TMP_DIR}
+
+rename_splitted_tracks ${TMP_DIR}/3.dsc.ssv.shp ${TMP_DIR}
+rename_splitted_tracks ${TMP_DIR}/3.dsc.sdv.shp ${TMP_DIR}
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
+
+
+#-----------------------------------------------------
+# 9) sort homogeneous timescan/timeseries
+#-----------------------------------------------------
+
+SECONDS=0
+echo -e " Sort for homogeneuos time-series over the AOI..."
+
+# ascending
+check_homogeneous_coverage ${TMP_DIR}/3.asc.ssv.shp ${TMP_DIR} ${TMP_DIR}/4.asc.ssv.shp
+check_homogeneous_coverage ${TMP_DIR}/3.asc.sdv.shp ${TMP_DIR} ${TMP_DIR}/4.asc.sdv.shp
+
+# descending
+check_homogeneous_coverage ${TMP_DIR}/3.dsc.ssv.shp ${TMP_DIR} ${TMP_DIR}/4.dsc.ssv.shp
+check_homogeneous_coverage ${TMP_DIR}/3.dsc.sdv.shp ${TMP_DIR} ${TMP_DIR}/4.dsc.sdv.shp
+
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"

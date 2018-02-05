@@ -258,8 +258,17 @@ tabItem(tabName = "s1_grd2rtc",
                             tags$h4("Demo I: Processing of one single-polarised scene"),
                             p("Within this demo a single-polarised scene over the wider area of the city of Santa Cruz della Sierra, Bolivia will be processed with the 
                                Standard GRD to RTC processor. The accompanying slides contain a step-by-step guide and familiarise the user with basic concepts of SAR 
-                               image processing and SAR image interpretation."),
-                            tags$b("In preparation"),
+                               image processing and SAR image interpretation. Click ", 
+                               a(href = "https://unfao-my.sharepoint.com/personal/andreas_vollrath_fao_org/_layouts/15/guestaccess.aspx?docid=064b8db272e8a47888504dd75d0609b56&authkey=AWW7CwPuh425ps9oRd6mkSE&e=9e62ad86aa6d4d9b9cc3d94553867aef", target = "_blank", "here"), 
+                               "to download them.                          "),
+                            
+                            p("The demo data provides an OST inventory shapefile that can be found within the ", tags$b("/home/username/OST_demos/S1/Lecture_1a/Inventory")," folder."),
+                            br(),
+                            withBusyIndicatorUI(
+                              actionButton("S1_g2r_l1a", "Download")
+                            ),
+                            br(),
+                            textOutput("download_s1_L1A"),
                             hr(),
                             tags$h4("Demo II: Processing of one dual-polarised scene"),
                             p("Within this demo a dual-polarised scene over the wider area of the city of Santa Cruz della Sierra, Bolivia will be processed with the 

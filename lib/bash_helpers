@@ -85,7 +85,7 @@ function set_tmp_S1_RTC_bulk() {
 function set_tmp_S1_TS() {
   if [ -z "$1" ]; then
     echo " Missing arguments. Syntax:"
-    echo " set_tmp_S1_RTC <Size of Images> "
+    echo " set_tmp_S1_TS <Size of Images> "
     return
   fi
 

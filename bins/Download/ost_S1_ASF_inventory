@@ -196,7 +196,7 @@ cp ${AOI_PROJ_FILE}.prj ${TMP_DIR}/aoi_convex.prj
 
 ogr2ogr -f CSV ${TMP_DIR}/AOI_WKT.csv ${TMP_DIR}/aoi_convex.shp -lco GEOMETRY=AS_WKT
 AOI=`grep POLYGON ${TMP_DIR}/AOI_WKT.csv | sed 's|\"POLYGON ((||g' | awk -F "\)\)" $'{print $1}' 2>/dev/null | sed 's/\ /,/g'`
-
+echo $AOI
 # Search Parameters
 PERIOD="start="${START}"T11:59:59UTC&end="${END}"T00:00:00UTC"
 PLATFORM="platform=Sentinel-1A,Sentinel-1B"
@@ -323,9 +323,9 @@ rm -rf "${INV}/S1_ASF_${MODE}_${LEVEL_2}_${POL_2}.shp"
 ogr2ogr -wrapdateline -datelineoffset 0.05 -f "Esri Shapefile" "${INV}/S1_ASF_${MODE}_${LEVEL_2}_${POL_2}.shp" "${TMP_DIR}/wkt.vrt" > /dev/null 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_inv_progress
 
-rm -rf ${TMP_DIR}
+#rm -rf ${TMP_DIR}
 
 # download if needed
 if [[ $8 == 1 ]];then
-	oft-sar-ALOS-ASF-download ${PROC_DIR} ${INV}/S1_ASF_${MODE}_${LEVEL_2}_${POL_2}.shp
+	ost_S1_ASF_download ${PROC_DIR} ${INV}/S1_ASF_${MODE}_${LEVEL_2}_${POL_2}.shp
 fi

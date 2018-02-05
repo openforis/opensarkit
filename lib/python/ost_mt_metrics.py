@@ -107,7 +107,7 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,toPower,rescale_sar, outlier):
                         stacked_array = stacked_array_orig.astype(float) * ( 35. / 254.) + (-30. - (35. / 254.))
 
                     elif data_type_name == 'UInt16':
-                        stacked_array = stacked_array_orig.astype(float) * ( 35. / 65535.) + (-30. - (35. / 65535.))
+                            stacked_array = stacked_array_orig.astype(float) * ( 35. / 65535.) + (-30. - (35. / 65535.))
                     else:
                         stacked_array = stacked_array_orig
                 else:

@@ -96,7 +96,8 @@ if [ "`echo $AOI | grep shp`" ]; then # AOI case
 else # country case
   mkdir -p ${PROC_DIR}/AOI/
   aoi_from_iso3 $2 ${PROC_DIR}/AOI | tee -a ${PROC_DIR}/.srtm_dow_progress
-	AOI=${PROC_DIR}/AOI/$2.shp
+	#AOI=${PROC_DIR}/AOI/$2.shp
+	AOI=${PROC_DIR}/AOI/aoi_$2_"buffer.shp"
 fi
 #----------------------------------------------------------------------
 
@@ -231,7 +232,7 @@ fi
 if [ $3 -gt 0 ];then
 	SECONDS=0
 	echo -ne " Creating a final vrt-stack" | tee -a ${PROC_DIR}/.srtm_dow_progress
-	gdalbuildvrt -separate -srcnodata 0 ${PROC_DIR}/SRTM.vrt $(ls ${PROC_DIR}/*tif) 
+	gdalbuildvrt -separate -srcnodata 0 ${PROC_DIR}/SRTM.vrt $(ls ${PROC_DIR}/*tif)
 fi
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.srtm_dow_progress
 

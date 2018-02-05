@@ -83,9 +83,9 @@ for i in $(seq 1 ${LSAT_NR_BANDS}); do
    SECONDS=0
    echo -ne "Extracting the ${LSAT_BAND} band from the Landsat stack..." | tee -a ${PROC_DIR}/.ms_ls_s1_kc_srtm_progress
    if [ $i -lt 10 ]; then
-     gdal_translate -b $i ${LSAT_STACK} ${PROC_DIR}/0${i}.LSAT.${LSAT_BAND}.tif -co "BIGTIFF=YES" -co "BLOCKXSIZE=${LSAT_WIDTH}" -co "BLOCKYSIZE=1" >> ${LOG_DIR}/log_lsat 2>&1
+     gdal_translate -b $i ${LSAT_STACK} ${PROC_DIR}/0${i}.LSAT.${LSAT_BAND}.tif -co "BIGTIFF=YES" -co "TILED=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" >> ${LOG_DIR}/log_lsat 2>&1
    else
-     gdal_translate -b $i ${LSAT_STACK} ${PROC_DIR}/${i}.LSAT.${LSAT_BAND}.tif -co "BIGTIFF=YES" -co "BLOCKXSIZE=${LSAT_WIDTH}" -co "BLOCKYSIZE=1" >> ${LOG_DIR}/log_lsat 2>&1
+     gdal_translate -b $i ${LSAT_STACK} ${PROC_DIR}/${i}.LSAT.${LSAT_BAND}.tif -co "BIGTIFF=YES" -co "TILED=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" >> ${LOG_DIR}/log_lsat 2>&1
    fi
    duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.ms_ls_s1_kc_srtm_progress
 done
@@ -94,7 +94,7 @@ done
 SECONDS=0
 echo -ne "Create a Landsat no data mask..." | tee -a ${PROC_DIR}/.ms_ls_s1_kc_srtm_progress
 mkdir -p ${PROC_DIR}/masks
-gdal_calc.py -A ${PROC_DIR}/0${i}.LSAT.*.tif --A_band=1 --calc="1*(A>0)" --outfile=${PROC_DIR}/masks/lsat_mask.tif --type=Byte --co "BIGTIFF=YES" --co "BLOCKXSIZE=${LSAT_WIDTH}" --co "BLOCKYSIZE=1" >> ${LOG_DIR}/log_lsat 2>&1
+gdal_calc.py -A ${PROC_DIR}/0${i}.LSAT.*.tif --A_band=1 --calc="1*(A>0)" --outfile=${PROC_DIR}/masks/lsat_mask.tif --type=Byte --co "BIGTIFF=YES" --co "BLOCKXSIZE=128" --co "BLOCKYSIZE=128" --co "TILED=YES" >> ${LOG_DIR}/log_lsat 2>&1
 gdal_trace_outline ${PROC_DIR}/masks/lsat_mask.tif -dp-toler 0 -ndv 0 -major-ring -out-cs ll -ogr-out ${TMP_DIR}/test.shp  >> ${LOG_DIR}/log_lsat 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.ms_ls_s1_kc_srtm_progress
 
@@ -108,9 +108,9 @@ if [ $6 == 1 ];then
   ost_replace_values.py -i ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.NDVI.tif -o ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.NDVI.ones.tif -r 0 -n 1 >> ${LOG_DIR}/log_lsat_ind 2>&1
   rm -f ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.NDVI.tif
   if [ ${LSAT_NR_BANDS} -lt 10 ]; then
-    gdalwarp -cutline ${TMP_DIR}/test.shp  -co "BIGTIFF=YES" -co "BLOCKXSIZE=${LSAT_WIDTH}" -co "BLOCKYSIZE=1" ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.NDVI.ones.tif ${PROC_DIR}/0${LSAT_NR_BANDS}.LSAT.NDVI.tif >> ${LOG_DIR}/log_lsat_ind 2>&1
+    gdalwarp -cutline ${TMP_DIR}/test.shp  -co "BIGTIFF=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" -co "TILED=YES" ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.NDVI.ones.tif ${PROC_DIR}/0${LSAT_NR_BANDS}.LSAT.NDVI.tif >> ${LOG_DIR}/log_lsat_ind 2>&1
   else
-    gdalwarp -cutline ${TMP_DIR}/test.shp  -co "BIGTIFF=YES" -co "BLOCKXSIZE=${LSAT_WIDTH}" -co "BLOCKYSIZE=1" ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.NDVI.ones.tif ${PROC_DIR}/${LSAT_NR_BANDS}.LSAT.NDVI.tif >> ${LOG_DIR}/log_lsat_ind 2>&1
+    gdalwarp -cutline ${TMP_DIR}/test.shp  -co "BIGTIFF=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" -co "TILED=YES" ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.NDVI.ones.tif ${PROC_DIR}/${LSAT_NR_BANDS}.LSAT.NDVI.tif >> ${LOG_DIR}/log_lsat_ind 2>&1
   fi
   rm -f ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.NDVI.ones.tif
   duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.ms_ls_s1_kc_srtm_progress
@@ -123,9 +123,9 @@ if [ $6 == 1 ];then
   ost_replace_values.py -i ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.MSAVI.tif -o ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.MSAVI.ones.tif -r 0 -n 1 >> ${LOG_DIR}/log_lsat_ind 2>&1
   rm -f ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.MSAVI.tif
   if [ ${LSAT_NR_BANDS} -lt 10 ]; then
-    gdalwarp -cutline ${TMP_DIR}/test.shp  -co "BIGTIFF=YES" -co "BLOCKXSIZE=${LSAT_WIDTH}" -co "BLOCKYSIZE=1" ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.MSAVI.ones.tif ${PROC_DIR}/0${LSAT_NR_BANDS}.LSAT.MSAVI.tif >> ${LOG_DIR}/log_lsat_ind 2>&1
-  else
-    gdalwarp -cutline ${TMP_DIR}/test.shp  -co "BIGTIFF=YES" -co "BLOCKXSIZE=${LSAT_WIDTH}" -co "BLOCKYSIZE=1" ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.MSAVI.ones.tif ${PROC_DIR}/${LSAT_NR_BANDS}.LSAT.MSAVI.tif >> ${LOG_DIR}/log_lsat_ind 2>&1
+    gdalwarp -cutline ${TMP_DIR}/test.shp  -co "BIGTIFF=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" -co "TILED=YES" ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.MSAVI.ones.tif ${PROC_DIR}/0${LSAT_NR_BANDS}.LSAT.MSAVI.tif >> ${LOG_DIR}/log_lsat_ind 2>&1
+  else  
+    gdalwarp -cutline ${TMP_DIR}/test.shp  -co "BIGTIFF=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" -co "TILED=YES" ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.MSAVI.ones.tif ${PROC_DIR}/${LSAT_NR_BANDS}.LSAT.MSAVI.tif >> ${LOG_DIR}/log_lsat_ind 2>&1
   fi
   rm -f ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.MSAVI.ones.tif
   duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.ms_ls_s1_kc_srtm_progress
@@ -138,9 +138,9 @@ if [ $6 == 1 ];then
   ost_replace_values.py -i ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.NDMI.tif -o ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.NDMI.ones.tif -r 0 -n 1 >> ${LOG_DIR}/log_lsat_ind 2>&1
   rm -f ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.NDMI.tif
   if [ ${LSAT_NR_BANDS} -lt 10 ]; then
-    gdalwarp -cutline ${TMP_DIR}/test.shp  -co "BIGTIFF=YES" -co "BLOCKXSIZE=${LSAT_WIDTH}" -co "BLOCKYSIZE=1" ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.NDMI.ones.tif ${PROC_DIR}/0${LSAT_NR_BANDS}.LSAT.NDMI.tif >> ${LOG_DIR}/log_lsat_ind 2>&1
+    gdalwarp -cutline ${TMP_DIR}/test.shp  -co "BIGTIFF=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" -co "TILED=YES" ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.NDMI.ones.tif ${PROC_DIR}/0${LSAT_NR_BANDS}.LSAT.NDMI.tif >> ${LOG_DIR}/log_lsat_ind 2>&1
   else
-    gdalwarp -cutline ${TMP_DIR}/test.shp  -co "BIGTIFF=YES" -co "BLOCKXSIZE=${LSAT_WIDTH}" -co "BLOCKYSIZE=1" ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.NDMI.ones.tif ${PROC_DIR}/${LSAT_NR_BANDS}.LSAT.NDMI.tif >> ${LOG_DIR}/log_lsat_ind 2>&1
+    gdalwarp -cutline ${TMP_DIR}/test.shp  -co "BIGTIFF=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" -co "TILED=YES" ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.NDMI.ones.tif ${PROC_DIR}/${LSAT_NR_BANDS}.LSAT.NDMI.tif >> ${LOG_DIR}/log_lsat_ind 2>&1
   fi
   rm -f ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.NDMI.ones.tif
   duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.ms_ls_s1_kc_srtm_progress
@@ -153,9 +153,9 @@ if [ $6 == 1 ];then
   ost_replace_values.py -i ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.NBR.tif -o ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.NBR.ones.tif -r 0 -n 1 >> ${LOG_DIR}/log_lsat_ind 2>&1
   rm -f ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.NBR.tif
   if [ ${LSAT_NR_BANDS} -lt 10 ]; then
-    gdalwarp -cutline ${TMP_DIR}/test.shp  -co "BIGTIFF=YES" -co "BLOCKXSIZE=${LSAT_WIDTH}" -co "BLOCKYSIZE=1" ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.NBR.ones.tif ${PROC_DIR}/0${LSAT_NR_BANDS}.LSAT.NBR.tif >> ${LOG_DIR}/log_lsat_ind 2>&1
+    gdalwarp -cutline ${TMP_DIR}/test.shp  -co "BIGTIFF=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" -co "TILED=YES" ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.NBR.ones.tif ${PROC_DIR}/0${LSAT_NR_BANDS}.LSAT.NBR.tif >> ${LOG_DIR}/log_lsat_ind 2>&1
   else
-    gdalwarp -cutline ${TMP_DIR}/test.shp  -co "BIGTIFF=YES" -co "BLOCKXSIZE=${LSAT_WIDTH}" -co "BLOCKYSIZE=1" ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.NBR.ones.tif ${PROC_DIR}/${LSAT_NR_BANDS}.LSAT.NBR.tif >> ${LOG_DIR}/log_lsat_ind 2>&1
+    gdalwarp -cutline ${TMP_DIR}/test.shp  -co "BIGTIFF=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" -co "TILED=YES" ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.NBR.ones.tif ${PROC_DIR}/${LSAT_NR_BANDS}.LSAT.NBR.tif >> ${LOG_DIR}/log_lsat_ind 2>&1
   fi
   rm -f ${TMP_DIR}/${LSAT_NR_BANDS}.LSAT.NBR.ones.tif
   duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.ms_ls_s1_kc_srtm_progress
@@ -179,17 +179,17 @@ for i in $(seq 1 ${S1_NR_BANDS}); do
     echo -ne "Extracting the `basename $file` band from the Sentinel-1 stack..." | tee -a ${PROC_DIR}/.ms_ls_s1_kc_srtm_progress
     if [ $j -lt 10 ]; then
       echo 0${j}.S1.${filename}.tif
-      gdalwarp ${S1_OPTS} -co "BIGTIFF=YES" -co "BLOCKXSIZE=${LSAT_WIDTH}" -co "BLOCKYSIZE=1" ${file} ${PROC_DIR}/0${j}.S1.${filename}.tif >> ${LOG_DIR}/log_s1 2>&1
+      gdalwarp ${S1_OPTS} -co "BIGTIFF=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" -co "TILED=YES" ${file} ${PROC_DIR}/0${j}.S1.${filename}.tif >> ${LOG_DIR}/log_s1 2>&1
     else
       echo ${j}.S1.${filename}.tif
-      gdalwarp ${S1_OPTS} -co "BIGTIFF=YES" -co "BLOCKXSIZE=${LSAT_WIDTH}" -co "BLOCKYSIZE=1" ${file} ${PROC_DIR}/${j}.S1.${filename}.tif >> ${LOG_DIR}/log_s1 2>&1
+      gdalwarp ${S1_OPTS} -co "BIGTIFF=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" -co "TILED=YES" ${file} ${PROC_DIR}/${j}.S1.${filename}.tif >> ${LOG_DIR}/log_s1 2>&1
     fi
     duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.ms_ls_s1_kc_srtm_progress
 done
 
 SECONDS=0
 echo -ne "Cropping the LS mask of Sentinel-1 to the common extent..." | tee -a ${PROC_DIR}/.ms_ls_s1_kc_srtm_progress
-gdalwarp ${S1_OPTS} -ot Byte -co "BIGTIFF=YES" -co "BLOCKXSIZE=${LSAT_WIDTH}" -co "BLOCKYSIZE=1" ${S1_TS_DIR}/../LS.map.tif ${PROC_DIR}/masks/s1_mask.tif  >> ${LOG_DIR}/log_s1 2>&1
+gdalwarp ${S1_OPTS} -ot Byte -co "BIGTIFF=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" -co "TILED=YES" ${S1_TS_DIR}/../LS.map.tif ${PROC_DIR}/masks/s1_mask.tif  >> ${LOG_DIR}/log_s1 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.ms_ls_s1_kc_srtm_progress
 #---------------------------------------------------------------------------------------------
 
@@ -211,10 +211,10 @@ for i in $(seq 1 ${KC_NR_BANDS}); do
     echo -ne "Extracting the `basename $file` band from the ALOS stack..." | tee -a ${PROC_DIR}/.ms_ls_s1_kc_srtm_progress
   if [ $j -lt 10 ]; then
     echo 0${j}_${filename}.tif
-    gdalwarp ${KC_OPTS} -co "BIGTIFF=YES" -co "BLOCKXSIZE=${LSAT_WIDTH}" -co "BLOCKYSIZE=1" ${file} ${PROC_DIR}/0${j}.ALOS.${filename}.tif >> ${LOG_DIR}/log_kc 2>&1
+    gdalwarp ${KC_OPTS} -co "BIGTIFF=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" -co "TILED=YES" ${file} ${PROC_DIR}/0${j}.ALOS.${filename}.tif >> ${LOG_DIR}/log_kc 2>&1
   else
     echo ${j}_${filename}.tif
-    gdalwarp ${KC_OPTS} -co "BIGTIFF=YES" -co "BLOCKXSIZE=${LSAT_WIDTH}" -co "BLOCKYSIZE=1" ${file} ${PROC_DIR}/${j}.ALOS.${filename}.tif >> ${LOG_DIR}/log_kc 2>&1
+    gdalwarp ${KC_OPTS} -co "BIGTIFF=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" -co "TILED=YES" ${file} ${PROC_DIR}/${j}.ALOS.${filename}.tif >> ${LOG_DIR}/log_kc 2>&1
   fi
   duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.ms_ls_s1_kc_srtm_progress
 done
@@ -222,9 +222,9 @@ done
 SECONDS=0
 echo -ne "Cropping the LS mask of ALOS to the common extent..." | tee -a ${PROC_DIR}/.ms_ls_s1_kc_srtm_progress
 if [ $j -lt 10 ]; then
-  gdal_calc.py -A ${PROC_DIR}/0$j.ALOS*.tif --calc="1*(A>0)" --outfile=${PROC_DIR}/masks/alos_mask.tif --type=Byte --co "BIGTIFF=YES" --co "BLOCKXSIZE=${LSAT_WIDTH}" --co "BLOCKYSIZE=1" >> ${LOG_DIR}/log_kc 2>&1
+  gdal_calc.py -A ${PROC_DIR}/0$j.ALOS*.tif --calc="1*(A>0)" --outfile=${PROC_DIR}/masks/alos_mask.tif --type=Byte --co "BIGTIFF=YES" --co "BLOCKXSIZE=128" --co "BLOCKYSIZE=128" --co "TILED=YES" >> ${LOG_DIR}/log_kc 2>&1
 else
-  gdal_calc.py -A ${PROC_DIR}/$j.ALOS*.tif --calc="1*(A>0)" --outfile=${PROC_DIR}/masks/alos_mask.tif --type=Byte --co "BIGTIFF=YES" --co "BLOCKXSIZE=${LSAT_WIDTH}" --co "BLOCKYSIZE=1" >> ${LOG_DIR}/log_kc 2>&1
+  gdal_calc.py -A ${PROC_DIR}/$j.ALOS*.tif --calc="1*(A>0)" --outfile=${PROC_DIR}/masks/alos_mask.tif --type=Byte --co "BIGTIFF=YES" --co "BLOCKXSIZE=128" --co "BLOCKYSIZE=128" --co "TILED=YES" >> ${LOG_DIR}/log_kc 2>&1
 fi
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.ms_ls_s1_kc_srtm_progress
 #---------------------------------------------------------------------------------------------
@@ -247,10 +247,10 @@ for i in $(seq 1 ${SRTM_BANDS}); do
   echo -ne "Extracting the `basename $file` band from the ALOS stack..." | tee -a ${PROC_DIR}/.ms_ls_s1_kc_srtm_progress
   if [ $j -lt 10 ]; then
     echo 0${j}_${filename}.tif
-    gdalwarp ${SRTM_OPTS} -co "BIGTIFF=YES" -co "BLOCKXSIZE=${LSAT_WIDTH}" -co "BLOCKYSIZE=1" ${file} ${PROC_DIR}/0${j}.SRTM.${filename}.tif >> ${LOG_DIR}/log_kc 2>&1
+    gdalwarp ${SRTM_OPTS} -co "BIGTIFF=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" -co "TILED=YES" ${file} ${PROC_DIR}/0${j}.SRTM.${filename}.tif >> ${LOG_DIR}/log_kc 2>&1
   else
     echo ${j}_${filename}.tif
-    gdalwarp ${SRTM_OPTS} -co "BIGTIFF=YES" -co "BLOCKXSIZE=${LSAT_WIDTH}" -co "BLOCKYSIZE=1" ${file} ${PROC_DIR}/${j}.SRTM.${filename}.tif >> ${LOG_DIR}/log_kc 2>&1
+    gdalwarp ${SRTM_OPTS} -co "BIGTIFF=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" -co "TILED=YES" ${file} ${PROC_DIR}/${j}.SRTM.${filename}.tif >> ${LOG_DIR}/log_kc 2>&1
   fi
   duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.ms_ls_s1_kc_srtm_progress
 done
@@ -261,9 +261,9 @@ done
 # masks
 SECONDS=0
 echo -ne "Combining the masks..." | tee -a ${PROC_DIR}/.ms_ls_s1_kc_srtm_progress
-gdal_calc.py -A ${PROC_DIR}/masks/alos_mask.tif -B ${PROC_DIR}/masks/lsat_mask.tif -C ${PROC_DIR}/masks/s1_mask.tif --calc="A*B*C" --outfile=${PROC_DIR}/masks/lsat_s1_alos_mask.tif --type=Byte --co "BIGTIFF=YES" --co "BLOCKXSIZE=${LSAT_WIDTH}" --co "BLOCKYSIZE=1" >> ${LOG_DIR}/log_mask 2>&1
-gdal_calc.py -A ${PROC_DIR}/masks/alos_mask.tif -B ${PROC_DIR}/masks/lsat_mask.tif --calc="A*B" --outfile=${PROC_DIR}/masks/lsat_alos_mask.tif --type=Byte --co "BIGTIFF=YES" --co "BLOCKXSIZE=${LSAT_WIDTH}" --co "BLOCKYSIZE=1" >> ${LOG_DIR}/log_mask 2>&1
-gdal_calc.py -A ${PROC_DIR}/masks/alos_mask.tif -B ${PROC_DIR}/masks/s1_mask.tif --calc="A*B" --outfile=${PROC_DIR}/masks/s1_alos_mask.tif --type=Byte --co "BIGTIFF=YES" --co "BLOCKXSIZE=${LSAT_WIDTH}" --co "BLOCKYSIZE=1" >> ${LOG_DIR}/log_mask 2>&1
+gdal_calc.py -A ${PROC_DIR}/masks/alos_mask.tif -B ${PROC_DIR}/masks/lsat_mask.tif -C ${PROC_DIR}/masks/s1_mask.tif --calc="A*B*C" --outfile=${PROC_DIR}/masks/lsat_s1_alos_mask.tif --type=Byte --co "BIGTIFF=YES" --co "BLOCKXSIZE=128" --co "BLOCKYSIZE=128" -co "TILED=YES" >> ${LOG_DIR}/log_mask 2>&1
+gdal_calc.py -A ${PROC_DIR}/masks/alos_mask.tif -B ${PROC_DIR}/masks/lsat_mask.tif --calc="A*B" --outfile=${PROC_DIR}/masks/lsat_alos_mask.tif --type=Byte --co "BIGTIFF=YES" --co "BLOCKXSIZE=128" --co "BLOCKYSIZE=128" -co "TILED=YES" >> ${LOG_DIR}/log_mask 2>&1
+gdal_calc.py -A ${PROC_DIR}/masks/alos_mask.tif -B ${PROC_DIR}/masks/s1_mask.tif --calc="A*B" --outfile=${PROC_DIR}/masks/s1_alos_mask.tif --type=Byte --co "BIGTIFF=YES" --co "BLOCKXSIZE=128" --co "BLOCKYSIZE=128" -co "TILED=YES" >> ${LOG_DIR}/log_mask 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.ms_ls_s1_kc_srtm_progress
 #
 # # create stack

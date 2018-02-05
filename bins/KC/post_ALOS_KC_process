@@ -268,19 +268,43 @@ fi
 # remove Temp Folder
 rm -rf ${TMP_DIR}
 
-if [ -e ${OUT_DIR}/${YEAR}/MOS/01_Gamma0_HH_${YEAR}.tif ] && [ -e ${OUT_DIR}/${YEAR}/MOS/04_RFDI_${YEAR}.tif ];then
+if [ ${YEAR} -gt 2006 ];then
 
-	echo " ---------------------------------------------------------------------------------------------" | tee -a ${OUT_DIR}/.kc_pro_progress
-	echo " Succesfully processed the K&C tiles " | tee -a ${OUT_DIR}/.kc_pro_progress
-	echo " You can find the RGB backscatter data in: ${OUT_DIR}/${YEAR}/MOS/RGB_${YEAR}.vrt" | tee -a ${OUT_DIR}/.kc_pro_progress
-	#echo " You can find the K&C Forest/Non-forest data in: ${OUT_DIR}/${YEAR}/FNF/${YEAR}_KC_FNF_map.tif"
-	echo " You can find the corresponding acquisiton dates: ${OUT_DIR}/${YEAR}/Auxiliary/${YEAR}_acquisition_date.tif" | tee -a ${OUT_DIR}/.kc_pro_progress
-	echo " You can find the corresponding local incidence angles in: ${OUT_DIR}/${YEAR}/AUX/${YEAR}_loc_inc_angle.tif" | tee -a ${OUT_DIR}/.kc_pro_progress
-	echo " ---------------------------------------------------------------------------------------------" | tee -a ${OUT_DIR}/.kc_pro_progress
+	if [ -e ${OUT_DIR}/${YEAR}/MOS/01_Gamma0_HH_${YEAR}.tif ] && [ -e ${OUT_DIR}/${YEAR}/MOS/04_RFDI_${YEAR}.tif ];then
 
-else
+		echo " ---------------------------------------------------------------------------------------------" | tee -a ${OUT_DIR}/.kc_pro_progress
+		echo " Succesfully processed the K&C tiles " | tee -a ${OUT_DIR}/.kc_pro_progress
+		echo " You can find the RGB backscatter data in: ${OUT_DIR}/${YEAR}/MOS/RGB_${YEAR}.vrt" | tee -a ${OUT_DIR}/.kc_pro_progress
+		#echo " You can find the K&C Forest/Non-forest data in: ${OUT_DIR}/${YEAR}/FNF/${YEAR}_KC_FNF_map.tif"
+		echo " You can find the corresponding acquisiton dates: ${OUT_DIR}/${YEAR}/Auxiliary/acquisition_dates.shp" | tee -a ${OUT_DIR}/.kc_pro_progress
+		echo " You can find the corresponding local incidence angles in: ${OUT_DIR}/${YEAR}/Auxiliary/${YEAR}_loc_inc_angle.tif" | tee -a ${OUT_DIR}/.kc_pro_progress
+		echo " ---------------------------------------------------------------------------------------------" | tee -a ${OUT_DIR}/.kc_pro_progress
+
+	else
 
 		echo " Something went terribly wrong, and your final output files have not been created." | tee -a ${OUT_DIR}/.kc_pro_progress
 		echo " Most likely you ran into storage issues (i.e. no space left on device)." | tee -a ${OUT_DIR}/.kc_pro_progress
 		exit 111
+
+	fi
+
+elif [ ${YEAR} -lt 2006 ];then
+
+	if [ -e ${OUT_DIR}/${YEAR}/MOS/01_Gamma0_HH_${YEAR}.tif ];then
+
+		echo " ---------------------------------------------------------------------------------------------" | tee -a ${OUT_DIR}/.kc_pro_progress
+		echo " Succesfully processed the K&C tiles " | tee -a ${OUT_DIR}/.kc_pro_progress
+		echo " You can find the HH backscatter data in: ${OUT_DIR}/${YEAR}/MOS/01_Gamma0_HH_${YEAR}.tif" | tee -a ${OUT_DIR}/.kc_pro_progress
+		echo " You can find the corresponding acquisiton dates: ${OUT_DIR}/${YEAR}/Auxiliary/acquisition_dates.shp" | tee -a ${OUT_DIR}/.kc_pro_progress
+		echo " You can find the corresponding local incidence angles in: ${OUT_DIR}/${YEAR}/Auxiliary/${YEAR}_loc_inc_angle.tif" | tee -a ${OUT_DIR}/.kc_pro_progress
+		echo " ---------------------------------------------------------------------------------------------" | tee -a ${OUT_DIR}/.kc_pro_progress
+
+	else
+
+		echo " Something went terribly wrong, and your final output files have not been created." | tee -a ${OUT_DIR}/.kc_pro_progress
+		echo " Most likely you ran into storage issues (i.e. no space left on device)." | tee -a ${OUT_DIR}/.kc_pro_progress
+		exit 111
+
+	fi
+
 fi

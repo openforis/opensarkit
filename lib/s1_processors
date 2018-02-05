@@ -167,7 +167,7 @@ function s1_rtc_processing() {
         rm -rf ${RTC_TMP}/TF.d*
 
         SECONDS=0
-        echo -ne " Merging backscatter bands with ratio"
+        echo -ne " Merging backscatter bands with ratio ..." &&
         bash ${SNAP_EXE} BandMerge -x  -q ${NR_OF_CPUS} ${RTC_TMP}/TC_DB.dim ${RTC_TMP}/Ratio.dim -t ${RTC_TMP}/RTC.dim > ${RTC_LOG}/log_output 2>&1
         duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
         [ $? -ne 0 ] && return ${ERR_BM}
@@ -601,8 +601,7 @@ function s1_gtc_processing() {
   elif [ ${GTC_RES} == "HI_RES" ];then
 
     SECONDS=0
-    echo " Removing GRD border noise by deleting the outer 600 rows, calibrating to beta0, "
-    echo -ne " applying the terrain flattening ..." &&
+    echo -ne " Calibrating to Gamma0 (based on ellipsoid earth model) ..." &&
     bash ${SNAP_EXE} ${S1_GRD2GTC_GRAPHS}/S1_GRD2GTC_CAL_noML.xml -x -q ${NR_OF_CPUS} -Pinput=${GTC_IN} -Pwidth=${NEW_WIDTH} -Pheight=${NEW_HEIGHT} -Poutput=${GTC_TMP}/TF > ${GTC_LOG}/log_cal_tf 2>&1
     duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
     [ $? -ne 0 ] && return ${ERR_BRD_NOISE}
@@ -853,12 +852,17 @@ function s1_timeseries() {
     fi
   fi
 
+  # set the geotiff options for output
+  OUT_OPTS_WARP='-overwrite -co "COMPRESS=LZW" -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline -co "BLOCKXSIZE=128" -co "BLOCKXSIZE=128" -co "TILED=YES"'
+  OUT_OPTS_CALC='--NoDataValue=0 --co='COMPRESS=LZW' --co "BLOCKXSIZE=128" --co "BLOCKXSIZE=128" --co "TILED=YES"'
+
+  # create final mask
   ost_mt_metrics.py -i ${TMP_MT}/ls_mask_stack.vrt -o ${TMP_MT}/LS.map -t 4 -p no -r no -m no >> ${LOG_MT}/log_mt_stacking 2>&1
   gdal_edit.py -a_nodata 0 ${TMP_MT}/LS.map.max.tif >> ${LOG_MT}/log_mt_stacking 2>&1
   gdal_fillnodata.py -md 3 ${TMP_MT}/LS.map.max.tif ${TMP_MT}/LS.map.tif >> ${LOG_MT}/log_mt_stacking 2>&1
   gdal_edit.py -unsetnodata ${TMP_MT}/LS.map.tif >> ${LOG_MT}/log_mt_stacking 2>&1
   gdal_calc.py --overwrite --type='Byte' -A ${TMP_MT}/LS.map.tif --outfile=${TMP_MT}/LS.map.invert.tif --calc="1*(A==0)" --NoDataValue=0 --co='COMPRESS=LZW' >> ${LOG_MT}/log_mt_stacking 2>&1
-  gdalwarp -overwrite -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${TMP_MT}/LS.map.invert.tif ${OUT_STACK_MT}/LS.map.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+  gdalwarp ${OUT_OPTS} ${TMP_MT}/LS.map.invert.tif ${OUT_STACK_MT}/LS.map.tif >> ${LOG_MT}/log_mt_stacking 2>&1
   rm -f ${TMP_MT}/LS.map*
   duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
@@ -873,6 +877,8 @@ function s1_timeseries() {
 
   paste ${TMP_MT}/tmp.date ${TMP_MT}/tmp.filename >> ${TMP_MT}/tmp.date.filename
   sort -g ${TMP_MT}/tmp.date.filename >> ${TMP_MT}/tmp.date.filename.sorted
+
+
 
   i=1
   while read line; do
@@ -891,10 +897,12 @@ function s1_timeseries() {
       rm -f ${TMP_MT}/${DATE}.16bit.tif
 
       # cut to the actual extent of interest coming from the intersect above
-      gdalwarp -overwrite -co "COMPRESS=LZW" -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${TMP_MT}/${DATE}.16bit.ones.tif ${TMP_MT}/${i}_${DATE}.VV.16bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+      #gdalwarp -overwrite -co "COMPRESS=LZW" -dstnodata "0" -multi -wm "4096" -cutline ${CROPLINE} -crop_to_cutline ${TMP_MT}/${DATE}.16bit.ones.tif ${TMP_MT}/${i}_${DATE}.VV.16bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+      gdalwarp ${OUT_OPTS} ${TMP_MT}/${DATE}.16bit.ones.tif ${TMP_MT}/${i}_${DATE}.VV.16bit.tif >> ${LOG_MT}/log_mt_stacking 2>&1
+      rm -f ${TMP_MT}/${DATE}.16bit.ones.tif
 
       if [ ${LS_MAP_OPT} = 1 ];then
-        gdal_calc.py --overwrite -A ${TMP_MT}/${i}_${DATE}.VV.16bit.tif -B ${OUT_STACK_MT}/LS.map.tif --calc="A*B" --outfile=${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.16bit.tif --NoDataValue=0 --co='COMPRESS=LZW' >> ${LOG_MT}/log_mt_stacking 2>&1
+        gdal_calc.py --overwrite -A ${TMP_MT}/${i}_${DATE}.VV.16bit.tif -B ${OUT_STACK_MT}/LS.map.tif --calc="A*B" --outfile=${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.16bit.tif ${OUT_OPTS_CALC} >> ${LOG_MT}/log_mt_stacking 2>&1
       else
         mv ${TMP_MT}/${i}_${DATE}.VV.16bit.tif ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.16bit.tif
       fi
@@ -902,7 +910,7 @@ function s1_timeseries() {
       rm -f ${TMP_MT}/${DATE}.VV.16.bit.ones.tif ${TMP_MT}/${i}_${DATE}.VV.16bit.tif
       echo ${OUT_STACK_MT}/Timeseries/${i}_${DATE}.VV.16bit.tif >> ${TMP_MT}/ts_vrt_list.txt
       duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-      rm -f ${TMP_MT}/${DATE}.16bit.ones.tif
+
 
       if [ ${POL_MODE_MT} == VV ];then
 
@@ -1281,9 +1289,9 @@ function s1_create_mosaic_ts() {
 	    return
   fi
 
-  DATA_DIR=(readlink -f $1)
+  DATA_DIR=$(readlink -f $1)
   SIZE=$2
-  TMP_DIR_TS=$3
+  TMP_DIR_TS=$( readlink -f $3)
 
   cd ${DATA_DIR}/MOSAIC/Timeseries
 
@@ -1314,7 +1322,7 @@ function s1_create_mosaic_ts() {
     gdal_translate -of JPEG -a_nodata 0 ${TMP_DIR_TS}/${i}_RGB.tif ${TMP_DIR_TS}/${i}_RGB.jpg
 
     echo "here"
-    ls -1 ${DATA_DIR}/*/Timeseries/${i}*VV* | awk -F "_" '{print $2}' | awk -F '.' '{print $1}' | sort > ${TMP_DIR_TS}/${i}_date
+    ls -1 ${DATA_DIR}/[0-9]*/Timeseries/${i}_*VV* | awk -F "_" '{print $2}' | awk -F '.' '{print $1}' | sort > ${TMP_DIR_TS}/${i}_date
     START=$(head -n 1)
     END=$(tail -n 1)
 
