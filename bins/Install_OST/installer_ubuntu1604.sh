@@ -187,15 +187,11 @@ apt-get install --yes --allow-unauthenticated \
  										  dans-gdal-scripts \
 											saga \
 											libsaga-dev \
-										#	otb-bin \
-										# libotb \
- 										#	libotb-apps \
 											geotiff-bin \
 											libgeotiff-dev \
 											spatialite-bin \
 											spatialite-gui >> ${OSK_HOME}/LOG/log_install_gis 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
-
 
 SECONDS=0
 echo -ne " Installing Ubuntu package dependencies "
@@ -236,7 +232,6 @@ apt-get install --yes --allow-unauthenticated \
 											python-dev \
 											python-gdal \
 											python-saga \
-										#	python-otb \
 											python-scipy \
 											python-h5py \
 											python-skimage \
@@ -258,7 +253,7 @@ echo "-------------------------------------"
 
 # install the latest Orfeo packaged version for use of ORFEO remote modules
 #otb=OTB-contrib-5.10.1-Linux64
-otb=OTB-contrib-6.0.0-Linux64
+otb=OTB-6.4.0-Linux64
 wget https://www.orfeo-toolbox.org/packages/$otb.run
 chmod +x $otb.run
 mv $otb.run /usr/local/lib
@@ -269,7 +264,7 @@ ln -s $otb orfeo
 chmod o+rx orfeo/*.sh
 chmod o+rx orfeo/otbenv.profile
 cd -
-echo "PYTHONPATH=/usr/local/lib/OTB-contrib-6.0.0-Linux64/lib/python" >> /etc/environment
+echo "PYTHONPATH=/usr/local/lib/orfeo/lib/python" >> /etc/environment
 echo "PATH=${PATH}:/usr/local/lib/orfeo/bin" >> /etc/environment
 
 #------------------------------------------------------------------
@@ -328,12 +323,12 @@ else
 
 	SECONDS=0
 	echo -ne " Downloading the SNAP software ..." &&
-	wget http://step.esa.int/downloads/6.0/installers/esa-snap_sentinel_unix_6_0.sh  >> ${OSK_HOME}/LOG/log_install 2>&1
+	wget http://step.esa.int/downloads/5.0/installers/esa-snap_sentinel_unix_5_0.sh  >> ${OSK_HOME}/LOG/log_install 2>&1
 	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 	SECONDS=0
 	echo -ne " Installing the SNAP software ..." &&
-	sh esa-snap_sentinel_unix_6_0.sh -q -overwrite  >> ${OSK_HOME}/LOG/log_install 2>&1
+	sh esa-snap_sentinel_unix_5_0.sh -q -overwrite  >> ${OSK_HOME}/LOG/log_install 2>&1
 	duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
 
 	rm -f esa-snap_sentinel_unix_5_0.sh
@@ -355,7 +350,15 @@ duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duratio
 
 HOME_USER=`stat -c '%U' ${HOME}/.bashrc`
 chown -R ${HOME_USER}:${HOME_USER} ${HOME}/.snap
+#-------------------------------------
 
+#-------------------------------------
+# install nlsar
+#git clone https://bitbucket.org/charles_deledalle/nlsar.git
+#cd nlsar
+#./configure
+#make
+#make install
 #-------------------------------------
 
 #------------------------------------------------------------------
@@ -400,7 +403,7 @@ echo "Path=" >> ${HOME}/Desktop/OST.desktop
 echo "StartupNotify=false" >> ${HOME}/Desktop/OST.desktop
 
 echo "require(shiny)" > ${OPENSARKIT}/shiny/ost.R
-echo "runApp('${OPENSARKIT}/shiny/',launch.browser = T)" >> ${OPENSARKIT}/shiny/ost.R
+echo "runApp(\"${OPENSARKIT}/shiny/\",launch.browser = T)" >> ${OPENSARKIT}/shiny/ost.R
 
 chmod +x ${HOME}/Desktop/OST.desktop
 chown ${HOME_USER}:${HOME_USER} ${HOME}/Desktop/OST.desktop
