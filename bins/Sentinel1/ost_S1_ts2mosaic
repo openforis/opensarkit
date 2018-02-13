@@ -184,7 +184,7 @@ if [ $2 == 1 ];then
 				SECONDS=0
 				echo -ne " Mosaicking the LS map and crop to the extent of the data layers  ..." | tee -a ${PROC_DIR}/.s1_ts2m_progress
 				gdal_merge.py -o ${TMP_DIR}/LS.map.tif -ul_lr $(gdal_ul ${TMP_DIR}/${i}_Gamma0.VV.tif) -ps $(gdal_resolution ${TMP_DIR}/${i}_Gamma0.VV.tif) -co "BIGTIFF=YES" \
-											-n 0 -a_nodata 0 $(cat ${TMP_DIR}/lslist | tr '\n' ' ') >> ${LOG_DIR}/log_mosaicking 2>&1
+											-n 0 $(cat ${TMP_DIR}/lslist | tr '\n' ' ') >> ${LOG_DIR}/log_mosaicking 2>&1
 				duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_ts2m_progress
 			fi
 
