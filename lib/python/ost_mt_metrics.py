@@ -116,6 +116,12 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,toPower,rescale_sar, outlier):
             # original nd_mask
             nd_mask = stacked_array_orig[1,:,:] == 0
 
+
+            # convert to power
+            if toPower == 'yes':
+                stacked_array_pow = 10 ** (stacked_array / 10)
+                stacked_array = stacked_array_pow
+
             # the outlier removal routine
             if outlier == 'yes' and raster3d.RasterCount >= 5:
                 # calculate percentiles
@@ -139,17 +145,10 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,toPower,rescale_sar, outlier):
                 stacked_array = np.ma.MaskedArray(
                                 stacked_array,
                                 mask = np.logical_or(
-                                stacked_array > masked_mean + masked_std * 4,
-                                stacked_array < masked_mean - masked_std * 4,
+                                stacked_array > masked_mean + masked_std * 0.5,
+                                stacked_array < masked_mean - masked_std * 0.5,
                                 )
                 )
-
-            # convert to power
-            if toPower == 'yes':
-                #print stacked_array.shape
-                stacked_array_pow = 10 ** (stacked_array / 10)
-                stacked_array = stacked_array_pow
-                #print stacked_array.shape
 
             # we calculate the metrics needed
             for metric in metrics:
@@ -162,8 +161,8 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,toPower,rescale_sar, outlier):
                             options=[           # Format-specific creation options.
                             'TILED=YES',
                             'BIGTIFF=IF_SAFER',
-                            'BLOCKXSIZE=256',   # must be a power of 2
-                            'BLOCKYSIZE=256',  # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
+                            'BLOCKXSIZE=128',   # must be a power of 2
+                            'BLOCKYSIZE=128',  # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
                             'COMPRESS=LZW'
                             ] )
                         outRaster_avg.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
@@ -194,8 +193,8 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,toPower,rescale_sar, outlier):
                             options=[           # Format-specific creation options.
                             'TILED=YES',
                             'BIGTIFF=IF_SAFER',
-                            'BLOCKXSIZE=256',   # must be a power of 2
-                            'BLOCKYSIZE=256',  # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
+                            'BLOCKXSIZE=128',   # must be a power of 2
+                            'BLOCKYSIZE=128',  # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
                             'COMPRESS=LZW'
                             ] )
                         outRaster_max.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
@@ -225,8 +224,8 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,toPower,rescale_sar, outlier):
                             options=[           # Format-specific creation options.
                             'TILED=YES',
                             'BIGTIFF=IF_SAFER',
-                            'BLOCKXSIZE=256',   # must be a power of 2
-                            'BLOCKYSIZE=256',  # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
+                            'BLOCKXSIZE=128',   # must be a power of 2
+                            'BLOCKYSIZE=128',  # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
                             'COMPRESS=LZW'
                             ] )
                         outRaster_min.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
@@ -250,12 +249,12 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,toPower,rescale_sar, outlier):
                 elif metric == "std":
 
                     if k == 1:
-                        outRaster_std = driver.Create(newRasterfn + ".std.tif", cols, rows, 1, data_type,
+                        outRaster_std = driver.Create(newRasterfn + ".std.tif", cols, rows, 1, gdal.GDT_Float32,
                                 options=[           # Format-specific creation options.
                                 'TILED=YES',
                                 'BIGTIFF=IF_SAFER',
-                                'BLOCKXSIZE=256',   # must be a power of 2
-                                'BLOCKYSIZE=256',  # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
+                                'BLOCKXSIZE=128',   # must be a power of 2
+                                'BLOCKYSIZE=128',  # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
                                 'COMPRESS=LZW'
                                 ] )
                         outRaster_std.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
@@ -266,25 +265,26 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,toPower,rescale_sar, outlier):
 
                     outmetric_std = np.std(stacked_array, axis=0)
 
-                    if toPower == 'yes':
-                        outmetric_std_db = 10 * np.log10(outmetric_std)
-                        outmetric_std = outmetric_std_db
+                    #if toPower == 'yes':
+                        #outmetric_std = np.std(10 * np.log10(stacked_array), axis=0)
+                        #outmetric_std_db = 10 * np.log10(outmetric_std)
+                        #outmetric_std = outmetric_std_db
 
                     if rescale_sar == 'yes' and data_type_name != 'Float32':
-                        outmetric_std = rescale_from_db(outmetric_std, 0.00001, 10., data_type_name) + 1
-                        outmetric_std[nd_mask == 1] = ndv
+                        outmetric_std = rescale_from_db(outmetric_std, 0.000001, 1., data_type_name) #+ 1
+                        outmetric_std[nd_mask == True] = ndv
 
                     outband_std.WriteArray(outmetric_std, x, y)
 
                 elif metric == "cov":
 
                     if k == 1:
-                         outRaster_cov = driver.Create(newRasterfn + ".cov.tif", cols, rows, 1, data_type,
+                         outRaster_cov = driver.Create(newRasterfn + ".cov.tif", cols, rows, 1, gdal.GDT_Float32,
                                  options=[           # Format-specific creation options.
                                  'TILED=YES',
                                  'BIGTIFF=IF_SAFER',
-                                 'BLOCKXSIZE=256',   # must be a power of 2
-                                 'BLOCKYSIZE=256',  # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
+                                 'BLOCKXSIZE=128',   # must be a power of 2
+                                 'BLOCKYSIZE=128',  # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
                                  'COMPRESS=LZW'
                                  ] )
                          outRaster_cov.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
@@ -294,12 +294,12 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,toPower,rescale_sar, outlier):
                              outRaster_cov.GetRasterBand(1).SetNoDataValue(ndv)
 
                     # calulate cov
-                    #outmetric_cov = scipy.stats.variation(stacked_array, axis=0)
-                    outmetric_cov = np.divide(outmetric_std.astype('float'), outmetric_avg.astype('float'))
+                    outmetric_cov = scipy.stats.variation(stacked_array, axis=0)
+                    #outmetric_cov = np.divide(outmetric_std.astype('float'), outmetric_avg.astype('float'))
 
                     if rescale_sar == 'yes' and data_type_name != 'Float32':
-                        outmetric_cov = rescale_from_db(outmetric_cov, -0.25, 0.25 , data_type_name) + 1
-                        outmetric_cov[nd_mask == 1] = 0
+                        outmetric_cov = rescale_from_db(outmetric_cov, 0.001, 1 , data_type_name) + 1
+                        outmetric_cov[nd_mask == True] = ndv
 
                     outband_cov.WriteArray(outmetric_cov, x, y)
 
@@ -310,8 +310,8 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,toPower,rescale_sar, outlier):
                             options=[           # Format-specific creation options.
                             'TILED=YES',
                             'BIGTIFF=IF_SAFER',
-                            'BLOCKXSIZE=256',   # must be a power of 2
-                            'BLOCKYSIZE=256',  # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
+                            'BLOCKXSIZE=128',   # must be a power of 2
+                            'BLOCKYSIZE=128',  # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
                             'COMPRESS=LZW'
                             ] )
                         outRaster_p90.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
@@ -336,8 +336,8 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,toPower,rescale_sar, outlier):
                             options=[           # Format-specific creation options.
                             'TILED=YES',
                             'BIGTIFF=IF_SAFER',
-                            'BLOCKXSIZE=256',   # must be a power of 2
-                            'BLOCKYSIZE=256',  # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
+                            'BLOCKXSIZE=128',   # must be a power of 2
+                            'BLOCKYSIZE=128',  # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
                             'COMPRESS=LZW'
                             ] )
                         outRaster_p10.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
@@ -362,8 +362,8 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,toPower,rescale_sar, outlier):
                             options=[           # Format-specific creation options.
                             'TILED=YES',
                             'BIGTIFF=IF_SAFER',
-                            'BLOCKXSIZE=256',   # must be a power of 2
-                            'BLOCKYSIZE=256',  # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
+                            'BLOCKXSIZE=128',   # must be a power of 2
+                            'BLOCKYSIZE=128',  # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
                             'COMPRESS=LZW'
                             ] )
                         outRaster_pDiff.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
@@ -386,8 +386,8 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,toPower,rescale_sar, outlier):
                             options=[           # Format-specific creation options.
                             'TILED=YES',
                             'BIGTIFF=IF_SAFER',
-                            'BLOCKXSIZE=256',   # must be a power of 2
-                            'BLOCKYSIZE=256',  # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
+                            'BLOCKXSIZE=128',   # must be a power of 2
+                            'BLOCKYSIZE=128',  # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
                             'COMPRESS=LZW'
                             ] )
                         outRaster_sum.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
@@ -425,7 +425,7 @@ def main():
                 metavar="<Number referring to MT metrics>")
 
     parser.add_option("-p", "--power", dest="toPower",
-            help="de-logarithmize to power", metavar="(yes/no) ")
+            help="de-logarithmize to power for computation", metavar="(yes/no) ")
 
     parser.add_option("-r", "--rescale", dest="rescale_sar",
                 help="rescale integer SAR data back to dB (OST specific)", metavar="(yes/no) ")

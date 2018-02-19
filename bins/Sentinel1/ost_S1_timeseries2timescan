@@ -65,6 +65,6 @@ else
 fi
 
 echo -ne " Calculating the timescan layers ..." | tee -a ${OUT_DIR}/.s1_ts2tscan_progress
-ost_mt_metrics.py -i ${TS_STACK} -o ${OUT_DIR}/${PREFIX} -t ${TS_MODE} -p no -r yes -m yes >> ${OUT_DIR}/.log_mt 2>&1 # | tee -a ${OUT_DIR}/.s1_ts2tscan_progress
-rm ${OUT_DIR}/.log_mt 2>&1
+ost_mt_metrics.py -i ${TS_STACK} -o ${OUT_DIR}/${PREFIX} -t ${TS_MODE} -p yes -r yes -m yes >> ${OUT_DIR}/.log_mt 2>&1 # | tee -a ${OUT_DIR}/.s1_ts2tscan_progress
+#rm ${OUT_DIR}/.log_mt 2>&1
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${OUT_DIR}/.s1_ts2tscan_progress

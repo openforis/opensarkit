@@ -14,116 +14,207 @@ tabItem(tabName = "s1_inv",
           box(
              # Title                     
              title = "Processing Panel", status = "success", solidHeader= TRUE,
-             tags$h4("Sentinel-1 data inventory"),hr(),
-             tags$b("Short description:"),
-             p("This interface allows to create a shapefile that contains all available Sentinel-1 scenes according to the parameters set below.
-               A careful refinement of the selection for the subsequent timeseries/timescan product generation is strongly encouraged."),hr(),
              
-             #-----------------------------------------------------------------------------------------------------------
-             # Project Directory
-             tags$b(" Project Directory:"),br(),
-             p("A new folder named \"Inventory\" will be created within the selected project directory. 
-                This folder contains the OST inventory shapefile that is produced by this interface."),
-             shinyDirButton('s1_inv_directory', 'Browse', 'Select a folder'),br(),br(),
-             verbatimTextOutput("s1_inv_project_dir"),hr(),
-             #-----------------------------------------------------------------------------------------------------------
-             
-             #-----------------------------------------------------------------------------------------------------------
-             tags$b("Area of Interest"),
-             p("This parameter will define the spatial extent of the data inventory. You can either choose the borders 
-                of a country or a shapefile that bounds your area of interest. If you are working from remote, 
-                you can transfer a zipped archive containing a shapefile and its associated files 
-                from your local machine to the server by selecting the third option."),
-             # AOI choice
-             radioButtons("s1_inv_AOI", "",
-                          c("Country boundary" = "s1_inv_country",
-                            "Shapefile (local/ on server)" = "s1_inv_shape_local",
-                            "Shapefile (upload a zipped archive)" = "s1_inv_shape_upload")),
-             
-             conditionalPanel(
-               "input.s1_inv_AOI == 's1_inv_country'",
-               selectInput(
-                     inputId = 's1_inv_countryname', 
-                     label = '',
-                     choices = dbGetQuery(
-                     dbConnect(SQLite(),dbname=Sys.getenv("OST_DB")),
-                     sprintf("SELECT name FROM %s WHERE iso3 <> -99 ORDER BY name ASC", "countries")), 
-                     selected=NULL)
+    
+             tabBox(width = 700,
+                    tabPanel("Automatic data inventory",
+                      tags$h4("Automated Sentinel-1 data inventory"),hr(),
+                      tags$b("Short description:"),
+                      p("Here you can search for data. The underlying routine will refine the search result and optimize the selection of scenes 
+                         for the given area and period in time for the creation of homogeneous large-area time-series and timescan mosaics. 
+                         Note that the area should coincide with the obseravtion strategy of Sentinel-1. For most national boundaries this is just fine, 
+                         but it will fail on very large areas. See the info panel for more information."),hr(), 
+                      #-----------------------------------------------------------------------------------------------------------
+                      
+                      #-----------------------------------------------------------------------------------------------------------
+                      # Project Directory
+                      tags$b(" Project Directory:"),br(),
+                      p("A new folder named \"Inventory\" will be created within the selected project directory. 
+                      This folder will contain the OST inventory shapefiles, sorted by orbit direction and polarization mode. See the Info Panel for 
+                      more details on the naming conventions."),
+                      shinyDirButton('s1_ainv_directory', 'Browse', 'Select a folder'),br(),br(),
+                      verbatimTextOutput("s1_ainv_project_dir"),hr(),             
+                      #-----------------------------------------------------------------------------------------------------------
+                      
+                      #-----------------------------------------------------------------------------------------------------------
+                      tags$b("Area of Interest"),
+                      p("This parameter will define the spatial extent of the data inventory. You can either choose the borders 
+                        of a country or a shapefile that bounds your area of interest. If you are working from remote, 
+                        you can transfer a zipped archive containing a shapefile and its associated files 
+                        from your local machine to the server by selecting the third option."),
+               # AOI choice
+               radioButtons("s1_ainv_AOI", "",
+                            c("Country boundary" = "s1_ainv_country",
+                              "Shapefile (local/ on server)" = "s1_ainv_shape_local",
+                              "Shapefile (upload a zipped archive)" = "s1_ainv_shape_upload")),
+               
+               conditionalPanel(
+                 "input.s1_ainv_AOI == 's1_ainv_country'",
+                 selectInput(
+                       inputId = 's1_ainv_countryname', 
+                       label = '',
+                       choices = dbGetQuery(
+                       dbConnect(SQLite(),dbname=Sys.getenv("OST_DB")),
+                       sprintf("SELECT name FROM %s WHERE iso3 <> -99 ORDER BY name ASC", "countries")), 
+                       selected=NULL)
+               ),
+               
+               conditionalPanel(
+                      "input.s1_ainv_AOI == 's1_ainv_shape_local'",
+                       #div(style="display:inline-block",shinyFilesButton("shapefile","Choose file","Choose one or more files",FALSE)),
+                       #div(style="display:inline-block",textOutput("filepath"))
+                       shinyFilesButton("s1_ainv_shapefile","Browse","Choose one shapefile",FALSE),
+                       br(),
+                       br(),
+                       verbatimTextOutput("s1_ainv_filepath")
+               ),
+               
+               conditionalPanel(
+                      "input.s1_ainv_AOI == 's1_ainv_shape_upload'",
+                       fileInput('s1_ainv_shapefile_path', label = '',accept = c(".zip"))
+               ),hr(),
+               
+               #-----------------------------------------------------------------------------------------------------------
+               tags$b("Date Range"),
+               p("Select a period of time for which data inventory will be applied."),
+               dateRangeInput("s1_ainv_daterange",
+                              "",
+                               start = "2014-10-01",
+                               end = Sys.Date(),
+                               min = "2014-10-01",
+                               max = Sys.Date(),
+                               format = "yyyy-mm-dd"
+                            ),hr(),
+               #-----------------------------------------------------------------------------------------------------------------------------------
+               
+               #-----------------------------------------------------------------------------------------------------------------------------------
+               # Trigger / Abort
+               div(style="display: inline-block;vertical-align:top; width: 235px;", withBusyIndicatorUI(
+                 actionButton("s1_ainv_pro_btn", "Create an OST inventory shapefile")
+               )),
+               div(style="display: inline-block;vertical-align:top; width: 150px;", withBusyIndicatorUI(
+                 actionButton("s1_ainv_abort_btn", "Abort the inventory")
+               )),
+               textOutput("s1_ainv")
+              #      )
              ),
+               #-----------------------------------------------------------------------------------------------------------
+               
+             tabPanel("Full Selection",
+               tags$h4("Sentinel-1 data inventory"),hr(),
+               tags$b("Short description:"),
+               p("This interface allows to create a shapefile that contains all available Sentinel-1 scenes according to the parameters set below.
+                 A careful refinement of the selection for the subsequent timeseries/timescan product generation is strongly encouraged."),hr(),
+               #-----------------------------------------------------------------------------------------------------------
+               
+               #-----------------------------------------------------------------------------------------------------------
+               # Project Directory
+               tags$b(" Project Directory:"),br(),
+               p("A new folder named \"Inventory\" will be created within the selected project directory. 
+                  This folder contains the OST inventory shapefile that is produced by this interface."),
+               shinyDirButton('s1_inv_directory', 'Browse', 'Select a folder'),br(),br(),
+               verbatimTextOutput("s1_inv_project_dir"),hr(),
+               #-----------------------------------------------------------------------------------------------------------
+               
+               #-----------------------------------------------------------------------------------------------------------
+               tags$b("Area of Interest"),
+               p("This parameter will define the spatial extent of the data inventory. You can either choose the borders 
+                  of a country or a shapefile that bounds your area of interest. If you are working from remote, 
+                  you can transfer a zipped archive containing a shapefile and its associated files 
+                  from your local machine to the server by selecting the third option."),
+               # AOI choice
+               radioButtons("s1_inv_AOI", "",
+                            c("Country boundary" = "s1_inv_country",
+                              "Shapefile (local/ on server)" = "s1_inv_shape_local",
+                              "Shapefile (upload a zipped archive)" = "s1_inv_shape_upload")),
+               
+               conditionalPanel(
+                 "input.s1_inv_AOI == 's1_inv_country'",
+                 selectInput(
+                       inputId = 's1_inv_countryname', 
+                       label = '',
+                       choices = dbGetQuery(
+                       dbConnect(SQLite(),dbname=Sys.getenv("OST_DB")),
+                       sprintf("SELECT name FROM %s WHERE iso3 <> -99 ORDER BY name ASC", "countries")), 
+                       selected=NULL)
+               ),
+               
+               conditionalPanel(
+                      "input.s1_inv_AOI == 's1_inv_shape_local'",
+                       #div(style="display:inline-block",shinyFilesButton("shapefile","Choose file","Choose one or more files",FALSE)),
+                       #div(style="display:inline-block",textOutput("filepath"))
+                       shinyFilesButton("s1_inv_shapefile","Browse","Choose one shapefile",FALSE),
+                       br(),
+                       br(),
+                       verbatimTextOutput("s1_inv_filepath")
+               ),
+               
+               conditionalPanel(
+                      "input.s1_inv_AOI == 's1_inv_shape_upload'",
+                       fileInput('s1_inv_shapefile_path', label = '',accept = c(".zip"))
+               ),hr(),
+               
+               #-----------------------------------------------------------------------------------------------------------
+               tags$b("Date Range"),
+               p("Select a period of time for which data inventory will be applied."),
+               dateRangeInput("s1_inv_daterange",
+                              "",
+                               start = "2014-10-01",
+                               end = Sys.Date(),
+                               min = "2014-10-01",
+                               max = Sys.Date(),
+                               format = "yyyy-mm-dd"
+                            ),hr(),
+               
+               #-----------------------------------------------------------------------------------------------------------
+               tags$b("Polarisation Mode"),
+               p("Note that for subsequent processing tasks only the VV co- and VH cross-polarisations are supported
+                  by OST for now. More info on the polarisation modes of Sentinel-1 can be found in the Info Panel on the right."),
+               selectInput("s1_inv_pol", "",
+                         c("Dual-pol (VV+VH) " = "dual_vv",
+                           "Single-pol (VV)" = "vv",
+                           "Dual-pol (VV+VH) & Single-pol (VV) " = "dual_single_vv",
+                           "Dual-pol (HH+HV)" = "dual_hh",
+                           "Single-pol (HH)" = "hh",
+                           "Dual-pol (HH+HV) & Single-pol (HH) " = "dual_single_hh")
+               ),hr(),
+               #-----------------------------------------------------------------------------------------------------------
+               
+               #-----------------------------------------------------------------------------------------------------------
+               tags$b("Sensor Mode"),
+               p(" Note that for subsequent processing tasks only the standard Interferometric Wide Swath is 
+                   supported by OST for now. More info on the sensor modes of Sentinel-1 can be found in the 
+                   Info Panel on the right. "),
+               radioButtons("s1_inv_sensor_mode", "",
+                            c("Interferometric Wide Swath (recommended) " = "iw",
+                              "Extra Wide Swath" = "ew",
+                              "Wave Mode" = "wv")
+               ),hr(),
+               #-----------------------------------------------------------------------------------------------------------
+               
+               #-----------------------------------------------------------------------------------------------------------
+               tags$b("Product Level"),
+               p("Note that for subsequent processing tasks only the GRD products are supported by OST for now.
+                  More info on the product levels of Sentinel-1 can be found in the Info Panel on the right."),
+               radioButtons("s1_inv_product_level", "",
+                            c("Level-1 GRD (recommended) " = "grd",
+                              "Level-1 SLC" = "slc",
+                              "Level-0 RAW" = "raw")
+               ),hr(),
+               #-----------------------------------------------------------------------------------------------------------
+               
+               #-----------------------------------------------------------------------------------------------------------------------------------
+               # Trigger / Abort
+               div(style="display: inline-block;vertical-align:top; width: 235px;", withBusyIndicatorUI(
+                 actionButton("s1_inv_pro_btn", "Create an OST inventory shapefile")
+               )),
+               div(style="display: inline-block;vertical-align:top; width: 150px;", withBusyIndicatorUI(
+                 actionButton("s1_inv_abort_btn", "Abort the inventory")
+               )),
+               textOutput("s1_inv")
+             )
+             )
              
-             conditionalPanel(
-                    "input.s1_inv_AOI == 's1_inv_shape_local'",
-                     #div(style="display:inline-block",shinyFilesButton("shapefile","Choose file","Choose one or more files",FALSE)),
-                     #div(style="display:inline-block",textOutput("filepath"))
-                     shinyFilesButton("s1_inv_shapefile","Browse","Choose one shapefile",FALSE),
-                     br(),
-                     br(),
-                     verbatimTextOutput("s1_inv_filepath")
-             ),
-             
-             conditionalPanel(
-                    "input.s1_inv_AOI == 's1_inv_shape_upload'",
-                     fileInput('s1_inv_shapefile_path', label = '',accept = c(".zip"))
-             ),hr(),
-             
-             #-----------------------------------------------------------------------------------------------------------
-             tags$b("Date Range"),
-             p("Select a period of time for which data inventory will be applied."),
-             dateRangeInput("s1_inv_daterange",
-                            "",
-                             start = "2014-10-01",
-                             end = Sys.Date(),
-                             min = "2014-10-01",
-                             max = Sys.Date(),
-                             format = "yyyy-mm-dd"
-                          ),hr(),
-             
-             #-----------------------------------------------------------------------------------------------------------
-             tags$b("Polarisation Mode"),
-             p("Note that for subsequent processing tasks only the VV co- and VH cross-polarisations are supported
-                by OST for now. More info on the polarisation modes of Sentinel-1 can be found in the Info Panel on the right."),
-             selectInput("s1_inv_pol", "",
-                       c("Dual-pol (VV+VH) " = "dual_vv",
-                         "Single-pol (VV)" = "vv",
-                         "Dual-pol (VV+VH) & Single-pol (VV) " = "dual_single_vv",
-                         "Dual-pol (HH+HV)" = "dual_hh",
-                         "Single-pol (HH)" = "hh",
-                         "Dual-pol (HH+HV) & Single-pol (HH) " = "dual_single_hh")
-             ),hr(),
-             #-----------------------------------------------------------------------------------------------------------
-             
-             #-----------------------------------------------------------------------------------------------------------
-             tags$b("Sensor Mode"),
-             p(" Note that for subsequent processing tasks only the standard Interferometric Wide Swath is 
-                 supported by OST for now. More info on the sensor modes of Sentinel-1 can be found in the 
-                 Info Panel on the right. "),
-             radioButtons("s1_inv_sensor_mode", "",
-                          c("Interferometric Wide Swath (recommended) " = "iw",
-                            "Extra Wide Swath" = "ew",
-                            "Wave Mode" = "wv")
-             ),hr(),
-             #-----------------------------------------------------------------------------------------------------------
-             
-             #-----------------------------------------------------------------------------------------------------------
-             tags$b("Product Level"),
-             p("Note that for subsequent processing tasks only the GRD products are supported by OST for now.
-                More info on the product levels of Sentinel-1 can be found in the Info Panel on the right."),
-             radioButtons("s1_inv_product_level", "",
-                          c("Level-1 GRD (recommended) " = "grd",
-                            "Level-1 SLC" = "slc",
-                            "Level-0 RAW" = "raw")
-             ),hr(),
-             #-----------------------------------------------------------------------------------------------------------
-             
-             #-----------------------------------------------------------------------------------------------------------------------------------
-             # Trigger / Abort
-             div(style="display: inline-block;vertical-align:top; width: 235px;", withBusyIndicatorUI(
-               actionButton("s1_inv_pro_btn", "Create an OST inventory shapefile")
-             )),
-             div(style="display: inline-block;vertical-align:top; width: 150px;", withBusyIndicatorUI(
-               actionButton("s1_inv_abort_btn", "Abort the inventory")
-             )),
-             textOutput("s1_inv")
              #-----------------------------------------------------------------------------------------------------------------------------------
              
           ), # close box

@@ -278,3 +278,317 @@ if [ -z "$1" ]; then
     echo " Absolute Satellite Orbit: 	${ORBIT}"
     echo "----------------------------------------------------------------"
 }
+
+
+function s1_adjust_equator_tracks() { # should only applied to ascending tracks!
+
+	if [ -z "$2" ]; then
+					echo " Missing arguments. Syntax:"
+					echo " adjust_equator_tracks <OST inventory shape> <temp-folder>"
+					return
+	fi
+
+	TMP_INV_FILE=$(readlink -f $1)
+	TMP_INV_BASE=$(basename ${TMP_INV_FILE} | rev | cut -c 5- | rev)
+	TMP_DIR=$(readlink -f $2)
+
+	# create a lst of dates
+	ogrinfo -q ${TMP_INV_FILE} -sql "SELECT DISTINCT DATE FROM \"${TMP_INV_BASE}\" " | grep DATE | awk -F '\=' '{print $2}' > ${TMP_DIR}/date_list
+
+	cat ${TMP_DIR}/date_list | while read date; do
+
+		# get the number of tracks per acquisition date
+		NR_OF_TRACKS=`ogrinfo -q ${TMP_INV_FILE} -dialect sqlite -sql "SELECT DISTINCT \"TRACK\" FROM \"${TMP_INV_BASE}\" WHERE \"DATE\" = ${date} " | grep Track | wc -l`
+
+		# check if there are more than one track per acquistion date
+		if [[ ${NR_OF_TRACKS} -ge 2 ]];then
+
+			 for ((i=1;i<=${NR_OF_TRACKS};i++));do
+        echo `ogrinfo -q ${TMP_INV_FILE} -dialect sqlite -sql "SELECT DISTINCT \"TRACK\" FROM \"${TMP_INV_BASE}\" WHERE \"DATE\" = ${date} " | grep Track | awk "NR == $i" | awk -F '\=' '{print $2}'` >> ${TMP_DIR}/${date}_list
+			 done
+
+      i=1
+			cat ${TMP_DIR}/${date}_list | sort | while read line; do
+
+        i=`expr $i + 1`
+
+        j=`cat ${TMP_DIR}/${date}_list | sort | awk "NR == $i"`
+        if [ ! -z $j ];then
+          k=`expr $j - 1`
+        else
+          k=-99
+        fi
+
+        if [[ $line -eq $k ]];then
+
+					NUMBER_1=$line
+					NUMBER_2=$(cat ${TMP_DIR}/${date}_list | sort | awk "NR == $i")
+
+          # get the center longitude of the end of orbit scene
+          CENT_LONG=`ogrinfo -q ${TMP_INV_FILE} -dialect sqlite -sql "SELECT Min(ST_X(ST_Centroid(geometry))) FROM \"${TMP_INV_BASE}\" WHERE Track = ${NUMBER_1}" | grep Min | awk -F '\= ' '{print $2}'`
+
+          # where track number is higher and center longitude is betweeen
+    	    ogrinfo -q ${TMP_INV_FILE} -dialect sqlite -sql "UPDATE \"${TMP_INV_BASE}\" SET Track=${NUMBER_1}
+        																								   WHERE (Track=${NUMBER_2})
+         																								   AND ( ST_X(ST_Centroid(geometry)) BETWEEN ${CENT_LONG} - 5 AND ${CENT_LONG} + 5 )"
+
+        fi
+      done
+      rm ${TMP_DIR}/${date}_list*
+
+		fi
+	done
+}
+
+function s1_check_overlap_aoi() {
+
+	if [ -z "$3" ]; then
+          echo " Missing arguments. Syntax:"
+          echo " check_overlap_aoi <AOI> <OST inventory shape> <temp-folder>"
+          return
+      fi
+
+	AOIFILE=$(readlink -f $1)
+	SHAPE=$(readlink -f $2)
+ 	TMP_OVERLAP=$(readlink -f $3)
+	BASE_SHAPE=$(basename ${SHAPE} | rev | cut -c 5- | rev)
+	BASE_AOI=$(basename ${AOIFILE} | rev | cut -c 5- | rev)
+
+	# create a list of tracks
+	ogrinfo -q ${SHAPE} -sql "SELECT DISTINCT TRACK FROM \"${BASE_SHAPE}\"" | grep TRACK | awk -F '\=' '{print $2}' > ${TMP_DIR}/track_list
+
+	# get intersect area
+	cat ${TMP_DIR}/track_list | while read track; do
+
+			if [[ ${track} != "" ]];then
+
+				# create a dissolved version of the track from all acquisitions
+				ogr2ogr -f "ESRI Shapefile" ${TMP_DIR}/${BASE_SHAPE}.${track}.shp ${SHAPE} -dialect sqlite -sql "SELECT st_buffer(st_union(geometry), -0.06) FROM \"${BASE_SHAPE}\"  WHERE \"TRACK\" = ${track}"
+
+				# intersect dissolved track with AOI
+				intersect_shp ${AOIFILE} ${TMP_DIR}/${BASE_SHAPE}.${track}.shp ${TMP_DIR}/${BASE_SHAPE}.${track}.inter.shp
+				rm ${TMP_DIR}/${BASE_SHAPE}.${track}.shp ${TMP_DIR}/${BASE_SHAPE}.${track}.dbf ${TMP_DIR}/${BASE_SHAPE}.${track}.prj ${TMP_DIR}/${BASE_SHAPE}.${track}.shx
+
+				# get area for intersected region
+				AREA=`ogrinfo -q ${TMP_DIR}/${BASE_SHAPE}.${track}.inter.shp -dialect sqlite -sql "SELECT Area(geometry) FROM \"${BASE_SHAPE}.${track}.inter\"" | grep Area | awk -F '\=' '{print $2}'`
+				rm ${TMP_DIR}/${BASE_SHAPE}.${track}*
+
+				# create a list of dates
+				ogrinfo -q ${SHAPE} -sql "SELECT DISTINCT DATE FROM \"${BASE_SHAPE}\" WHERE \"TRACK\" = ${track}" | grep DATE | awk -F '\=' '{print $2}' > ${TMP_DIR}/date_list
+
+					# loop through dates
+					cat ${TMP_DIR}/date_list | while read dates; do
+						if [[ ${dates} != "" ]];then
+
+							# create a dissolved version of the track/date
+							ogr2ogr -f "ESRI Shapefile" ${TMP_DIR}/${BASE_SHAPE}.${track}.${dates}.shp ${SHAPE} -dialect sqlite -sql "SELECT st_union(geometry) FROM \"${BASE_SHAPE}\"  WHERE \"TRACK\" = ${track} AND \"DATE\" = ${dates}"
+
+							# intersect rack with AOI
+							intersect_shp ${AOIFILE} ${TMP_DIR}/${BASE_SHAPE}.${track}.${dates}.shp ${TMP_DIR}/${BASE_SHAPE}.${track}.${dates}.inter.shp
+							rm ${TMP_DIR}/${BASE_SHAPE}.${track}.${dates}.sh* ${TMP_DIR}/${BASE_SHAPE}.${track}.${dates}.prj ${TMP_DIR}/${BASE_SHAPE}.${track}.${dates}.dbf
+
+							# get area for intersected region
+							AREA_DATE=`ogrinfo -q ${TMP_DIR}/${BASE_SHAPE}.${track}.${dates}.inter.shp -dialect sqlite -sql "SELECT Area(geometry) FROM \"${BASE_SHAPE}.${track}.${dates}.inter\"" | grep Area | awk -F '\=' '{print $2}'`
+
+              #if [ $track -eq 25 ];then
+              #  echo $dates $AREA_DATE $AREA
+              #fi
+							# check if area is greater than, and f not delete entries from inventory shapefile
+							test=`echo "${AREA} >= ${AREA_DATE}" | bc -l`
+
+							if [[ ${test} -eq 1 ]]; then
+
+								# delete entries
+								ogrinfo -q ${SHAPE} -dialect sqlite -sql "DELETE FROM \"${BASE_SHAPE}\" WHERE \"TRACK\" = ${track} AND \"DATE\" = ${dates}"
+
+							fi
+
+							rm ${TMP_DIR}/${BASE_SHAPE}.${track}.${dates}.*
+
+						fi
+					done
+			fi
+	done
+
+	rm ${TMP_DIR}/date_list ${TMP_DIR}/track_list
+}
+
+function s1_rename_splitted_tracks() {
+
+  if [ -z "$2" ]; then
+          echo " Missing arguments. Syntax:"
+          echo " rename_double_tracks <OST inventory shape> <temp-folder>"
+          return
+  fi
+
+  TMP_INV_FILE=$(readlink -f $1)
+  TMP_INV_BASE=$(basename ${TMP_INV_FILE} | rev | cut -c 5- | rev)
+  TMP_DIR=$(readlink -f $2)
+
+  # take center longitude of track with some margin, if 2 have significant different numbers treat them
+  ogrinfo -q ${TMP_INV_FILE} -sql "SELECT DISTINCT Date FROM \"${TMP_INV_BASE}\" " | grep Date | awk -F '\= ' '{print $2}' > ${TMP_DIR}/date_list
+
+  cat ${TMP_DIR}/date_list | while read date;do
+
+    # create a lst of tracks
+    ogrinfo -q ${TMP_INV_FILE} -sql "SELECT DISTINCT Track FROM \"${TMP_INV_BASE}\" WHERE Date = ${date} " | grep Track | awk -F '\= ' '{print $2}' > ${TMP_DIR}/track_list
+
+    cat ${TMP_DIR}/track_list | while read track;do
+
+      ogrinfo -q ${TMP_INV_FILE} -dialect sqlite \
+              -sql "SELECT \"Start_Time\",Track FROM \"${TMP_INV_BASE}\"
+                    WHERE (Date = ${date})
+                    AND (Track = ${track})
+                    AND (Start_Time NOT IN (SELECT Stop_Time
+                                            FROM \"${TMP_INV_BASE}\"
+                                            WHERE (Date = ${date})
+                                            AND (Track = ${track})))" | grep Start_Time | awk -F '\= ' '{print $2}' > ${TMP_DIR}/starts
+
+      if [ `cat ${TMP_DIR}/starts | wc -l` -gt 1 ];then
+
+        ogrinfo -q ${TMP_INV_FILE} -dialect sqlite \
+                 -sql "SELECT \"Stop_Time\" FROM \"${TMP_INV_BASE}\"
+                       WHERE (Date = ${date})
+                       AND (Stop_Time NOT IN (SELECT Start_Time
+                                              FROM \"${TMP_INV_BASE}\"
+                                              WHERE (Date = ${date})
+                                              AND (Track = ${track})))" | grep Stop_Time | awk -F '\= ' '{print $2}' >> ${TMP_DIR}/starts
+
+
+								# do a check if consecutive numbers appear
+				cat ${TMP_DIR}/starts | sort > ${TMP_DIR}/starts_sorted
+				LINES=$(cat ${TMP_DIR}/starts_sorted | head -n -1 | wc -l)
+
+				i=2
+				while [ $i -lt ${LINES} ];do
+
+					DATE_1=`awk "NR == $i" ${TMP_DIR}/starts_sorted`
+					DATE_2=`awk "NR == $i + 1" ${TMP_DIR}/starts_sorted`
+
+					if [ ! -z "${DATE_2}" ];then
+
+						if [[ `expr ${DATE_2} - ${DATE_1}` > 1 ]];then
+
+							i=`expr $i + 2`
+
+						else
+
+							j=`expr $i + 1`
+							sed -i "${i},${j}d" ${TMP_DIR}/starts_sorted
+
+						fi
+					else
+
+						i=`expr $i + 2`
+					fi
+				done
+
+
+				i=0
+				if [ `cat ${TMP_DIR}/starts_sorted | wc -l` -gt 2 ];then
+
+          cat ${TMP_DIR}/starts_sorted | head -n -1 | while read starts;do
+
+						i=`expr $i + 1`
+
+						# only get every second line (i.e. if line number is odd)
+						if [ $((i%2)) -ne 0 ]; then
+							STARTTIME=${starts}
+							ENDTIME=`awk "NR == $i + 1" ${TMP_DIR}/starts_sorted`
+
+							ogrinfo -q ${TMP_INV_FILE} -dialect sqlite \
+							 				-sql "UPDATE \"${TMP_INV_BASE}\" SET Track=9${i}${track}
+														WHERE (Date = ${date})
+														AND (Track=${track})
+														AND ( Start_Time BETWEEN ${STARTTIME} AND ${ENDTIME} )"
+						fi
+					done
+
+				fi
+			fi
+		done
+	done
+}
+
+function s1_check_homogeneous_coverage() {
+
+	if [ -z "$3" ]; then
+					echo " Missing arguments. Syntax:"
+					echo " check_homogeneous_coverag	e <OST inventory shapefile> <temp-folder> <outfile> "
+					return
+	fi
+
+	TMP_INV_FILE=$(readlink -f $1)
+	TMP_INV_BASE=$(basename ${TMP_INV_FILE} | rev | cut -c 5- | rev)
+	TMP_DIR=$(readlink -f $2)
+	OUT_SHAPE=$(readlink -f $3)
+  OUT_DIREC=$(dirname ${OUT_SHAPE})
+  OUT_FILE=$(basename ${OUT_SHAPE})
+  BASE_OUT=$(echo ${OUT_FILE} | rev | cut -c 5- | rev)
+
+	# get number of tracks
+	NR_OF_TRACKS=`ogrinfo -q ${TMP_INV_FILE} -dialect sqlite -sql "SELECT DISTINCT TRACK FROM \"${TMP_INV_BASE}\"" | grep Track | wc -l`
+
+	# get first acq. date
+	FIRST_ACQ=`ogrinfo -q ${TMP_INV_FILE} -dialect sqlite -sql "SELECT Min(Date) FROM \"${TMP_INV_BASE}\"" | grep "Min(Date)" | awk -F '\= ' '{print $2}'`
+
+	# get last acq date
+	LAST_ACQ=`ogrinfo -q ${TMP_INV_FILE} -dialect sqlite -sql "SELECT Max(Date) FROM \"${TMP_INV_BASE}\"" | grep "Max(Date)" | awk -F '\= ' '{print $2}'`
+
+	# we start counting mosaics
+	i=0
+
+  # create a datelist to loop over
+  ogrinfo -q ${TMP_INV_FILE} -sql "SELECT DISTINCT Date FROM \"${TMP_INV_BASE}\" " | grep Date | awk -F '\= ' '{print $2}' | sort > ${TMP_DIR}/date_list
+
+  # loop through dates
+  cat ${TMP_DIR}/date_list |
+  {
+    while read date; do
+
+      # write date to a new datelist for the mosaic period
+      echo $date >> ${TMP_DIR}/date_list_mosaic
+      END_OF_CYCLE=${date}
+
+      # number of tracks in specific date range range
+      PERIOD_TRACK=`ogrinfo -q ${TMP_INV_FILE} -dialect sqlite -sql "SELECT DISTINCT TRACK FROM \"${TMP_INV_BASE}\"
+                                                                     WHERE \"Date\" BETWEEN ${FIRST_ACQ} AND ${END_OF_CYCLE}" | grep Track | wc -l`
+
+      if [[ ${PERIOD_TRACK} -eq ${NR_OF_TRACKS} ]];then
+
+        touch ${TMP_DIR}/track_list_mosaic
+        cat ${TMP_DIR}/date_list_mosaic | sort -r | while read date_inv; do
+
+          # write out track number to a file
+          ogrinfo -q ${TMP_INV_FILE} -dialect sqlite -sql "SELECT DISTINCT TRACK FROM \"${TMP_INV_BASE}\"
+                                                           WHERE \"Date\" = ${date_inv}" | grep Track | awk -F '\= ' '{print $2}' > ${TMP_DIR}/track_list_mosaic_1
+
+          cat ${TMP_DIR}/track_list_mosaic_1 | while read line; do
+
+            if ! grep -q "Track $line" ${TMP_DIR}/track_list_mosaic ; then
+              echo "Track ${line} ${date_inv}" >> ${TMP_DIR}/track_list_mosaic
+              # we write the acquisitions to the shapefile
+              ogr2ogr -f 'ESRI Shapefile' ${TMP_DIR}/${OUT_FILE} ${TMP_INV_FILE} -append -dialect sqlite \
+                      -sql "SELECT * FROM \"${TMP_INV_BASE}\" WHERE (\"Date\" = ${date_inv}) AND (\"Track\" = ${line})"
+
+            fi
+          done
+         done
+
+        # we overwrite first acq date for the next cycle
+        FIRST_ACQ=`date -d "${date}+1 days" +%Y%m%d`
+        i=`expr $i + 1`
+
+        # remove temporary datelist
+        rm -f ${TMP_DIR}/date_list_mosaic ${TMP_DIR}/track_list_mosaic
+      fi
+    done
+
+    #echo " Found $i mosaics for $(basename ${OUT_SHAPE})"
+
+    mv ${TMP_DIR}/${BASE_OUT}.shp ${OUT_DIR}/${i}.${BASE_OUT}.shp
+    mv ${TMP_DIR}/${BASE_OUT}.shx ${OUT_DIR}/${i}.${BASE_OUT}.shx
+    mv ${TMP_DIR}/${BASE_OUT}.prj ${OUT_DIR}/${i}.${BASE_OUT}.prj
+    mv ${TMP_DIR}/${BASE_OUT}.dbf ${OUT_DIR}/${i}.${BASE_OUT}.dbf
+  }
+}

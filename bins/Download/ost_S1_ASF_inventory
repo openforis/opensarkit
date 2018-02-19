@@ -126,7 +126,7 @@ else
 	echo -e "			  GRD (recommended)"
 	echo -e "			  SLC (Level 1.1)"
 	echo -e "			  RAW (Level 1.0)"
-	echo -e " polarization mode	choose the product level"
+	echo -e " polarization mode		choose the product level"
 	echo -e "			 Available choices:"
 	echo -e "			  1: Dual + Single-pol imagery (VV,VV/VH)"
 	echo -e "			  2: Dual-pol imagery (VV/VH)"
@@ -134,10 +134,10 @@ else
 	echo -e "			  4: Dual + Single-pol imagery (HH,HH/HV)"
 	echo -e "			  5: Dual-pol imagery (HH/HV)"
 	echo -e "			  6: Single-pol imagery (HH)"
-	echo -e " script_Mode		choose between data inventory only or immediate download "
+	echo -e " script_Mode		do an automatic image selection for homogeneous large-scale time-series/timescan mosaics"
 	echo -e "			 Available choices"
-	echo -e "			  0 (only do the data inventory)"
-	echo -e "			  1 (data inventory + direct data download)"
+	echo -e "			  0 (create an OST inventory file with all available scenes)"
+	echo -e "			  1 (file for all available scenes + files with automatically selcted images)"
 	echo -e ""
 	exit 1
 fi
@@ -196,7 +196,6 @@ cp ${AOI_PROJ_FILE}.prj ${TMP_DIR}/aoi_convex.prj
 
 ogr2ogr -f CSV ${TMP_DIR}/AOI_WKT.csv ${TMP_DIR}/aoi_convex.shp -lco GEOMETRY=AS_WKT
 AOI=`grep POLYGON ${TMP_DIR}/AOI_WKT.csv | sed 's|\"POLYGON ((||g' | awk -F "\)\)" $'{print $1}' 2>/dev/null | sed 's/\ /,/g'`
-echo $AOI
 # Search Parameters
 PERIOD="start="${START}"T11:59:59UTC&end="${END}"T00:00:00UTC"
 PLATFORM="platform=Sentinel-1A,Sentinel-1B"
@@ -327,5 +326,5 @@ duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duratio
 
 # download if needed
 if [[ $8 == 1 ]];then
-	ost_S1_ASF_download ${PROC_DIR} ${INV}/S1_ASF_${MODE}_${LEVEL_2}_${POL_2}.shp
+	ost_S1_ASF_sort4ts ${INV}/S1_ASF_${MODE}_${LEVEL_2}_${POL_2}.shp ${AOI_PATH}/aoi*.shp ${INV} | tee -a ${PROC_DIR}/.s1_inv_progress
 fi

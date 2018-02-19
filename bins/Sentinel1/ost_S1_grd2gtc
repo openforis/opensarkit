@@ -102,7 +102,7 @@ fi
 if [[ ${POL_MODE} == "SDV" ]];then
 	SECONDS=0
 	echo -ne " Creating final output file (Band 1: VV, Band 2: VH, Band 3 VV/VH ratio) ..." | tee -a ${PROC_DIR}/.s1_g2g_progress
-	gdal_merge.py -o ${OUT_DIR}/${SCENE_ID}".GTC".tif -n 0 -a_nodata 0 -separate ${TMP_DIR}/${SCENE_ID}".GTC".data/Gamma0_VV_db.img ${TMP_DIR}/${SCENE_ID}".GTC".data/Gamma0_VH_db.img ${TMP_DIR}/${SCENE_ID}".GTC".data/VV-VH_ratio.img > $OUT_DIR/log_export 2>&1
+	gdal_merge.py -o ${OUT_DIR}/${SCENE_ID}".GTC".tif -n 0 -separate ${TMP_DIR}/${SCENE_ID}".GTC".data/Gamma0_VV_db.img ${TMP_DIR}/${SCENE_ID}".GTC".data/Gamma0_VH_db.img ${TMP_DIR}/${SCENE_ID}".GTC".data/VV-VH_ratio.img > $OUT_DIR/log_export 2>&1
   duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_g2g_progress
 
 elif [[ ${POL_MODE} == "SSV" ]];then
