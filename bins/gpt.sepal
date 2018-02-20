@@ -1,9 +1,16 @@
 #!/bin/bash
 
 TOT_MEM=`free -m | awk 'NR==2' | awk '{print $2}'`
-HEAP_MEM=`expr $TOT_MEM / 2`
+#HEAP_MEM=`expr $TOT_MEM / 2`
 
-echo $HEAP_MEM
+if [[ TOT_MEM -gt 10000 ]] ;then
+	HEAP_MEM=8192
+	echo $HEAP_MEM
+else
+	HEAP_MEM=2048
+	echo $HEAP_MEM
+fi
+	
 
 LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. java \
  -Djava.awt.headless=true\
