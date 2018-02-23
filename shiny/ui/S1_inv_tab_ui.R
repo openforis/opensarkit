@@ -20,18 +20,22 @@ tabItem(tabName = "s1_inv",
                     tabPanel("Automatic data inventory",
                       tags$h4("Automated Sentinel-1 data inventory"),hr(),
                       tags$b("Short description:"),
-                      p("Here you can search for data. The underlying routine will refine the search result and optimize the selection of scenes 
-                         for the given area and period in time for the creation of homogeneous large-area time-series and timescan mosaics. 
-                         Note that the area should coincide with the obseravtion strategy of Sentinel-1. For most national boundaries this is just fine, 
-                         but it will fail on very large areas. See the info panel for more information."),hr(), 
+                      p("While the observation scenario of Sentinel-1 foresees systematic acquisitions worldwide, repeat and revisit will still vary across adjacent acquisition swaths.     
+                         The large-scale processing routines of OST however do rely on homogeneous acquisitions across the given Area of Interest (AOI), 
+                         i.e. the same amount of acquisitions across the entire AOI. This routine will therefore look for all available data in the first place,
+                         and subsequently do a refinement of the available acquisitions in order to be compliant with the processing logic, guaranteeing 
+                         the highest possible quality of the final output data. Note that the area should coincide with
+                         the observation scenario of Sentinel-1 (see Info Panel), which for most places is geared to national boundaries. The refinement will 
+                         possibly fail for larger areas. In this case a full search and a subsequent manual refinement is necessary. Respective instructions 
+                         are given in the Info Panel on the right."),hr(), 
                       #-----------------------------------------------------------------------------------------------------------
                       
                       #-----------------------------------------------------------------------------------------------------------
                       # Project Directory
                       tags$b(" Project Directory:"),br(),
                       p("A new folder named \"Inventory\" will be created within the selected project directory. 
-                      This folder will contain the OST inventory shapefiles, sorted by orbit direction and polarization mode. See the Info Panel for 
-                      more details on the naming conventions."),
+                        This folder will contain the OST inventory shapefiles, sorted by orbit direction and polarization mode. See the Info Panel for 
+                        more details on the naming conventions."),
                       shinyDirButton('s1_ainv_directory', 'Browse', 'Select a folder'),br(),br(),
                       verbatimTextOutput("s1_ainv_project_dir"),hr(),             
                       #-----------------------------------------------------------------------------------------------------------
@@ -237,11 +241,29 @@ tabItem(tabName = "s1_inv",
                                
                                tags$h4("Sentinel-1 data inventory "),
                                hr(),
-                               p("By using the processing panel on the left, it is possible to easily search for data from the Sentinel-1 constellation for a certain area, 
-                                  defined by country borders or a self-provided shapefile delimiting the area of interest. Based on this selection, as well as the 
+                               p("OST separates the search for data from the actual download. Two routines are available to the user, the ", tags$b("Automatic Data Inventory"), " and 
+                                  the ", tags$b("Full Selection."), "Both routines will create a folder named ", tags$b("Inventory"), " within the selected project folder, where all
+                                  outputs will be placed."),
+                               p("The ", tags$b("Automatic Data Inventory"), " tab will look for all GRD data products available for the given AOI within the selected time-period
+                                  in VV only (i.e. single-polarized) and VV + VH polarisation (i.e. dual-polarized).
+                                  An automated refinement takes place that sorts out scenes that do not meet the criteria to be included in the time-series/timescan processing.  
+                                  Available imagery will be stored in separate shapefiles according to the orbit direction and polarisation mode. Additionally, the user can see 
+                                  the number of available number of acquisitions placed at the beginning of each file. E.g., the file ", tags$b("23.asc.single-pol.shp"), " is read as: 
+                                  23 wall-to-wall mosaics for the entire AOI, acquired in single-polarised mode and ascending orbit direction."),
+                               p("A maximum of 4 combinations is available, i.e. ascending + single-pol, ascending + dual-pol, descending + single-pol and descending dual-pol. 
+                                  The selection for further download and processing should comply with the highest number of available wall-to-wall mosaics.
+                                  However, since dual-pol data includes additional information from the VH cross-polarised channel, it mihgt be favorable to select 
+                                  the dual-pol file, even if the number of mosaics is lower."),
+                               p("In order to give sense to the envisaged analysis based on timescans, a ", tags$b("minimum"), " of 5 wall-to-wall mosaics, distributed over 
+                                  different seasons, should be available. This should assure that the temporal dynamics of all present land cover classes is well captured. More 
+                                  suited datasets contain 10 and more wall-to-wall mosaics. As a result, an OST inventory shapefile, containing 12 mosaics acquired in single-pol mode 
+                                  is likely to give more information than an OST inventory shapefile containing just 5 mosaics in dual-pol mode. "),
+                               p("The ", tags$b("Full Selection."), ", instead, returns the full set of available imagery and allows also for more advanced search criteria.
+                                  It is possible to easily search for all kinds of data from the Sentinel-1 constellation for a certain area, 
+                                  defined by country borders or a self-provided shapefile delimiting the AOI. Based on this selection, as well as the 
                                   other criteria, an", tags$b("OST inventory shapefile"), "is created. This shapefile shows the footprints of the 
                                   matching scenes and contains further metadata in its attribute table. Thus, the selection of scenes can be further refined
-                                  manually. Ultimately, this shapefile is needed for the subsequent", actionLink("link_to_tabpanel_s1_dow", "Data Download"),"."),
+                                  manually. Ultimately, this shapefile can then be used for the subsequent", actionLink("link_to_tabpanel_s1_dow", "Data Download"),"."),
                                p("Specifications of the acquisition mode can be modified as well. The default values are recommended. 
                                   For more information see the other tabs within this Info Panel."),
                                p(tags$b("Note I:"), "For subsequent processing tasks not all imaging modes are supported. At the moment OST only supports processing of
@@ -271,17 +293,27 @@ tabItem(tabName = "s1_inv",
                                   Since the launch of the SENTINEL-1A unit in April 2014, daily data delivery has been increased constantly. 
                                   With the availability of the data from the SENTINEL-1B unit and the integration into the",
                                  a(href = "https://en.wikipedia.org/wiki/European_Data_Relay_System", "European Data Relay System (EDRS)"),
-                                 ", constant image acqusition is in place since October 2016."),
+                                 ", constant image acqusition is in place since May 2017."),
                                p("Detailed information on the acquisition strategy can be found", 
                                  a(href = "https://sentinel.esa.int/web/sentinel/missions/sentinel-1/observation-scenario", target = "_blank", "here"), "."),
+                               br(),
+                               tags$h3("Observation scenarion as of 05/2017"),
+                               br(),
+                               img(src = "Sentinel-1-revisit-coverage-052017.jpg", width = "100%", height = "100%"),
+                               tags$b("Figure 1: Revisit and coverage frequency of the SENTINEL-1 constellation as from May 2017 (image courtesy:ESA)."),
+                               br(),
+                               img(src = "Sentinel-1-mode-polarisation-pass-052017.jpg", width = "100%", height = "100%"),
+                               tags$b("Figure 2: Imaging modes of the SENTINEL-1 constellation as from May 2017 (image courtesy:ESA)."),
+                               hr(),
+                               tags$h4("Observation scenarion as of 10/2016"),
+                               br(),
                                img(src = "Sentinel-1-revisit-frequency.jpg", width = "100%", height = "100%"),
-                               tags$b("Figure 1: Revisit and coverage frequency of the SENTINEL-1 constellation as from October 2016 (image courtesy:ESA)."),
+                               tags$b("Figure 3: Revisit and coverage frequency of the SENTINEL-1 constellation as from October 2016 (image courtesy:ESA)."),
                                br(),
                                img(src = "Sentinel-1-mode-polarisation-observation-geometry.jpg", width = "100%", height = "100%"),
-                               tags$b("Figure 2: Imaging modes of the SENTINEL-1 constellation as from Ocotber 2016 (image courtesy:ESA).")
-                      ),
+                               tags$b("Figure 4: Imaging modes of the SENTINEL-1 constellation as from October 2016 (image courtesy:ESA).")                      ),
                       tabPanel("Sensor Mode",
-                               tags$h4("Sentinel-1 sensor modes"),
+                               tags$h3("Sentinel-1 sensor modes"),
                                tags$i("Note that the content is adapted from"), 
                                a(href = "https://sentinel.esa.int/web/sentinel/missions/sentinel-1", target = "_blank", "ESA's Sentinel-1 webpage."),
                                hr(),

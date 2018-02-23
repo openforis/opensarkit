@@ -134,6 +134,7 @@ srtm_dow_get_args = function(){
     else if (input$srtm_dow_AOI == "SRTM_AOI_shape_local"){
       df = parseFilePaths(volumes, input$srtm_dow_shapefile)
       srtm_dow_aoi = as.character(df[,"datapath"])
+      #print(srtm_dow_aoi)
     } 
     
     else if (input$srtm_dow_AOI == "SRTM_AOI_zip_upload"){
@@ -179,7 +180,7 @@ srtm_dow_start = function() {
     js_string_srtm_dow <- 'alert("Downloading");'
     js_string_srtm_dow <- sub("Downloading",srtm_dow_message,js_string_srtm_dow)
     session$sendCustomMessage(type='jsCode', list(value = js_string_srtm_dow))
-    
+    #print(paste("( ost_SRTM4_download", srtm_dow_args, "; echo $? >", srtm_dow_exitfile, ")"), wait = FALSE, intern = FALSE)
     system(paste("( ost_SRTM4_download", srtm_dow_args, "; echo $? >", srtm_dow_exitfile, ")"), wait = FALSE, intern = FALSE)
     
     return("RUNNING")

@@ -7,8 +7,9 @@ import numpy.ma as ma
 import scipy
 from scipy import stats
 from time import time
+from numba import jit, float64
+from numba import njit, prange
 
-# read in all the metadata of a raster file
 def read_input_stack_geos(rasterfn):
 
     # open raster file
@@ -50,7 +51,6 @@ def read_input_stack_geos(rasterfn):
     return {'xB':x_block_size, 'yB': y_block_size, 'cols': cols, 'rows':rows, 'bands':bands, 'dt': data_type, 'dtn':data_type_name, 'ndv':ndv,
             'gtr':geotransform, 'oX':originX, 'oY': originY, 'pW':pixelWidth, 'pH':pixelHeight, 'driver': driver, 'outR':outRasterSRS}
 
-# create an empty raster that is filled later on
 def create_2d_raster(newRasterfn, cols, rows, data_type, originX, originY, pixelWidth, pixelHeight, outRasterSRS, driver, ndv):
 
     outRaster = driver.Create(newRasterfn, cols, rows, 1, data_type,
@@ -69,7 +69,6 @@ def create_2d_raster(newRasterfn, cols, rows, data_type, originX, originY, pixel
 
     return outRaster
 
-# write chunks of arrays to an already existent raster
 def write_chunk_to_raster(outRasterfn, array_chunk, ndv, x, y):
 
     outRaster = gdal.Open(outRasterfn, gdal.GA_Update)
@@ -78,7 +77,7 @@ def write_chunk_to_raster(outRasterfn, array_chunk, ndv, x, y):
     # write to array
     outband.WriteArray(array_chunk, x, y)
 
-# rescale sar dB dat ot integer format
+@jit(cache=True)
 def rescale_to_int(float_array,minVal,maxVal,datatype):
 
     # set output min and max
@@ -94,7 +93,7 @@ def rescale_to_int(float_array,minVal,maxVal,datatype):
 
     return int_array
 
-# rescale integer scaled sar data back to dB
+@jit(cache=True)
 def rescale_from_int(int_array, data_type_name):
 
     if data_type_name == 'uint8':
@@ -105,18 +104,21 @@ def rescale_from_int(int_array, data_type_name):
     return float_array
 
 # convert dB to power
+@jit(float64[:,:,:](float64[:,:,:]), nopython=True, nogil=True)
 def convert_to_pow(dB_array):
 
     pow_array = 10 ** (dB_array / 10)
     return pow_array
 
 # convert power to dB
+@jit(float64[:,:](float64[:,:]), nopython=True, nogil=True)
 def convert_to_dB(pow_array):
 
     dB_array = 10 * np.log10(pow_array)
     return dB_array
 
 # the outlier removal, needs revision (e.g. use something profound)
+@jit(float64[:,:,:](float64[:,:,:]))
 def outlier_removal(arrayin):
 
     # calculate percentiles
@@ -148,6 +150,7 @@ def outlier_removal(arrayin):
     return array_out
 
 # calculate multi-temporal metrics by looping throuch chunks defined by blocksize
+#@njit(parallel=True)
 def calc_mt_metrics(rasterfn, newRasterfn, metrics, cols, rows, x_block_size, y_block_size, data_type_name, outRaster, toPower, rescale_sar, outlier, ndv):
 
     raster3d = gdal.Open(rasterfn)
@@ -265,70 +268,6 @@ def calc_mt_metrics(rasterfn, newRasterfn, metrics, cols, rows, x_block_size, y_
 
                 # write out to raster
                 write_chunk_to_raster(newRasterfn + ".cov.tif", metric, ndv, x, y)
-
-            # 90th percentile
-            if 'p90' in metrics:
-                # calulate the max
-                metric = np.percentile(stacked_array, 90, axis=0)
-
-                # rescale to db
-                if toPower == 'yes':
-                    metric = convert_to_dB(metric)
-
-                # rescale to actual data type
-                if rescale_sar == 'yes' and data_type_name != 'Float32':
-                    metric = rescale_to_int(metric,-30. ,5. , data_type_name)
-                    metric[nd_mask == True] = ndv
-
-                # write out to raster
-                write_chunk_to_raster(newRasterfn + ".p90.tif", metric, ndv, x, y)
-
-            # 10th perentile
-            if 'p10' in metrics:
-                # calulate the max
-                metric = np.percentile(stacked_array, 10, axis=0)
-
-                # rescale to db
-                if toPower == 'yes':
-                    metric = convert_to_dB(metric)
-
-                # rescale to actual data type
-                if rescale_sar == 'yes' and data_type_name != 'Float32':
-                    metric = rescale_to_int(metric,-30. ,5. , data_type_name)
-                    metric[nd_mask == True] = ndv
-
-                # write out to raster
-                write_chunk_to_raster(newRasterfn + ".p10.tif", metric, ndv, x, y)
-
-            # Difference between 90th and 10th percentile
-            if 'pDiff' in metrics:
-                # calulate the max
-                metric = np.percentile(stacked_array, 90, axis=0) - (np.percentile(stacked_array, 10, axis=0)
-
-                # we do not rescale to dB for the CoV
-
-                if rescale_sar == 'yes' and data_type_name != 'Float32':
-                    # rescale to actual data type
-                    metric = rescale_to_int(metric,-0.0001 ,1. , data_type_name)
-                    metric[nd_mask == True] = ndv
-
-                # write out to raster
-                write_chunk_to_raster(newRasterfn + ".pDiff.tif", metric, ndv, x, y)
-
-            # Difference between 90th and 10th percentile
-            if 'sum' in metrics:
-                # calulate the max
-                metric = np.percentile(stacked_array, 90, axis=0) - (np.percentile(stacked_array, 10, axis=0)
-
-                # we do not rescale to dB for the CoV
-
-                if rescale_sar == 'yes' and data_type_name != 'Float32':
-                    # rescale to actual data type
-                    metric = rescale_to_int(metric,-0.0001 ,1. , data_type_name)
-                    metric[nd_mask == True] = ndv
-
-                # write out to raster
-                write_chunk_to_raster(newRasterfn + ".sum.tif", metric, ndv, x, y)
 
 def run_all(rasterfn,newRasterfn,metrics,toPower,rescale_sar, outlier):
 

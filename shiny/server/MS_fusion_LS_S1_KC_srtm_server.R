@@ -113,7 +113,7 @@ ms_ls_s1_kc_srtm_get_state = function() {
     return("INITIAL")
   else {
     # get the pid
-    ms_ls_s1_kc_srtm_pid_cmd=paste("-ef | grep \"sh -c ( ost_multi_sensor_ls_s1_kc_srtm", ms_ls_s1_kc_srtm_args, "\" | grep -v grep | awk '{print $2}'")
+    ms_ls_s1_kc_srtm_pid_cmd=paste("-ef | grep \"sh -c ( ost_multi_sensor_opt_s1_kc_srtm", ms_ls_s1_kc_srtm_args, "\" | grep -v grep | awk '{print $2}'")
     
     ms_ls_s1_kc_srtm_pid = as.integer(system2("ps", args = ms_ls_s1_kc_srtm_pid_cmd, stdout = TRUE))
   }
@@ -132,6 +132,19 @@ ms_ls_s1_kc_srtm_get_state = function() {
 # get the input arguments from the GUI
 ms_ls_s1_kc_srtm_get_args = function(){
   
+  # processing
+  volumes = c('User directory'=Sys.getenv("HOME"))
+  
+  ms_s1_df = parseFilePaths(volumes, input$ms2_s1_file)
+  ms_s1_infile = as.character(ms_s1_df[,"datapath"])
+  
+  ms_kc_df = parseFilePaths(volumes, input$ms2_alos_file)
+  ms_kc_infile = as.character(ms_kc_df[,"datapath"])
+  
+  ms_srtm_df = parseFilePaths(volumes, input$ms2_srtm_file)
+  ms_srtm_infile = as.character(ms_srtm_df[,"datapath"])
+  
+  
   # empty input file message
     if(is.null(input$ms2_lsat_file)){
       ms2_lsat_file_message=" No Landsat stack has been selected"
@@ -144,40 +157,43 @@ ms_ls_s1_kc_srtm_get_args = function(){
     } 
     
   # empty s1 message
-  else if(is.null(input$ms2_s1_file)){
-    ms2_s1_file_message=" No Sentinel-1 stack has been selected"
-    ms_s1_js_string <- 'alert("Attention");'
-    ms_s1_js_string <- sub("Attention",ms2_s1_file_message, ms_s1_js_string)
-    session$sendCustomMessage(type='jsCode', list(value =  ms_s1_js_string))
-    ms_ls_s1_kc_srtm_values$ms_ls_s1_kc_srtm_pro = 0
-    ms_ls_s1_kc_srtm_values$ms_ls_s1_kc_srtm_log = 0
-    return("INPUT_FAIL")
+  if(is.null(input$ms2_s1_file)){
+    #ms2_s1_file_message=" No Sentinel-1 stack has been selected"
+    #ms_s1_js_string <- 'alert("Attention");'
+    #ms_s1_js_string <- sub("Attention",ms2_s1_file_message, ms_s1_js_string)
+    #session$sendCustomMessage(type='jsCode', list(value =  ms_s1_js_string))
+    #ms_ls_s1_kc_srtm_values$ms_ls_s1_kc_srtm_pro = 0
+    #ms_ls_s1_kc_srtm_values$ms_ls_s1_kc_srtm_log = 0
+    #return("INPUT_FAIL")
+    ms_s1_infile="-" 
   }
    
   # empty kc message
-  else if(is.null(input$ms2_alos_file)){
-    ms_kc_file_message=" No ALOS K&C stack has been selected"
-    ms_kc_js_string <- 'alert("Attention");'
-    ms_kc_js_string <- sub("Attention",ms_kc_file_message, ms_kc_js_string)
-    session$sendCustomMessage(type='jsCode', list(value =  ms_kc_js_string))
-    ms_ls_s1_kc_srtm_values$ms_ls_s1_kc_srtm_pro = 0
-    ms_ls_s1_kc_srtm_values$ms_ls_s1_kc_srtm_log = 0
-    return("INPUT_FAIL")
+  if(is.null(input$ms2_alos_file)){
+    #ms_kc_file_message=" No ALOS K&C stack has been selected"
+    #ms_kc_js_string <- 'alert("Attention");'
+    #ms_kc_js_string <- sub("Attention",ms_kc_file_message, ms_kc_js_string)
+    #session$sendCustomMessage(type='jsCode', list(value =  ms_kc_js_string))
+    #ms_ls_s1_kc_srtm_values$ms_ls_s1_kc_srtm_pro = 0
+    #ms_ls_s1_kc_srtm_values$ms_ls_s1_kc_srtm_log = 0
+    #return("INPUT_FAIL")
+    ms_kc_infile="-"
   } 
    
   # empty srtm message
-  else if(is.null(input$ms2_srtm_file)){
-    ms_srtm_file_message=" No SRTM stack has been selected"
-    ms_srtm_js_string <- 'alert("Attention");'
-    ms_srtm_js_string <- sub("Attention",ms_srtm_file_message, ms_srtm_js_string)
-    session$sendCustomMessage(type='jsCode', list(value =  ms_srtm_js_string))
-    ms_ls_s1_kc_srtm_values$ms_ls_s1_kc_srtm_pro = 0
-    ms_ls_s1_kc_srtm_values$ms_ls_s1_kc_srtm_log = 0
-    return("INPUT_FAIL")
-  }
+  if(is.null(input$ms2_srtm_file)){
+    #ms_srtm_file_message=" No SRTM stack has been selected"
+    #ms_srtm_js_string <- 'alert("Attention");'
+    #ms_srtm_js_string <- sub("Attention",ms_srtm_file_message, ms_srtm_js_string)
+    #session$sendCustomMessage(type='jsCode', list(value =  ms_srtm_js_string))
+    #ms_ls_s1_kc_srtm_values$ms_ls_s1_kc_srtm_pro = 0
+    #ms_ls_s1_kc_srtm_values$ms_ls_s1_kc_srtm_log = 0
+    #return("INPUT_FAIL")
+    ms_srtm_infile="-"
+    }
   
   # empty output directy message
-  else if(is.null(input$ms_ls_s1_kc_srtm_outdir)){
+  if(is.null(input$ms_ls_s1_kc_srtm_outdir)){
     ms_ls_kc_s1_dir_message=" No output folder selected"
     ms_ls_kc_s1_js_string <- 'alert("Attention");'
     ms_ls_kc_s1_js_string <- sub("Attention",ms_ls_kc_s1_dir_message,ms_ls_kc_s1_js_string)
@@ -187,38 +203,25 @@ ms_ls_s1_kc_srtm_get_args = function(){
     return("INPUT_FAIL")
   }
   
-  # processing
-  else {
+  ms_lsat_df = parseFilePaths(volumes, input$ms2_lsat_file)
+  ms_lsat_infile = as.character(ms_lsat_df[,"datapath"])
   
-    volumes = c('User directory'=Sys.getenv("HOME"))
-    
-    ms_lsat_df = parseFilePaths(volumes, input$ms2_lsat_file)
-    ms_lsat_infile = as.character(ms_lsat_df[,"datapath"])
-    
-    ms_ls_s1_kc_srtm_lsatind = input$ms_ls_s1_kc_srtm_lsatind
-    
-    ms_s1_df = parseFilePaths(volumes, input$ms2_s1_file)
-    ms_s1_infile = as.character(ms_s1_df[,"datapath"])
-    
-    ms_kc_df = parseFilePaths(volumes, input$ms2_alos_file)
-    ms_kc_infile = as.character(ms_kc_df[,"datapath"])
-    
-    ms_srtm_df = parseFilePaths(volumes, input$ms2_srtm_file)
-    ms_srtm_infile = as.character(ms_srtm_df[,"datapath"])
-    
-    ms_ls_s1_kc_srtm_dir <<- parseDirPath(volumes, input$ms_ls_s1_kc_srtm_outdir)      
-    #ms_ls_s1_kc_srtm_outfile = paste(ms_ls_s1_kc_srtm_dir,"/ms_sensor_stack.vrt",sep="")
-    ms_ls_s1_kc_srtm_args<<- paste(ms_lsat_infile, ms_s1_infile, ms_kc_infile, ms_srtm_infile, ms_ls_s1_kc_srtm_dir, ms_ls_s1_kc_srtm_lsatind )
+  ms_ls_s1_kc_srtm_lsatind = input$ms_ls_s1_kc_srtm_lsatind
   
-    # create a exitfile path and export as global variable
-    ms_ls_s1_kc_srtm_exitfile <<- paste(ms_ls_s1_kc_srtm_dir, "/.exitfile", sep="")
-    
-    ms_ls_s1_kc_srtm_tmp <<- paste(ms_ls_s1_kc_srtm_dir, "/.TMP")
-    
-    # return new state
-    return("NOT_STARTED")
-    
-  }
+  ms_ls_s1_kc_srtm_dir <<- parseDirPath(volumes, input$ms_ls_s1_kc_srtm_outdir)    
+  print(input$ms_ls_s1_kc_srtm_outdir)
+  print(ms_ls_s1_kc_srtm_dir)
+  #ms_ls_s1_kc_srtm_outfile = paste(ms_ls_s1_kc_srtm_dir,"/ms_sensor_stack.vrt",sep="")
+  ms_ls_s1_kc_srtm_args<<- paste(ms_lsat_infile, ms_s1_infile, ms_kc_infile, ms_srtm_infile, ms_ls_s1_kc_srtm_dir, ms_ls_s1_kc_srtm_lsatind )
+
+  # create a exitfile path and export as global variable
+  ms_ls_s1_kc_srtm_exitfile <<- paste(ms_ls_s1_kc_srtm_dir, "/.exitfile", sep="")
+  
+  ms_ls_s1_kc_srtm_tmp <<- paste(ms_ls_s1_kc_srtm_dir, "/.TMP")
+  
+  # return new state
+  return("NOT_STARTED")
+
 }
 #---------------------------------------------------------------------------
 
@@ -235,8 +238,8 @@ ms_ls_s1_kc_srtm_start = function() {
     session$sendCustomMessage(type='jsCode', list(value = js_string_ms_ls_s1_kc))
       
     # run processing
-    print(paste("( ost_multi_sensor_ls_s1_kc_srtm", ms_ls_s1_kc_srtm_args, "; echo $? >", ms_ls_s1_kc_srtm_exitfile, ")"))
-    system(paste("( ost_multi_sensor_ls_s1_kc_srtm", ms_ls_s1_kc_srtm_args, "; echo $? >", ms_ls_s1_kc_srtm_exitfile, ")"), wait = FALSE, intern=FALSE)
+    print(paste("( ost_multi_sensor_opt_s1_kc_srtm", ms_ls_s1_kc_srtm_args, "; echo $? >", ms_ls_s1_kc_srtm_exitfile, ")"))
+    system(paste("( ost_multi_sensor_opt_s1_kc_srtm", ms_ls_s1_kc_srtm_args, "; echo $? >", ms_ls_s1_kc_srtm_exitfile, ")"), wait = FALSE, intern=FALSE)
     return("RUNNING")     
   })
 }
