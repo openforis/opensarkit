@@ -387,7 +387,7 @@ print_s1_g2r_l1a = eventReactive(input$S1_g2r_l1a, {
   withBusyIndicatorServer("S1_g2r_l1a", {
 
     dir.create("~/OST_demos/S1/Lecture_1a/Inventory", recursive = TRUE)
-    system2("wget","-O ~/OST_demos/S1/Lecture_1a/Inventory/s1_ssv_example.zip https://www.dropbox.com/s/iv3jynbpjo2ps6m/s1_ssv_example.zip?dl=0")
+    system2("wget","-O ~/OST_demos/S1/Lecture_1a/Inventory/s1_ssv_example.zip https://www.dropbox.com/s/iszfnjgrzze6uzd/s1_ssv_example.zip?dl=0")
     unzip("~/OST_demos/S1/Lecture_1a/Inventory/s1_ssv_example.zip", exdir = "~/OST_demos/S1/Lecture_1a/Inventory/")
     file.remove("~/OST_demos/S1/Lecture_1a/Inventory/s1_ssv_example.zip")
     print("Done!")
