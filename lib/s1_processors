@@ -796,14 +796,14 @@ function s1_timeseries() {
     basename ${MTs} | rev | cut -c 5- | rev >> ${TMP_MT}/tmp_list
   done
   BANDLIST=$(cat ${TMP_MT}/tmp_list | tr '\n' ',' | rev | cut -c 2- | rev)
-  #rm -f ${TMP_MT}/tmp_list
+  rm -f ${TMP_MT}/tmp_list
 
   SECONDS=0
   echo -ne " Converting linear to db-scale ... " &&
   bash $SNAP_EXE ${S1_RTC2TS_GRAPHS}/S1_RTC2TS_lin_to_db.xml -x -q ${NR_OF_CPUS} -Pinput=${TMP_MT}/mt_stack.vv.speckle.dim -Pbandlist=${BANDLIST} -Poutput=${TMP_MT}/mt_stack.vv.db.speckle.dim >> ${LOG_MT}/log_mt_stacking 2>&1
   duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"
   [ $? -ne 0 ] && return ${ERR_SPECKLE}
-  #rm -rf ${TMP_MT}/mt_stack.vv.speckle.d*
+  rm -rf ${TMP_MT}/mt_stack.vv.speckle.d*
 
   # change nodata value use (i.e. applies the nanmean etc. calculation in the next steps)
   sed -i 's|<NO_DATA_VALUE_USED>true</NO_DATA_VALUE_USED>|<NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>|g' ${TMP_MT}/mt_stack.vv.db.speckle.dim

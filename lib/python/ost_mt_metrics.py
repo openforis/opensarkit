@@ -8,22 +8,8 @@ import scipy
 from scipy import stats
 from time import time
 
-def rescale_from_db(arrayin,minVal,maxVal,datatype):
-
-    # set output min and max
-    display_min = 1.
-    if datatype == 'uint8':
-        display_max = 254.
-    elif datatype == 'UInt16':
-        display_max = 65535.
-
-    a = minVal - ((maxVal - minVal)/(display_max - display_min))
-    x = (maxVal - minVal)/(display_max - 1)
-    arrayout = np.round((arrayin - a) / x).astype(datatype)
-
-    return arrayout
-
-def mt_metrics(rasterfn,newRasterfn,mt_type,toPower,rescale_sar, outlier):
+# read in all the metadata of a raster file
+def read_input_stack_geos(rasterfn):
 
     # open raster file
     raster3d = gdal.Open(rasterfn)
@@ -36,6 +22,7 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,toPower,rescale_sar, outlier):
     # Get image sizes
     cols = raster3d.RasterXSize
     rows = raster3d.RasterYSize
+    bands = raster3d.RasterCount
 
     # get datatype and transform to numpy readable
     data_type = raster3d.GetRasterBand(1).DataType
@@ -46,7 +33,7 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,toPower,rescale_sar, outlier):
 
     print " INFO: Importing", raster3d.RasterCount, "bands from", rasterfn
 
-    band=raster3d.GetRasterBand(1)
+    #band=raster3d.GetRasterBand(1)
     geotransform = raster3d.GetGeoTransform()
     originX = geotransform[0]
     originY = geotransform[3]
@@ -59,25 +46,111 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,toPower,rescale_sar, outlier):
     outRasterSRS = osr.SpatialReference()
     outRasterSRS.ImportFromWkt(raster3d.GetProjectionRef())
 
-    # we will need this to create the output just once
-    k = 1
+    # we return a dict of all relevant values
+    return {'xB':x_block_size, 'yB': y_block_size, 'cols': cols, 'rows':rows, 'bands':bands, 'dt': data_type, 'dtn':data_type_name, 'ndv':ndv,
+            'gtr':geotransform, 'oX':originX, 'oY': originY, 'pW':pixelWidth, 'pH':pixelHeight, 'driver': driver, 'outR':outRasterSRS}
 
-    # loop through the metrics
-    # create a vector of measures
-    if mt_type is '1':
-        metrics = ["avg", "max", "min", "std", "cov" ]
-    elif mt_type is '2':
-        metrics = [ "p90", "p10", "pDiff" ]
-    elif mt_type is '3':
-        metrics = [ "max", "min" ] # for extent
-    elif mt_type is '4':
-        metrics = [ "max" ] # for ls map
-    elif mt_type is '5':
-        metrics = ["avg", "max", "min", "std", "cov" , "skew", "kurt", "argmin", "argmax", "median" ]
-    elif mt_type is '6':
-        metrics = ["sum"] # for TRMM
-    elif mt_type is '7':
-        metrics = ["min","std"] # for TRMM
+# create an empty raster that is filled later on
+def create_2d_raster(newRasterfn, cols, rows, data_type, originX, originY, pixelWidth, pixelHeight, outRasterSRS, driver, ndv):
+
+    outRaster = driver.Create(newRasterfn, cols, rows, 1, data_type,
+        options=[           # Format-specific creation options.
+        'TILED=YES',
+        'BIGTIFF=IF_SAFER',
+        'BLOCKXSIZE=128',   # must be a power of 2
+        'BLOCKYSIZE=128',  # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
+        'COMPRESS=LZW'
+        ] )
+    outRaster.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
+    outband = outRaster.GetRasterBand(1)
+    outRaster.SetProjection(outRasterSRS.ExportToWkt())
+    if ndv is not None:
+        outRaster.GetRasterBand(1).SetNoDataValue(ndv)
+
+    return outRaster
+
+# write chunks of arrays to an already existent raster
+def write_chunk_to_raster(outRasterfn, array_chunk, ndv, x, y):
+
+    outRaster = gdal.Open(outRasterfn, gdal.GA_Update)
+    outband = outRaster.GetRasterBand(1)
+
+    # write to array
+    outband.WriteArray(array_chunk, x, y)
+
+# rescale sar dB dat ot integer format
+def rescale_to_int(float_array,minVal,maxVal,datatype):
+
+    # set output min and max
+    display_min = 1.
+    if datatype == 'uint8':
+        display_max = 254.
+    elif datatype == 'UInt16':
+        display_max = 65535.
+
+    a = minVal - ((maxVal - minVal)/(display_max - display_min))
+    x = (maxVal - minVal)/(display_max - 1)
+    int_array = np.round((float_array - a) / x).astype(datatype)
+
+    return int_array
+
+# rescale integer scaled sar data back to dB
+def rescale_from_int(int_array, data_type_name):
+
+    if data_type_name == 'uint8':
+        float_array = int_array.astype(float) * ( 35. / 254.) + (-30. - (35. / 254.))
+    elif data_type_name == 'UInt16':
+        float_array = int_array.astype(float) * ( 35. / 65535.) + (-30. - (35. / 65535.))
+
+    return float_array
+
+# convert dB to power
+def convert_to_pow(dB_array):
+
+    pow_array = 10 ** (dB_array / 10)
+    return pow_array
+
+# convert power to dB
+def convert_to_dB(pow_array):
+
+    dB_array = 10 * np.log10(pow_array)
+    return dB_array
+
+# the outlier removal, needs revision (e.g. use something profound)
+def outlier_removal(arrayin):
+
+    # calculate percentiles
+    p95 = np.percentile(arrayin, 95, axis=0)
+    p5 = np.percentile(arrayin, 5, axis=0)
+
+    # we mask out the percetile outliers for std dev calculation
+    masked_array = np.ma.MaskedArray(
+                    arrayin,
+                    mask = np.logical_or(
+                    arrayin > p95,
+                    arrayin < p5
+                    )
+    )
+
+    # we calculate new std and mean
+    masked_std = np.std(masked_array, axis=0)
+    masked_mean = np.mean(masked_array, axis=0)
+
+    # we mask based on mean +- 3 * stddev
+    array_out = np.ma.MaskedArray(
+                    arrayin,
+                    mask = np.logical_or(
+                    arrayin > masked_mean + masked_std * 3,
+                    arrayin < masked_mean - masked_std * 3,
+                    )
+    )
+
+    return array_out
+
+# calculate multi-temporal metrics by looping throuch chunks defined by blocksize
+def calc_mt_metrics(rasterfn, newRasterfn, metrics, cols, rows, x_block_size, y_block_size, data_type_name, outRaster, toPower, rescale_sar, outlier, ndv):
+
+    raster3d = gdal.Open(rasterfn)
 
     # loop through y direction
     for y in xrange(0, rows, y_block_size):
@@ -94,313 +167,183 @@ def mt_metrics(rasterfn,newRasterfn,mt_type,toPower,rescale_sar, outlier):
                 xsize = cols - x
 
             # create the blocksized array
-            stacked_array_orig=np.empty((raster3d.RasterCount, ysize, xsize), dtype=data_type_name)
+            stacked_array=np.empty((raster3d.RasterCount, ysize, xsize), dtype=data_type_name)
 
             # loop through the timeseries and fill the stacked array part
             for i in xrange( raster3d.RasterCount ):
                 i += 0
-                stacked_array_orig[i,:,:] = np.array(raster3d.GetRasterBand(i+1).ReadAsArray(x,y,xsize,ysize))
-
-                # convert back to original dB
-                if rescale_sar == 'yes':
-                    if data_type_name == 'uint8':
-                        stacked_array = stacked_array_orig.astype(float) * ( 35. / 254.) + (-30. - (35. / 254.))
-
-                    elif data_type_name == 'UInt16':
-                            stacked_array = stacked_array_orig.astype(float) * ( 35. / 65535.) + (-30. - (35. / 65535.))
-                    else:
-                        stacked_array = stacked_array_orig
-                else:
-                    stacked_array = stacked_array_orig
+                stacked_array[i,:,:] = np.array(raster3d.GetRasterBand(i+1).ReadAsArray(x,y,xsize,ysize))
 
             # original nd_mask
-            nd_mask = stacked_array_orig[1,:,:] == 0
+            nd_mask = stacked_array[1,:,:] == 0
 
+            # rescale to db if data comes in compressed integer format
+            if rescale_sar == 'yes' and data_type_name != 'Float32':
+                stacked_array = rescale_from_int(stacked_array, data_type_name)
 
-            # convert to power
+            # convert from dB to power
             if toPower == 'yes':
-                stacked_array_pow = 10 ** (stacked_array / 10)
-                stacked_array = stacked_array_pow
+                stacked_array = convert_to_pow(stacked_array)
 
-            # the outlier removal routine
+            # remove outliers
             if outlier == 'yes' and raster3d.RasterCount >= 5:
-                # calculate percentiles
-                p95 = np.percentile(stacked_array, 95, axis=0)
-                p5 = np.percentile(stacked_array, 5, axis=0)
+                stacked_array = outlier_removal(stacked_array)
 
-                # we mask out the percetile outliers for std dev calculation
-                masked_array = np.ma.MaskedArray(
-                                stacked_array,
-                                mask = np.logical_or(
-                                stacked_array > p95,
-                                stacked_array < p5
-                                )
-                )
+            if 'avg' in metrics:
+                # calulate the mean
+                metric = np.mean(stacked_array, axis=0)
 
-                # we calculate new std and mean
-                masked_std = np.std(masked_array, axis=0)
-                masked_mean = np.mean(masked_array, axis=0)
+                # rescale to db
+                if toPower == 'yes':
+                    metric = convert_to_dB(metric)
 
-                # # we mask based on mean +- 2 * stddev
-                stacked_array = np.ma.MaskedArray(
-                                stacked_array,
-                                mask = np.logical_or(
-                                stacked_array > masked_mean + masked_std * 0.5,
-                                stacked_array < masked_mean - masked_std * 0.5,
-                                )
-                )
+                # rescale to actual data type
+                if rescale_sar == 'yes' and data_type_name != 'Float32':
+                    metric = rescale_to_int(metric,-30. ,5. , data_type_name)
+                    metric[nd_mask == True] = ndv
 
-            # we calculate the metrics needed
-            for metric in metrics:
+                # write out to raster
+                write_chunk_to_raster(newRasterfn + ".avg.tif", metric, ndv, x, y)
 
-                # calculate the specific metric
-                if metric == "avg":
+            if 'max' in metrics:
+                # calulate the max
+                metric = np.max(stacked_array, axis=0)
 
-                    if k == 1:
-                        outRaster_avg = driver.Create(newRasterfn + ".avg.tif", cols, rows, 1, data_type,
-                            options=[           # Format-specific creation options.
-                            'TILED=YES',
-                            'BIGTIFF=IF_SAFER',
-                            'BLOCKXSIZE=128',   # must be a power of 2
-                            'BLOCKYSIZE=128',  # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
-                            'COMPRESS=LZW'
-                            ] )
-                        outRaster_avg.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
-                        outband_avg = outRaster_avg.GetRasterBand(1)
-                        outRaster_avg.SetProjection(outRasterSRS.ExportToWkt())
-                        if ndv is not None:
-                            outRaster_avg.GetRasterBand(1).SetNoDataValue(ndv)
+                # rescale to db
+                if toPower == 'yes':
+                    metric = convert_to_dB(metric)
 
-                    # calulate the mean
-                    outmetric_avg = np.mean(stacked_array, axis=0)
+                # rescale to actual data type
+                if rescale_sar == 'yes' and data_type_name != 'Float32':
+                    metric = rescale_to_int(metric,-30. ,5. , data_type_name)
+                    metric[nd_mask == True] = ndv
 
-                    if toPower == 'yes':
-                        outmetric_avg_db = 10 * np.log10(outmetric_avg)
-                        outmetric_avg = outmetric_avg_db
+                # write out to raster
+                write_chunk_to_raster(newRasterfn + ".max.tif", metric, ndv, x, y)
 
+            if 'min' in metrics:
+                # calulate the max
+                metric = np.min(stacked_array, axis=0)
+
+                # rescale to db
+                if toPower == 'yes':
+                    metric = convert_to_dB(metric)
+
+                # rescale to actual data type
+                if rescale_sar == 'yes' and data_type_name != 'Float32':
+                    metric = rescale_to_int(metric,-30. ,5. , data_type_name)
+                    metric[nd_mask == True] = ndv
+
+                # write out to raster
+                write_chunk_to_raster(newRasterfn + ".min.tif", metric, ndv, x, y)
+
+            if 'std' in metrics:
+                # calulate the max
+                metric = np.std(stacked_array, axis=0)
+
+                # we do not rescale to dB for the standard deviation
+
+                # rescale to actual data type
+                if rescale_sar == 'yes' and data_type_name != 'Float32':
+                    metric = rescale_to_int(metric, 0.000001, 0.5, data_type_name) + 1 # we add 1 to avoid no false no data values
+                    metric[nd_mask == True] = ndv
+
+                # write out to raster
+                write_chunk_to_raster(newRasterfn + ".std.tif", metric, ndv, x, y)
+
+            # Coefficient of Variation (aka amplitude dispersion)
+            if 'cov' in metrics:
+                # calulate the max
+                metric = scipy.stats.variation(stacked_array, axis=0)
+
+                # we do not rescale to dB for the CoV
+
+                # rescale to actual data type
+                if rescale_sar == 'yes' and data_type_name != 'Float32':
+                    metric = rescale_to_int(metric, 0.001, 1. , data_type_name) + 1 # we add 1 to avoid no false no data values
+                    metric[nd_mask == True] = ndv
+
+                # write out to raster
+                write_chunk_to_raster(newRasterfn + ".cov.tif", metric, ndv, x, y)
+
+            # 90th percentile
+            if 'p90' in metrics:
+                # calulate the max
+                metric = np.percentile(stacked_array, 90, axis=0)
+
+                # rescale to db
+                if toPower == 'yes':
+                    metric = convert_to_dB(metric)
+
+                # rescale to actual data type
+                if rescale_sar == 'yes' and data_type_name != 'Float32':
+                    metric = rescale_to_int(metric,-30. ,5. , data_type_name)
+                    metric[nd_mask == True] = ndv
+
+                # write out to raster
+                write_chunk_to_raster(newRasterfn + ".p90.tif", metric, ndv, x, y)
+
+            # 10th perentile
+            if 'p10' in metrics:
+                # calulate the max
+                metric = np.percentile(stacked_array, 10, axis=0)
+
+                # rescale to db
+                if toPower == 'yes':
+                    metric = convert_to_dB(metric)
+
+                # rescale to actual data type
+                if rescale_sar == 'yes' and data_type_name != 'Float32':
+                    metric = rescale_to_int(metric,-30. ,5. , data_type_name)
+                    metric[nd_mask == True] = ndv
+
+                # write out to raster
+                write_chunk_to_raster(newRasterfn + ".p10.tif", metric, ndv, x, y)
+
+            # Difference between 90th and 10th percentile
+            if 'pDiff' in metrics:
+                # calulate the max
+                metric = np.subtract(np.percentile(stacked_array, 90, axis=0), np.percentile(stacked_array, 10, axis=0))
+
+                # rescale to actual data type
+                if rescale_sar == 'yes' and data_type_name != 'Float32':
+                    metric = rescale_to_int(metric, 0.001, 1. , data_type_name) + 1 # we add 1 to avoid no false no data values
+                    metric[nd_mask == True] = ndv
+
+                # write out to raster
+                write_chunk_to_raster(newRasterfn + ".pDiff.tif", metric, ndv, x, y)
+
+            # # Difference between 90th and 10th percentile
+            if 'sum' in metrics:
+                # calulate the max
+                metric = np.sum(np.percentile(stacked_array, 90, axis=0), np.percentile(stacked_array, 10, axis=0))
+
+                if rescale_sar == 'yes' and data_type_name != 'Float32':
                     # rescale to actual data type
-                    if rescale_sar == 'yes' and data_type_name != 'Float32':
-                        outmetric_avg = rescale_from_db(outmetric_avg,-30. ,5. , data_type_name)
-                        outmetric_avg[nd_mask == True] = ndv
+                    metric = rescale_to_int(metric,-0.0001 ,1. , data_type_name)
+                    metric[nd_mask == True] = ndv
 
-                    # write to array
-                    outband_avg.WriteArray(outmetric_avg, x, y)
+                # write out to raster
+                write_chunk_to_raster(newRasterfn + ".sum.tif", metric, ndv, x, y)
 
-                elif metric == "max":
+def run_all(rasterfn,newRasterfn,metrics,toPower,rescale_sar, outlier):
 
-                    if k == 1:
-                        outRaster_max = driver.Create(newRasterfn + ".max.tif", cols, rows, 1, data_type,
-                            options=[           # Format-specific creation options.
-                            'TILED=YES',
-                            'BIGTIFF=IF_SAFER',
-                            'BLOCKXSIZE=128',   # must be a power of 2
-                            'BLOCKYSIZE=128',  # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
-                            'COMPRESS=LZW'
-                            ] )
-                        outRaster_max.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
-                        outband_max = outRaster_max.GetRasterBand(1)
-                        outRaster_max.SetProjection(outRasterSRS.ExportToWkt())
-                        if ndv is not None:
-                            outRaster_max.GetRasterBand(1).SetNoDataValue(ndv)
-
-                    # calculate the max
-                    outmetric_max = np.max(stacked_array, axis=0)
-
-                    if toPower == 'yes':
-                        outmetric_max_db = 10 * np.log10(outmetric_max)
-                        outmetric_max = outmetric_max_db
-
-                    # rescale to actual data type
-                    if rescale_sar == 'yes' and data_type_name != 'Float32':
-                        outmetric_max = rescale_from_db(outmetric_max,-30. ,5. , data_type_name) + 1
-                        outmetric_max[nd_mask == True] = ndv
-
-                    outband_max.WriteArray(outmetric_max, x, y)
-
-                elif metric == "min":
-
-                    if k == 1:
-                        outRaster_min = driver.Create(newRasterfn + ".min.tif", cols, rows, 1, data_type,
-                            options=[           # Format-specific creation options.
-                            'TILED=YES',
-                            'BIGTIFF=IF_SAFER',
-                            'BLOCKXSIZE=128',   # must be a power of 2
-                            'BLOCKYSIZE=128',  # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
-                            'COMPRESS=LZW'
-                            ] )
-                        outRaster_min.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
-                        outband_min = outRaster_min.GetRasterBand(1)
-                        outRaster_min.SetProjection(outRasterSRS.ExportToWkt())
-                        if ndv is not None:
-                            outRaster_min.GetRasterBand(1).SetNoDataValue(ndv)
-
-                    outmetric_min = np.min(stacked_array, axis=0)
-
-                    if toPower == 'yes':
-                        outmetric_min_db = 10 * np.log10(outmetric_min)
-                        outmetric_min = outmetric_min_db
-
-                    if rescale_sar == 'yes' and data_type_name != 'Float32':
-                        outmetric_min = rescale_from_db(outmetric_min,-30. ,5., data_type_name)
-                        outmetric_min[nd_mask == True] = ndv
-
-                    outband_min.WriteArray(outmetric_min, x, y)
-
-                elif metric == "std":
-
-                    if k == 1:
-                        outRaster_std = driver.Create(newRasterfn + ".std.tif", cols, rows, 1, data_type,
-                                options=[           # Format-specific creation options.
-                                'TILED=YES',
-                                'BIGTIFF=IF_SAFER',
-                                'BLOCKXSIZE=128',   # must be a power of 2
-                                'BLOCKYSIZE=128',  # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
-                                'COMPRESS=LZW'
-                                ] )
-                        outRaster_std.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
-                        outband_std = outRaster_std.GetRasterBand(1)
-                        outRaster_std.SetProjection(outRasterSRS.ExportToWkt())
-                        if ndv is not None:
-                            outRaster_std.GetRasterBand(1).SetNoDataValue(ndv)
-
-                    outmetric_std = np.std(stacked_array, axis=0)
-
-                    #if toPower == 'yes':
-                        #outmetric_std = np.std(10 * np.log10(stacked_array), axis=0)
-                        #outmetric_std_db = 10 * np.log10(outmetric_std)
-                        #outmetric_std = outmetric_std_db
-
-                    if rescale_sar == 'yes' and data_type_name != 'Float32':
-                        outmetric_std = rescale_from_db(outmetric_std, 0.000001, 1., data_type_name) #+ 1
-                        outmetric_std[nd_mask == True] = ndv
-
-                    outband_std.WriteArray(outmetric_std, x, y)
-
-                elif metric == "cov":
-
-                    if k == 1:
-                         outRaster_cov = driver.Create(newRasterfn + ".cov.tif", cols, rows, 1, data_type,
-                                 options=[           # Format-specific creation options.
-                                 'TILED=YES',
-                                 'BIGTIFF=IF_SAFER',
-                                 'BLOCKXSIZE=128',   # must be a power of 2
-                                 'BLOCKYSIZE=128',  # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
-                                 'COMPRESS=LZW'
-                                 ] )
-                         outRaster_cov.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
-                         outband_cov = outRaster_cov.GetRasterBand(1)
-                         outRaster_cov.SetProjection(outRasterSRS.ExportToWkt())
-                         if ndv is not None:
-                             outRaster_cov.GetRasterBand(1).SetNoDataValue(ndv)
-
-                    # calulate cov
-                    outmetric_cov = scipy.stats.variation(stacked_array, axis=0)
-                    #outmetric_cov = np.divide(outmetric_std.astype('float'), outmetric_avg.astype('float'))
-
-                    if rescale_sar == 'yes' and data_type_name != 'Float32':
-                        outmetric_cov = rescale_from_db(outmetric_cov, 0.001, 1 , data_type_name) + 1
-                        outmetric_cov[nd_mask == True] = ndv
-
-                    outband_cov.WriteArray(outmetric_cov, x, y)
-
-                elif metric == "p90":
-
-                    if k == 1:
-                        outRaster_p90 = driver.Create(newRasterfn + ".p90.tif", cols, rows, 1, data_type,
-                            options=[           # Format-specific creation options.
-                            'TILED=YES',
-                            'BIGTIFF=IF_SAFER',
-                            'BLOCKXSIZE=128',   # must be a power of 2
-                            'BLOCKYSIZE=128',  # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
-                            'COMPRESS=LZW'
-                            ] )
-                        outRaster_p90.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
-                        outband_p90 = outRaster_p90.GetRasterBand(1)
-                        outRaster_p90.SetProjection(outRasterSRS.ExportToWkt())
-                        if ndv is not None:
-                            outRaster_p90.GetRasterBand(1).SetNoDataValue(ndv)
-
-                    if (data_type_name == 'Float32') or (rescale_sar == 'no'):
-                        outmetric_p90 = np.percentile(stacked_array, 90, axis=0)
-                        outband_p90.WriteArray(outmetric_p90, x, y)
-                    else:
-                        outmetric_p90 = np.percentile(stacked_array_db, 90, axis=0)
-                        outmetric_p90_res = rescale_from_db(outmetric_p90, -30 , 5 , data_type_name)
-                        outband_p90.WriteArray(outmetric_p90_res, x, y)
+    # read the input raster and get the geo information
+    geo_list = read_input_stack_geos(rasterfn)
 
 
-                elif metric == "p10":
+    # we create our empty output files
+    print " INFO: Creating output files."
+    for metric in metrics:
+        # create output rasters
+        create_2d_raster(newRasterfn + "." + metric + ".tif", geo_list['cols'], geo_list['rows'], geo_list['dt'], geo_list['oX'],
+                         geo_list['oY'], geo_list['pW'], geo_list['pH'], geo_list['outR'], geo_list['driver'], geo_list['ndv'])
 
-                    if k == 1:
-                        outRaster_p10 = driver.Create(newRasterfn + ".p10.tif", cols, rows, 1, data_type,
-                            options=[           # Format-specific creation options.
-                            'TILED=YES',
-                            'BIGTIFF=IF_SAFER',
-                            'BLOCKXSIZE=128',   # must be a power of 2
-                            'BLOCKYSIZE=128',  # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
-                            'COMPRESS=LZW'
-                            ] )
-                        outRaster_p10.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
-                        outband_p10 = outRaster_p10.GetRasterBand(1)
-                        outRaster_p10.SetProjection(outRasterSRS.ExportToWkt())
-                        if ndv is not None:
-                            outRaster_p10.GetRasterBand(1).SetNoDataValue(ndv)
+    print " INFO: Calculating the multi-temporal metrics and write them to the respective output files."
+    # calculate the multi temporal metrics by looping over blocksize
+    calc_mt_metrics(rasterfn, newRasterfn, metrics, geo_list['cols'], geo_list['rows'], geo_list['xB'], geo_list['yB'], geo_list['dtn'],
+                    geo_list['outR'], toPower, rescale_sar, outlier, geo_list['ndv'])
 
-                    if (data_type_name == 'Float32') or (rescale_sar == 'no'):
-                        outmetric_p10 = np.percentile(stacked_array, 10, axis=0)
-                        outband_p10.WriteArray(outmetric_p10, x, y)
-                    else:
-                        outmetric_p10 = np.percentile(stacked_array_db, 10, axis=0)
-                        outmetric_p10_res = rescale_from_db(outmetric_p10, -30 , 5 , data_type_name)
-                        outband_p10.WriteArray(outmetric_p10_res, x, y)
-
-
-                elif metric == "pDiff":
-
-                    if k == 1:
-                        outRaster_pDiff = driver.Create(newRasterfn + ".pDiff.tif", cols, rows, 1, data_type,
-                            options=[           # Format-specific creation options.
-                            'TILED=YES',
-                            'BIGTIFF=IF_SAFER',
-                            'BLOCKXSIZE=128',   # must be a power of 2
-                            'BLOCKYSIZE=128',  # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
-                            'COMPRESS=LZW'
-                            ] )
-                        outRaster_pDiff.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
-                        outband_pDiff = outRaster_pDiff.GetRasterBand(1)
-                        outRaster_pDiff.SetProjection(outRasterSRS.ExportToWkt())
-                        if ndv is not None:
-                            outRaster_pDiff.GetRasterBand(1).SetNoDataValue(ndv)
-
-                    if (data_type_name == 'Float32') or (rescale_sar == 'no'):
-                        outmetric_pDiff = np.subtract(outmetric_p90,outmetric_p10)
-                        outband_pDiff.WriteArray(outmetric_pDiff, x, y)
-                    else:
-                        outmetric_pDiff = np.subtract(outmetric_p90_res,outmetric_p10_res)
-                        outband_pDiff.WriteArray(outmetric_pDiff, x, y)
-
-                elif metric == "sum":
-
-                    if k == 1:
-                        outRaster_sum = driver.Create(newRasterfn + ".sum.tif", cols, rows, 1, data_type,
-                            options=[           # Format-specific creation options.
-                            'TILED=YES',
-                            'BIGTIFF=IF_SAFER',
-                            'BLOCKXSIZE=128',   # must be a power of 2
-                            'BLOCKYSIZE=128',  # also power of 2, need not match BLOCKXSIZEBLOCKXSIZE
-                            'COMPRESS=LZW'
-                            ] )
-                        outRaster_sum.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
-                        outband_sum = outRaster_sum.GetRasterBand(1)
-                        outRaster_sum.SetProjection(outRasterSRS.ExportToWkt())
-                        if ndv is not None:
-                            outRaster_sum.GetRasterBand(1).SetNoDataValue(ndv)
-
-                    outmetric = np.sum(stacked_array, axis=0)
-                    outband_sum.WriteArray(outmetric, x, y)
-
-            # counter to write the outbup just once
-            k = k + 1
 
 def main():
 
@@ -460,7 +403,24 @@ def main():
         print usage
 
     currtime = time()
-    mt_metrics(options.ifile,options.ofile,options.mt_type,options.toPower,options.rescale_sar,options.outlier)
+
+    # create a vector of measures
+    if options.mt_type is '1':
+        metrics = ["avg", "max", "min", "std", "cov" ]
+    elif options.mt_type is '2':
+        metrics = [ "p90", "p10", "pDiff" ]
+    elif options.mt_type is '3':
+        metrics = [ "max", "min" ] # for extent
+    elif options.mt_type is '4':
+        metrics = [ "max" ] # for ls map
+    elif options.mt_type is '5':
+        metrics = ["avg", "max", "min", "std", "cov" , "skew", "kurt", "argmin", "argmax", "median" ]
+    elif options.mt_type is '6':
+        metrics = ["sum"] # for TRMM
+    elif options.mt_type is '7':
+        metrics = ["min","std"]
+
+    run_all(options.ifile,options.ofile,metrics,options.toPower,options.rescale_sar,options.outlier)
     print 'time elapsed:', time() - currtime
 
 
