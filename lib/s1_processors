@@ -186,7 +186,7 @@ function s1_rtc_processing() {
         CROPLINE=${RTC_TMP}/cropline.shp
 
         if [[ -e ${RTC_AOI} ]];then
-          intersect_shp ${EXTENT} ${RTC_AOI} ${CROPLINE} >> ${LOG_MT}/log_mt_stacking 2>&1
+          intersect_shp ${EXTENT} ${RTC_AOI} ${CROPLINE} >> ${RTC_LOG}/log_output 2>&1
         else
           CROPLINE=${EXTENT}
         fi
