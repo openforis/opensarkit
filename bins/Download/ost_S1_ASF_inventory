@@ -213,6 +213,8 @@ ASK="\&polygon=${AOI}&${PLATFORM}&${BEAM}&${PERIOD}&${POLAR}&${PROCESSING}&${OUT
 echo -ne " Data inventory from ASF server ..." | tee -a ${PROC_DIR}/.s1_inv_progress
 curl -s https://api.daac.asf.alaska.edu/services/search/param?keyword=value$ASK | tail -n +2  > ${OUT_FILE}
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_inv_progress
+echo "curl -s https://api.daac.asf.alaska.edu/services/search/param?keyword=value$ASK"
+
 
 if [[ $(cat ${OUT_FILE} 2>&1 | head -c 3) != \"S1 ]];then
 	echo -e " No products have been found for the given search parameters." | tee -a ${PROC_DIR}/.s1_inv_progress && exit 1
