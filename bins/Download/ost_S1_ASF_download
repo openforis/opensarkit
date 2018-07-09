@@ -28,7 +28,6 @@ if [ "$#" == "3" ]; then
 	source ${OPENSARKIT}/lib/helpers_source
 
 	export WGETRC=`readlink -f $3`
-	cd $1
 	PROC_DIR=$(readlink -f $1)
 	TMP_DIR=${PROC_DIR}/.TMP
 	mkdir -p ${TMP_DIR}
@@ -57,7 +56,6 @@ else
 	# source libs
 	source ${OPENSARKIT}/lib/helpers_source
 
-	cd $1
   	PROC_DIR=$(readlink -f $1)
 	TMP_DIR="${PROC_DIR}/.TMP"
 	#rm -rf ${TMP_DIR} > /dev/null
@@ -134,7 +132,7 @@ while read line; do
 			i=3
 			SECONDS=0
 			echo -ne " Downloading Product ${COUNT} of ${NR} (Granule: ${SCENE})... " | tee -a "${PROC_DIR}/.s1_dow_progress"
-			echo "wget --show-progress --progress=dot -q -c -P ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/ "${LINK}""
+			#echo "wget --show-progress --progress=dot -q -c -P ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/ "${LINK}""
 			wget --show-progress --progress=dot -q -c -P ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/ "${LINK}" >> ${TMP_DIR}/log_download_${COUNT} 2>&1
 			WGET_ERR=$?
 
