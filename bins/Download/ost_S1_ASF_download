@@ -29,7 +29,7 @@ if [ "$#" == "3" ]; then
 
 	export WGETRC=`readlink -f $3`
 	cd $1
-	PROC_DIR=`pwd`
+	PROC_DIR=$(readlink -f $1)
 	TMP_DIR=${PROC_DIR}/.TMP
 	mkdir -p ${TMP_DIR}
 
@@ -58,7 +58,7 @@ else
 	source ${OPENSARKIT}/lib/helpers_source
 
 	cd $1
-  PROC_DIR=`pwd`
+  	PROC_DIR=$(readlink -f $1)
 	TMP_DIR="${PROC_DIR}/.TMP"
 	#rm -rf ${TMP_DIR} > /dev/null
 	mkdir -p "${TMP_DIR}"
