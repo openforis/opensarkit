@@ -24,64 +24,64 @@
 # 	0.1 Check for right usage & set up basic Script Variables
 if [ "$#" == "3" ]; then
 
-	# source libs
-	source ${OPENSARKIT}/lib/helpers_source
+# source libs
+source ${OPENSARKIT}/lib/helpers_source
 
-	export WGETRC=`readlink -f $3`
-	PROC_DIR=$(readlink -f $1)
-	TMP_DIR=${PROC_DIR}/.TMP
-	mkdir -p ${TMP_DIR}
+export WGETRC=`readlink -f $3`
+PROC_DIR=$(readlink -f $1)
+TMP_DIR=${PROC_DIR}/.TMP
+mkdir -p ${TMP_DIR}
 
-	echo -e "---------------------------------------------------------------------------" | tee "${PROC_DIR}/.s1_dow_progress"
-	echo -e " Open SAR Toolkit, version ${OST_VERSION}"  | tee -a "${PROC_DIR}/.s1_dow_progress"
-	echo -e " Download Sentinel-1 data from ASF server using an OST inventory shapefile"  | tee -a "${PROC_DIR}/.s1_dow_progress"
-	echo -e "---------------------------------------------------------------------------"  | tee -a "${PROC_DIR}/.s1_dow_progress"
+echo -e "---------------------------------------------------------------------------" | tee "${PROC_DIR}/.s1_dow_progress"
+echo -e " Open SAR Toolkit, version ${OST_VERSION}"  | tee -a "${PROC_DIR}/.s1_dow_progress"
+echo -e " Download Sentinel-1 data from ASF server using an OST inventory shapefile"  | tee -a "${PROC_DIR}/.s1_dow_progress"
+echo -e "---------------------------------------------------------------------------"  | tee -a "${PROC_DIR}/.s1_dow_progress"
 
 elif [ "$#" != "2" ]; then
 
-	echo -e "---------------------------------------------------------------------------"
-	echo -e " Open SAR Toolkit, version ${OST_VERSION}"
-	echo -e " Download Sentinel-1 data from ASF server using an OST inventory shapefile"
-	echo -e "---------------------------------------------------------------------------"
-	echo -e ""
-	echo -e " syntax: oft-sar-S1-ASF-download <output_folder> <Inventory Shapefile>"
-	echo -e ""
-	echo -e " input parameters:"
-	echo -e "  Output Folder			(output) folder where the downloaded data will be saved"
-	echo -e "  Inventory shapefile		(input) shapefile created and maybe edited from oft-sar-ALOS-ASF-inventory script"
-	exit 1
+echo -e "---------------------------------------------------------------------------"
+echo -e " Open SAR Toolkit, version ${OST_VERSION}"
+echo -e " Download Sentinel-1 data from ASF server using an OST inventory shapefile"
+echo -e "---------------------------------------------------------------------------"
+echo -e ""
+echo -e " syntax: oft-sar-S1-ASF-download <output_folder> <Inventory Shapefile>"
+echo -e ""
+echo -e " input parameters:"
+echo -e "  Output Folder			(output) folder where the downloaded data will be saved"
+echo -e "  Inventory shapefile		(input) shapefile created and maybe edited from oft-sar-ALOS-ASF-inventory script"
+exit 1
 
 else
 
-	# source libs
-	source ${OPENSARKIT}/lib/helpers_source
+# source libs
+source ${OPENSARKIT}/lib/helpers_source
 
-  	PROC_DIR=$(readlink -f $1)
-	TMP_DIR="${PROC_DIR}/.TMP"
-	#rm -rf ${TMP_DIR} > /dev/null
-	mkdir -p "${TMP_DIR}"
+PROC_DIR=$(readlink -f $1)
+TMP_DIR="${PROC_DIR}/.TMP"
+#rm -rf ${TMP_DIR} > /dev/null
+mkdir -p "${TMP_DIR}"
 
-	echo -e "---------------------------------------------------------------------------" | tee "${PROC_DIR}/.s1_dow_progress"
-	echo -e " Open SAR Toolkit, version ${OST_VERSION}"  | tee -a "${PROC_DIR}/.s1_dow_progress"
-	echo -e " Download Sentinel-1 data from ASF server using an OST inventory shapefile"  | tee -a "${PROC_DIR}/.s1_dow_progress"
-	echo -e "---------------------------------------------------------------------------"  | tee -a "${PROC_DIR}/.s1_dow_progress"
+echo -e "---------------------------------------------------------------------------" | tee "${PROC_DIR}/.s1_dow_progress"
+echo -e " Open SAR Toolkit, version ${OST_VERSION}"  | tee -a "${PROC_DIR}/.s1_dow_progress"
+echo -e " Download Sentinel-1 data from ASF server using an OST inventory shapefile"  | tee -a "${PROC_DIR}/.s1_dow_progress"
+echo -e "---------------------------------------------------------------------------"  | tee -a "${PROC_DIR}/.s1_dow_progress"
 fi
 
 if [ "$#" == "3" ];then
 
-	echo " Non-interactive mode"
+echo " Non-interactive mode"
 
 else
 
 #	Credentials
-	read -r -p " Please type your NASA Earthdata Username:" USERNAME
-	read -s -p " Please type your NASA Earthdata Password:" PW
-	echo ""
+read -r -p " Please type your NASA Earthdata Username:" USERNAME
+read -s -p " Please type your NASA Earthdata Password:" PW
+echo ""
 
-	echo "http_user=${USERNAME}" >> "${TMP_DIR}/wget.conf"
-	echo "http_password=${PW}" >> "${TMP_DIR}/wget.conf"
-	chmod 600 "${TMP_DIR}/wget.conf"
-	export WGETRC="${TMP_DIR}/wget.conf"
+echo "http_user=${USERNAME}" >> "${TMP_DIR}/wget.conf"
+echo "http_password=${PW}" >> "${TMP_DIR}/wget.conf"
+chmod 600 "${TMP_DIR}/wget.conf"
+export WGETRC="${TMP_DIR}/wget.conf"
 fi
 
 echo ""
@@ -91,6 +91,7 @@ ogrinfo $2 -al | grep Product_ID | sed 's/  Product_ID (String) = //g' | tail -n
 ogrinfo $2 -al | grep Track | sed 's/  Track (Integer) = //g' | tail -n +2 > ${TMP_DIR}/tmp_track_list &&
 ogrinfo $2 -al | grep Orbit_Dir | sed 's/  Orbit_Dir (String) = //g' | tail -n +2 | cut -c -1 > ${TMP_DIR}/tmp_orb_dir_list &&
 ogrinfo $2 -al | grep Date | sed 's/  Date (Integer) = //g'| tail -n +2 > ${TMP_DIR}/tmp_date_list
+ogrinfo $2 -al | grep Date | sed 's/  Date (Integer) = //g'| tail -n +2
 ogrinfo $2 -al | grep Scene_ID | sed 's/  Scene_ID (String) = //g' | tail -n +2 > ${TMP_DIR}/scene_id
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a "${PROC_DIR}/.s1_dow_progress"
 echo ""
@@ -99,77 +100,85 @@ echo ""
 NR=`cat ${TMP_DIR}/tmp_download_list | wc -l`
 
 paste -d ';' ${TMP_DIR}/tmp_download_list ${TMP_DIR}/tmp_track_list ${TMP_DIR}/tmp_orb_dir_list ${TMP_DIR}/tmp_date_list ${TMP_DIR}/scene_id >> ${TMP_DIR}/tmp_list
+paste -d ';' ${TMP_DIR}/tmp_download_list ${TMP_DIR}/tmp_track_list ${TMP_DIR}/tmp_orb_dir_list ${TMP_DIR}/tmp_date_list ${TMP_DIR}/scene_id
 
 COUNT=1
 while read line; do
 
-	# get the data via the UUID
-	LINK=`echo $line | awk -F "\;" '{print $1}' 2>/dev/null`
-	TRACK=`echo $line | awk -F "\;" '{print $2}' 2>/dev/null`
-	if [ `echo $TRACK | wc -c` -eq 2 ];then
-		TRACK=`echo "00${TRACK}"`
-	elif [ `echo $TRACK | wc -c` -eq 3 ];then
-		TRACK=`echo "0${TRACK}"`
-	fi
-	ORB_DIR=`echo $line | awk -F "\;" '{print $3}' 2>/dev/null`
-	DATE=`echo $line | awk -F "\;" '{print $4}' 2>/dev/null`
-	SCENE=`echo $line | awk -F "\;" '{print $5}' 2>/dev/null`
+# get the data via the UUID
 
-	# if statement for repeated downloads
-  if [ -f ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/.$SCENE.passed ];then
-		echo "Product already downloaded"
-	else
+echo $line
 
-		mkdir -p ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/
+LINK=`echo $line | awk -F "\;" '{print $1}' 2>/dev/null`
+echo $line | awk -F "\;" '{print $1}'
+TRACK=`echo $line | awk -F "\;" '{print $2}' 2>/dev/null`
+if [ `echo $TRACK | wc -c` -eq 2 ];then
+TRACK=`echo "00${TRACK}"`
+elif [ `echo $TRACK | wc -c` -eq 3 ];then
+TRACK=`echo "0${TRACK}"`
+fi
+ORB_DIR=`echo $line | awk -F "\;" '{print $3}' 2>/dev/null`
+echo $line | awk -F "\;" '{print $3}'
+DATE=`echo $line | awk -F "\;" '{print $4}' 2>/dev/null`
+echo $line | awk -F "\;" '{print $4}'
+SCENE=`echo $line | awk -F "\;" '{print $5}' 2>/dev/null`
+echo $line | awk -F "\;" '{print $5}'
 
-		# prepare a loop to avoid uncomplete data downloads
-		i=1
-		echo "bla" > ${TMP_DIR}/tmp_error
-		#do the loop
-		j=1
-		for(( i=1; i<=2; i++ ));do
+# if statement for repeated downloads
+if [ -f ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/.$SCENE.passed ];then
+echo "Product already downloaded"
+else
 
-			i=3
-			SECONDS=0
-			echo -ne " Downloading Product ${COUNT} of ${NR} (Granule: ${SCENE})... " | tee -a "${PROC_DIR}/.s1_dow_progress"
-			#echo "wget --show-progress --progress=dot -q -c -P ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/ "${LINK}""
-			wget --show-progress --progress=dot -q -c -P ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/ "${LINK}" >> ${TMP_DIR}/log_download_${COUNT} 2>&1
-			WGET_ERR=$?
+mkdir -p ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/
 
-			if [ ${WGET_ERR} == 6 ]; then
-				echo -e ""
-				echo " Username/Password Authentication Failed."  | tee -a "${PROC_DIR}/.s1_dow_progress"
-				rm -rf ${TMP_DIR}
-				exit 2
-			elif [ ${WGET_ERR} -ne 0 ]; then
-				i=1 && echo -e " failed, having another try."  | tee -a "${PROC_DIR}/.s1_dow_progress"
-				j=$(expr $j + 1)
-				if [ $j -gt 50 ];then
-					echo -e ""
-					echo " Tried more then 50 times downloading the scene. Exiting because of download problems."  | tee -a "${PROC_DIR}/.s1_dow_progress"
-					rm -rf ${TMP_DIR}
-					exit 3
-				fi
-			else
-					duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"  | tee -a "${PROC_DIR}/.s1_dow_progress"
+# prepare a loop to avoid uncomplete data downloads
+i=1
+echo "bla" > ${TMP_DIR}/tmp_error
+#do the loop
+j=1
+for(( i=1; i<=2; i++ ));do
 
-					SECONDS=0
-					echo -ne " Checking for Zip archive file integrity..."  | tee -a "${PROC_DIR}/.s1_dow_progress"
-					if 7z t ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/${SCENE}.zip | grep "Everything is Ok" > /dev/null;then
-						echo "download passed" > ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/.$SCENE.passed
-						duration=$SECONDS && echo -e " passed ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"  | tee -a "${PROC_DIR}/.s1_dow_progress"
-					else
-						i=1
-						duration=$SECONDS && echo -e " failed. Will restart download. ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"  | tee -a "${PROC_DIR}/.s1_dow_progress"
-						rm -f ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/${SCENE}.zip
-					fi
+i=3
+SECONDS=0
+echo -ne " Downloading Product ${COUNT} of ${NR} (Granule: ${SCENE})... " | tee -a "${PROC_DIR}/.s1_dow_progress"
+#echo "wget --show-progress --progress=dot -q -c -P ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/ "${LINK}""
+wget --show-progress --progress=dot -q -c -P ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/ "${LINK}" >> ${TMP_DIR}/log_download_${COUNT} 2>&1
+WGET_ERR=$?
 
-			fi
+if [ ${WGET_ERR} == 6 ]; then
+echo -e ""
+echo " Username/Password Authentication Failed."  | tee -a "${PROC_DIR}/.s1_dow_progress"
+rm -rf ${TMP_DIR}
+exit 2
+elif [ ${WGET_ERR} -ne 0 ]; then
+i=1 && echo -e " failed, having another try."  | tee -a "${PROC_DIR}/.s1_dow_progress"
+j=$(expr $j + 1)
+if [ $j -gt 50 ];then
+echo -e ""
+echo " Tried more then 50 times downloading the scene. Exiting because of download problems."  | tee -a "${PROC_DIR}/.s1_dow_progress"
+rm -rf ${TMP_DIR}
+exit 3
+fi
+else
+duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"  | tee -a "${PROC_DIR}/.s1_dow_progress"
 
-		done
+SECONDS=0
+echo -ne " Checking for Zip archive file integrity..."  | tee -a "${PROC_DIR}/.s1_dow_progress"
+if 7z t ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/${SCENE}.zip | grep "Everything is Ok" > /dev/null;then
+echo "download passed" > ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/.$SCENE.passed
+duration=$SECONDS && echo -e " passed ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"  | tee -a "${PROC_DIR}/.s1_dow_progress"
+else
+i=1
+duration=$SECONDS && echo -e " failed. Will restart download. ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)"  | tee -a "${PROC_DIR}/.s1_dow_progress"
+rm -f ${PROC_DIR}/DATA/${TRACK}${ORB_DIR}/${DATE}"-"${TRACK}${ORB_DIR}/${SCENE}.zip
+fi
 
-	fi # close the existing file loop
-	COUNT=`expr ${COUNT} + 1`
+fi
+
+done
+
+fi # close the existing file loop
+COUNT=`expr ${COUNT} + 1`
 
 done < ${TMP_DIR}/tmp_list
 

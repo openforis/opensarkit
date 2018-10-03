@@ -208,18 +208,18 @@ BEAM="beamMode=${MODE}"
 OUTPUT_FORMAT="output=csv"
 OUTPUT="${MODE}-data_inventory"
 OUT_FILE=${TMP_DIR}/$OUTPUT.csv
-ASK="\&polygon=${AOI}&${PLATFORM}&${BEAM}&${PERIOD}&${POLAR}&${PROCESSING}&${OUTPUT_FORMAT}"
+ASK="polygon=${AOI}&${PLATFORM}&${BEAM}&${PERIOD}&${POLAR}&${PROCESSING}&${OUTPUT_FORMAT}"
 
 echo -ne " Data inventory from ASF server ..." | tee -a ${PROC_DIR}/.s1_inv_progress
-curl -s https://api.daac.asf.alaska.edu/services/search/param?keyword=value$ASK | tail -n +2  > ${OUT_FILE}
+curl -s https://api.daac.asf.alaska.edu/services/search/param?$ASK | tail -n +2  > ${OUT_FILE}
 duration=$SECONDS && echo -e " done ($(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed)" | tee -a ${PROC_DIR}/.s1_inv_progress
-#echo "curl -s https://api.daac.asf.alaska.edu/services/search/param?keyword=value$ASK"
+#echo "curl -s https://api.daac.asf.alaska.edu/services/search/param?$ASK"
 
 
 if [[ $(cat ${OUT_FILE} 2>&1 | head -c 3) != \"S1 ]];then
 	echo -e " No products have been found for the given search parameters." | tee -a ${PROC_DIR}/.s1_inv_progress && exit 1
-else
-	echo "" >>  ${OUT_FILE} # we need this line for line break in order to get also the last scene
+#else
+#	echo "" >>  ${OUT_FILE} # we need this line for line break in order to get also the last scene
 fi
 
 NR_OF_PRODUCTS=`wc -l ${OUT_FILE} | awk '{print $1}'`
@@ -233,22 +233,42 @@ echo "-------------------------------------------------" | tee -a ${PROC_DIR}/.s
 SECONDS=0
 echo -ne " Creating an OST inventory shapefile ... " | tee -a ${PROC_DIR}/.s1_inv_progress
 # sort the data
+#wc -l ${OUT_FILE} | awk '{print $1}'
+cat ${OUT_FILE}
 cat ${OUT_FILE} | awk -F ',' $'{print $1}' | sed 's/"//g' > ${TMP_DIR}/granule
-cat ${OUT_FILE} | awk -F ',' $'{print $2}' | sed 's/"//g' > ${TMP_DIR}/satellite
-cat ${OUT_FILE} | awk -F ',' $'{print $4}' | sed 's/"//g' > ${TMP_DIR}/mode
-cat ${OUT_FILE} | awk -F ',' $'{print $7}' | sed 's/"//g' > ${TMP_DIR}/orbit
-cat ${OUT_FILE} | awk -F ',' $'{print $8}' | sed 's/"//g' > ${TMP_DIR}/track
-cat ${OUT_FILE} | awk -F ',' $'{print $9}'| sed 's/"//g' > ${TMP_DIR}/frame
-cat ${OUT_FILE} | awk -F ',' $'{print $26}'| sed 's/"//g' > ${TMP_DIR}/orbit_dir
-cat ${OUT_FILE} | awk -F ',' $'{print $27}'| sed 's/"//g' > ${TMP_DIR}/download
+#cat ${OUT_FILE} | awk -F ',' $'{print $1}'
 
+cat ${OUT_FILE} | awk -F ',' $'{print $2}' | sed 's/"//g' > ${TMP_DIR}/satellite
+#cat ${OUT_FILE} | awk -F ',' $'{print $2}'
+
+cat ${OUT_FILE} | awk -F ',' $'{print $4}' | sed 's/"//g' > ${TMP_DIR}/mode
+#cat ${OUT_FILE} | awk -F ',' $'{print $4}'
+
+cat ${OUT_FILE} | awk -F ',' $'{print $7}' | sed 's/"//g' > ${TMP_DIR}/orbit
+#cat ${OUT_FILE} | awk -F ',' $'{print $7}'
+
+cat ${OUT_FILE} | awk -F ',' $'{print $8}' | sed 's/"//g' > ${TMP_DIR}/track
+#cat ${OUT_FILE} | awk -F ',' $'{print $8}'
+
+cat ${OUT_FILE} | awk -F ',' $'{print $9}'| sed 's/"//g' > ${TMP_DIR}/frame
+#cat ${OUT_FILE} | awk -F ',' $'{print $9}'
+
+cat ${OUT_FILE} | awk -F ',' $'{print $26}'| sed 's/"//g' > ${TMP_DIR}/orbit_dir
+#cat ${OUT_FILE} | awk -F ',' $'{print $26}'
+
+cat ${OUT_FILE} | awk -F ',' $'{print $27}'| sed 's/"//g' > ${TMP_DIR}/download
+#cat ${OUT_FILE} | awk -F ',' $'{print $27}'
 
 #acqdata
-for LINE in $(cat ${OUT_FILE} | awk -F ',' $'{print $10}'| sed 's/"//g' | tr "\ " "\n" | awk NR%2==1);do
+
+cat ${OUT_FILE} | awk -F ',' $'{print $10}'| sed 's/"//g' | tr "\ " "\n" | awk NR%2==1
+
+for LINE in $(cat ${OUT_FILE} | awk -F ',' $'{print $10}'| sed 's/"//g' | tr "\ " "\n");do
 	YEAR=`echo ${LINE} | awk -F "-" '{print $1}'`
 	MONTH=`echo ${LINE} | awk -F "-" '{print $2}'`
-	DAY=`echo ${LINE} | awk -F "-" '{print $3}'`
+	DAY=`echo ${LINE} | awk -F "-" '{print substr($3, 1, length($3)-10)}'`
 	ACQ_DATE=${YEAR}${MONTH}${DAY}
+    echo ${ACQ_DATE}
 	echo ${ACQ_DATE} >> ${TMP_DIR}/acq_date
 done
 
@@ -304,6 +324,8 @@ echo '"String(68)","String(37)","Integer(8)","Integer(3)","String(5)","String(11
 
 # write data
 paste -d "," ${TMP_DIR}/granule ${TMP_DIR}/download ${TMP_DIR}/acq_date ${TMP_DIR}/track ${TMP_DIR}/pol_mode ${TMP_DIR}/orbit_dir ${TMP_DIR}/orbit ${TMP_DIR}/mode ${TMP_DIR}/start ${TMP_DIR}/stop ${TMP_DIR}/polys >> ${TMP_DIR}/wkt.csv
+
+paste -d "," ${TMP_DIR}/granule ${TMP_DIR}/download ${TMP_DIR}/acq_date ${TMP_DIR}/track ${TMP_DIR}/pol_mode ${TMP_DIR}/orbit_dir ${TMP_DIR}/orbit ${TMP_DIR}/mode ${TMP_DIR}/start ${TMP_DIR}/stop ${TMP_DIR}/polys
 
 mkdir -p ${PROC_DIR}/
 mkdir -p ${PROC_DIR}/Inventory
